@@ -102,6 +102,15 @@
   - Verified 1-click launcher scripts (`run.bat`, `run.ps1`, `run.py`) are fully operational.
 - [x] **Step 15**: Session Architecture & Local Model Guidance (Nov 2, 2026):
   - Documented session distinction: Antigravity IDE UI chat panel runs on Google Cloud Gemini endpoint (Gemini Flash/Pro), whereas local model interaction is conducted via the integrated terminal session (`run.ps1` / `run.py`), CLI, or SDK agent scripts targeting `http://localhost:11434/v1`.
+- [x] **Step 16**: End-to-End "Zero to Start Coding" Master Guide (`ZERO_TO_CODING.md`):
+  - Authored comprehensive developer documentation:
+    - Phase 1: Zero Setup (hardware matrix, 3-minute quickstart, model selection).
+    - Phase 2: Starting to Code Immediately with `code_agent.py` interactive shell and CLI.
+    - Phase 3: 3 Real-World Coding Recipes (FastAPI backend microservice, pytest test suite generation, async refactoring).
+    - Phase 4: Python Developer SDK Handbook (annotated 25-line agent script, safety policies, tool execution).
+    - Phase 5: Architecture, custom harnesses, and troubleshooting pro-tips.
+  - Linked `ZERO_TO_CODING.md` as the primary developer guide in `README.md`.
+  - Tested and verified end-to-end autonomous code generation and workspace tools.
 
 ---
 

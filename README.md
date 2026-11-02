@@ -1,6 +1,8 @@
 # 🚀 Local Google Antigravity Agent (Open-Source Edition)
 
 > Run fully autonomous, private AI agents on your local machine using the official **Google Antigravity SDK** (`google-antigravity`) connected to local models (**Ollama**, **LM Studio**, **vLLM**) or Google's open-source **Research AI Harness**—with zero cloud lock-in and zero API fees.
+>
+> 📖 **From Zero to Start Coding**: For an end-to-end developer guide with real-world project recipes and the Python SDK handbook, read **[ZERO_TO_CODING.md](ZERO_TO_CODING.md)**.
 
 ---
 
@@ -36,14 +38,16 @@ chmod +x run.sh && ./run.sh
 
 ## 📋 Table of Contents
 1. [⚡ 1-Command Plug & Play](#-1-command-plug--play-zero-friction-setup)
-2. [What is This?](#-what-is-this)
-3. [Prerequisites Checklist](#-prerequisites-checklist)
-4. [Step-by-Step Manual Setup](#-step-by-step-manual-setup)
-5. [Project Structure](#-project-structure)
-6. [How It Works](#-how-it-works)
-7. [Common Gotchas & Troubleshooting](#-common-gotchas--troubleshooting)
-8. [Advanced: Using Custom Research Harnesses & Servers](#-advanced-using-custom-research-harnesses--servers)
-9. [License & Contributing](#-license--contributing)
+2. [📖 From Zero to Start Coding (Master Guide)](ZERO_TO_CODING.md)
+3. [💻 Developer Coding Agent (code_agent.py)](#mode-3-developer-pair-programming-shell-code_agentpy)
+4. [What is This?](#-what-is-this)
+5. [Prerequisites Checklist](#-prerequisites-checklist)
+6. [Step-by-Step Manual Setup](#-step-by-step-manual-setup)
+7. [Project Structure](#-project-structure)
+8. [How It Works](#-how-it-works)
+9. [Common Gotchas & Troubleshooting](#-common-gotchas--troubleshooting)
+10. [Advanced: Using Custom Research Harnesses & Servers](#-advanced-using-custom-research-harnesses--servers)
+11. [License & Contributing](#-license--contributing)
 
 ---
 
@@ -203,6 +207,7 @@ antigravity-local/
 ├── requirements.txt          # Minimal Python dependencies (google-antigravity, python-dotenv)
 ├── LICENSE                   # Open-source MIT License
 ├── README.md                 # Complete beginner & developer documentation
+├── ZERO_TO_CODING.md         # 📖 E2E Master Guide: From Zero to Coding Real Apps
 ├── test_local.py             # Script 1: Tests local connection & real-time token streaming
 ├── agent_with_workspace.py   # Script 2: Autonomous agent with file creation tools
 ├── code_agent.py             # Script 3: Interactive developer coding shell & pair-programmer
