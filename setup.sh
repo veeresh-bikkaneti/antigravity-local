@@ -46,3 +46,4 @@ echo "  2. Start Ollama:   ollama run qwen2.5:14b"
 echo "  3. Run test:       python test_local.py"
 echo "  4. Run agent:      python agent_with_workspace.py"
 echo "==================================================="
+

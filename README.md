@@ -4,15 +4,46 @@
 
 ---
 
+## ⚡ 1-Command Plug & Play (Zero-Friction Setup)
+
+No manual environment creation or dependency hunting. Clone and run **one command**—the bootstrap orchestrator automatically configures your environment, starts Ollama, downloads the best model for your hardware, runs an autonomous demonstration, and opens an interactive agent chat:
+
+### Windows (CMD or PowerShell):
+```cmd
+git clone https://github.com/veeresh-bikkaneti/antigravity-local.git
+cd antigravity-local
+run.bat
+```
+*(Or in PowerShell: `.\run.ps1` or `python run.py`)*
+
+### macOS / Linux:
+```bash
+git clone https://github.com/veeresh-bikkaneti/antigravity-local.git
+cd antigravity-local
+chmod +x run.sh && ./run.sh
+```
+*(Or: `python3 run.py`)*
+
+#### 🤖 What the 1-Command Bootstrap Does Automatically:
+1. 🔍 **Hardware Detection**: Probes system RAM and selects `qwen2.5:14b` (for systems with >=16GB RAM) or `llama3.1:8b` (for systems under 16GB RAM).
+2. 📦 **Virtual Environment Setup**: Creates isolated `venv`, installs `requirements.txt`, and generates `.env` if missing.
+3. ⚙️ **Ollama Auto-Start**: Pings `http://localhost:11434`. If down, launches `ollama serve` in the background.
+4. 📥 **Model Auto-Pull**: Inspects downloaded models and automatically pulls the optimal model if not yet present.
+5. 🛠️ **Autonomous Demo**: Invokes the local agent to create a modern responsive `workspace/index.html` file using built-in tool calling.
+6. 💬 **Interactive Shell**: Drops you straight into an interactive terminal where you can prompt your private local agent to write code, inspect files, or perform tasks!
+
+---
+
 ## 📋 Table of Contents
-1. [What is This?](#-what-is-this)
-2. [Prerequisites Checklist](#-prerequisites-checklist)
-3. [Zero-to-Hero Quickstart (5 Minutes)](#-zero-to-hero-quickstart-5-minutes)
-4. [Project Structure](#-project-structure)
-5. [How It Works](#-how-it-works)
-6. [Common Gotchas & Troubleshooting](#-common-gotchas--troubleshooting)
-7. [Advanced: Using Custom Research Harnesses & Servers](#-advanced-using-custom-research-harnesses--servers)
-8. [License & Contributing](#-license--contributing)
+1. [⚡ 1-Command Plug & Play](#-1-command-plug--play-zero-friction-setup)
+2. [What is This?](#-what-is-this)
+3. [Prerequisites Checklist](#-prerequisites-checklist)
+4. [Step-by-Step Manual Setup](#-step-by-step-manual-setup)
+5. [Project Structure](#-project-structure)
+6. [How It Works](#-how-it-works)
+7. [Common Gotchas & Troubleshooting](#-common-gotchas--troubleshooting)
+8. [Advanced: Using Custom Research Harnesses & Servers](#-advanced-using-custom-research-harnesses--servers)
+9. [License & Contributing](#-license--contributing)
 
 ---
 
@@ -42,7 +73,9 @@ Before you start, make sure you have:
 
 ---
 
-## 🏁 Zero-to-Hero Quickstart (5 Minutes)
+## 🛠️ Step-by-Step Manual Setup (Optional Alternative)
+
+If you prefer to configure each component step-by-step rather than using the 1-command bootstrap (`run.bat` / `run.sh` / `run.py`):
 
 ### Step 1: Install & Verify Ollama
 1. Download and install Ollama from [ollama.ai/download](https://ollama.ai/download).
@@ -135,10 +168,14 @@ After completion, inspect your newly generated file at `workspace/index.html`!
 
 ```
 antigravity-local/
+├── run.py                    # ⚡ 1-Command Plug & Play auto-bootstrap orchestrator
+├── run.bat                   # 1-Click launcher for Windows
+├── run.sh                    # 1-Command launcher for macOS & Linux
+├── run.ps1                   # 1-Command launcher for PowerShell
+├── setup.bat                 # Standalone venv setup for Windows
+├── setup.sh                  # Standalone venv setup for macOS & Linux
 ├── .env.example              # Template environment variables (server URL, model, paths)
 ├── requirements.txt          # Minimal Python dependencies (google-antigravity, python-dotenv)
-├── setup.bat                 # 1-click automated setup script for Windows
-├── setup.sh                  # 1-command automated setup script for macOS / Linux
 ├── LICENSE                   # Open-source MIT License
 ├── README.md                 # Complete beginner & developer documentation
 ├── test_local.py             # Script 1: Tests local connection & real-time token streaming

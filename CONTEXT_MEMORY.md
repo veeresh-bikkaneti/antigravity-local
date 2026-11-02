@@ -77,6 +77,10 @@
   - Hardened `test_local.py` & `agent_with_workspace.py` with friendly `ImportError` diagnostics, helpful Ollama pre-flight instructions, and UTF-8 console output.
   - Formatted demo artifact `workspace/index.html` and added `workspace/.gitkeep`.
   - Updated `README.md` with turnkey quickstart and verified repository URLs.
+- [x] **Step 12**: 1-Command Plug & Play Bootstrap Engine:
+  - Created `run.py`: Self-contained, zero-dependency bootstrap orchestrator that auto-detects RAM, sets up virtualenv, starts Ollama background service if offline, auto-pulls model weights, runs the workspace demo, and launches an interactive agent shell.
+  - Created 1-click platform wrappers: `run.bat` (Windows), `run.sh` (macOS/Linux), and `run.ps1` (PowerShell).
+  - Restructured `README.md` with 1-Command Plug & Play as the primary entry point for any user cloning the repo.
 - [x] **Step 11**: Session Resumption & Environment Audit (Nov 2, 2026):
   - Verified active Ollama service (PID 21404) running with `qwen2.5:14b` and `gemma2:27b`.
   - Tested `test_local.py` against `http://localhost:11434/v1` using existing Python virtual environment (`C:\Users\veere\antigravity-local\venv`).
