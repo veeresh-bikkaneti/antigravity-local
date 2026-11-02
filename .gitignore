@@ -65,3 +65,8 @@ logs/
 *.bak
 .pytest_cache/
 
+# Agent transient workspace outputs (keep only demo artifact and gitkeep)
+workspace/*
+!workspace/.gitkeep
+!workspace/index.html
+
