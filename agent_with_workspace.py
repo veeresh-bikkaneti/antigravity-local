@@ -2,13 +2,6 @@ import asyncio
 import os
 import sys
 
-# Load environment variables from .env file if available
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
-
 # Ensure UTF-8 console output on Windows
 if sys.platform == "win32":
     try:
@@ -17,8 +10,21 @@ if sys.platform == "win32":
     except Exception:
         pass
 
-from google.antigravity import Agent, LocalOpenAIAgentConfig
-from google.antigravity.hooks import policy
+# Load environment variables from .env file if available
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+# Verify dependencies
+try:
+    from google.antigravity import Agent, LocalOpenAIAgentConfig
+    from google.antigravity.hooks import policy
+except ImportError:
+    print("\n❌ [ERROR] Missing dependency: 'google-antigravity' is not installed.")
+    print("👉 Run: pip install -r requirements.txt\n")
+    sys.exit(1)
 
 async def main():
     base_url = os.environ.get("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1")
@@ -37,13 +43,13 @@ async def main():
     )
     
     print("==================================================")
-    print(" Local Google Antigravity Autonomous Agent")
+    print(" Google Antigravity - Local Autonomous Agent")
     print("==================================================")
     print(f"Server Endpoint : {base_url}")
     print(f"Inference Model : {model}")
     print(f"Agent Workspace : {workspace_dir}")
     print("Security Policy : policy.allow_all() (Autonomous Mode)")
-    print("Task            : Create index.html with a dark-mode toggle.\n")
+    print("Task            : Create index.html with a modern dark-mode toggle.\n")
     
     target_file = os.path.join(workspace_dir, "index.html")
     prompt = (
@@ -51,11 +57,21 @@ async def main():
         "Call write_file or create_file with Path, Content, and Overwrite=True."
     )
     
-    async with Agent(config) as agent:
-        response = await agent.chat(prompt)
-        async for chunk in response:
-            print(chunk, end="", flush=True)
-        print("\n\nAgent task completed.")
+    try:
+        async with Agent(config) as agent:
+            response = await agent.chat(prompt)
+            async for chunk in response:
+                print(chunk, end="", flush=True)
+            print("\n\n✅ Agent task completed successfully.")
+            if os.path.exists(target_file):
+                print(f"📁 Output file generated: {target_file}")
+    except Exception as exc:
+        print(f"\n❌ [ERROR] Agent execution failure: {exc}")
+        print("\n💡 Troubleshooting Tips:")
+        print(f"   - Tool calling models required: qwen2.5:14b, llama3.1:8b (not gemma2)")
+        print(f"   - Is Ollama active? Run: ollama serve")
+        print(f"   - Pull the model: Run: ollama pull {model}\n")
+        sys.exit(1)
 
 if __name__ == "__main__":
     asyncio.run(main())

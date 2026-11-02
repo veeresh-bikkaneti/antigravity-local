@@ -61,15 +61,27 @@ ollama pull qwen2.5:14b
 # ollama pull llama3.1:8b
 ```
 
-### Step 3: Clone the Repository & Set Up Virtual Environment
-Open your terminal (PowerShell on Windows, or Bash on macOS/Linux):
+### Step 3: Clone the Repository & 1-Command Setup
 
 ```bash
-# 1. Clone this repository
-git clone https://github.com/your-username/local-antigravity.git
-cd local-antigravity
+git clone https://github.com/veeresh-bikkaneti/antigravity-local.git
+cd antigravity-local
+```
 
-# 2. Create a virtual environment
+#### Option A: 1-Click Automated Setup (Recommended)
+- **Windows**:
+  ```cmd
+  setup.bat
+  ```
+- **macOS / Linux**:
+  ```bash
+  chmod +x setup.sh && ./setup.sh
+  ```
+*(This automatically creates a virtual environment, installs dependencies from `requirements.txt`, and generates your `.env` file.)*
+
+#### Option B: Manual Setup
+```bash
+# 1. Create a virtual environment
 python -m venv venv
 ```
 
@@ -122,13 +134,17 @@ After completion, inspect your newly generated file at `workspace/index.html`!
 ## 📂 Project Structure
 
 ```
-local-antigravity/
+antigravity-local/
 ├── .env.example              # Template environment variables (server URL, model, paths)
 ├── requirements.txt          # Minimal Python dependencies (google-antigravity, python-dotenv)
+├── setup.bat                 # 1-click automated setup script for Windows
+├── setup.sh                  # 1-command automated setup script for macOS / Linux
+├── LICENSE                   # Open-source MIT License
 ├── README.md                 # Complete beginner & developer documentation
 ├── test_local.py             # Script 1: Tests local connection & real-time token streaming
 ├── agent_with_workspace.py   # Script 2: Autonomous agent with file creation tools
 └── workspace/                # Sandboxed folder where the agent creates/edits files
+    ├── .gitkeep              # Keeps directory tracked in git
     └── index.html            # Artifact generated automatically by the agent
 ```
 
@@ -229,5 +245,7 @@ The SDK will automatically detect your custom binary on startup and route all ag
 ---
 
 ## 📄 License & Contributing
+
+This project is licensed under the [MIT License](LICENSE) - free to use, modify, and distribute for personal and commercial projects.
 
 Contributions are welcome! Please open an issue or pull request if you have suggestions, optimizations, or new tool integrations.

@@ -71,6 +71,16 @@
   - Added remote origin: `https://github.com/veeresh-bikkaneti/antigravity-local.git`.
   - Staged and created root commit (`feat: initial commit of local Google Antigravity autonomous agent setup`).
   - Successfully pushed `main` branch to remote GitHub repository.
+- [x] **Step 11**: Open-Source Polish & Turnkey Packaging Overhaul:
+  - Added open-source `LICENSE` (MIT).
+  - Added 1-click cross-platform setup scripts: `setup.bat` (Windows) and `setup.sh` (macOS/Linux).
+  - Hardened `test_local.py` & `agent_with_workspace.py` with friendly `ImportError` diagnostics, helpful Ollama pre-flight instructions, and UTF-8 console output.
+  - Formatted demo artifact `workspace/index.html` and added `workspace/.gitkeep`.
+  - Updated `README.md` with turnkey quickstart and verified repository URLs.
+- [x] **Step 11**: Session Resumption & Environment Audit (Nov 2, 2026):
+  - Verified active Ollama service (PID 21404) running with `qwen2.5:14b` and `gemma2:27b`.
+  - Tested `test_local.py` against `http://localhost:11434/v1` using existing Python virtual environment (`C:\Users\veere\antigravity-local\venv`).
+  - Clarifying specific server scope requested by user (Local Antigravity Agent environment setup, FastAPI HTTP/REST server wrapper, or Node.js `web-run` server).
 
 ---
 
