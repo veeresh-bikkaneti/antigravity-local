@@ -81,10 +81,17 @@
   - Created `run.py`: Self-contained, zero-dependency bootstrap orchestrator that auto-detects RAM, sets up virtualenv, starts Ollama background service if offline, auto-pulls model weights, runs the workspace demo, and launches an interactive agent shell.
   - Created 1-click platform wrappers: `run.bat` (Windows), `run.sh` (macOS/Linux), and `run.ps1` (PowerShell).
   - Restructured `README.md` with 1-Command Plug & Play as the primary entry point for any user cloning the repo.
-- [x] **Step 11**: Session Resumption & Environment Audit (Nov 2, 2026):
-  - Verified active Ollama service (PID 21404) running with `qwen2.5:14b` and `gemma2:27b`.
-  - Tested `test_local.py` against `http://localhost:11434/v1` using existing Python virtual environment (`C:\Users\veere\antigravity-local\venv`).
-  - Clarifying specific server scope requested by user (Local Antigravity Agent environment setup, FastAPI HTTP/REST server wrapper, or Node.js `web-run` server).
+- [x] **Step 13**: Defensive Model Pre-Check Engineering:
+  - Eliminated redundant model re-downloads by implementing dual-tier inventory inspection (`get_installed_ollama_models`) via Ollama REST API (`/api/tags`) with CLI (`ollama list`) fallback.
+  - Added smart tag normalization and candidate model discovery (detects `qwen2.5:14b`, `llama3.1:8b`, etc. and reuses existing weights).
+  - Updated `README.md` documentation to promote `ollama list` pre-checking before downloading.
+- [x] **Step 13**: Local Environment Setup & End-to-End Verification Completed (Nov 2, 2026):
+  - Created isolated Python virtual environment (`venv`) inside `c:\Users\veere\source\repos\local antigravity`.
+  - Installed dependencies via pip (`google-antigravity`, `python-dotenv`, and supporting libraries).
+  - Provisioned `.env` from `.env.example` configured for `http://localhost:11434/v1` with model `qwen2.5:14b`.
+  - Verified live token streaming with `test_local.py` (`gemma2:27b` and `qwen2.5:14b`).
+  - Verified autonomous tool execution with `agent_with_workspace.py` (generated `workspace/index.html`).
+  - Verified 1-click launcher scripts (`run.bat`, `run.ps1`, `run.py`) are fully operational.
 
 ---
 

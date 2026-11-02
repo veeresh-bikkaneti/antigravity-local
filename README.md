@@ -84,15 +84,23 @@ If you prefer to configure each component step-by-step rather than using the 1-c
    ollama --version
    ```
 
-### Step 2: Download a Local Model
-For autonomous agent tasks (creating files, reading code), download **`qwen2.5:14b`** (or **`llama3.1:8b`** if you have less than 12 GB RAM):
-```bash
-# Recommended for agents with workspace tools:
-ollama pull qwen2.5:14b
+### Step 2: Check Local Models & Pull Only If Missing
 
-# If you have limited VRAM/RAM (under 12 GB), pull this smaller model instead:
-# ollama pull llama3.1:8b
-```
+> 💡 **Best Engineering Practice**: Always check your existing local inventory before downloading multiple gigabytes!
+
+1. Check what models are already installed on your machine:
+   ```bash
+   ollama list
+   ```
+2. If you already have **`qwen2.5:14b`**, **`llama3.1:8b`**, or another tool-capable model, **skip downloading—you're already ready to go!**
+3. Only if you don't have a tool-capable model, download one:
+   ```bash
+   # Recommended for agents with workspace tools (systems with >= 12 GB RAM):
+   ollama pull qwen2.5:14b
+
+   # Lightweight alternative for machines under 12 GB RAM:
+   # ollama pull llama3.1:8b
+   ```
 
 ### Step 3: Clone the Repository & 1-Command Setup
 

@@ -7,7 +7,7 @@ One command to rule them all:
 - Auto-detects OS and system hardware (RAM/VRAM)
 - Auto-creates virtual environment & installs dependencies
 - Auto-detects / starts Ollama local server in background
-- Auto-downloads the optimal agent model (qwen2.5:14b or llama3.1:8b)
+- Pre-checks existing models (HTTP API + CLI fallback) to prevent redundant downloads
 - Runs autonomous workspace agent and starts an interactive agent shell!
 =============================================================================
 """
@@ -160,53 +160,143 @@ def check_ollama_service(base_url="http://localhost:11434"):
     print(f"\n⚠️  Please ensure Ollama is running (`ollama serve`) at {base_url} and re-run.\n")
     return False
 
-def select_and_pull_model(base_url="http://localhost:11434"):
-    """Auto-detect hardware and ensure the best tool-capable model is downloaded."""
-    print("🧠 [3/4] Checking Local Agent Model...")
-    ram_gb = get_system_ram_gb()
+def get_installed_ollama_models(base_url="http://localhost:11434"):
+    """
+    Rigorously detect already pulled models using dual-tier checks:
+    Tier 1: Ollama HTTP API (/api/tags)
+    Tier 2: Ollama CLI (`ollama list`) fallback
+    Returns a set of normalized model identifiers.
+    """
+    models = set()
     
-    # Choose optimal model based on available RAM
-    if ram_gb >= 15.0:
-        recommended_model = "qwen2.5:14b"
-        print(f"       Detected {ram_gb:.1f} GB RAM -> Selected: {recommended_model} (14B params, top agent performance)")
-    else:
-        recommended_model = "llama3.1:8b"
-        print(f"       Detected {ram_gb:.1f} GB RAM -> Selected: {recommended_model} (8B params, optimized for compact RAM)")
-
-    # Check existing models in Ollama
+    # Tier 1: Query Ollama REST API
     tags_url = f"{base_url}/api/tags"
-    existing_models = []
     try:
-        with urllib.request.urlopen(tags_url, timeout=5) as resp:
+        with urllib.request.urlopen(tags_url, timeout=3) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-            existing_models = [m.get("name", "") for m in data.get("models", [])]
+            for m in data.get("models", []):
+                name = m.get("name", "").strip().lower()
+                if name:
+                    models.add(name)
+                    # Add without registry or tag variations (e.g. 'qwen2.5:14b' from 'registry.ollama.ai/library/qwen2.5:14b')
+                    clean_name = name.split("/")[-1]
+                    models.add(clean_name)
+                    # Also add base model name without tag
+                    models.add(clean_name.split(":")[0])
     except Exception:
         pass
 
-    # Check if target model or any tool model is present
-    has_target = any(recommended_model in m for m in existing_models)
-    if has_target:
-        print(f"       Model '{recommended_model}' is already downloaded and ready to use.")
-        return recommended_model
+    # Tier 2: CLI fallback if API was empty or unreachable
+    if not models and shutil.which("ollama"):
+        try:
+            output = subprocess.check_output(["ollama", "list"], text=True, stderr=subprocess.DEVNULL)
+            for line in output.splitlines()[1:]:
+                parts = line.split()
+                if parts:
+                    name = parts[0].strip().lower()
+                    models.add(name)
+                    clean_name = name.split("/")[-1]
+                    models.add(clean_name)
+                    models.add(clean_name.split(":")[0])
+        except Exception:
+            pass
 
-    # Check if any compatible tool-capable model is present
-    compatible = [m for m in existing_models if any(k in m for k in ["qwen2.5", "llama3.1", "llama3.2", "mistral-nemo"])]
-    if compatible:
-        chosen = compatible[0]
-        print(f"       Found alternative tool-calling model: '{chosen}'. Using it!")
-        return chosen
+    return models
 
-    # Auto-pull the recommended model
-    print(f"\n📥 Downloading model '{recommended_model}' via Ollama (~5-9 GB, one-time download)...")
-    print("   Please wait, downloading model weights...")
+def is_model_installed(target_model, installed_models):
+    """Check if target_model matches any locally installed model."""
+    target = target_model.strip().lower()
+    clean_target = target.split("/")[-1]
+    
+    # Exact match or base match
+    if target in installed_models or clean_target in installed_models:
+        return True
+    
+    # Substring match (e.g. 'qwen2.5:14b' in 'qwen2.5:14b-instruct-q4_K_M')
+    for m in installed_models:
+        if clean_target in m or m in clean_target:
+            return True
+            
+    return False
+
+def select_and_pull_model(base_url="http://localhost:11434"):
+    """
+    Engineering Best Practice:
+    1. Inspect user configuration (.env or CLI arguments) first.
+    2. Check existing local models BEFORE attempting any download.
+    3. If target or any compatible model is already present, USE IT (zero download).
+    4. Only download if no compatible tool-capable model is found locally.
+    """
+    print("🧠 [3/4] Checking Local Agent Model Inventory...")
+    
+    # Load .env if present
     try:
-        subprocess.check_call(["ollama", "pull", recommended_model])
-        print(f"✅ Model '{recommended_model}' successfully pulled!\n")
-        return recommended_model
+        from dotenv import load_dotenv
+        load_dotenv(os.path.join(PROJECT_DIR, ".env"))
+    except ImportError:
+        pass
+
+    # Check existing models locally FIRST
+    installed_models = get_installed_ollama_models(base_url)
+    if installed_models:
+        display_names = sorted(list(set(m for m in installed_models if ":" in m)))
+        print(f"       Found {len(display_names)} locally installed model(s): {', '.join(display_names) if display_names else 'detected'}")
+    else:
+        print("       No local models found in inventory.")
+
+    # 1. Did the user specify a model via CLI or .env?
+    user_configured_model = None
+    if len(sys.argv) > 1 and not sys.argv[1].startswith("-"):
+        user_configured_model = sys.argv[1]
+    elif os.environ.get("LOCAL_LLM_MODEL"):
+        user_configured_model = os.environ.get("LOCAL_LLM_MODEL")
+
+    if user_configured_model:
+        if is_model_installed(user_configured_model, installed_models):
+            print(f"       ✅ Configured model '{user_configured_model}' is already pulled. Skipping download!")
+            return user_configured_model
+        else:
+            print(f"       Configured model '{user_configured_model}' is not in local inventory.")
+            target_to_pull = user_configured_model
+    else:
+        # 2. Check if a recommended agent model is ALREADY installed
+        # Preferred models with verified Antigravity tool calling support:
+        candidate_tool_models = [
+            "qwen2.5:14b",
+            "qwen2.5:7b",
+            "qwen2.5:32b",
+            "llama3.1:8b",
+            "llama3.1:70b",
+            "llama3.2:3b",
+            "mistral-nemo",
+            "mistral:latest"
+        ]
+        
+        for candidate in candidate_tool_models:
+            if is_model_installed(candidate, installed_models):
+                print(f"       ✅ Found existing tool-capable model '{candidate}' locally. Skipping download!")
+                return candidate
+
+        # 3. No candidate is installed; calculate best model based on available hardware RAM
+        ram_gb = get_system_ram_gb()
+        if ram_gb >= 15.0:
+            target_to_pull = "qwen2.5:14b"
+            print(f"       Hardware has {ram_gb:.1f} GB RAM -> Selected: {target_to_pull} (14B params, top agent performance)")
+        else:
+            target_to_pull = "llama3.1:8b"
+            print(f"       Hardware has {ram_gb:.1f} GB RAM -> Selected: {target_to_pull} (8B params, optimized for compact RAM)")
+
+    # 4. Only if missing from local inventory, perform download
+    print(f"\n📥 Model '{target_to_pull}' not found locally. Initiating one-time download via Ollama...")
+    print("   Please wait while model weights are downloaded...")
+    try:
+        subprocess.check_call(["ollama", "pull", target_to_pull])
+        print(f"✅ Model '{target_to_pull}' successfully pulled!\n")
+        return target_to_pull
     except Exception as exc:
         print(f"\n❌ Failed to pull model: {exc}")
-        print(f"   You can manually pull it via: ollama pull {recommended_model}\n")
-        return recommended_model
+        print(f"   You can manually pull it via: ollama pull {target_to_pull}\n")
+        return target_to_pull
 
 async def run_agent(model, base_url="http://localhost:11434/v1"):
     """Run autonomous demonstration and interactive shell."""
@@ -253,7 +343,11 @@ async def run_agent(model, base_url="http://localhost:11434/v1"):
     print("=============================================================================")
     print(" 💬 Interactive Local Agent Shell (Type 'exit' or 'quit' to leave)")
     print("    Ask your local agent to code, inspect files, or build features!")
-    print("=============================================================================\n")
+    print("=============================================================================")
+    print("💡 Example prompts to try:")
+    print("   - 'What files are in this repository?'")
+    print("   - 'Create a python script called calculator.py with basic math functions.'")
+    print("   - 'Inspect workspace/index.html and add a footer with copyright 2026.'\n")
 
     async with Agent(config) as agent:
         while True:
@@ -290,7 +384,7 @@ def main():
     if not check_ollama_service(ollama_host):
         sys.exit(1)
 
-    # Step 3: Hardware auto-detect & model auto-pull
+    # Step 3: Check local inventory first & only pull if missing
     model = select_and_pull_model(ollama_host)
 
     # Step 4: Run agent via asyncio
