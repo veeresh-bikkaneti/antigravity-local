@@ -127,15 +127,18 @@ One of the foundational design requirements of Antigravity Local is complete air
 
 ## 4. Model Compatibility & Tool Calling Safety Matrix
 
-Different open-source models support varying levels of function calling:
+Antigravity Local evaluates open-source models dynamically rather than defaulting to a narrow set. Below is the capability matrix for cutting-edge models:
 
-| Model Family | Parameter Scale | Function Calling Support | Antigravity Mode | Architecture Notes |
+| Model Family | Key Variants | Function Calling Support | Antigravity Mode | Architecture Notes & PC Build Fit |
 |---|---|---|---|---|
-| **Nanbeige** | 16B | **Native** (Top Agentic Rank) | `policy.allow_all()` | Proven deep reasoning and sequential multi-tool calling |
-| **Qwen 2.5** | 14B / 32B / 72B | **Native** (High Performance) | `policy.allow_all()` | Fits 100% in 16GB VRAM; native OpenAI tool call schema |
-| **DeepSeek Coder** | 6.7B / 33B | **Native** | `policy.allow_all()` | Optimized for code synthesis and test generation |
-| **Gemma 2** | 9B / 27B | **Unsupported** in Ollama | `CapabilitiesConfig(enabled_tools=[])` | Ollama returns HTTP 400 if tools are enabled. Used for pure text generation & reasoning |
-| **LLaMA 3.1** | 8B / 70B | **Native** | `policy.allow_all()` | Standard function calling support |
+| **Nanbeige** | `nanbeige2:16b`, `nanbeige4.3:16b`, `nanbeige4.1:3b` | **Native** (Top Agentic Rank) | `policy.allow_all()` | Proven deep reasoning and sequential multi-step tool execution. Ideal for $\ge$16GB VRAM. |
+| **DeepSeek Coder / R1** | `deepseek-coder-v2:16b`, `deepseek-r1:14b`, `deepseek-r1:32b` | **Native** (Top Code Synthesis) | `policy.allow_all()` | State-of-the-art coding accuracy, fill-in-the-middle, and competitive programming benchmarks. |
+| **Qwen 2.5 Coder** | `qwen2.5-coder:14b`, `qwen2.5-coder:32b`, `qwen2.5:14b` | **Native** (Flagship Tool Fit) | `policy.allow_all()` | 14B fits 100% inside 16GB VRAM; native OpenAI tool-calling schema. |
+| **Command R / R+** | `command-r:35b` | **Native** (Enterprise Tool Calling) | `policy.allow_all()` | Cohere's model purpose-built for multi-step tool execution and citations. Offloads layers to DDR5 RAM. |
+| **Codestral** | `codestral:22b` | **Native** | `policy.allow_all()` | Mistral's dedicated 32k context coding model. |
+| **GLM-4** | `glm4:9b` | **Native** | `policy.allow_all()` | Zhipu's flagship agentic model with built-in tool use and multilingual reasoning. |
+| **LLaMA 3.3 / 3.1** | `llama3.3:70b`, `llama3.1:8b`, `llama3.2:3b` | **Native** | `policy.allow_all()` | Standard open foundation with reliable function calling. |
+| **Gemma 2** | `gemma2:27b`, `gemma2:9b` | **Unsupported** in Ollama | `CapabilitiesConfig(enabled_tools=[])` | High-density reasoning and text generation. Ollama returns HTTP 400 if tools are passed; automatically run in pure chat/streaming mode. |
 
 ---
 

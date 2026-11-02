@@ -73,11 +73,12 @@ flowchart LR
     CLIFallback --> ParseTags
 
     ParseTags --> Normalize["Normalize Model Tags<br/>Strip ':latest' suffixes & case differences"]
-    Normalize --> CandidateScoring["Score Local Candidates:<br/>1. Nanbeige: 85 pts<br/>2. Qwen 2.5: 80 pts<br/>3. DeepSeek Coder: 78 pts<br/>4. Codestral: 75 pts<br/>5. Gemma 2: 70 pts<br/>6. LLaMA 3.1: 65 pts"]
+    Normalize --> CandidateScoring["Score Local Candidates:<br/>1. Nanbeige: 92 pts (Top Agentic)<br/>2. DeepSeek Coder/R1: 90 pts (Top Code)<br/>3. Qwen 2.5 Coder: 88 pts (Tool Fit)<br/>4. Command R: 86 pts (Enterprise)<br/>5. Codestral: 84 pts (32k Code)<br/>6. GLM-4: 82 pts (Tool Use)<br/>7. Gemma 2: 76 pts (Reasoning)<br/>8. LLaMA 3.x: 74 pts"]
 
-    CandidateScoring --> BestCandidate{"Best local candidate found?"}
-    BestCandidate -- Yes --> FastPath["Zero-Download Fast Path<br/>Reuse local weights instantly<br/>(0s delay, 0 GB downloaded)"]
-    BestCandidate -- No --> PullWeights["Targeted Download<br/>ollama pull <model>"]
+    CandidateScoring --> BestCandidate{"Models exist in local inventory?"}
+    BestCandidate -- Yes --> FastPath["Zero-Download Fast Path<br/>Reuse highest-scoring local model<br/>(0s delay, 0 GB downloaded)"]
+    BestCandidate -- No --> HWEval["Inspect PC Hardware Profile<br/>Evaluate VRAM + System RAM"]
+    HWEval --> PullWeights["Hardware-Tailored Pull<br/>Workstation: qwen2.5-coder:14b / nanbeige<br/>Mid-Tier: qwen2.5-coder:7b<br/>Entry: llama3.2:3b"]
     
     PullWeights --> BindModel["Bind to LocalOpenAIConnectionStrategy"]
     FastPath --> BindModel

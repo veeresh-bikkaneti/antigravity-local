@@ -71,6 +71,46 @@ def get_system_ram_gb():
         return 16.0  # safe default assumption
     return 16.0
 
+def get_hardware_profile():
+    """
+    Detects hardware profile (System RAM, GPU Model, Dedicated VRAM)
+    to match the PC build with optimal, cutting-edge models.
+    """
+    ram_gb = get_system_ram_gb()
+    vram_gb = 0.0
+    gpu_name = "CPU Only"
+
+    # 1. NVIDIA GPU / VRAM check via nvidia-smi
+    if shutil.which("nvidia-smi"):
+        try:
+            output = subprocess.check_output(
+                ["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"],
+                text=True, stderr=subprocess.DEVNULL
+            ).strip()
+            if output:
+                first_gpu = output.splitlines()[0].split(",")
+                gpu_name = first_gpu[0].strip()
+                vram_mb = float(first_gpu[1].strip())
+                vram_gb = vram_mb / 1024.0
+        except Exception:
+            pass
+
+    # 2. Apple Silicon unified memory check
+    elif sys.platform == "darwin":
+        try:
+            cpu_brand = subprocess.check_output(["sysctl", "-n", "machdep.cpu.brand_string"], text=True).strip()
+            if "Apple" in cpu_brand:
+                gpu_name = f"Apple Silicon ({cpu_brand})"
+                vram_gb = ram_gb  # Unified memory acts as VRAM
+        except Exception:
+            pass
+
+    return {
+        "ram_gb": ram_gb,
+        "vram_gb": vram_gb,
+        "gpu_name": gpu_name
+    }
+
 def bootstrap_venv():
     """Create virtual environment and install requirements if not inside one."""
     print("📦 [1/4] Checking Python Virtual Environment...")
@@ -208,49 +248,60 @@ def get_model_capability_score(model_name: str) -> float:
     """
     Computes an agentic capability score to automatically select the MOST CAPABLE model:
     - Nanbeige: Top-tier multi-step agentic reasoning and sequential tool calling (Nanbeige 4.1/4.2/4.3, Nanbeige 2-16B)
-    - Qwen 2.5: Proven flagship open coding & agent reasoning (Qwen 2.5 32B/14B/7B)
-    - DeepSeek Coder / R1: Specialized programming capability
-    - Codestral / Mistral Large: High reasoning capability
-    - Gemma 2: High general reasoning
+    - DeepSeek Coder / R1: World-class programming, fill-in-the-middle, and competitive reasoning
+    - Qwen 2.5 Coder / Qwen 2.5: Proven flagship open coding & native OpenAI function calling
+    - Command R / R+: Enterprise multi-step tool execution and structured citations
+    - Codestral: Dedicated 32k context coding model
+    - GLM-4: Advanced multilingual agentic tool use and function calling
+    - Mistral Large / Devstral: High software architecture capability
+    - Gemma 2: High general reasoning (streaming/text)
     - LLaMA 3.3 / 3.1: Strong general foundation
-    - Scale weighting: 70B > 33B > 32B > 27B > 16B > 14B > 8B > 7B > 3B
+    - Scale weighting: 70B > 35B > 33B > 32B > 27B > 22B > 16B > 14B > 9B > 8B > 7B > 3B
     """
     name = model_name.lower().strip()
     score = 0.0
 
-    # 1. Family weighting for agentic / tool-calling capabilities
+    # 1. Family weighting for agentic / tool-calling / reasoning capabilities
     if "nanbeige" in name:
-        score += 85.0   # Nanbeige (e.g. 4.1, 4.3, 2-16B) - proven multi-step agentic caller
-    elif "qwen2.5" in name:
-        score += 80.0   # Qwen 2.5 - industry leader in open-weights function calling
+        score += 92.0   # Nanbeige (4.1/4.2/4.3, 2-16B) - top agentic tool caller & deep search
     elif "deepseek" in name:
-        score += 78.0   # DeepSeek Coder / R1
-    elif "codestral" in name or "mistral-large" in name:
-        score += 75.0   # Codestral
+        score += 90.0   # DeepSeek Coder V2 / R1 / V2.5 - world-class code synthesis
+    elif "qwen2.5" in name:
+        score += 88.0   # Qwen 2.5 Coder / Qwen 2.5 - native OpenAI tool calling benchmark leader
+    elif "command-r" in name:
+        score += 86.0   # Cohere Command R / Command R+ - enterprise tool calling
+    elif "codestral" in name:
+        score += 84.0   # Mistral Codestral 22B
+    elif "glm4" in name or "glm-4" in name:
+        score += 82.0   # Zhipu GLM-4
+    elif "mistral-large" in name or "devstral" in name:
+        score += 80.0   # Mistral Large / Devstral
     elif "gemma2" in name:
-        score += 70.0   # Gemma 2
-    elif "llama3.3" in name or "llama3.1" in name:
-        score += 65.0   # Meta LLaMA 3.x
-    elif "mistral" in name:
-        score += 60.0
+        score += 76.0   # Gemma 2
+    elif "llama3.3" in name or "llama3.1" in name or "llama3.2" in name or "llama3" in name:
+        score += 74.0   # Meta LLaMA 3.x
     elif "phi4" in name or "phi3" in name:
-        score += 55.0
+        score += 68.0   # Microsoft Phi
+    elif "mistral" in name:
+        score += 65.0
     else:
-        score += 40.0
+        score += 45.0
 
     # 2. Parameter scale weighting
     size_match = re.search(r"(\d+)(?:\.\d+)?b", name)
     if size_match:
         size = float(size_match.group(1))
-        score += min(size, 72.0) * 0.4
+        score += min(size, 72.0) * 0.3
     else:
-        score += 5.0
+        score += 4.0
 
     # 3. Task optimization keywords
     if "coder" in name or "code" in name:
-        score += 10.0
+        score += 8.0
+    if "agent" in name or "tool" in name or "search" in name:
+        score += 8.0
     if "instruct" in name or "chat" in name:
-        score += 5.0
+        score += 4.0
 
     return score
 
@@ -270,16 +321,33 @@ def is_model_installed(target_model, installed_models):
             
     return False
 
+def update_env_model(model_name: str):
+    """Keep .env synchronized with the active local model."""
+    env_file = os.path.join(PROJECT_DIR, ".env")
+    if os.path.exists(env_file):
+        try:
+            with open(env_file, "r", encoding="utf-8") as f:
+                content = f.read()
+            if "LOCAL_LLM_MODEL=" in content:
+                content = re.sub(r"LOCAL_LLM_MODEL=.*", f"LOCAL_LLM_MODEL={model_name}", content)
+            else:
+                content += f"\nLOCAL_LLM_MODEL={model_name}\n"
+            with open(env_file, "w", encoding="utf-8") as f:
+                f.write(content)
+        except Exception:
+            pass
+
 def select_and_pull_model(base_url="http://localhost:11434"):
     """
     Engineering Best Practice:
-    1. Inspect user configuration (.env or CLI arguments) first.
-    2. Check existing local models BEFORE attempting any download.
-    3. Dynamically evaluate and select the MOST CAPABLE model in local inventory
-       (Nanbeige, Qwen 2.5, DeepSeek, Codestral, LLaMA 3.x, Gemma 2).
-    4. Only download if no compatible agent model is found locally.
+    1. NEVER download if compatible models are already present on the machine!
+    2. Check local Ollama inventory FIRST across all modern open-source models:
+       (Nanbeige, DeepSeek, Qwen 2.5 Coder, Command-R, Codestral, GLM-4, LLaMA, Gemma).
+    3. If multiple models exist locally, automatically rank and select the MOST CAPABLE one.
+    4. Only if the machine has ZERO models installed, evaluate the PC build (RAM, GPU, VRAM)
+       and recommend/pull the optimal cutting-edge model tailored to the hardware.
     """
-    print("🧠 [3/4] Evaluating Local Model Inventory for Highest Capability...")
+    print("🧠 [3/4] Evaluating Hardware & Model Inventory for Highest Capability...")
     
     # Load .env if present
     try:
@@ -288,49 +356,76 @@ def select_and_pull_model(base_url="http://localhost:11434"):
     except ImportError:
         pass
 
+    # Inspect hardware profile
+    hw = get_hardware_profile()
+    ram_gb = hw["ram_gb"]
+    vram_gb = hw["vram_gb"]
+    gpu_name = hw["gpu_name"]
+    print(f"       Detected PC Build: {gpu_name} ({vram_gb:.1f} GB VRAM) | {ram_gb:.1f} GB RAM")
+
     # Check existing models locally FIRST
     installed_models = get_installed_ollama_models(base_url)
     display_names = sorted(list(set(m for m in installed_models if ":" in m or "/" in m)))
     if display_names:
-        print(f"       Found {len(display_names)} local model(s): {', '.join(display_names)}")
+        print(f"       Found {len(display_names)} local model(s) in machine inventory: {', '.join(display_names)}")
     else:
-        print("       No local models found in inventory.")
+        print("       No local models found in machine inventory.")
 
-    # 1. Did the user explicitly configure a model via CLI or .env?
-    user_configured_model = None
+    # 1. Did the user explicitly pass a model via CLI command-line?
+    cli_requested_model = None
     if len(sys.argv) > 1 and not sys.argv[1].startswith("-"):
-        user_configured_model = sys.argv[1]
-    elif os.environ.get("LOCAL_LLM_MODEL"):
-        user_configured_model = os.environ.get("LOCAL_LLM_MODEL")
+        cli_requested_model = sys.argv[1]
 
-    if user_configured_model:
-        if is_model_installed(user_configured_model, installed_models):
-            print(f"       ✅ Using explicitly configured model: '{user_configured_model}' (Found locally. Skipping download!)")
-            return user_configured_model
+    if cli_requested_model:
+        if is_model_installed(cli_requested_model, installed_models):
+            print(f"       ✅ Using explicitly requested model: '{cli_requested_model}' (Found locally. Skipping download!)")
+            update_env_model(cli_requested_model)
+            return cli_requested_model
         else:
-            print(f"       Configured model '{user_configured_model}' is not in local inventory.")
-            target_to_pull = user_configured_model
+            print(f"       User explicitly requested model '{cli_requested_model}' which is not in local inventory.")
+            target_to_pull = cli_requested_model
 
-    # 2. Dynamic Capability Ranking of ALL installed models (Nanbeige, Qwen 2.5, DeepSeek, etc.)
+    # 2. ZERO-DOWNLOAD BEST PRACTICE: If models are already installed on this machine, REUSE THEM!
     elif display_names:
+        # Check if .env model is installed
+        configured_env_model = os.environ.get("LOCAL_LLM_MODEL")
+        if configured_env_model and is_model_installed(configured_env_model, installed_models):
+            print(f"       ✅ Using configured local model: '{configured_env_model}' (Found locally. Zero download needed!)")
+            return configured_env_model
+
+        # Rank all installed models by capability score
         ranked_models = sorted(display_names, key=get_model_capability_score, reverse=True)
         top_model = ranked_models[0]
         top_score = get_model_capability_score(top_model)
         
         print(f"       🏆 Auto-selected MOST CAPABLE installed model: '{top_model}' (Capability Score: {top_score:.1f}/100)")
-        print(f"       ✅ Skipping download—reusing existing local weights.")
+        print(f"       ✅ Zero download needed—reusing existing local weights on this machine.")
+        update_env_model(top_model)
         return top_model
-    else:
-        # 3. No models installed: auto-select optimal model based on available RAM
-        ram_gb = get_system_ram_gb()
-        if ram_gb >= 15.0:
-            target_to_pull = "qwen2.5:14b"
-            print(f"       Hardware has {ram_gb:.1f} GB RAM -> Selected: {target_to_pull} (Top agent performance)")
-        else:
-            target_to_pull = "llama3.1:8b"
-            print(f"       Hardware has {ram_gb:.1f} GB RAM -> Selected: {target_to_pull} (Compact RAM)")
 
-    # 4. Only if missing from local inventory, perform download
+    # 3. No models installed on machine at all: evaluate PC build and select optimal cutting-edge model
+    else:
+        print("       Zero models found on machine. Evaluating hardware build for optimal cutting-edge model...")
+        
+        # Workstation / Enthusiast PC (>= 15 GB VRAM or >= 32 GB RAM)
+        if vram_gb >= 15.0 or (vram_gb >= 8.0 and ram_gb >= 32.0):
+            target_to_pull = "qwen2.5-coder:14b"
+            print(f"       PC Build: High-performance workstation ({vram_gb:.1f}GB VRAM, {ram_gb:.1f}GB RAM)")
+            print(f"       Selected cutting-edge agent model: '{target_to_pull}' (100% VRAM tool fit, flagship coding)")
+            print(f"       (Note: You can also try 'nanbeige2:16b', 'deepseek-coder-v2:16b', 'command-r:35b', or 'codestral:22b')")
+        # Mid-Tier PC (8-14 GB VRAM or 16-32 GB RAM)
+        elif vram_gb >= 8.0 or ram_gb >= 16.0:
+            target_to_pull = "qwen2.5-coder:7b"
+            print(f"       PC Build: Mid-tier hardware ({vram_gb:.1f}GB VRAM, {ram_gb:.1f}GB RAM)")
+            print(f"       Selected cutting-edge agent model: '{target_to_pull}'")
+            print(f"       (Note: You can also try 'nanbeige4.1:3b', 'deepseek-coder:6.7b', or 'glm4:9b')")
+        # Entry-Level / CPU (< 16 GB RAM)
+        else:
+            target_to_pull = "llama3.2:3b"
+            print(f"       PC Build: Compact / CPU hardware ({ram_gb:.1f}GB RAM)")
+            print(f"       Selected compact agent model: '{target_to_pull}'")
+
+    # 4. Only if completely missing from local inventory, perform download
     print(f"\n📥 Model '{target_to_pull}' not found locally. Initiating one-time download via Ollama...")
     print("   Please wait while model weights are downloaded...")
     try:

@@ -39,27 +39,28 @@
       "dot": "emerald",
       "title": "Zero-Download Engineering",
       "items": [
-        "Calls http://localhost:11434/api/tags and falls back to 'ollama list'",
-        "If a suitable model (e.g. qwen2.5:14b or nanbeige) is installed, reuse immediately",
-        "Saves 5GB to 15GB bandwidth and eliminates startup latency"
+        "Inspects /api/tags and 'ollama list' before touching the network",
+        "Reuses existing weights on the machine with zero download delay",
+        "Prevents redundant multi-gigabyte downloads and eliminates wait time"
       ]
     },
     {
       "dot": "cyan",
-      "title": "Proven Capability Hierarchy",
+      "title": "Cutting-Edge Model Hierarchy",
       "items": [
-        "1. Nanbeige (85 pts): Exceptional multi-step agentic search and complex tool calling",
-        "2. Qwen 2.5 (80 pts): Native OpenAI function calling, fits 100% in 16GB VRAM",
-        "3. DeepSeek Coder (78 pts): High code synthesis accuracy",
-        "4. Gemma 2 (70 pts): Strong reasoning; tools disabled to prevent HTTP 400"
+        "1. Nanbeige (92 pts): Top agentic search and sequential multi-step tool calling",
+        "2. DeepSeek Coder / R1 (90 pts): State-of-the-art coding and algorithmic synthesis",
+        "3. Qwen 2.5 Coder (88 pts): Open-weights champion, 100% 16GB VRAM tool fit",
+        "4. Command R / Codestral / GLM-4 (82-86 pts): Dedicated tool calling & 32k context"
       ]
     },
     {
       "dot": "rose",
-      "title": "Defensive Fallbacks",
+      "title": "PC Build Hardware Matching",
       "items": [
-        "Automatically adjusts tool configurations based on model capabilities",
-        "Ensures graceful degradation without application crashes"
+        "High-End Workstation (>=16GB VRAM, >=32GB RAM): Nanbeige 16B/32B, Qwen2.5-Coder, DeepSeek",
+        "Mid-Tier PC (8-12GB VRAM): Qwen2.5-Coder 7B, Nanbeige 4.1 3B, GLM-4 9B",
+        "Entry / CPU (<16GB RAM): LLaMA 3.2 3B, Qwen 2.5 3B"
       ]
     }
   ]

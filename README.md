@@ -27,11 +27,11 @@ chmod +x run.sh && ./run.sh
 *(Or: `python3 run.py`)*
 
 #### 🤖 What the 1-Command Bootstrap Does Automatically:
-1. 🔍 **Hardware Detection**: Probes system RAM and selects `qwen2.5:14b` (for systems with >=16GB RAM) or `llama3.1:8b` (for systems under 16GB RAM).
-2. 📦 **Virtual Environment Setup**: Creates isolated `venv`, installs `requirements.txt`, and generates `.env` if missing.
-3. ⚙️ **Ollama Auto-Start**: Pings `http://localhost:11434`. If down, launches `ollama serve` in the background.
-4. 📥 **Model Auto-Pull**: Inspects downloaded models and automatically pulls the optimal model if not yet present.
-5. 🛠️ **Autonomous Demo**: Invokes the local agent to create a modern responsive `workspace/index.html` file using built-in tool calling.
+1. 🔍 **Hardware & Inventory Inspection**: Probes dedicated GPU VRAM (via `nvidia-smi` / Apple Silicon) and System RAM. Checks local Ollama inventory first to reuse existing weights with **zero downloads**.
+2. 🧠 **Cutting-Edge Model Matching**: Evaluates your PC build against modern agentic powerhouses (Nanbeige, DeepSeek, Qwen 2.5 Coder, Command-R, Codestral, GLM-4) and selects the most capable model matching your hardware.
+3. 📦 **Virtual Environment Setup**: Creates isolated `venv`, installs `requirements.txt`, and generates `.env` if missing.
+4. ⚙️ **Ollama Auto-Start**: Pings `http://localhost:11434`. If down, launches `ollama serve` in the background.
+5. 🛠️ **Autonomous Verification**: Invokes the local agent to create a modern responsive `workspace/index.html` file using built-in tool calling.
 6. 💬 **Interactive Shell**: Drops you straight into an interactive terminal where you can prompt your private local agent to write code, inspect files, or perform tasks!
 
 ---
@@ -90,27 +90,32 @@ If you prefer to configure each component step-by-step rather than using the 1-c
    ollama --version
    ```
 
-### Step 2: Check Local Models & Pull Only If Missing
+### Step 2: Check Local Models & Select Best for Your PC Build
 
-> 💡 **Best Engineering Practice**: Always check your existing local inventory before downloading multiple gigabytes!
+> 💡 **Best Engineering Practice**: Never default to a hardcoded download! Always check what is already installed on your machine first. If you have any capable agent model, the system reuses it with **zero download delay**.
 
-1. Check what models are already installed on your machine:
+1. **Check what models are already on your machine**:
    ```bash
    ollama list
    ```
-2. If you already have a proven agent model, **skip downloading—you're already ready to go!**
-   - **`nanbeige`** (e.g., `nanbeige4.1:3b`, `nanbeige2:16b`): Specially optimized for deep search and multi-step sequential tool calling.
-   - **`qwen2.5`** (e.g., `qwen2.5:14b`, `qwen2.5:7b`, `qwen2.5:32b`): Flagship open coding and OpenAI-compatible tool use.
-   - **`llama3.1`** (e.g., `llama3.1:8b`): Battle-tested, compact 8B agent runner.
-   - **`gemma2`** (e.g., `gemma2:27b`): High-quality reasoning and token streaming.
-3. Only if you don't have an agent model installed, download one:
-   ```bash
-   # Option A: Flagship agent model (systems with >= 12 GB RAM):
-   ollama pull qwen2.5:14b
+2. **If you already have any capable model installed, SKIP downloading—you are ready to code!**  
+   Our bootstrap orchestrator scans your local inventory and automatically adopts the highest-scoring model:
+   - **`nanbeige`** (e.g., `nanbeige2:16b`, `nanbeige4.3:16b`, `nanbeige4.1:3b`): Top-tier multi-step agentic search and complex sequential tool calling.
+   - **`deepseek-coder-v2` / `deepseek-r1`** (e.g., `deepseek-coder-v2:16b`, `deepseek-r1:14b`): State-of-the-art coding synthesis, fill-in-the-middle, and algorithmic problem solving.
+   - **`qwen2.5-coder` / `qwen2.5`** (e.g., `qwen2.5-coder:14b`, `qwen2.5:14b`, `qwen2.5-coder:32b`): Open-weights coding benchmark champion with native OpenAI function calling.
+   - **`command-r`** (e.g., `command-r:35b`): Cohere's enterprise model purpose-built for multi-step tool execution and structured outputs.
+   - **`codestral`** (e.g., `codestral:22b`): Mistral's dedicated 32k context coding engine.
+   - **`glm4`** (e.g., `glm4:9b`): Outstanding tool use, function calling, and multilingual reasoning.
+   - **`llama3.3` / `llama3.1`** (e.g., `llama3.3:70b`, `llama3.1:8b`): Battle-tested general foundation models.
+   - **`gemma2`** (e.g., `gemma2:27b`, `gemma2:9b`): Dense reasoning and high-speed streaming (tools disabled).
 
-   # Option B: Ultra-compact agent & tool-calling model (any system):
-   # ollama pull llama3.1:8b
-   ```
+3. **Only if you have ZERO models installed, choose the cutting-edge model that matches your PC build**:
+
+| PC Build Tier | Hardware Specs | Recommended Cutting-Edge Models | Pull Command |
+| :--- | :--- | :--- | :--- |
+| **High-End Workstation** | $\ge$ 16 GB VRAM GPU<br/>$\ge$ 32-128 GB System RAM | **`qwen2.5-coder:14b`** *(Fits 100% in 16GB VRAM)*<br/>**`nanbeige2:16b`** *(Top agentic tool caller)*<br/>**`deepseek-coder-v2:16b`** *(Deep code synthesis)*<br/>**`command-r:35b`** *(Layer offload to RAM)* | `ollama pull qwen2.5-coder:14b`<br/>*(or `ollama pull nanbeige2:16b`)* |
+| **Mid-Tier PC** | 8 - 12 GB VRAM GPU<br/>16 - 32 GB System RAM | **`qwen2.5-coder:7b`**<br/>**`nanbeige4.1:3b`**<br/>**`deepseek-coder:6.7b`**<br/>**`glm4:9b`** | `ollama pull qwen2.5-coder:7b` |
+| **Entry / CPU Only** | No dedicated GPU<br/>8 - 16 GB System RAM | **`llama3.2:3b`**<br/>**`qwen2.5:3b`**<br/>**`nanbeige4.1:3b`** | `ollama pull llama3.2:3b` |
 
 ### Step 3: Clone the Repository & 1-Command Setup
 

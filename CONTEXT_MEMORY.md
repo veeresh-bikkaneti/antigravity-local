@@ -122,6 +122,12 @@
     - `docs/ARCHITECTURE.md`: High-level system architecture, component breakdown, hardware offloading physics (GPU VRAM vs DDR5 RAM), security/air-gap guarantees, and Google Antigravity SDK decoupling.
     - `docs/FLOWS.md`: Detailed visual execution lifecycles with embedded GitHub-rendered Mermaid diagrams and summary trigger matrices.
   - Enhanced `README.md` with direct navigation to architecture specifications and interactive HTML diagrams.
+- [x] **Step 18**: Dynamic PC Build Hardware Profiling & Comprehensive Model Selection (Nov 2, 2026):
+  - Replaced narrow defaults with a full spectrum of cutting-edge agentic models: Nanbeige (4.1/4.2/4.3, 2-16B), DeepSeek-Coder-V2 / R1, Qwen 2.5 Coder, Command R / R+, Codestral, GLM-4, Gemma 2, and LLaMA 3.3.
+  - Added `get_hardware_profile()` in `run.py` to detect dedicated GPU VRAM (via `nvidia-smi` / Apple Silicon) and System RAM.
+  - Enforced strict Zero-Download policy: If ANY model is already installed in local Ollama inventory, `run.py` automatically ranks installed models, adopts the best local model, updates `.env`, and completely avoids redundant downloads.
+  - Tailored zero-model fallback to the detected PC build (Workstation 16GB+ VRAM & 32-128GB RAM vs. Mid-Tier 8-12GB VRAM vs. Entry CPU).
+  - Overhauled `README.md` Step 2 with PC Build & Model Matching Matrix, updated `docs/ARCHITECTURE.md`, `docs/FLOWS.md`, and recompiled `docs/diagrams/model-pipeline-workflow.html`.
 
 ---
 

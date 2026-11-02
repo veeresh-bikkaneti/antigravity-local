@@ -5593,33 +5593,34 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <h3>Zero-Download Engineering</h3>
         </div>
         <ul>
-          <li>Calls http://localhost:11434/api/tags and falls back to &#39;ollama list&#39;</li>
-          <li>If a suitable model (e.g. qwen2.5:14b or nanbeige) is installed, reuse immediately</li>
-          <li>Saves 5GB to 15GB bandwidth and eliminates startup latency</li>
+          <li>Inspects /api/tags and &#39;ollama list&#39; before touching the network</li>
+          <li>Reuses existing weights on the machine with zero download delay</li>
+          <li>Prevents redundant multi-gigabyte downloads and eliminates wait time</li>
         </ul>
       </div>
 
       <div class="card">
         <div class="card-header">
           <div class="card-dot cyan"></div>
-          <h3>Proven Capability Hierarchy</h3>
+          <h3>Cutting-Edge Model Hierarchy</h3>
         </div>
         <ul>
-          <li>1. Nanbeige (85 pts): Exceptional multi-step agentic search and complex tool calling</li>
-          <li>2. Qwen 2.5 (80 pts): Native OpenAI function calling, fits 100% in 16GB VRAM</li>
-          <li>3. DeepSeek Coder (78 pts): High code synthesis accuracy</li>
-          <li>4. Gemma 2 (70 pts): Strong reasoning; tools disabled to prevent HTTP 400</li>
+          <li>1. Nanbeige (92 pts): Top agentic search and sequential multi-step tool calling</li>
+          <li>2. DeepSeek Coder / R1 (90 pts): State-of-the-art coding and algorithmic synthesis</li>
+          <li>3. Qwen 2.5 Coder (88 pts): Open-weights champion, 100% 16GB VRAM tool fit</li>
+          <li>4. Command R / Codestral / GLM-4 (82-86 pts): Dedicated tool calling &amp; 32k context</li>
         </ul>
       </div>
 
       <div class="card">
         <div class="card-header">
           <div class="card-dot rose"></div>
-          <h3>Defensive Fallbacks</h3>
+          <h3>PC Build Hardware Matching</h3>
         </div>
         <ul>
-          <li>Automatically adjusts tool configurations based on model capabilities</li>
-          <li>Ensures graceful degradation without application crashes</li>
+          <li>High-End Workstation (&gt;=16GB VRAM, &gt;=32GB RAM): Nanbeige 16B/32B, Qwen2.5-Coder, DeepSeek</li>
+          <li>Mid-Tier PC (8-12GB VRAM): Qwen2.5-Coder 7B, Nanbeige 4.1 3B, GLM-4 9B</li>
+          <li>Entry / CPU (&lt;16GB RAM): LLaMA 3.2 3B, Qwen 2.5 3B</li>
         </ul>
       </div>
     </div>
