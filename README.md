@@ -38,16 +38,18 @@ chmod +x run.sh && ./run.sh
 
 ## 📋 Table of Contents
 1. [⚡ 1-Command Plug & Play](#-1-command-plug--play-zero-friction-setup)
-2. [📖 From Zero to Start Coding (Master Guide)](ZERO_TO_CODING.md)
-3. [💻 Developer Coding Agent (code_agent.py)](#mode-3-developer-pair-programming-shell-code_agentpy)
-4. [What is This?](#-what-is-this)
-5. [Prerequisites Checklist](#-prerequisites-checklist)
-6. [Step-by-Step Manual Setup](#-step-by-step-manual-setup)
-7. [Project Structure](#-project-structure)
-8. [How It Works](#-how-it-works)
-9. [Common Gotchas & Troubleshooting](#-common-gotchas--troubleshooting)
-10. [Advanced: Using Custom Research Harnesses & Servers](#-advanced-using-custom-research-harnesses--servers)
-11. [License & Contributing](#-license--contributing)
+2. [🏛️ System Architecture & Specifications (Docs & Archify)](docs/ARCHITECTURE.md)
+3. [📊 System Execution Flows & Lifecycles](docs/FLOWS.md)
+4. [📖 From Zero to Start Coding (Master Guide)](ZERO_TO_CODING.md)
+5. [💻 Developer Coding Agent (code_agent.py)](#mode-3-developer-pair-programming-shell-code_agentpy)
+6. [What is This?](#-what-is-this)
+7. [Prerequisites Checklist](#-prerequisites-checklist)
+8. [Step-by-Step Manual Setup](#-step-by-step-manual-setup)
+9. [Project Structure](#-project-structure)
+10. [How It Works & Architectural Flows](#-how-it-works)
+11. [Common Gotchas & Troubleshooting](#-common-gotchas--troubleshooting)
+12. [Advanced: Using Custom Research Harnesses & Servers](#-advanced-using-custom-research-harnesses--servers)
+13. [License & Contributing](#-license--contributing)
 
 ---
 
@@ -249,6 +251,20 @@ antigravity-local/
 1. **LocalOpenAIAgentConfig**: Replaces Google's cloud Gemini endpoint with a local OpenAI-compatible endpoint (`http://localhost:11434/v1`).
 2. **Built-in Workspace Tools**: Antigravity automatically gives the model tools to explore and edit files in the designated `workspace/` directory.
 3. **Execution Policy**: `policy.allow_all()` permits the agent to write files autonomously. You can customize this to ask for confirmation before writing.
+
+### 🏛️ Interactive Architecture & Visual Flow Documents
+
+For complete system topology, hardware offload physics, and lifecycle state machines, explore our comprehensive technical guides and interactive Archify visualizations:
+
+- 📖 **Architecture Specification**: [**docs/ARCHITECTURE.md**](docs/ARCHITECTURE.md) (Component boundaries, cloud decoupling, hardware VRAM/RAM offload).
+- 📊 **Master Flow Guide**: [**docs/FLOWS.md**](docs/FLOWS.md) (Step-by-step Mermaid sequence diagrams and lifecycles).
+
+#### 🌐 Standalone Interactive HTML Visualizations (Powered by Archify):
+Open these self-contained artifacts directly in any web browser to explore pan/zoom, theme switching, and live signal tracing:
+- 🏛️ [**System Topology & Architecture (HTML)**](docs/diagrams/system-topology.html)
+- 🚀 [**1-Command Bootstrap Lifecycle (HTML)**](docs/diagrams/bootstrap-workflow.html)
+- ⚡ [**Autonomous Tool Execution Sequence (HTML)**](docs/diagrams/agent-tool-execution.html)
+- 🧠 [**Model Pre-Check & Capability Pipeline (HTML)**](docs/diagrams/model-pipeline-workflow.html)
 
 ---
 

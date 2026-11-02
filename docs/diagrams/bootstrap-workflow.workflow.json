@@ -1,0 +1,69 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "1-Command Plug-and-Play Bootstrap Lifecycle",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase",
+    "output": "bootstrap-workflow.html"
+  },
+  "lanes": [
+    { "id": "launcher", "label": "CLI & User Shell" },
+    { "id": "environment", "label": "Hardware & Python Runtime" },
+    { "id": "ollama", "label": "Ollama Service & Models" },
+    { "id": "agent", "label": "Antigravity Agent & Workspace" }
+  ],
+  "phases": [
+    { "id": "phase_init", "label": "Phase 1: Hardware & Audit", "fromCol": 0, "toCol": 1 },
+    { "id": "phase_service", "label": "Phase 2: Environment & Service", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "phase_exec", "label": "Phase 3: Model & Execution", "fromCol": 4, "toCol": 5, "variant": "security" }
+  ],
+  "nodes": [
+    { "id": "user_cmd", "lane": "launcher", "col": 0, "type": "external", "label": "Run Launcher", "sublabel": "run.bat / run.sh / run.ps1", "width": 140 },
+    { "id": "sys_audit", "lane": "environment", "col": 1, "type": "backend", "label": "Hardware Audit", "sublabel": "detect RAM & VRAM", "tag": "16GB VRAM / 128GB RAM", "width": 140 },
+    { "id": "venv_mgr", "lane": "environment", "col": 2, "type": "backend", "label": "Venv Provisioner", "sublabel": "isolated venv & pip", "width": 140 },
+    { "id": "daemon_check", "lane": "ollama", "col": 3, "type": "database", "label": "Daemon Health", "sublabel": "ping localhost:11434", "tag": "auto-start", "width": 140 },
+    { "id": "inventory_check", "lane": "ollama", "col": 4, "type": "database", "label": "Model Pre-Check", "sublabel": "/api/tags inspection", "tag": "zero re-download", "width": 140 },
+    { "id": "model_selector", "lane": "environment", "col": 4, "type": "backend", "label": "Capability Ranker", "sublabel": "Nanbeige > Qwen > Gemma", "width": 140 },
+    { "id": "workspace_demo", "lane": "agent", "col": 5, "type": "backend", "label": "Workspace Agent", "sublabel": "generate index.html", "tag": "autonomous test", "width": 140 },
+    { "id": "coding_repl", "lane": "launcher", "col": 5, "type": "frontend", "label": "Coding Agent Shell", "sublabel": "code_agent.py ready", "tag": "developer REPL", "width": 140 }
+  ],
+  "edges": [
+    { "id": "e_user_to_audit", "from": "user_cmd", "to": "sys_audit", "label": "1-click init", "variant": "emphasis" },
+    { "id": "e_audit_to_venv", "from": "sys_audit", "to": "venv_mgr", "label": "hardware ok", "variant": "default" },
+    { "id": "e_venv_to_daemon", "from": "venv_mgr", "to": "daemon_check", "label": "packages ready", "variant": "default" },
+    { "id": "e_daemon_to_inv", "from": "daemon_check", "to": "inventory_check", "label": "check weights", "variant": "emphasis" },
+    { "id": "e_inv_to_rank", "from": "inventory_check", "to": "model_selector", "label": "score models", "variant": "security" },
+    { "id": "e_rank_to_demo", "from": "model_selector", "to": "workspace_demo", "label": "bind best model", "variant": "emphasis" },
+    { "id": "e_demo_to_repl", "from": "workspace_demo", "to": "coding_repl", "label": "hand off", "variant": "emphasis" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Zero-Configuration Bootstrap",
+      "items": [
+        "Single entry point run.bat / run.sh / run.ps1 executes end-to-end",
+        "Inspects Python environment, creates venv, and installs google-antigravity",
+        "Starts Ollama background daemon automatically if not currently running"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Smart Inventory Pre-Flight",
+      "items": [
+        "Inspects local Ollama repository (/api/tags and 'ollama list') before pulling",
+        "Prevents redundant multi-gigabyte weight downloads",
+        "Prioritizes high-capability function-calling models (Nanbeige and Qwen 2.5)"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Immediate Developer Value",
+      "items": [
+        "Verifies end-to-end autonomous tool calling by generating workspace/index.html",
+        "Hands off control directly to the interactive code_agent.py coding shell"
+      ]
+    }
+  ]
+}

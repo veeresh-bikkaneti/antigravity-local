@@ -1,0 +1,66 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Model Selection & Inventory Pre-Check Pipeline",
+    "animation": "trace",
+    "visual_preset": "blueprint",
+    "quality_profile": "showcase",
+    "output": "model-pipeline-workflow.html"
+  },
+  "lanes": [
+    { "id": "request", "label": "Model Request & Budget" },
+    { "id": "inventory", "label": "Local Weight Inventory" },
+    { "id": "evaluator", "label": "Capability Scoring Matrix" },
+    { "id": "execution", "label": "Runtime Model Binding" }
+  ],
+  "phases": [
+    { "id": "p1", "label": "Phase 1: Inventory Pre-Check", "fromCol": 0, "toCol": 1 },
+    { "id": "p2", "label": "Phase 2: Capability Evaluation", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "p3", "label": "Phase 3: Binding & Execution", "fromCol": 4, "toCol": 5, "variant": "security" }
+  ],
+  "nodes": [
+    { "id": "req_start", "lane": "request", "col": 0, "type": "external", "label": "Model Request", "sublabel": "cli argument or default", "width": 140 },
+    { "id": "inv_scan", "lane": "inventory", "col": 1, "type": "database", "label": "Ollama /api/tags", "sublabel": "inspect local weights", "tag": "zero re-download", "width": 140 },
+    { "id": "hw_check", "lane": "request", "col": 2, "type": "security", "label": "Hardware Profile", "sublabel": "verify 16GB VRAM budget", "tag": "OOM prevention", "width": 140 },
+    { "id": "score_matrix", "lane": "evaluator", "col": 3, "type": "backend", "label": "Capability Ranker", "sublabel": "Nanbeige > Qwen > Gemma", "tag": "agentic priority", "width": 140 },
+    { "id": "pull_guard", "lane": "inventory", "col": 4, "type": "cloud", "label": "Defensive Pull", "sublabel": "pull only if uninstalled", "width": 140 },
+    { "id": "runtime_bind", "lane": "execution", "col": 5, "type": "frontend", "label": "Antigravity Agent", "sublabel": "LocalOpenAI initialized", "tag": "tool-ready", "width": 140 }
+  ],
+  "edges": [
+    { "id": "e1", "from": "req_start", "to": "inv_scan", "label": "inspect inventory", "variant": "emphasis" },
+    { "id": "e2", "from": "inv_scan", "to": "hw_check", "label": "check installed", "variant": "default" },
+    { "id": "e3", "from": "hw_check", "to": "score_matrix", "label": "filter budget", "variant": "default" },
+    { "id": "e4", "from": "score_matrix", "to": "pull_guard", "label": "missing weight?", "variant": "security" },
+    { "id": "e5", "from": "pull_guard", "to": "runtime_bind", "label": "bind best model", "variant": "emphasis" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Zero-Download Engineering",
+      "items": [
+        "Calls http://localhost:11434/api/tags and falls back to 'ollama list'",
+        "If a suitable model (e.g. qwen2.5:14b or nanbeige) is installed, reuse immediately",
+        "Saves 5GB to 15GB bandwidth and eliminates startup latency"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Proven Capability Hierarchy",
+      "items": [
+        "1. Nanbeige (85 pts): Exceptional multi-step agentic search and complex tool calling",
+        "2. Qwen 2.5 (80 pts): Native OpenAI function calling, fits 100% in 16GB VRAM",
+        "3. DeepSeek Coder (78 pts): High code synthesis accuracy",
+        "4. Gemma 2 (70 pts): Strong reasoning; tools disabled to prevent HTTP 400"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Defensive Fallbacks",
+      "items": [
+        "Automatically adjusts tool configurations based on model capabilities",
+        "Ensures graceful degradation without application crashes"
+      ]
+    }
+  ]
+}

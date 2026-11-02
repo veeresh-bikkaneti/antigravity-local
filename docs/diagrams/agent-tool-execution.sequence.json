@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Autonomous Tool Calling Execution Sequence",
+    "output": "agent-tool-execution.html",
+    "viewBox": [1080, 680],
+    "column_fit": "spread",
+    "animation": "trace",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    { "id": "dev", "type": "external", "label": "Developer", "sublabel": "Task Prompt / CLI" },
+    { "id": "agent", "type": "frontend", "label": "Agent Runtime", "sublabel": "Antigravity Loop" },
+    { "id": "strategy", "type": "backend", "label": "OpenAI Router", "sublabel": "LocalOpenAI Strategy" },
+    { "id": "ollama", "type": "database", "label": "Ollama Daemon", "sublabel": "Qwen / Nanbeige" },
+    { "id": "policy", "type": "security", "label": "Security Policy", "sublabel": "policy.allow_all()" },
+    { "id": "harness", "type": "backend", "label": "Workspace Tools", "sublabel": "LocalHarness Tools" },
+    { "id": "disk", "type": "database", "label": "Workspace Disk", "sublabel": "./workspace/*" }
+  ],
+  "segments": [
+    { "from": 150, "to": 240, "label": "1. Task Dispatch & LLM Request" },
+    { "from": 250, "to": 365, "label": "2. Tool Call Generation & Policy Check" },
+    { "from": 375, "to": 515, "label": "3. Tool Execution & Artifact Delivery" }
+  ],
+  "messages": [
+    { "id": "m1", "from": "dev", "to": "agent", "y": 165, "label": "task: build index.html", "variant": "emphasis" },
+    { "id": "m2", "from": "agent", "to": "strategy", "y": 195, "label": "format OpenAI tools schema", "variant": "default" },
+    { "id": "m3", "from": "strategy", "to": "ollama", "y": 225, "label": "POST /v1/chat/completions", "variant": "emphasis" },
+    { "id": "m4", "from": "ollama", "to": "strategy", "y": 260, "label": "stream tool_call: create_file", "variant": "return" },
+    { "id": "m5", "from": "strategy", "to": "agent", "y": 290, "label": "yield tool invocation", "variant": "return" },
+    { "id": "m6", "from": "agent", "to": "policy", "y": 320, "label": "check permission: create_file", "variant": "security" },
+    { "id": "m7", "from": "policy", "to": "agent", "y": 350, "label": "policy.allow_all() approved", "variant": "security" },
+    { "id": "m8", "from": "agent", "to": "harness", "y": 385, "label": "invoke create_file(path, content)", "variant": "emphasis" },
+    { "id": "m9", "from": "harness", "to": "disk", "y": 415, "label": "write ./workspace/index.html", "variant": "default" },
+    { "id": "m10", "from": "disk", "to": "harness", "y": 445, "label": "file written (3,420 bytes)", "variant": "return" },
+    { "id": "m11", "from": "harness", "to": "agent", "y": 475, "label": "tool result: success", "variant": "return" },
+    { "id": "m12", "from": "agent", "to": "dev", "y": 505, "label": "Task complete: index.html generated", "variant": "emphasis" }
+  ],
+  "activations": [
+    { "participant": "agent", "from": 165, "to": 510, "type": "frontend" },
+    { "participant": "strategy", "from": 195, "to": 293, "type": "backend" },
+    { "participant": "ollama", "from": 225, "to": 263, "type": "database" },
+    { "participant": "policy", "from": 320, "to": 353, "type": "security" },
+    { "participant": "harness", "from": 385, "to": 478, "type": "backend" },
+    { "participant": "disk", "from": 415, "to": 448, "type": "database" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Decoupled Local Loop",
+      "items": [
+        "Antigravity Agent Runtime communicates directly via LocalOpenAIConnectionStrategy",
+        "OpenAI standard function-calling schemas are translated without cloud gateways",
+        "Models like Qwen 2.5 and Nanbeige natively understand create_file and edit_file"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Strict Sandbox Boundaries",
+      "items": [
+        "Every tool invocation is intercepted and validated against the Safety Policy",
+        "Operations are confined to the target workspace directory",
+        "Prevented 400 errors by disabling tools on unsupported models like Gemma 2:27b"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Deterministic Artifact Feedback",
+      "items": [
+        "Harness confirms byte length and write status back to the agent context loop",
+        "Agent inspects tool result and decides whether to continue or conclude the turn"
+      ]
+    }
+  ]
+}

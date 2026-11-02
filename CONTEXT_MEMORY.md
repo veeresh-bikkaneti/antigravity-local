@@ -111,6 +111,17 @@
     - Phase 5: Architecture, custom harnesses, and troubleshooting pro-tips.
   - Linked `ZERO_TO_CODING.md` as the primary developer guide in `README.md`.
   - Tested and verified end-to-end autonomous code generation and workspace tools.
+- [x] **Step 17**: Archify System Architecture & Interactive Flow Documents (Nov 2, 2026):
+  - Integrated Archify (`tt-a1i/archify`) into `.agents/skills/archify`.
+  - Designed, validated with showcase layout quality, and compiled 4 standalone interactive HTML diagrams with live tracing:
+    - `docs/diagrams/system-topology.html`: Component topology, air-gapped host boundary, and hardware offload split.
+    - `docs/diagrams/bootstrap-workflow.html`: 1-Command zero-dependency bootstrap lifecycle from CLI launch to interactive REPL.
+    - `docs/diagrams/agent-tool-execution.html`: Autonomous tool calling sequence loop (Developer -> Antigravity Agent -> OpenAI Router -> Ollama -> Policy -> Harness -> Workspace).
+    - `docs/diagrams/model-pipeline-workflow.html`: Zero-download inventory pre-flight check and model capability scoring hierarchy (Nanbeige > Qwen 2.5 > DeepSeek > Codestral > Gemma 2 > LLaMA 3.1).
+  - Authored master architecture and flow specifications:
+    - `docs/ARCHITECTURE.md`: High-level system architecture, component breakdown, hardware offloading physics (GPU VRAM vs DDR5 RAM), security/air-gap guarantees, and Google Antigravity SDK decoupling.
+    - `docs/FLOWS.md`: Detailed visual execution lifecycles with embedded GitHub-rendered Mermaid diagrams and summary trigger matrices.
+  - Enhanced `README.md` with direct navigation to architecture specifications and interactive HTML diagrams.
 
 ---
 

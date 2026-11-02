@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Antigravity Local System Topology & Component Architecture",
+    "output": "system-topology.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "cli_launchers", "type": "external", "label": "CLI Launchers", "sublabel": "run.bat / run.sh / run.ps1", "pos": [40, 240], "size": [160, 60], "tag": "1-Command Entry" },
+    { "id": "bootstrap_engine", "type": "backend", "label": "Bootstrap Engine", "sublabel": "run.py (Auto-provision)", "pos": [250, 240], "size": [160, 60], "tag": "Zero-Dependency" },
+    { "id": "code_agent", "type": "backend", "label": "Coding Agent Shell", "sublabel": "code_agent.py (CLI / REPL)", "pos": [250, 360], "size": [160, 60], "tag": "Interactive & CLI" },
+    { "id": "workspace_fs", "type": "database", "label": "Workspace Sandbox", "sublabel": "./workspace/* (Artifacts)", "pos": [250, 480], "size": [160, 60], "tag": "Air-Gapped Output" },
+    { "id": "antigravity_sdk", "type": "backend", "label": "Antigravity SDK", "sublabel": "google.antigravity.Agent", "pos": [540, 240], "size": [160, 60], "tag": "Decoupled Agent Loop" },
+    { "id": "safety_policy", "type": "security", "label": "Execution Policy", "sublabel": "policy.allow_all()", "pos": [540, 360], "size": [160, 60], "tag": "Workspace Guard" },
+    { "id": "workspace_tools", "type": "backend", "label": "Workspace Harness", "sublabel": "create / edit / read files", "pos": [540, 480], "size": [160, 60], "tag": "LocalHarness" },
+    { "id": "connection_strategy", "type": "backend", "label": "LocalOpenAI Router", "sublabel": "LocalOpenAIConnectionStrategy", "pos": [770, 240], "size": [170, 60], "tag": "Zero-Cloud SSE" },
+    { "id": "ollama_service", "type": "database", "label": "Ollama Daemon", "sublabel": "http://localhost:11434/v1", "pos": [1000, 240], "size": [160, 60], "tag": "OpenAI Compatible" },
+    { "id": "model_qwen", "type": "database", "label": "Qwen 2.5 / Nanbeige", "sublabel": "Tool-Calling Weights", "pos": [1240, 150], "size": [160, 60], "tag": "14B/16B Function Call" },
+    { "id": "model_gemma", "type": "database", "label": "Gemma 2:27b", "sublabel": "Streaming / Reasoning", "pos": [1240, 260], "size": [160, 60], "tag": "27B Dense Reasoning" },
+    { "id": "hardware_gpu", "type": "cloud", "label": "GPU VRAM Engine", "sublabel": "RTX 5000 Ada (16 GB)", "pos": [1240, 370], "size": [160, 60], "tag": "100% On-Chip Layer" },
+    { "id": "hardware_ram", "type": "cloud", "label": "System DDR5 RAM", "sublabel": "128 GB Host Memory", "pos": [1240, 480], "size": [160, 60], "tag": "Seamless CPU Offload" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Local Host Air-Gapped Boundary (100% Offline / Zero Cloud Keys)", "wraps": ["cli_launchers", "bootstrap_engine", "code_agent", "antigravity_sdk", "connection_strategy", "safety_policy", "workspace_tools", "workspace_fs", "ollama_service", "model_qwen", "model_gemma", "hardware_gpu", "hardware_ram"] },
+    { "kind": "security-group", "label": "Antigravity SDK Runtime Core", "wraps": ["antigravity_sdk", "connection_strategy", "safety_policy", "workspace_tools"] },
+    { "kind": "security-group", "label": "Local Inference & Hardware Offload", "wraps": ["ollama_service", "model_qwen", "model_gemma", "hardware_gpu", "hardware_ram"] }
+  ],
+  "connections": [
+    { "id": "launch-to-boot", "from": "cli_launchers", "to": "bootstrap_engine", "label": "1-click init", "variant": "emphasis" },
+    { "id": "launch-to-code", "from": "cli_launchers", "to": "code_agent", "label": "REPL shell", "variant": "dashed", "fromSide": "bottom", "toSide": "left" },
+    { "id": "boot-to-sdk", "from": "bootstrap_engine", "to": "antigravity_sdk", "label": "provisions" },
+    { "id": "code-to-sdk", "from": "code_agent", "to": "antigravity_sdk", "label": "dispatches", "fromSide": "right", "toSide": "bottom" },
+    { "id": "sdk-to-strategy", "from": "antigravity_sdk", "to": "connection_strategy", "label": "LocalOpenAI", "variant": "emphasis" },
+    { "id": "strategy-to-ollama", "from": "connection_strategy", "to": "ollama_service", "label": "HTTP/SSE :11434", "variant": "emphasis" },
+    { "id": "sdk-to-policy", "from": "antigravity_sdk", "to": "safety_policy", "label": "permission check", "variant": "security", "fromSide": "bottom", "toSide": "top" },
+    { "id": "policy-to-tools", "from": "safety_policy", "to": "workspace_tools", "label": "allow_all()", "variant": "security", "fromSide": "bottom", "toSide": "top" },
+    { "id": "tools-to-fs", "from": "workspace_tools", "to": "workspace_fs", "label": "create / edit files", "variant": "emphasis", "fromSide": "left", "toSide": "right" },
+    { "id": "ollama-to-qwen", "from": "ollama_service", "to": "model_qwen", "label": "loads weights", "fromSide": "top", "toSide": "left" },
+    { "id": "ollama-to-gemma", "from": "ollama_service", "to": "model_gemma", "label": "loads weights" },
+    { "id": "qwen-to-gpu", "from": "model_qwen", "to": "hardware_gpu", "label": "VRAM fit (9GB < 16GB)", "variant": "emphasis", "fromSide": "bottom", "toSide": "top" },
+    { "id": "gemma-to-ram", "from": "model_gemma", "to": "hardware_ram", "label": "21% RAM offload", "variant": "dashed", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Air-Gapped & Decoupled",
+      "items": [
+        "LocalOpenAIConnectionStrategy redirects all LLM calls to http://localhost:11434/v1",
+        "Zero Google Cloud API keys, auth tokens, or network egress required",
+        "Compatible with Google Research AI Harness via ANTIGRAVITY_HARNESS_PATH"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Adaptive Hardware Offload",
+      "items": [
+        "Qwen 2.5 (14B) and Nanbeige (16B) fit 100% inside 16 GB dedicated VRAM for fast tool calling",
+        "Gemma 2 (27B, 15 GB weights) automatically splits layers: 79% GPU VRAM + 21% CPU DDR5 RAM"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Safe Workspace Isolation",
+      "items": [
+        "Antigravity Agent operates within isolated ./workspace directory",
+        "Local filesystem modifications are strictly scoped to user workspace",
+        "Multi-turn state and session progress logged to CONTEXT_MEMORY.md"
+      ]
+    }
+  ]
+}
