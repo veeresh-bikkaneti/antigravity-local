@@ -57,11 +57,12 @@ def list_workspace_files(workspace_dir: str):
 async def execute_task(agent: Agent, prompt: str, workspace_dir: str):
     """Execute a single coding prompt through the agent with streaming output."""
     full_prompt = (
-        f"You are an expert pair programmer working in the workspace at '{workspace_dir}'.\n"
-        f"Task: {prompt}\n"
-        f"You have permission to inspect files, write new files, and modify existing files.\n"
-        f"When writing or updating files, call write_file with 'Path' (full path inside the workspace), "
-        f"'Content', and 'Overwrite'=True."
+        f"{prompt}\n\n"
+        f"Workspace Directory: {os.path.abspath(workspace_dir)}\n"
+        "Important Instructions:\n"
+        "1. To create or modify files, call the `create_file` tool with parameters: "
+        "`Path` (absolute path inside the workspace), `Content` (the complete file code), and `Overwrite=True`.\n"
+        "2. Keep explanations concise and always execute the file creation tool directly."
     )
     response = await agent.chat(full_prompt)
     async for chunk in response:
