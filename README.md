@@ -92,13 +92,17 @@ If you prefer to configure each component step-by-step rather than using the 1-c
    ```bash
    ollama list
    ```
-2. If you already have **`qwen2.5:14b`**, **`llama3.1:8b`**, or another tool-capable model, **skip downloading—you're already ready to go!**
-3. Only if you don't have a tool-capable model, download one:
+2. If you already have a proven agent model, **skip downloading—you're already ready to go!**
+   - **`nanbeige`** (e.g., `nanbeige4.1:3b`, `nanbeige2:16b`): Specially optimized for deep search and multi-step sequential tool calling.
+   - **`qwen2.5`** (e.g., `qwen2.5:14b`, `qwen2.5:7b`, `qwen2.5:32b`): Flagship open coding and OpenAI-compatible tool use.
+   - **`llama3.1`** (e.g., `llama3.1:8b`): Battle-tested, compact 8B agent runner.
+   - **`gemma2`** (e.g., `gemma2:27b`): High-quality reasoning and token streaming.
+3. Only if you don't have an agent model installed, download one:
    ```bash
-   # Recommended for agents with workspace tools (systems with >= 12 GB RAM):
+   # Option A: Flagship agent model (systems with >= 12 GB RAM):
    ollama pull qwen2.5:14b
 
-   # Lightweight alternative for machines under 12 GB RAM:
+   # Option B: Ultra-compact agent & tool-calling model (any system):
    # ollama pull llama3.1:8b
    ```
 
@@ -170,6 +174,19 @@ python agent_with_workspace.py
 ```
 After completion, inspect your newly generated file at `workspace/index.html`!
 
+#### Mode 3: Developer Pair-Programming Shell (`code_agent.py`)
+Pair program with your local agent to write code, generate project scaffolds, or execute one-shot autonomous tasks:
+```bash
+# 1. Interactive pair-programming shell in ./workspace:
+python code_agent.py --workspace ./workspace
+
+# 2. One-shot autonomous coding task:
+python code_agent.py --workspace ./workspace --task "Create a Python CLI calculator with unit tests"
+
+# 3. Use a specific model (e.g., Nanbeige or Qwen):
+python code_agent.py --model nanbeige4.1:3b
+```
+
 ---
 
 ## 📂 Project Structure
@@ -188,6 +205,7 @@ antigravity-local/
 ├── README.md                 # Complete beginner & developer documentation
 ├── test_local.py             # Script 1: Tests local connection & real-time token streaming
 ├── agent_with_workspace.py   # Script 2: Autonomous agent with file creation tools
+├── code_agent.py             # Script 3: Interactive developer coding shell & pair-programmer
 └── workspace/                # Sandboxed folder where the agent creates/edits files
     ├── .gitkeep              # Keeps directory tracked in git
     └── index.html            # Artifact generated automatically by the agent

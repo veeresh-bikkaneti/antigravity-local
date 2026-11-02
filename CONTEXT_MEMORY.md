@@ -85,13 +85,23 @@
   - Eliminated redundant model re-downloads by implementing dual-tier inventory inspection (`get_installed_ollama_models`) via Ollama REST API (`/api/tags`) with CLI (`ollama list`) fallback.
   - Added smart tag normalization and candidate model discovery (detects `qwen2.5:14b`, `llama3.1:8b`, etc. and reuses existing weights).
   - Updated `README.md` documentation to promote `ollama list` pre-checking before downloading.
-- [x] **Step 13**: Local Environment Setup & End-to-End Verification Completed (Nov 2, 2026):
+- [x] **Step 14**: Nanbeige Model Integration & Capability Hierarchy:
+  - Added **Nanbeige** (Nanbeige 4.1/4.2/4.3, Nanbeige 2-16B) to the top-tier agent model evaluation matrix in `run.py`.
+  - Implemented dynamic scoring engine (`get_model_capability_score`) that prioritizes proven agentic performers (Nanbeige > Qwen 2.5 > DeepSeek > Codestral > Gemma 2 > LLaMA 3.1) and scales with parameter counts.
+  - Updated `README.md` and `agent_with_workspace.py` with Nanbeige tool-calling support notes.
+- [x] **Step 15**: Developer Coding Agent Shell (`code_agent.py`):
+  - Created `code_agent.py` for interactive pair-programming (`--workspace`) and autonomous one-shot task execution (`--task`).
+  - Added `/files` workspace inspector, `/help`, and graceful exception handling.
+  - Fully integrated and documented across `README.md`.
+- [x] **Step 14**: Local Environment Setup & End-to-End Verification Completed (Nov 2, 2026):
   - Created isolated Python virtual environment (`venv`) inside `c:\Users\veere\source\repos\local antigravity`.
   - Installed dependencies via pip (`google-antigravity`, `python-dotenv`, and supporting libraries).
   - Provisioned `.env` from `.env.example` configured for `http://localhost:11434/v1` with model `qwen2.5:14b`.
   - Verified live token streaming with `test_local.py` (`gemma2:27b` and `qwen2.5:14b`).
   - Verified autonomous tool execution with `agent_with_workspace.py` (generated `workspace/index.html`).
   - Verified 1-click launcher scripts (`run.bat`, `run.ps1`, `run.py`) are fully operational.
+- [x] **Step 15**: Session Architecture & Local Model Guidance (Nov 2, 2026):
+  - Documented session distinction: Antigravity IDE UI chat panel runs on Google Cloud Gemini endpoint (Gemini Flash/Pro), whereas local model interaction is conducted via the integrated terminal session (`run.ps1` / `run.py`), CLI, or SDK agent scripts targeting `http://localhost:11434/v1`.
 
 ---
 

@@ -7,13 +7,16 @@ One command to rule them all:
 - Auto-detects OS and system hardware (RAM/VRAM)
 - Auto-creates virtual environment & installs dependencies
 - Auto-detects / starts Ollama local server in background
-- Pre-checks existing models (HTTP API + CLI fallback) to prevent redundant downloads
+- Auto-evaluates local models and picks the MOST CAPABLE model available
+  (Nanbeige, Qwen 2.5, DeepSeek, Codestral, LLaMA 3.x, Gemma 2)
+- Pre-checks inventory before downloading (zero redundant pulls)
 - Runs autonomous workspace agent and starts an interactive agent shell!
 =============================================================================
 """
 
 import sys
 import os
+import re
 import subprocess
 import platform
 import shutil
@@ -178,10 +181,8 @@ def get_installed_ollama_models(base_url="http://localhost:11434"):
                 name = m.get("name", "").strip().lower()
                 if name:
                     models.add(name)
-                    # Add without registry or tag variations (e.g. 'qwen2.5:14b' from 'registry.ollama.ai/library/qwen2.5:14b')
                     clean_name = name.split("/")[-1]
                     models.add(clean_name)
-                    # Also add base model name without tag
                     models.add(clean_name.split(":")[0])
     except Exception:
         pass
@@ -202,6 +203,56 @@ def get_installed_ollama_models(base_url="http://localhost:11434"):
             pass
 
     return models
+
+def get_model_capability_score(model_name: str) -> float:
+    """
+    Computes an agentic capability score to automatically select the MOST CAPABLE model:
+    - Nanbeige: Top-tier multi-step agentic reasoning and sequential tool calling (Nanbeige 4.1/4.2/4.3, Nanbeige 2-16B)
+    - Qwen 2.5: Proven flagship open coding & agent reasoning (Qwen 2.5 32B/14B/7B)
+    - DeepSeek Coder / R1: Specialized programming capability
+    - Codestral / Mistral Large: High reasoning capability
+    - Gemma 2: High general reasoning
+    - LLaMA 3.3 / 3.1: Strong general foundation
+    - Scale weighting: 70B > 33B > 32B > 27B > 16B > 14B > 8B > 7B > 3B
+    """
+    name = model_name.lower().strip()
+    score = 0.0
+
+    # 1. Family weighting for agentic / tool-calling capabilities
+    if "nanbeige" in name:
+        score += 85.0   # Nanbeige (e.g. 4.1, 4.3, 2-16B) - proven multi-step agentic caller
+    elif "qwen2.5" in name:
+        score += 80.0   # Qwen 2.5 - industry leader in open-weights function calling
+    elif "deepseek" in name:
+        score += 78.0   # DeepSeek Coder / R1
+    elif "codestral" in name or "mistral-large" in name:
+        score += 75.0   # Codestral
+    elif "gemma2" in name:
+        score += 70.0   # Gemma 2
+    elif "llama3.3" in name or "llama3.1" in name:
+        score += 65.0   # Meta LLaMA 3.x
+    elif "mistral" in name:
+        score += 60.0
+    elif "phi4" in name or "phi3" in name:
+        score += 55.0
+    else:
+        score += 40.0
+
+    # 2. Parameter scale weighting
+    size_match = re.search(r"(\d+)(?:\.\d+)?b", name)
+    if size_match:
+        size = float(size_match.group(1))
+        score += min(size, 72.0) * 0.4
+    else:
+        score += 5.0
+
+    # 3. Task optimization keywords
+    if "coder" in name or "code" in name:
+        score += 10.0
+    if "instruct" in name or "chat" in name:
+        score += 5.0
+
+    return score
 
 def is_model_installed(target_model, installed_models):
     """Check if target_model matches any locally installed model."""
@@ -224,10 +275,11 @@ def select_and_pull_model(base_url="http://localhost:11434"):
     Engineering Best Practice:
     1. Inspect user configuration (.env or CLI arguments) first.
     2. Check existing local models BEFORE attempting any download.
-    3. If target or any compatible model is already present, USE IT (zero download).
-    4. Only download if no compatible tool-capable model is found locally.
+    3. Dynamically evaluate and select the MOST CAPABLE model in local inventory
+       (Nanbeige, Qwen 2.5, DeepSeek, Codestral, LLaMA 3.x, Gemma 2).
+    4. Only download if no compatible agent model is found locally.
     """
-    print("🧠 [3/4] Checking Local Agent Model Inventory...")
+    print("🧠 [3/4] Evaluating Local Model Inventory for Highest Capability...")
     
     # Load .env if present
     try:
@@ -238,13 +290,13 @@ def select_and_pull_model(base_url="http://localhost:11434"):
 
     # Check existing models locally FIRST
     installed_models = get_installed_ollama_models(base_url)
-    if installed_models:
-        display_names = sorted(list(set(m for m in installed_models if ":" in m)))
-        print(f"       Found {len(display_names)} locally installed model(s): {', '.join(display_names) if display_names else 'detected'}")
+    display_names = sorted(list(set(m for m in installed_models if ":" in m or "/" in m)))
+    if display_names:
+        print(f"       Found {len(display_names)} local model(s): {', '.join(display_names)}")
     else:
         print("       No local models found in inventory.")
 
-    # 1. Did the user specify a model via CLI or .env?
+    # 1. Did the user explicitly configure a model via CLI or .env?
     user_configured_model = None
     if len(sys.argv) > 1 and not sys.argv[1].startswith("-"):
         user_configured_model = sys.argv[1]
@@ -253,38 +305,30 @@ def select_and_pull_model(base_url="http://localhost:11434"):
 
     if user_configured_model:
         if is_model_installed(user_configured_model, installed_models):
-            print(f"       ✅ Configured model '{user_configured_model}' is already pulled. Skipping download!")
+            print(f"       ✅ Using explicitly configured model: '{user_configured_model}' (Found locally. Skipping download!)")
             return user_configured_model
         else:
             print(f"       Configured model '{user_configured_model}' is not in local inventory.")
             target_to_pull = user_configured_model
-    else:
-        # 2. Check if a recommended agent model is ALREADY installed
-        # Preferred models with verified Antigravity tool calling support:
-        candidate_tool_models = [
-            "qwen2.5:14b",
-            "qwen2.5:7b",
-            "qwen2.5:32b",
-            "llama3.1:8b",
-            "llama3.1:70b",
-            "llama3.2:3b",
-            "mistral-nemo",
-            "mistral:latest"
-        ]
-        
-        for candidate in candidate_tool_models:
-            if is_model_installed(candidate, installed_models):
-                print(f"       ✅ Found existing tool-capable model '{candidate}' locally. Skipping download!")
-                return candidate
 
-        # 3. No candidate is installed; calculate best model based on available hardware RAM
+    # 2. Dynamic Capability Ranking of ALL installed models (Nanbeige, Qwen 2.5, DeepSeek, etc.)
+    elif display_names:
+        ranked_models = sorted(display_names, key=get_model_capability_score, reverse=True)
+        top_model = ranked_models[0]
+        top_score = get_model_capability_score(top_model)
+        
+        print(f"       🏆 Auto-selected MOST CAPABLE installed model: '{top_model}' (Capability Score: {top_score:.1f}/100)")
+        print(f"       ✅ Skipping download—reusing existing local weights.")
+        return top_model
+    else:
+        # 3. No models installed: auto-select optimal model based on available RAM
         ram_gb = get_system_ram_gb()
         if ram_gb >= 15.0:
             target_to_pull = "qwen2.5:14b"
-            print(f"       Hardware has {ram_gb:.1f} GB RAM -> Selected: {target_to_pull} (14B params, top agent performance)")
+            print(f"       Hardware has {ram_gb:.1f} GB RAM -> Selected: {target_to_pull} (Top agent performance)")
         else:
             target_to_pull = "llama3.1:8b"
-            print(f"       Hardware has {ram_gb:.1f} GB RAM -> Selected: {target_to_pull} (8B params, optimized for compact RAM)")
+            print(f"       Hardware has {ram_gb:.1f} GB RAM -> Selected: {target_to_pull} (Compact RAM)")
 
     # 4. Only if missing from local inventory, perform download
     print(f"\n📥 Model '{target_to_pull}' not found locally. Initiating one-time download via Ollama...")
@@ -303,16 +347,21 @@ async def run_agent(model, base_url="http://localhost:11434/v1"):
     print("🎯 [4/4] Launching Google Antigravity Local Agent...")
     
     from google.antigravity import Agent, LocalOpenAIAgentConfig
+    from google.antigravity.types import CapabilitiesConfig
     from google.antigravity.hooks import policy
 
     workspace_dir = os.path.join(PROJECT_DIR, "workspace")
     os.makedirs(workspace_dir, exist_ok=True)
+
+    # Disable tools only if using Gemma under Ollama (which does not support Ollama tool schema)
+    capabilities = CapabilitiesConfig(enabled_tools=[]) if "gemma" in model.lower() else None
 
     config = LocalOpenAIAgentConfig(
         model=model,
         base_url=base_url,
         workspaces=[workspace_dir],
         policies=[policy.allow_all()],
+        capabilities=capabilities,
     )
 
     print("=============================================================================")
@@ -337,12 +386,12 @@ async def run_agent(model, base_url="http://localhost:11434/v1"):
                 print(chunk, end="", flush=True)
             print("\n\n✅ Demonstration complete! File generated at: workspace/index.html\n")
     except Exception as exc:
-        print(f"\n⚠️ Demo encountered notice: {exc}\n")
+        print(f"\n⚠️ Demo notice: {exc}\n")
 
     # Interactive Agent Shell
     print("=============================================================================")
     print(" 💬 Interactive Local Agent Shell (Type 'exit' or 'quit' to leave)")
-    print("    Ask your local agent to code, inspect files, or build features!")
+    print(f"    Active Model: {model} (Prompt your agent to write code or inspect files)")
     print("=============================================================================")
     print("💡 Example prompts to try:")
     print("   - 'What files are in this repository?'")
@@ -384,7 +433,7 @@ def main():
     if not check_ollama_service(ollama_host):
         sys.exit(1)
 
-    # Step 3: Check local inventory first & only pull if missing
+    # Step 3: Check local inventory & auto-select most capable model
     model = select_and_pull_model(ollama_host)
 
     # Step 4: Run agent via asyncio

@@ -68,7 +68,7 @@ async def main():
     except Exception as exc:
         print(f"\n❌ [ERROR] Agent execution failure: {exc}")
         print("\n💡 Troubleshooting Tips:")
-        print(f"   - Tool calling models required: qwen2.5:14b, llama3.1:8b (not gemma2)")
+        print(f"   - Tool calling models supported: nanbeige (4.1/2-16B), qwen2.5 (14b/32b), llama3.1:8b (not gemma2)")
         print(f"   - Is Ollama active? Run: ollama serve")
         print(f"   - Pull the model: Run: ollama pull {model}\n")
         sys.exit(1)
