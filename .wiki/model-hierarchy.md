@@ -20,3 +20,4 @@ Models are scored dynamically based on benchmarked autonomous agent performance:
 
 ## 3. Parameter Scaling Formula
 Final Score = `Base_Score(family) + min(param_count * 0.4, 25.0)`.
+

@@ -18,3 +18,4 @@
   - **Workstation (16GB+ VRAM & 32-128GB RAM)**: Models 14B to 32B.
   - **Mid-Tier (8-12GB VRAM & 16-32GB RAM)**: Models 7B to 14B.
   - **Entry (<=6GB VRAM or CPU)**: Models 3B to 8B quantized.
+

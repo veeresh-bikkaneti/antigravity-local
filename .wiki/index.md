@@ -21,3 +21,4 @@
 1. Run `python memory.py wiki <topic>` to read any topic instantly into context.
 2. In the `code_agent.py` interactive shell, type `/wiki <topic>` or `/memory <query>`.
 3. To update or add topics, write clean Markdown in `.wiki/<topic>.md` and run `python memory.py index`.
+

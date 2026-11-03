@@ -23,3 +23,4 @@ On local models (e.g. Qwen 2.5 14B), this causes:
    Use `python memory.py wiki <topic>`.
 3. **Fuzzy Concepts, History, & Decisions** (e.g., "Why did we switch from LiteRT to Ollama?"):
    Use `python memory.py search "<query>"`.
+

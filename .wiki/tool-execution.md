@@ -13,3 +13,4 @@ The Antigravity SDK routes tool calls via the OpenAI function-calling format to 
 ## 3. Model Compatibility Caveat
 - `qwen2.5:14b` natively parses OpenAI function calls and executes tools cleanly.
 - `gemma2:27b` in Ollama does NOT support tools schema (`registry.ollama.ai/library/gemma2:27b does not support tools`). For Gemma, tool execution must be disabled via `capabilities=CapabilitiesConfig(enabled_tools=[])`.
+

@@ -180,3 +180,4 @@ python memory.py sync
 In `code_agent.py`, interactive slash commands are exposed:
 - `/memory <query>`: Executes a hybrid search and injects the top-K relevant chunks into the agent's immediate context.
 - `/wiki [topic]`: Loads the requested wiki page directly without burning context on full repo files.
+

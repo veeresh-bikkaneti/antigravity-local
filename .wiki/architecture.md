@@ -13,3 +13,4 @@ This repository runs Google Antigravity autonomous coding agents on local, air-g
 - **Antigravity IDE UI Session**: The upper chat panel in the Antigravity IDE is hosted by Google Cloud (Gemini Flash/Pro).
 - **Local Agent Terminal Session**: The integrated terminal runs the local agent scripts (`run.py`, `code_agent.py`, `agent_with_workspace.py`), executing locally against Ollama.
 - **Shared Memory Bridge**: Both environments share and read the same file-backed state (`CONTEXT_MEMORY.md`, `.wiki/`, `graphify-out/graph.json`, and `.memory/index.sqlite`).
+
