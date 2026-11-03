@@ -133,6 +133,14 @@
   - Verified `archify doctor` passes all runtime checks with zero errors.
   - Synchronized and pushed all latest commits to `origin/main` (`https://github.com/veeresh-bikkaneti/antigravity-local.git`).
   - Remote repository is 100% up to date and clean.
+- [x] **Step 20**: Global Archify CLI Installation & README Architecture Diagrams Integration (Nov 3, 2026):
+  - Installed Archify (`tt-a1i/archify`) globally on the host via `npm install -g .agents\skills\archify`; verified `archify doctor` executes cleanly from any terminal.
+  - Overhauled `README.md` with dedicated "System Architecture & Design Diagrams" featuring GitHub-native Mermaid diagrams:
+    - Diagram 1: System Topology Architecture & Host Air-Gapped Boundary.
+    - Diagram 2: Autonomous Tool Calling Execution Sequence (7-participant loop).
+    - Diagram 3: Hardware-Aware Model Selection & Zero-Download Pipeline.
+    - Diagram 4: Interactive Archify Visualizations & Global CLI reference.
+  - Mirrored `CONTEXT_MEMORY.md` to `C:\Users\veere\antigravity-local\CONTEXT_MEMORY.md`.
 
 ---
 

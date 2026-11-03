@@ -46,7 +46,7 @@ chmod +x run.sh && ./run.sh
 7. [Prerequisites Checklist](#-prerequisites-checklist)
 8. [Step-by-Step Manual Setup](#-step-by-step-manual-setup)
 9. [Project Structure](#-project-structure)
-10. [How It Works & Architectural Flows](#-how-it-works)
+10. [🏛️ System Architecture & Design Diagrams](#-system-architecture--design-diagrams)
 11. [Common Gotchas & Troubleshooting](#-common-gotchas--troubleshooting)
 12. [Advanced: Using Custom Research Harnesses & Servers](#-advanced-using-custom-research-harnesses--servers)
 13. [License & Contributing](#-license--contributing)
@@ -225,51 +225,180 @@ antigravity-local/
 
 ---
 
-## 🔍 How It Works
+## 🏛️ System Architecture & Design Diagrams
 
+Antigravity Local decouples the Google Antigravity SDK from cloud infrastructure by combining an air-gapped agent loop with local inference. 
+
+### 1. System Topology Architecture
+
+The diagram below shows how the client orchestration layer, Google Antigravity SDK, Ollama inference daemon, and hardware memory offloading interconnect:
+
+```mermaid
+graph TB
+    subgraph Host["Local Host Machine (100% Air-Gapped / Zero External Cloud Traffic)"]
+        subgraph ClientLayer["Client & Orchestration Layer"]
+            CLI["CLI Launchers<br/>(run.bat / run.sh / run.ps1)"]
+            Bootstrap["Bootstrap Engine<br/>(run.py)"]
+            CodeAgent["Developer Agent Shell<br/>(code_agent.py)"]
+        end
+
+        subgraph SDKLayer["Google Antigravity SDK Runtime Core"]
+            Agent["Agent Runtime Loop<br/>(google.antigravity.Agent)"]
+            Router["LocalOpenAI Router<br/>(LocalOpenAIConnectionStrategy)"]
+            Policy["Safety Policy<br/>(policy.allow_all())"]
+            Harness["Workspace Harness<br/>(create_file, edit_file, read_file)"]
+        end
+
+        subgraph LocalInference["Local Inference & Hardware Offload Layer"]
+            Ollama["Ollama REST Daemon<br/>(http://localhost:11434/v1)"]
+            ModelWeights["Local Model Weights<br/>(Nanbeige / DeepSeek / Qwen / Codestral)"]
+            GPU["GPU VRAM Engine<br/>(NVIDIA RTX 5000 Ada - 16 GB VRAM)"]
+            RAM["Host System RAM<br/>(128 GB DDR5 Memory Offload)"]
+        end
+
+        subgraph Sandbox["Workspace Storage Boundary"]
+            Workspace["./workspace/*<br/>(Isolated Code & Artifacts)"]
+            Memory["CONTEXT_MEMORY.md<br/>(Persistent State & Session Log)"]
+        end
+    end
+
+    CLI -->|1-click launch| Bootstrap
+    CLI -.->|interactive REPL| CodeAgent
+    Bootstrap -->|provisions & starts| Agent
+    CodeAgent -->|dispatches tasks| Agent
+
+    Agent -->|routes LLM queries| Router
+    Router -->|HTTP SSE :11434| Ollama
+    Ollama -->|loads active weights| ModelWeights
+
+    ModelWeights -->|100% VRAM fit (<=16GB)| GPU
+    ModelWeights -.->|dynamic layer spill (>16GB)| RAM
+
+    Agent -->|permission check| Policy
+    Policy -->|authorizes file I/O| Harness
+    Harness -->|reads & writes| Workspace
+    Agent -.->|logs progress| Memory
+
+    classDef host fill:#0f172a,stroke:#334155,stroke-width:2px,color:#f8fafc;
+    classDef client fill:#1e293b,stroke:#38bdf8,stroke-width:1px,color:#e0f2fe;
+    classDef sdk fill:#1e1b4b,stroke:#818cf8,stroke-width:1px,color:#e0e7ff;
+    classDef inf fill:#064e3b,stroke:#34d399,stroke-width:1px,color:#d1fae5;
+    classDef store fill:#312e81,stroke:#a78bfa,stroke-width:1px,color:#ede9fe;
+
+    class Host host;
+    class CLI,Bootstrap,CodeAgent client;
+    class Agent,Router,Policy,Harness sdk;
+    class Ollama,ModelWeights,GPU,RAM inf;
+    class Workspace,Memory store;
 ```
-   ┌───────────────────────┐
-   │ agent_with_workspace  │ (User Python script)
-   └───────────┬───────────┘
-               │ 1. Passes prompt + workspace tools (create_file)
-               ▼
-   ┌───────────────────────┐
-   │ google-antigravity    │ (SDK + Bundled localharness engine)
-   └───────────┬───────────┘
-               │ 2. Translates to OpenAI REST: POST /v1/chat/completions
-               ▼
-   ┌───────────────────────┐
-   │ Ollama (:11434)       │ (Runs qwen2.5:14b / llama3.1:8b locally)
-   └───────────┬───────────┘
-               │ 3. Model emits tool-call JSON: create_file("index.html")
-               ▼
-   ┌───────────────────────┐
-   │ Policy Engine         │ (policy.allow_all() approves execution)
-   └───────────┬───────────┘
-               │ 4. Writes file directly to disk on your machine
-               ▼
-   ┌───────────────────────┐
-   │ workspace/index.html  │ (Created successfully!)
-   └───────────────────────┘
+
+---
+
+### 2. Autonomous Tool Calling Execution Sequence
+
+This sequence diagram illustrates the execution loop when the agent receives a task requiring workspace modifications:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Developer as Developer / CLI
+    participant Agent as Antigravity Agent Runtime
+    participant Strategy as LocalOpenAI Router
+    participant Ollama as Ollama Daemon (:11434)
+    participant Policy as Security Policy
+    participant Harness as Workspace Harness
+    participant Disk as Workspace Filesystem
+
+    Developer->>Agent: task: "Generate landing page in index.html"
+    Note over Agent: Compiles prompt, system instruction,<br/>and available tool schemas
+    Agent->>Strategy: stream_chat(messages, tools=[create_file, edit_file])
+    Strategy->>Ollama: POST /v1/chat/completions (OpenAI compatible SSE)
+    
+    activate Ollama
+    Note over Ollama: Model infers task requirements<br/>and triggers tool call
+    Ollama-->>Strategy: Yield tool_call: create_file(path="index.html", content="...")
+    deactivate Ollama
+
+    Strategy-->>Agent: Dispatched tool invocation
+    
+    activate Agent
+    Agent->>Policy: Intercept tool call: verify permission for create_file
+    activate Policy
+    Policy-->>Agent: policy.allow_all() APPROVED (workspace-scoped)
+    deactivate Policy
+
+    Agent->>Harness: invoke create_file("index.html", content, overwrite=True)
+    activate Harness
+    Harness->>Disk: Write ./workspace/index.html
+    Disk-->>Harness: 3,420 bytes written successfully
+    Harness-->>Agent: Observation: "File index.html created successfully"
+    deactivate Harness
+
+    Note over Agent: Evaluates result; determines task is complete
+    Agent-->>Developer: "Task complete. Generated modern landing page at workspace/index.html"
+    deactivate Agent
 ```
 
-1. **LocalOpenAIAgentConfig**: Replaces Google's cloud Gemini endpoint with a local OpenAI-compatible endpoint (`http://localhost:11434/v1`).
-2. **Built-in Workspace Tools**: Antigravity automatically gives the model tools to explore and edit files in the designated `workspace/` directory.
-3. **Execution Policy**: `policy.allow_all()` permits the agent to write files autonomously. You can customize this to ask for confirmation before writing.
+---
 
-### 🏛️ Interactive Architecture & Visual Flow Documents
+### 3. Hardware-Aware Model Selection & Zero-Download Pipeline
 
-For complete system topology, hardware offload physics, and lifecycle state machines, explore our comprehensive technical guides and interactive Archify visualizations:
+```mermaid
+flowchart LR
+    Start["Launch run.bat / run.sh"] --> DetectHW["Detect PC Build<br/>(GPU, VRAM, System RAM)"]
+    DetectHW --> ScanInventory["Scan Local Inventory<br/>(/api/tags & 'ollama list')"]
+    
+    ScanInventory --> AnyInstalled{"Models exist on machine?"}
+    
+    AnyInstalled -- Yes --> ScoreInstalled["Score Local Models:<br/>• Nanbeige: 92 pts<br/>• DeepSeek Coder: 90 pts<br/>• Qwen 2.5 Coder: 88 pts<br/>• Command R: 86 pts<br/>• Codestral: 84 pts<br/>• GLM-4: 82 pts<br/>• Gemma 2: 76 pts<br/>• LLaMA 3.x: 74 pts"]
+    
+    ScoreInstalled --> ZeroDownload["🏆 Zero-Download Fast Path<br/>Adopt highest-capability local model<br/>(0s delay, 0 GB downloaded)"]
+    
+    AnyInstalled -- No --> CheckTier{"Evaluate PC Build"}
+    CheckTier -- Workstation (>=16GB VRAM) --> PullWorkstation["Pull qwen2.5-coder:14b / nanbeige"]
+    CheckTier -- Mid-Tier (8-12GB VRAM) --> PullMid["Pull qwen2.5-coder:7b"]
+    CheckTier -- Entry / CPU (<16GB RAM) --> PullEntry["Pull llama3.2:3b"]
+    
+    PullWorkstation --> Bind["Bind to LocalOpenAIConnectionStrategy"]
+    PullMid --> Bind
+    PullEntry --> Bind
+    ZeroDownload --> Bind
+    Bind --> Ready(["Launch Interactive Agent"])
 
-- 📖 **Architecture Specification**: [**docs/ARCHITECTURE.md**](docs/ARCHITECTURE.md) (Component boundaries, cloud decoupling, hardware VRAM/RAM offload).
-- 📊 **Master Flow Guide**: [**docs/FLOWS.md**](docs/FLOWS.md) (Step-by-step Mermaid sequence diagrams and lifecycles).
+    classDef proc fill:#1e293b,stroke:#38bdf8,stroke-width:1px,color:#e0f2fe;
+    classDef branch fill:#312e81,stroke:#818cf8,stroke-width:1px,color:#e0e7ff;
+    classDef fast fill:#064e3b,stroke:#34d399,stroke-width:1px,color:#d1fae5;
+    classDef start fill:#111827,stroke:#9ca3af,stroke-width:1px,color:#f3f4f6;
 
-#### 🌐 Standalone Interactive HTML Visualizations (Powered by Archify):
-Open these self-contained artifacts directly in any web browser to explore pan/zoom, theme switching, and live signal tracing:
-- 🏛️ [**System Topology & Architecture (HTML)**](docs/diagrams/system-topology.html)
-- 🚀 [**1-Command Bootstrap Lifecycle (HTML)**](docs/diagrams/bootstrap-workflow.html)
-- ⚡ [**Autonomous Tool Execution Sequence (HTML)**](docs/diagrams/agent-tool-execution.html)
-- 🧠 [**Model Pre-Check & Capability Pipeline (HTML)**](docs/diagrams/model-pipeline-workflow.html)
+    class Start,Ready start;
+    class DetectHW,ScanInventory,ScoreInstalled,PullWorkstation,PullMid,PullEntry,Bind proc;
+    class AnyInstalled,CheckTier branch;
+    class ZeroDownload fast;
+```
+
+---
+
+### 4. Interactive Visualizations & Archify Integration
+
+This repository is integrated with [**Archify** (`tt-a1i/archify`)](https://github.com/tt-a1i/archify). Archify compiles structured JSON intermediate representations (IR) into standalone, interactive HTML files featuring dark/light themes, smooth pan/zoom, and live trace motion:
+
+| Diagram | Type | Scope | Standalone Interactive Link |
+|---|---|---|---|
+| **System Topology & Architecture** | `architecture` | Host boundary, Antigravity SDK decoupling, GPU VRAM vs. RAM offload | [**system-topology.html**](docs/diagrams/system-topology.html) |
+| **1-Command Bootstrap Lifecycle** | `workflow` | Automated hardware audit, venv provisioning, Ollama auto-spawn, REPL | [**bootstrap-workflow.html**](docs/diagrams/bootstrap-workflow.html) |
+| **Autonomous Tool Calling Sequence** | `sequence` | Multi-turn loop: Developer $\to$ Agent $\to$ Router $\to$ Ollama $\to$ Policy $\to$ Workspace Disk | [**agent-tool-execution.html**](docs/diagrams/agent-tool-execution.html) |
+| **Model Pre-Check & Capability Pipeline** | `workflow` | Zero-download inventory pre-flight (`/api/tags`) and scoring hierarchy | [**model-pipeline-workflow.html**](docs/diagrams/model-pipeline-workflow.html) |
+
+#### Using Archify in This Repository:
+Archify is installed both as a project skill in [`.agents/skills/archify`](.agents/skills/archify) and as a global CLI tool:
+```bash
+# Verify Archify installation & health
+archify doctor
+
+# Render or validate any architecture diagram
+archify render architecture docs/diagrams/system-topology.architecture.json docs/diagrams/system-topology.html
+archify validate workflow docs/diagrams/bootstrap-workflow.workflow.json
+```
 
 ---
 
