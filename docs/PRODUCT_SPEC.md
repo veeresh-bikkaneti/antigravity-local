@@ -80,3 +80,4 @@ Google Antigravity Local is a 100% private, air-gapped, zero-cloud-cost develope
 - **Docker Clean-Room Verified**: Passed all 7 gates in `python:3.11-slim` container.
 - **Adversarial Resilience**: 0 verified vulnerabilities under malformed FTS5 injection, vector dimension mismatches, and 50k-character query overloads.
 - **Performance Benchmark**: Empirical speedup of **231.8x** and token reduction of **1,713x** vs naive full-repo ingestion.
+

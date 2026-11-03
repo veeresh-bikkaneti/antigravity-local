@@ -38,16 +38,20 @@ chmod +x run.sh && ./run.sh
 
 ## 📋 Table of Contents
 1. [⚡ 1-Command Plug & Play](#-1-command-plug--play-zero-friction-setup)
-2. [🏛️ System Architecture & Specifications (Docs & Archify)](docs/ARCHITECTURE.md)
-3. [📊 System Execution Flows & Lifecycles](docs/FLOWS.md)
-4. [📖 From Zero to Start Coding (Master Guide)](ZERO_TO_CODING.md)
-5. [💻 Developer Coding Agent (code_agent.py)](#mode-3-developer-pair-programming-shell-code_agentpy)
-6. [What is This?](#-what-is-this)
-7. [Prerequisites Checklist](#-prerequisites-checklist)
-8. [Step-by-Step Manual Setup](#-step-by-step-manual-setup)
-9. [Project Structure](#-project-structure)
-10. [🏛️ System Architecture & Design Diagrams](#-system-architecture--design-diagrams)
-11. [Common Gotchas & Troubleshooting](#-common-gotchas--troubleshooting)
+2. [🐳 1-Command Docker Clean-Room Test Drive](#-1-command-docker-clean-room-test-drive)
+3. [📜 Product Specification & Consensus Manifest](#-product-specification--consensus-manifest)
+4. [🛠️ GStack Review Pipeline & Autonomous Governance](#-gstack-review-pipeline--autonomous-governance)
+5. [🏛️ System Architecture & Specifications (Docs & Archify)](docs/ARCHITECTURE.md)
+6. [📊 System Execution Flows & Lifecycles](docs/FLOWS.md)
+7. [🧠 3-Tier Zero-Token Memory Fabric](#-3-tier-zero-token-memory-fabric-graphify--llmwiki--sqlite-hybrid)
+8. [📖 From Zero to Start Coding (Master Guide)](ZERO_TO_CODING.md)
+9. [💻 Developer Coding Agent (code_agent.py)](#mode-3-developer-pair-programming-shell-code_agentpy)
+10. [What is This?](#-what-is-this)
+11. [Prerequisites Checklist](#-prerequisites-checklist)
+12. [Step-by-Step Manual Setup](#-step-by-step-manual-setup)
+13. [Project Structure](#-project-structure)
+14. [🏛️ System Architecture & Design Diagrams](#-system-architecture--design-diagrams)
+15. [Common Gotchas & Troubleshooting](#-common-gotchas--troubleshooting)
 12. [Advanced: Using Custom Research Harnesses & Servers](#-advanced-using-custom-research-harnesses--servers)
 13. [License & Contributing](#-license--contributing)
 
@@ -524,6 +528,49 @@ Inside the interactive shell:
 - `/memory <query>` : Searches project memory with BM25 + Vector fusion and displays matching lines.
 - `/wiki [topic]`   : Displays canonical domain truth pages directly from `.wiki/`.
 - `/files`          : Lists all files currently in the workspace.
+
+---
+
+## 🐳 1-Command Docker Clean-Room Test Drive
+
+Want to verify the entire system in a clean, disposable Linux container without touching host Python environments? We provide an automated test drive harness [`docker-test-drive.sh`](docker-test-drive.sh) that runs in standard Docker Desktop:
+
+```bash
+docker run --rm --add-host=host.docker.internal:host-gateway \
+  -v "%cd%:/app" -w /app python:3.11-slim bash docker-test-drive.sh
+```
+
+*(On macOS/Linux, replace `%cd%` with `$(pwd)`)*
+
+### What the Docker Test Drive Verifies Automatically:
+1. 📦 **Clean-Room Dependency Isolation**: Installs `google-antigravity` and `python-dotenv` from scratch in `python:3.11-slim`.
+2. 🧠 **Memory Engine Initialization**: Validates the SQLite FTS5 database engine and indexes repository knowledge.
+3. 🔍 **Hybrid Retrieval**: Runs BM25 + dense semantic vector fusion queries with Reciprocal Rank Fusion (RRF).
+4. 📖 **Canonical LLMWiki Loading**: Verifies atomic topic retrieval from `.wiki/` with zero token waste.
+5. 💻 **CLI Parsing & Safety Flags**: Checks `code_agent.py` CLI arguments and `--with-memory` context clamp.
+6. 🌉 **Host Inference Bridge**: Tests the container-to-host network bridge (`host.docker.internal:11434`), auto-detecting host Ollama models (`qwen2.5:14b`, `gemma2:27b`).
+
+---
+
+## 📜 Product Specification & Consensus Manifest
+
+This project's architecture and governance are formally specified and approved:
+
+- 📑 **[Refined Product Specification (docs/PRODUCT_SPEC.md)](docs/PRODUCT_SPEC.md)**: Comprehensive specification covering the Decoupled Runtime Engine, Hardware-Aware Model Scheduler, 3-Tier Zero-Token Memory Fabric, Autonomous Tool Calling Boundary, and Developer Shell UX.
+- 🏛️ **[Council Consensus Manifest (docs/CONSENSUS_MANIFEST.md)](docs/CONSENSUS_MANIFEST.md)**: Formal voting and deliberation record signed by the Council of Experts (Architect, QA Lead, Systems Engineer, UX Designer, Security Officer) following P-Stack swarm governance and Advisor approval.
+- 📐 **[3-Tier Memory Fabric Specification (docs/MEMORY_SPEC.md)](docs/MEMORY_SPEC.md)**: Detailed comparative analysis of RAG vs. OKF vs. Standalone Vector DBs vs. LLMWiki, detailing mathematical RRF rank fusion and SQLite schema design.
+
+---
+
+## 🛠️ GStack Review Pipeline & Autonomous Governance
+
+The repository integrates Garry Tan's [`gstack`](https://github.com/garrytan/gstack) toolchain (`.agents/skills/gstack/`) to automate rigorous product and engineering reviews:
+
+| GStack Review Mode | Focus & Methodology | Impact |
+| :--- | :--- | :--- |
+| **`/plan-eng-review`** | Blast radius analysis, Larson state diagnosis, McKinley boring technology principle, and error budgets. | Prevents architectural drift; ensures 1-command zero-external-daemon simplicity. |
+| **`plan-design-review`** | Developer journey, cognitive load reduction, sub-10ms feedback loops, and progressive disclosure. | Enforces instant streaming responses and intuitive slash commands (`/memory`, `/wiki`, `/files`). |
+| **`design-consultation`** | Visual hierarchy, Unicode box drawing, dark-mode terminal palettes, and interactive Archify diagrams. | Delivers clean, legible CLI output and responsive standalone HTML architecture visualizers. |
 
 ---
 

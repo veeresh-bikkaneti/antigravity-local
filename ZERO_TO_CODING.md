@@ -18,6 +18,8 @@
 7. [The Developer SDK Handbook (Writing Your Own Agents in Python)](#7-the-developer-sdk-handbook-writing-your-own-agents-in-python)
 8. [Advanced Backend Integration (LM Studio, vLLM & Google Research Harness)](#8-advanced-backend-integration-lm-studio-vllm--google-research-harness)
 9. [Troubleshooting & Pro-Tips](#9-troubleshooting--pro-tips)
+10. [Docker Clean-Room Test Drive](#10-docker-clean-room-test-drive)
+11. [Product Specification & Consensus Governance](#11-product-specification--consensus-governance)
 
 ---
 
@@ -337,6 +339,35 @@ import sys
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 ```
+
+---
+
+## 10. Docker Clean-Room Test Drive
+
+If you want to run the entire Antigravity Local stack inside a pristine, disposable container without modifying your local host's Python environments, run our 1-command Docker test drive harness:
+
+```bash
+docker run --rm --add-host=host.docker.internal:host-gateway \
+  -v "%cd%:/app" -w /app python:3.11-slim bash docker-test-drive.sh
+```
+
+*(On Linux / macOS: use `-v "$(pwd):/app"`)*
+
+This automated harness validates:
+1. Pure pip dependency installation in an unpolluted Linux environment.
+2. SQLite FTS5 database initialization and BM25 index generation.
+3. Hybrid semantic vector search and Reciprocal Rank Fusion retrieval.
+4. Canonical topic loading from `.wiki/` with zero token waste.
+5. Container-to-host bridge connection (`host.docker.internal:11434`) communicating with your local Ollama instance.
+
+---
+
+## 11. Product Specification & Consensus Governance
+
+For comprehensive architectural specifications and formal engineering governance records:
+- **[Refined Product Specification](docs/PRODUCT_SPEC.md)**: Exhaustive breakdown of the runtime engine, zero-download model scheduler, 3-tier zero-token memory fabric, and security policies.
+- **[Council Consensus Manifest](docs/CONSENSUS_MANIFEST.md)**: Voting and deliberation record signed by the Council of Experts (Architect, QA Lead, Systems Engineer, UX Designer, Security Officer) and approved by the Advisor.
+- **[3-Tier Memory Fabric Specification](docs/MEMORY_SPEC.md)**: RAG vs. OKF vs. Vector DBs comparison and Reciprocal Rank Fusion mathematical formulation.
 
 ---
 

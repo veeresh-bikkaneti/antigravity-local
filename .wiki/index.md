@@ -14,6 +14,7 @@
 | [`model-hierarchy.md`](file:///c:/Users/veere/source/repos/local%20antigravity/.wiki/model-hierarchy.md) | Nanbeige, Qwen 2.5, DeepSeek scoring hierarchy, zero-download pre-flight logic. | ~1,100 tokens |
 | [`tool-execution.md`](file:///c:/Users/veere/source/repos/local%20antigravity/.wiki/tool-execution.md) | Antigravity tool calling schema (`create_file`), safety policies, workspace boundaries. | ~800 tokens |
 | [`token-optimization.md`](file:///c:/Users/veere/source/repos/local%20antigravity/.wiki/token-optimization.md) | 3-Tier Memory Fabric, Graphify AST benchmarks (31x–128x), RRF retrieval formula. | ~950 tokens |
+| [`consensus-governance.md`](file:///c:/Users/veere/source/repos/local%20antigravity/.wiki/consensus-governance.md) | Frozen Core invariants, Council deliberation pass rule, Advisor loop. | ~750 tokens |
 
 ---
 

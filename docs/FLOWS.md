@@ -192,12 +192,46 @@ stateDiagram-v2
 
 ---
 
+## Flow 4: Hive Mind Consensus & Clean-Room Verification Lifecycle
+
+This lifecycle defines the formal review, adversarial testing, and council consensus process required before merging changes into `main`.
+
+```mermaid
+flowchart TD
+    UserReq["User Requirement / Feature Spec"] --> Swarm["Phase 1: Hive Swarming<br/>Concurrent Module Drafting (Runtime, Hardware, Memory, Security, UX)"]
+    
+    Swarm --> TripleReview["GStack Triple Review Pipeline<br/>1. /plan-eng-review (Blast Radius, Larson State)<br/>2. plan-design-review (Cognitive Load, States)<br/>3. design-consultation (Tokens, Visual Hierarchy)"]
+    
+    TripleReview --> Council{"Council of Experts Deliberation<br/>Pass Rule: 3/4 Non-Chair Approval + No Veto"}
+    
+    Council -- Impasse / Reject --> Deliberate["Council Deliberation Loop<br/>Draft Revised Verdict"]
+    Deliberate --> TripleReview
+    
+    Council -- Approved --> Advisor{"Advisor Approval Loop"}
+    Advisor -- Feedback / Revision --> Deliberate
+    Advisor -- Approved --> SignManifest["Sign Consensus Manifest<br/>(docs/CONSENSUS_MANIFEST.md)"]
+    
+    SignManifest --> CleanRoom["Phase 2: Clean-Room Verification<br/>Run docker-test-drive.sh (7 Runtime Gates)"]
+    
+    CleanRoom --> Adversarial["Pstack /interrogate Adversarial Gauntlet<br/>FTS5 injection, offline Ollama fallback, buffer stress"]
+    
+    Adversarial --> BranchAudit{"Branch & PR Queue Audit<br/>Check main diff, detect collisions"}
+    
+    BranchAudit -- Clean & Verified --> SealMain["Seal & Push to origin/main"]
+```
+
+---
+
 ## 5. Summary Matrix of Flow Triggers
 
 | Action | Command / Trigger | Primary Module | Visual Architecture Ref |
 |---|---|---|---|
 | **Turnkey Bootstrap** | `run.bat` / `run.sh` / `run.ps1` | `run.py` | [Bootstrap Workflow](diagrams/bootstrap-workflow.html) |
 | **Interactive Coding Shell** | `python code_agent.py` | `code_agent.py` | [Tool Execution Sequence](diagrams/agent-tool-execution.html) |
+| **Memory-Augmented Coding** | `python code_agent.py --with-memory` | `code_agent.py` | [System Topology](diagrams/system-topology.html) |
+| **Hybrid Memory Search** | `python memory.py search "<query>"` | `memory.py` | [System Topology](diagrams/system-topology.html) |
+| **Dual-Sync AST & Memory** | `python memory.py sync` | `memory.py` | [System Topology](diagrams/system-topology.html) |
+| **Clean-Room Docker Test** | `docker run ... bash docker-test-drive.sh` | `docker-test-drive.sh` | [System Topology](diagrams/system-topology.html) |
 | **One-Shot Task Execution** | `python code_agent.py --task "<task>"` | `code_agent.py` | [Tool Execution Sequence](diagrams/agent-tool-execution.html) |
 | **Model Pre-Flight & Pull** | Built into `run.py` | `run.py:get_installed_ollama_models()` | [Model Selection Pipeline](diagrams/model-pipeline-workflow.html) |
 | **Streaming Token Test** | `python test_local.py [model]` | `test_local.py` | [System Topology](diagrams/system-topology.html) |

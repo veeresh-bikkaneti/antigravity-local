@@ -156,3 +156,16 @@ Antigravity Local evaluates open-source models dynamically rather than defaultin
 2. **Context Memory Continuity**:
    - State and architectural decisions persist across model reboots in `CONTEXT_MEMORY.md`.
    - Multi-agent handoffs can resume instantly by parsing the session log.
+
+---
+
+## 6. Architecture Governance, Specifications & Docker Verification
+
+1. **Refined Product Specification**:
+   - See [`docs/PRODUCT_SPEC.md`](PRODUCT_SPEC.md) for complete technical specifications across the Runtime Engine, Hardware Scheduler, 3-Tier Memory Fabric, Harness Safety Policies, and Developer REPL.
+2. **Council Consensus Manifest**:
+   - See [`docs/CONSENSUS_MANIFEST.md`](CONSENSUS_MANIFEST.md) for the formal voting and deliberation record signed by the Council of Experts (Architect, QA Lead, Systems Engineer, UX Designer, Security Officer) following P-Stack swarm governance and Advisor approval.
+3. **3-Tier Zero-Token Memory Fabric**:
+   - See [`docs/MEMORY_SPEC.md`](MEMORY_SPEC.md) for the mathematical formulation of Reciprocal Rank Fusion, SQLite FTS5 schema, and token benchmark reduction analysis.
+4. **Docker Clean-Room Test Drive**:
+   - Run `docker run --rm --add-host=host.docker.internal:host-gateway -v "%cd%:/app" -w /app python:3.11-slim bash docker-test-drive.sh` to verify all 7 runtime gates in a clean-room Linux container.

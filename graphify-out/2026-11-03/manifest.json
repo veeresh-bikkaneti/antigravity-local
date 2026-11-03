@@ -800,7 +800,7 @@
     "semantic_hash": "bd4410a5883666c01dd8edf54931e886"
   },
   "code_agent.py": {
-    "mtime": 1793728202.8391523,
+    "mtime": 1793728521.6306112,
     "ast_hash": "5e4ebed6d748b4bd13ceda1c53b1ee4c",
     "semantic_hash": ""
   },
@@ -855,8 +855,8 @@
     "semantic_hash": "ab5f0490d17f619b05802104413ef5c7"
   },
   "memory.py": {
-    "mtime": 1793727974.3994074,
-    "ast_hash": "a3b24bf5e7ba297b556e81815d340797",
+    "mtime": 1793728425.8221126,
+    "ast_hash": "c9e1bf1d25acb452047a64ee5fd64938",
     "semantic_hash": ""
   },
   ".agents/rules/graphify.md": {
@@ -1075,33 +1075,33 @@
     "semantic_hash": ""
   },
   ".wiki/architecture.md": {
-    "mtime": 1793727991.5959477,
-    "ast_hash": "1d1c8c7f925658265095ff03342b4073",
+    "mtime": 1793728417.1885056,
+    "ast_hash": "018161072d0c4e8e675bf4a7a1373b22",
     "semantic_hash": ""
   },
   ".wiki/hardware-matrix.md": {
-    "mtime": 1793727999.4364154,
-    "ast_hash": "72d95b455b0f18513dcd9fd29377c758",
+    "mtime": 1793728417.2384787,
+    "ast_hash": "147c2508efdc1c5d567e73b43c7222c7",
     "semantic_hash": ""
   },
   ".wiki/index.md": {
-    "mtime": 1793727984.881047,
-    "ast_hash": "971a7bffdf2cf2c735ded45befded2d5",
+    "mtime": 1793728417.2692394,
+    "ast_hash": "d4858febe43523c24a5f3b93f938a26f",
     "semantic_hash": ""
   },
   ".wiki/model-hierarchy.md": {
-    "mtime": 1793728006.3168335,
-    "ast_hash": "1f20a30141d7ccdfb52e29ae22fc9793",
+    "mtime": 1793728417.3418043,
+    "ast_hash": "224b44bb915c7d51cf02498a53091881",
     "semantic_hash": ""
   },
   ".wiki/token-optimization.md": {
-    "mtime": 1793728020.365498,
-    "ast_hash": "b00649baccfedbd477cfcf94f55f07c4",
+    "mtime": 1793728417.3866646,
+    "ast_hash": "c07cbaee2348dd7f07483246448732a6",
     "semantic_hash": ""
   },
   ".wiki/tool-execution.md": {
-    "mtime": 1793728010.4876983,
-    "ast_hash": "5b264bb2c15d0a5d8121a088d850a0bb",
+    "mtime": 1793728417.4414544,
+    "ast_hash": "034f1c16358a83497089d02018f0e4a2",
     "semantic_hash": ""
   },
   "AGENTS.md": {
@@ -1110,8 +1110,8 @@
     "semantic_hash": ""
   },
   "CONTEXT_MEMORY.md": {
-    "mtime": 1793727543.8837206,
-    "ast_hash": "e7ac13cea10d14a12c871029af678541",
+    "mtime": 1793729531.2906828,
+    "ast_hash": "faef077c9864ef87211af56337b6b70c",
     "semantic_hash": ""
   },
   "README.md": {
@@ -1120,7 +1120,7 @@
     "semantic_hash": ""
   },
   "ZERO_TO_CODING.md": {
-    "mtime": 1793728283.6051865,
+    "mtime": 1793728521.5686264,
     "ast_hash": "84054eee3378b90e15679e029c29ba29",
     "semantic_hash": ""
   },
@@ -1135,8 +1135,8 @@
     "semantic_hash": ""
   },
   "docs/MEMORY_SPEC.md": {
-    "mtime": 1793727916.7477925,
-    "ast_hash": "25e9476c207a70f1fa139f9355bef492",
+    "mtime": 1793728425.6706786,
+    "ast_hash": "0d29aebb2c6b00f88ee8e1218b22a52b",
     "semantic_hash": ""
   },
   "docs/diagrams/agent-tool-execution.html": {
@@ -1167,6 +1167,21 @@
   "workspace/index.html": {
     "mtime": 1793726784.2402315,
     "ast_hash": "b38ae789043a2186d5dc2ea2c42e681f",
+    "semantic_hash": ""
+  },
+  "docker-test-drive.sh": {
+    "mtime": 1793729434.3491013,
+    "ast_hash": "ecb1611e6874fcf2d0651ebe4fbaa81a",
+    "semantic_hash": ""
+  },
+  "docs/CONSENSUS_MANIFEST.md": {
+    "mtime": 1793729521.0590253,
+    "ast_hash": "39e0d0977107aff098a13d2eb1d0da04",
+    "semantic_hash": ""
+  },
+  "docs/PRODUCT_SPEC.md": {
+    "mtime": 1793729499.1205971,
+    "ast_hash": "0e43f4c1bb7183b40b6314f7a19c6a3a",
     "semantic_hash": ""
   }
 }
