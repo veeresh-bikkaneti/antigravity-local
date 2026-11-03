@@ -141,6 +141,12 @@
     - Diagram 3: Hardware-Aware Model Selection & Zero-Download Pipeline.
     - Diagram 4: Interactive Archify Visualizations & Global CLI reference.
   - Mirrored `CONTEXT_MEMORY.md` to `C:\Users\veere\antigravity-local\CONTEXT_MEMORY.md`.
+- [x] **Step 21**: Comprehensive Archify Preview & Serving Documentation (Nov 3, 2026):
+  - Explicitly documented all 3 ways to view and serve the interactive Archify diagrams across `README.md`, `docs/ARCHITECTURE.md`, and `docs/FLOWS.md`:
+    - Method 1: Live Interactive Preview (`archify preview <type> <json>`) with live reload and auto-open.
+    - Method 2: Instant zero-server browser open (`Start-Process docs\diagrams\*.html`).
+    - Method 3: Standard local HTTP server (`python -m http.server 8080 --directory docs/diagrams`).
+  - Mirrored `CONTEXT_MEMORY.md` to `C:\Users\veere\antigravity-local\CONTEXT_MEMORY.md`.
 
 ---
 

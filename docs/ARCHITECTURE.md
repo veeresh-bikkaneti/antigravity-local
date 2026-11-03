@@ -4,6 +4,12 @@ This document details the architectural design, component boundaries, hardware a
 
 > **Interactive Visualization**: Open the standalone Archify diagram in your browser:
 > 👉 [**Interactive System Topology Diagram (HTML)**](diagrams/system-topology.html) *(Features dark/light themes, live motion, pan/zoom, and full component inspection)*
+>
+> **Live CLI Preview**:
+> ```bash
+> archify preview architecture docs/diagrams/system-topology.architecture.json
+> ```
+> *(Or open directly in browser: `Start-Process "docs\diagrams\system-topology.html"` on Windows, or `open docs/diagrams/system-topology.html` on macOS)*
 
 ---
 

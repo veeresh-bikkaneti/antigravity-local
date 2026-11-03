@@ -7,6 +7,16 @@ This document provides detailed step-by-step lifecycle specifications and execut
 > - ⚡ [**Autonomous Tool Execution Sequence (HTML)**](diagrams/agent-tool-execution.html)
 > - 🧠 [**Model Pre-Check & Capability Selection Pipeline (HTML)**](diagrams/model-pipeline-workflow.html)
 > - 🏛️ [**Overall System Topology Architecture (HTML)**](diagrams/system-topology.html)
+>
+> **Live CLI Preview**:
+> ```bash
+> # Preview any diagram with live reload in your browser:
+> archify preview workflow docs/diagrams/bootstrap-workflow.workflow.json
+> archify preview sequence docs/diagrams/agent-tool-execution.sequence.json
+> archify preview workflow docs/diagrams/model-pipeline-workflow.workflow.json
+> archify preview architecture docs/diagrams/system-topology.architecture.json
+> ```
+> *(Or open directly in browser: `Start-Process "docs\diagrams\bootstrap-workflow.html"` on Windows)*
 
 ---
 

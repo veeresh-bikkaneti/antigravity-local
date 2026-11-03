@@ -389,15 +389,67 @@ This repository is integrated with [**Archify** (`tt-a1i/archify`)](https://gith
 | **Autonomous Tool Calling Sequence** | `sequence` | Multi-turn loop: Developer $\to$ Agent $\to$ Router $\to$ Ollama $\to$ Policy $\to$ Workspace Disk | [**agent-tool-execution.html**](docs/diagrams/agent-tool-execution.html) |
 | **Model Pre-Check & Capability Pipeline** | `workflow` | Zero-download inventory pre-flight (`/api/tags`) and scoring hierarchy | [**model-pipeline-workflow.html**](docs/diagrams/model-pipeline-workflow.html) |
 
-#### Using Archify in This Repository:
-Archify is installed both as a project skill in [`.agents/skills/archify`](.agents/skills/archify) and as a global CLI tool:
+---
+
+### 🌐 How to View & Serve Interactive Archify Diagrams
+
+You can preview and serve the interactive diagrams in three easy ways:
+
+#### Option 1: Live Interactive Preview via Archify CLI (Recommended)
+Archify is installed globally as a developer CLI. Running `archify preview` launches a local live-reload server and opens your browser immediately:
+
 ```bash
-# Verify Archify installation & health
+# 1. Preview System Topology & Component Architecture:
+archify preview architecture docs/diagrams/system-topology.architecture.json
+
+# 2. Preview 1-Command Plug & Play Bootstrap Lifecycle:
+archify preview workflow docs/diagrams/bootstrap-workflow.workflow.json
+
+# 3. Preview Autonomous Tool-Calling Execution Loop:
+archify preview sequence docs/diagrams/agent-tool-execution.sequence.json
+
+# 4. Preview Model Inventory & Capability Selection Pipeline:
+archify preview workflow docs/diagrams/model-pipeline-workflow.workflow.json
+```
+
+#### Option 2: Instant Browser Open (Zero Server / Zero Dependencies)
+Because Archify compiles into **100% self-contained standalone HTML files** (all CSS, SVG, themes, and motion engine are bundled directly inside the file), you can open any diagram directly in your web browser with no server running:
+
+* **Windows PowerShell**:
+  ```powershell
+  Start-Process "docs\diagrams\system-topology.html"
+  ```
+* **Windows CMD**:
+  ```cmd
+  start docs\diagrams\system-topology.html
+  ```
+* **macOS**:
+  ```bash
+  open docs/diagrams/system-topology.html
+  ```
+* **Linux**:
+  ```bash
+  xdg-open docs/diagrams/system-topology.html
+  ```
+*(Or double-click any `.html` file inside [`docs/diagrams/`](docs/diagrams/) in File Explorer / Finder).*
+
+#### Option 3: Local Python HTTP Web Server
+To serve all diagrams on a local port:
+```bash
+python -m http.server 8080 --directory docs/diagrams
+```
+Navigate to: [http://localhost:8080/system-topology.html](http://localhost:8080/system-topology.html)
+
+#### 🛠️ Archify CLI Quick Reference
+```bash
+# Verify Archify installation & system health:
 archify doctor
 
-# Render or validate any architecture diagram
+# Validate diagram JSON syntax and layout clearance:
+archify validate architecture docs/diagrams/system-topology.architecture.json
+
+# Compile/render JSON into standalone HTML:
 archify render architecture docs/diagrams/system-topology.architecture.json docs/diagrams/system-topology.html
-archify validate workflow docs/diagrams/bootstrap-workflow.workflow.json
 ```
 
 ---
