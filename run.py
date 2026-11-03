@@ -521,8 +521,31 @@ async def run_agent(model, base_url="http://localhost:11434/v1"):
             except Exception as exc:
                 print(f"\n❌ Error during response: {exc}\n")
 
+def check_or_update_memory():
+    """Ensure the 3-Tier Memory Fabric (.memory/index.sqlite) is indexed and up to date."""
+    try:
+        from memory import MemoryDatabase, EmbeddingProvider, MemoryIndexer
+        db = MemoryDatabase()
+        embedder = EmbeddingProvider()
+        indexer = MemoryIndexer(db, embedder)
+        stats = indexer.index_all(force=False)
+        if stats["indexed"] > 0:
+            print(f"[*] Memory Fabric auto-indexed {stats['indexed']} updated files ({stats['chunks']} chunks).")
+    except Exception:
+        pass
+
+
 def main():
     print_header()
+
+    if "--sync-memory" in sys.argv:
+        try:
+            from memory import cmd_sync
+            import types
+            cmd_sync(types.SimpleNamespace())
+        except Exception as e:
+            print(f"Error syncing memory: {e}")
+        return
 
     # Step 1: Self-bootstrap inside venv if running in system Python
     if not is_in_venv():
@@ -537,6 +560,9 @@ def main():
 
     # Step 3: Check local inventory & auto-select most capable model
     model = select_and_pull_model(ollama_host)
+
+    # Step 3.5: Auto-index memory fabric
+    check_or_update_memory()
 
     # Step 4: Run agent via asyncio
     import asyncio

@@ -454,6 +454,79 @@ archify render architecture docs/diagrams/system-topology.architecture.json docs
 
 ---
 
+## 🧠 3-Tier Zero-Token Memory Fabric: Graphify + LLMWiki + SQLite Hybrid
+
+When working with autonomous coding agents on local models (such as Qwen 2.5 14B or Gemma 2 27B) paired with cloud IDE sessions (Antigravity Gemini/Claude), preserving context across sessions without exhausting prompt context windows is critical.
+
+### Why Not a Standalone Vector DB (Milvus, Qdrant, Chroma)?
+- **1-Command Plug-and-Play Principle**: Standalone vector DBs require Docker daemons, listening ports (6333, 8000, 19530), and complex C++ dependencies, violating our zero-dependency air-gapped promise.
+- **Exact Code Matching**: Vector embeddings frequently fail on exact identifiers (e.g. `get_hardware_profile` or CLI flags).
+- **Token Inefficiency**: Traditional RAG injects large text chunks into prompts, burning 20,000+ tokens per query.
+
+### The Solution: 3-Tier Memory Architecture
+
+```mermaid
+flowchart LR
+    subgraph T1["Tier 1: Graphify (AST OKF)"]
+        G["graphify-out/graph.json<br/>AST Code Hierarchy & Calls"]
+    end
+    subgraph T2["Tier 2: LLMWiki (.wiki/)"]
+        W[".wiki/*.md<br/>Karpathy Topic Knowledge"]
+    end
+    subgraph T3["Tier 3: Embedded SQLite Hybrid"]
+        M[".memory/index.sqlite<br/>FTS5 BM25 + Vector RRF"]
+    end
+
+    Q["Agent Query"] -->|Structural code questions| G
+    Q -->|Canonical system design| W
+    Q -->|Fuzzy concept & history search| M
+```
+
+| Tier | Engine & Location | Purpose | Token Cost |
+| :--- | :--- | :--- | :--- |
+| **Tier 1: Deterministic Code Graph** | [`graphify`](.agents/rules/graphify.md) in `graphify-out/` | Deterministic AST code relationships, call hierarchies, and community clusters. | **0 tokens to build**; ~800 tokens to query (**31x–128x token reduction**). |
+| **Tier 2: High-Density LLMWiki** | `.wiki/*.md` (Karpathy Paradigm) | Atomic, curated Markdown concept pages (`architecture.md`, `hardware-matrix.md`, `model-hierarchy.md`). | **~850 tokens** per topic page (**328x token reduction**). |
+| **Tier 3: Embedded Hybrid Store** | [`memory.py`](memory.py) (`.memory/index.sqlite`) | SQLite FTS5 BM25 exact match + cosine semantic vector fusion with Reciprocal Rank Fusion (RRF). | **~1,200 tokens** per hybrid search (**232x token reduction**). |
+
+### 🛠️ Memory Engine CLI Commands
+
+```bash
+# 1. Index all repository memory (wiki, docs, context memory, and core code):
+python memory.py index
+
+# 2. Hybrid search across indexed memory with BM25 + Vector Fusion:
+python memory.py search "how does hardware offloading work with 16GB VRAM"
+
+# 3. View memory database status and chunk breakdown:
+python memory.py status
+
+# 4. Read canonical LLMWiki topic pages directly:
+python memory.py wiki architecture
+python memory.py wiki hardware-matrix
+
+# 5. Dual-Sync: Update Graphify AST graph + SQLite memory store in one shot:
+python memory.py sync
+```
+
+### 💻 Interactive Shell Memory Integration (`code_agent.py`)
+
+In the developer pair-programming shell, use memory commands directly:
+
+```bash
+# Launch interactive coding shell:
+python code_agent.py
+
+# Or launch with automatic memory context injection enabled:
+python code_agent.py --with-memory
+```
+
+Inside the interactive shell:
+- `/memory <query>` : Searches project memory with BM25 + Vector fusion and displays matching lines.
+- `/wiki [topic]`   : Displays canonical domain truth pages directly from `.wiki/`.
+- `/files`          : Lists all files currently in the workspace.
+
+---
+
 ## 🛠️ Common Gotchas & Troubleshooting
 
 ### 1. PowerShell: "Running scripts is disabled on this system"

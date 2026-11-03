@@ -157,9 +157,17 @@ CodeAgent [Local LLM] > Created `test_database.py` with in-memory SQLite fixture
 ```
 
 ### Built-in Shell Commands:
-- `/files` : Lists all files currently created in your workspace directory.
-- `/help`  : Displays tips and syntax guides.
-- `exit` or `quit` : Closes the coding session.
+- `/memory <query>` : Searches project memory using SQLite FTS5 BM25 + dense semantic vector fusion with Reciprocal Rank Fusion.
+- `/wiki [topic]`   : Instantly loads canonical domain knowledge pages from `.wiki/` with zero token waste.
+- `/files`          : Lists all files currently created in your workspace directory.
+- `/help`           : Displays tips and syntax guides.
+- `exit` or `quit`  : Closes the coding session.
+
+### Automatic Memory Augmentation:
+Launch with `--with-memory` to automatically prepend the top 2-3 most relevant project memory chunks directly into the model's context for each coding task without blowing up token windows:
+```powershell
+python code_agent.py --workspace ./workspace --with-memory
+```
 
 ---
 

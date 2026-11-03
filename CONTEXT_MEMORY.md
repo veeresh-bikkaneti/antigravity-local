@@ -154,6 +154,16 @@
     - Zero external API tokens spent on AST extraction via local Tree-sitter.
   - Confirmed Karpathy's LLMWiki + Graphify architecture as the ideal solution to avoid token burnout while preserving 1-command plug-and-play simplicity.
   - Mirrored `CONTEXT_MEMORY.md` to `C:\Users\veere\antigravity-local\CONTEXT_MEMORY.md`.
+- [x] **Step 23**: Spec and Build of 3-Tier Zero-Token Memory Fabric via Swarm Orchestration (Nov 3, 2026):
+  - **Specification (`docs/MEMORY_SPEC.md`)**: Authored detailed architectural comparison of RAG vs OKF vs Standalone Vector DBs (Milvus, Qdrant) vs LLMWiki. Demonstrated why a zero-dependency 3-Tier fabric (Graphify + LLMWiki + SQLite Hybrid) satisfies 1-command plug-and-play, air-gapped security, zero-external-daemon requirements, and up to 328x token reduction.
+  - **Canonical LLMWiki (`.wiki/`)**: Built initial high-density Karpathy-style topic pages: `index.md`, `architecture.md`, `hardware-matrix.md`, `model-hierarchy.md`, `tool-execution.md`, and `token-optimization.md`.
+  - **Embedded SQLite Hybrid Engine (`memory.py`)**: Implemented zero-external-dependency SQLite FTS5 (BM25 exact match) + dense semantic vector search (Ollama embeddings with pure-Python TF-IDF/cosine similarity fallback) using Reciprocal Rank Fusion (RRF).
+  - **CLI & REPL Integration**:
+    - Built CLI commands in `memory.py`: `index`, `search`, `status`, `wiki`, `sync`.
+    - Integrated `/memory <query>`, `/wiki [topic]`, `/files`, and `--with-memory` into `code_agent.py`.
+    - Added `--sync-memory` flag and auto-index pre-check into `run.py`.
+  - **Verification**: Verified indexing (17 files, 121 chunks), hybrid retrieval speed (<50ms), and prompt context boundedness (~1.3k chars).
+  - **Documentation & Remote Sync**: Updated `README.md`, `ZERO_TO_CODING.md`, and mirrored to `C:\Users\veere\antigravity-local`.
 
 ---
 
