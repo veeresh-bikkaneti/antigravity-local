@@ -1,11 +1,11 @@
 # Graph Report - local antigravity  (2026-11-03)
 
 ## Corpus Check
-- 211 files · ~1,673,091 words
+- 211 files · ~1,673,646 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4625 nodes · 9103 edges · 281 communities (263 shown, 18 thin omitted)
+- 4631 nodes · 9110 edges · 276 communities (261 shown, 15 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 174 edges (avg confidence: 0.66)
 - Token cost: 0 input · 0 output
 
@@ -18,9 +18,9 @@
 - archify.mjs
 - check-update.mjs
 - render-erd.mjs
-- workflow-compiler.mjs
+- geometry.mjs
 - render-class.mjs
-- utils.mjs
+- workflow-compiler.mjs
 - generated-validators.mjs
 - architecture-delta.mjs
 - render-sequence.mjs
@@ -29,9 +29,9 @@
 - atomic-output.mjs
 - render-architecture.mjs
 - YAYTP6L5.js
-- 42UTT654.js
-- render-waterfall.mjs
+- collectArrows
 - render-timeline.mjs
+- render-waterfall.mjs
 - properties
 - UKSIWDDN.js
 - finalize.mjs
@@ -96,7 +96,7 @@
 - properties
 - properties
 - XTDUIGUI.js
-- IZOKQ2GT.js
+- 42UTT654.js
 - properties
 - required
 - properties
@@ -240,7 +240,7 @@
 - Event Timeline Renderer
 - enum
 - viewBox
-- enum
+- layout
 - enum
 - viewBox
 - viewBox
@@ -265,17 +265,17 @@
 - start
 - col
 - LLMWiki: Master Knowledge Index & Registry
-- 9. Troubleshooting & Pro-Tips
+- common.schema.json
 - 3. Zero Setup (3-Minute Quickstart)
 - 4. Start Coding: Interactive Pair-Programmer Shell
 - AGENTS.md - Workspace Instructions & Rules
 - labelSegment
 - pad
 - row
-- label
+- enum
 - from
 - title
-- rules/graphify.md
+- col
 - brand-marks/README.md
 - pele/README.md
 - update-awareness.md
@@ -285,16 +285,11 @@
 - yOffset
 - workflows/graphify.md
 - MemoryDatabase
-- meta
-- row
-- locale
+- 6. 3 End-to-End Real World Coding Recipes
+- col
 - enum
-- label
-- labelSegment
 - width
 - height
-- pos
-- toSide
 
 ## God Nodes (most connected - your core abstractions)
 1. `compileWorkflowInternal()` - 81 edges
@@ -323,7 +318,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (281 total, 18 thin omitted)
+## Communities (276 total, 15 thin omitted)
 
 ### Community 0 - "archify.mjs"
 Cohesion: 0.06
@@ -331,23 +326,23 @@ Nodes (121): acquireDeliveryLock(), artifactCheckMaxBuffer(), artifactIdentity()
 
 ### Community 1 - "check-update.mjs"
 Cohesion: 0.05
-Nodes (111): acquireOperation(), assertBoundedRegularFile(), assertCacheTargetAbsent(), assertRenameableCacheEntry(), assertSafeCacheEntry(), assertSafeDirectory(), assertSafeRegularFile(), cacheMkdir() (+103 more)
+Nodes (112): acquireOperation(), assertBoundedRegularFile(), assertCacheTargetAbsent(), assertRenameableCacheEntry(), assertSafeCacheEntry(), assertSafeDirectory(), assertSafeRegularFile(), cacheMkdir() (+104 more)
 
 ### Community 2 - "render-erd.mjs"
 Cohesion: 0.04
-Nodes (85): bandedLayout(), DEFAULT_ER_GRID, entityHeight(), erGridLayout(), gridColumn(), resolvedEntityWidth(), resolveEntityPos(), validateErGridPlacement() (+77 more)
+Nodes (80): bandedLayout(), DEFAULT_ER_GRID, entityHeight(), erGridLayout(), gridColumn(), resolvedEntityWidth(), resolveEntityPos(), validateErGridPlacement() (+72 more)
 
-### Community 3 - "workflow-compiler.mjs"
-Cohesion: 0.05
-Nodes (133): validateArchitecture(), busRouteConflict(), nodeTextFit, crossingCount(), distance(), length(), masks(), pinned() (+125 more)
+### Community 3 - "geometry.mjs"
+Cohesion: 0.07
+Nodes (76): busRouteConflict(), nodeTextFit, crossingCount(), distance(), length(), masks(), pinned(), related() (+68 more)
 
 ### Community 4 - "render-class.mjs"
 Cohesion: 0.05
-Nodes (73): createRouter(), attributeText(), autoViewBox(), bands, busGroups, busPaths, cliArgs, compartments() (+65 more)
+Nodes (68): createRouter(), attributeText(), autoViewBox(), bands, busGroups, busPaths, cliArgs, compartments() (+60 more)
 
-### Community 5 - "utils.mjs"
-Cohesion: 0.23
-Nodes (10): nodeTextFit, SEMANTIC_SIGIL_FOOTPRINT, SEMANTIC_SIGIL_INSET, SEMANTIC_SIGIL_SIZE, serializeScriptJson(), SIGIL_SHAPE, SIGIL_TONE, SOURCE_BADGE_FOOTPRINT (+2 more)
+### Community 5 - "workflow-compiler.mjs"
+Cohesion: 0.07
+Nodes (61): validateCrossCollectionContracts(), minimumReadableSourceTextPx(), predictedFixedWidthOverflow(), withDiagnosticRecordingSuppressed(), edgeLabelAccent(), labelPoint(), legacyDefaultFromSide(), legacyDefaultToSide() (+53 more)
 
 ### Community 6 - "generated-validators.mjs"
 Cohesion: 0.03
@@ -359,43 +354,43 @@ Nodes (66): addNodeMarker(), addState(), annotateArchitectureSideSvg(), architec
 
 ### Community 8 - "render-sequence.mjs"
 Cohesion: 0.07
-Nodes (71): FLOW_LABEL_HEIGHT, flowLabelSize(), wrapBlockedFlowLabels(), preferredWidth(), validateStructure(), arrowClass, automaticCanvasWidth(), automaticHeight (+63 more)
+Nodes (87): slideTitleOffRoutes(), validateArchitecture(), rowTextWidths(), validateEr(), preferredWidth(), validateStructure(), arrowClass, automaticCanvasWidth() (+79 more)
 
 ### Community 9 - "visual-check.mjs"
 Cohesion: 0.08
 Nodes (53): appendEvidenceCleanupWarning(), appendEvidencePublicationFailure(), baseReceipt(), beginVisualEvidenceWrite(), CAPTURE_VIEWPORTS, CHROME_NO_SANDBOX_ENV, CHROME_STARTUP_TIMEOUT_MS, contactSheetHtml() (+45 more)
 
 ### Community 10 - "render-lifecycle.mjs"
-Cohesion: 0.05
-Nodes (64): assignArcLevels(), assignTracks(), bracketOf, brackets, bracketTargets, canvasWidth, countCrossings(), depth (+56 more)
+Cohesion: 0.04
+Nodes (70): assignArcLevels(), assignTracks(), bracketOf, brackets, bracketTargets, canvasWidth, countCrossings(), depth (+62 more)
 
 ### Community 11 - "atomic-output.mjs"
 Cohesion: 0.12
 Nodes (54): captureOwnedDeliverySidecars(), args, backupOwnedPublishedEntry(), cleanupStagedEvidence(), commitVisualEvidence(), identityMatches(), readRegularFileContents(), restoreOwnedBackup() (+46 more)
 
 ### Community 12 - "render-architecture.mjs"
-Cohesion: 0.05
-Nodes (60): DEFAULT_GRID, gridLayout(), resolveComponentPos(), validateGridPlacement(), architectureLegendEntries, autoViewBoxFor(), boundaryLabelWidth(), boundaryRect() (+52 more)
+Cohesion: 0.06
+Nodes (50): DEFAULT_GRID, gridLayout(), resolveComponentPos(), validateGridPlacement(), architectureLegendEntries, autoViewBoxFor(), boundaryLabelWidth(), boundaryRect() (+42 more)
 
 ### Community 13 - "YAYTP6L5.js"
 Cohesion: 0.16
 Nodes (31): E(), h(), L(), Z(), ae(), be(), Ct(), de() (+23 more)
 
-### Community 14 - "42UTT654.js"
-Cohesion: 0.19
-Nodes (21): addClass(), addPoint(), ct(), parse(), qt(), setAccDescription(), setAccTitle(), setDiagramTitle() (+13 more)
+### Community 14 - "collectArrows"
+Cohesion: 0.32
+Nodes (8): collectArrows(), collectCompositionFrames(), continuousRoutePoints(), decodeNumericReferences(), inspectedPath(), isPoint(), lineSegments(), parseRoutePoints()
 
-### Community 15 - "render-waterfall.mjs"
+### Community 15 - "render-timeline.mjs"
 Cohesion: 0.03
-Nodes (106): componentContext(), renderComponent(), renderType(), entityHeader(), renderEntity(), fonts(), renderState(), renderParticipant() (+98 more)
+Nodes (123): componentContext(), renderBoundaryFrame(), renderBoundaryLabel(), renderComponent(), renderConnectionLabel(), renderSvg(), renderRelationshipLabel(), renderRelationshipPath() (+115 more)
 
-### Community 16 - "render-timeline.mjs"
-Cohesion: 0.06
-Nodes (49): autoViewBox(), legendFootprint(), measuredEntryWidth(), measureLegend(), renderedLegendFontSize(), renderLegend(), breaks, buildLayoutReport() (+41 more)
+### Community 16 - "render-waterfall.mjs"
+Cohesion: 0.04
+Nodes (47): autoViewBox(), legendFootprint(), measuredEntryWidth(), measureLegend(), renderedLegendFontSize(), renderLegend(), axisLabels, byId (+39 more)
 
 ### Community 17 - "properties"
-Cohesion: 0.04
-Nodes (47): $ref, minimum, type, $ref, $ref, $ref, $ref, properties (+39 more)
+Cohesion: 0.05
+Nodes (44): $ref, $ref, $ref, $ref, $ref, properties, auto, orthogonal-h (+36 more)
 
 ### Community 18 - "UKSIWDDN.js"
 Cohesion: 0.11
@@ -419,11 +414,11 @@ Nodes (43): $ref, type, type, $ref, $ref, $ref, properties, minLength (+35 more)
 
 ### Community 23 - "brand-marks.mjs"
 Cohesion: 0.10
-Nodes (37): asUrl(), BASIC_HTML_REFERENCES, beforeDeadline(), captureBrandReference(), captureRemoteBrand(), captureTimeoutMilliseconds(), checkedFetch(), COLLECTIONS (+29 more)
+Nodes (36): asUrl(), BASIC_HTML_REFERENCES, beforeDeadline(), captureBrandReference(), captureRemoteBrand(), captureTimeoutMilliseconds(), checkedFetch(), COLLECTIONS (+28 more)
 
 ### Community 24 - "path-semantics.mjs"
-Cohesion: 0.15
-Nodes (38): visualEvidenceOwnershipMatches(), absolutePath(), compareFutureLocations(), compareKnownEntries(), compareUnmaterializedNames(), containedBy(), futureWindowsNameRisk(), hasStableIdentity() (+30 more)
+Cohesion: 0.16
+Nodes (37): visualEvidenceOwnershipMatches(), absolutePath(), compareFutureLocations(), compareKnownEntries(), compareUnmaterializedNames(), containedBy(), futureWindowsNameRisk(), hasStableIdentity() (+29 more)
 
 ### Community 25 - "memory.py"
 Cohesion: 0.21
@@ -447,7 +442,7 @@ Nodes (31): f(), l(), t(), u(), st(), addPlot(), Je(), K() (+23 more)
 
 ### Community 30 - "properties"
 Cohesion: 0.05
-Nodes (41): maximum, minimum, type, $ref, type, $ref, $ref, type (+33 more)
+Nodes (40): $ref, type, $ref, $ref, type, properties, minLength, type (+32 more)
 
 ### Community 31 - "properties"
 Cohesion: 0.12
@@ -470,8 +465,8 @@ Cohesion: 0.08
 Nodes (25): minimum, type, items, minItems, type, $ref, properties, $ref (+17 more)
 
 ### Community 36 - "properties"
-Cohesion: 0.10
-Nodes (20): $ref, $ref, $ref, properties, $ref, type, type, from (+12 more)
+Cohesion: 0.06
+Nodes (34): $ref, $ref, $ref, properties, minLength, type, $ref, type (+26 more)
 
 ### Community 37 - "id"
 Cohesion: 0.08
@@ -495,7 +490,7 @@ Nodes (10): additionalProperties, $id, diagram_type, meta, schema_version, requi
 
 ### Community 42 - "$defs"
 Cohesion: 0.09
-Nodes (22): enum, oneOf, $defs, animation, brandMark, id, point, relationshipWidth (+14 more)
+Nodes (23): oneOf, type, $defs, brandMark, cards, id, locale, nodeIcon (+15 more)
 
 ### Community 43 - "route-quality.mjs"
 Cohesion: 0.13
@@ -510,8 +505,8 @@ Cohesion: 0.06
 Nodes (33): $ref, type, type, $ref, $ref, $ref, properties, type (+25 more)
 
 ### Community 46 - "EEIX5ZYH.js"
-Cohesion: 0.14
-Nodes (23): addStyleData(), addSubsetData(), addTextData(), color(), Ct(), dt(), et(), getCurrentSets() (+15 more)
+Cohesion: 0.15
+Nodes (23): addStyleData(), addSubsetData(), addTextData(), color(), Ct(), dt(), getCurrentSets(), gt() (+15 more)
 
 ### Community 47 - "properties"
 Cohesion: 0.09
@@ -530,8 +525,8 @@ Cohesion: 0.17
 Nodes (12): enum, class, diagramType, architecture, dataflow, erd, lifecycle, sequence (+4 more)
 
 ### Community 51 - "enum"
-Cohesion: 0.10
-Nodes (25): enum, componentType, nodeIcon, active, decision, external, failure, neutral (+17 more)
+Cohesion: 0.08
+Nodes (29): enum, componentType, variant, active, dashed, decision, default, emphasis (+21 more)
 
 ### Community 52 - "properties"
 Cohesion: 0.08
@@ -559,7 +554,7 @@ Nodes (20): applyTheme(), cropDiagramPreviews(), ensureDiagramReadability(), exp
 
 ### Community 58 - "🚀 From Zero to Start Coding with Local Google Antigravity Agent"
 Cohesion: 0.11
-Nodes (18): 1. What Can This Agent Do?, 2. Prerequisites & System Architecture, 5. Start Coding: One-Shot Autonomous Task CLI, 6. 3 End-to-End Real World Coding Recipes, 7. The Developer SDK Handbook (Writing Your Own Agents in Python), 8. Advanced Backend Integration (LM Studio, vLLM & Google Research Harness), 🚀 From Zero to Start Coding with Local Google Antigravity Agent, Hardware Matrix (+10 more)
+Nodes (18): 1. Model Tool Calling Compatibility, 1. What Can This Agent Do?, 2. File Path Formatting, 2. Prerequisites & System Architecture, 3. Windows Terminal Character Encoding, 5. Start Coding: One-Shot Autonomous Task CLI, 7. The Developer SDK Handbook (Writing Your Own Agents in Python), 8. Advanced Backend Integration (LM Studio, vLLM & Google Research Harness) (+10 more)
 
 ### Community 59 - "enum"
 Cohesion: 0.22
@@ -594,12 +589,12 @@ Cohesion: 0.26
 Nodes (17): chartFromData(), fileName(), parseExplainerDiff(), sourceLines(), containsExplainerSecret(), deriveRepository(), digest(), fail() (+9 more)
 
 ### Community 67 - "workflow-v2.mjs"
-Cohesion: 0.12
-Nodes (30): clone(), diagnostic(), expandableViewBox(), legacyLayoutProbe(), legacyRequirementProbe(), migrateWorkflowDocument(), requiredViewBoxFrom(), result() (+22 more)
+Cohesion: 0.22
+Nodes (18): clone(), diagnostic(), expandableViewBox(), legacyLayoutProbe(), legacyRequirementProbe(), migrateWorkflowDocument(), requiredViewBoxFrom(), result() (+10 more)
 
 ### Community 68 - "properties"
-Cohesion: 0.12
-Nodes (17): $ref, const, mode, additionalProperties, required, type, properties, cards (+9 more)
+Cohesion: 0.17
+Nodes (12): $ref, const, properties, cards, diagram_type, relationships, schema_version, types (+4 more)
 
 ### Community 69 - "properties"
 Cohesion: 0.11
@@ -610,8 +605,8 @@ Cohesion: 0.11
 Nodes (24): items, type, items, type, additionalProperties, required, type, id (+16 more)
 
 ### Community 71 - "parseAttrs"
-Cohesion: 0.18
-Nodes (21): collectArchitectureLeadingSpace(), collectArrows(), collectCompositionFrames(), collectLegendBoxes(), collectRelationshipLabelMasks(), collectSequenceColumnSpace(), collectSequenceNoteBorders(), collectUntransformedNodeRects() (+13 more)
+Cohesion: 0.27
+Nodes (14): collectArchitectureLeadingSpace(), collectLegendBoxes(), collectRelationshipLabelMasks(), collectSequenceColumnSpace(), collectSequenceNoteBorders(), collectUntransformedNodeRects(), legendTextWidth(), numberAttr() (+6 more)
 
 ### Community 72 - "repository-evidence.mjs"
 Cohesion: 0.25
@@ -626,8 +621,8 @@ Cohesion: 0.05
 Nodes (43): additionalProperties, type, additionalProperties, type, additionalProperties, type, $defs, callout (+35 more)
 
 ### Community 75 - "properties"
-Cohesion: 0.11
-Nodes (19): minimum, type, minimum, type, maximum, minimum, type, minimum (+11 more)
+Cohesion: 0.08
+Nodes (24): minimum, type, minimum, type, maximum, minimum, type, minimum (+16 more)
 
 ### Community 76 - "explainer.schema.json"
 Cohesion: 0.08
@@ -649,9 +644,9 @@ Nodes (19): type, $ref, properties, change, default, enum, minLength, type (+11 
 Cohesion: 0.16
 Nodes (12): compileExplainerChart(), NATIVE, pieLegend(), o(), r(), x(), ee(), k() (+4 more)
 
-### Community 81 - "IZOKQ2GT.js"
-Cohesion: 0.18
-Nodes (24): B(), Ht(), Kt(), $t(), bt(), b(), ft(), gt() (+16 more)
+### Community 81 - "42UTT654.js"
+Cohesion: 0.10
+Nodes (45): addClass(), addPoint(), B(), ct(), Ht(), Kt(), parse(), qt() (+37 more)
 
 ### Community 82 - "properties"
 Cohesion: 0.12
@@ -678,8 +673,8 @@ Cohesion: 0.17
 Nodes (6): Bundled Viewer catalogs, Architecture layout repair, Choose the repair scope, One coherent repair, Agent decision path, Brand marks
 
 ### Community 88 - "properties"
-Cohesion: 0.12
-Nodes (17): $ref, minItems, type, type, const, mode, additionalProperties, required (+9 more)
+Cohesion: 0.11
+Nodes (18): $ref, minItems, type, type, const, output, title, additionalProperties (+10 more)
 
 ### Community 89 - "properties"
 Cohesion: 0.15
@@ -722,8 +717,8 @@ Cohesion: 0.15
 Nodes (13): $ref, properties, $ref, locale, output, repository, subtitle, translations (+5 more)
 
 ### Community 99 - "desktop-readability.mjs"
-Cohesion: 0.15
-Nodes (14): DECLARED_WIDE_READER_CONTRACT, DECLARED_WIDE_READER_MAX_WIDTH, DECLARED_WIDE_READER_RATIO, DECLARED_WIDE_REFERENCE_BODY_HORIZONTAL_PX, DECLARED_WIDE_REFERENCE_DIAGRAM_HORIZONTAL_PX, declaredWideReadabilityBudget(), describeFixedWidthOverflow(), DESKTOP_FIXED_VERTICAL_CHROME_PX (+6 more)
+Cohesion: 0.13
+Nodes (16): DECLARED_WIDE_READER_CONTRACT, DECLARED_WIDE_READER_MAX_WIDTH, DECLARED_WIDE_READER_RATIO, DECLARED_WIDE_REFERENCE_BODY_HORIZONTAL_PX, DECLARED_WIDE_REFERENCE_DIAGRAM_HORIZONTAL_PX, declaredWideReadabilityBudget(), describeFixedWidthOverflow(), DESKTOP_FIXED_VERTICAL_CHROME_PX (+8 more)
 
 ### Community 100 - "required"
 Cohesion: 0.17
@@ -882,8 +877,8 @@ Cohesion: 0.25
 Nodes (8): enum, amber, cyan, emerald, orange, rose, slate, violet
 
 ### Community 140 - "required"
-Cohesion: 0.10
-Nodes (24): items, type, cards, guidedViews, sourceReferences, items, maxItems, type (+16 more)
+Cohesion: 0.11
+Nodes (22): items, guidedViews, sourceReferences, items, maxItems, type, additionalProperties, items (+14 more)
 
 ### Community 141 - "Delivery contract"
 Cohesion: 0.15
@@ -898,8 +893,8 @@ Cohesion: 0.25
 Nodes (8): additionalProperties, properties, type, layout, width, description, minimum, type
 
 ### Community 144 - "collectNonFiniteAttrs"
-Cohesion: 0.25
-Nodes (8): attrEntries(), collectNonFiniteAttrs(), decodeNumericReferences(), ELEMENT_NUMERIC_ATTRS, HTML_VOID_ELEMENTS, isNumericAttr(), NUMERIC_ATTRS, SVG_HTML_INTEGRATION_POINTS
+Cohesion: 0.29
+Nodes (7): attrEntries(), collectNonFiniteAttrs(), ELEMENT_NUMERIC_ATTRS, HTML_VOID_ELEMENTS, isNumericAttr(), NUMERIC_ATTRS, SVG_HTML_INTEGRATION_POINTS
 
 ### Community 145 - "patch.mjs"
 Cohesion: 0.24
@@ -914,8 +909,8 @@ Cohesion: 0.15
 Nodes (12): 1. Executive Summary & Design Rationale, 2. The 3-Tier Memory Fabric Architecture, 3. Tier Deep-Dive Specifications, 4. SQLite Schema (`.memory/index.sqlite`), 5. CLI & Agent Integration Interface, Agent Integration:, Graphify (AST OKF) + LLMWiki (Karpathy Paradigm) + Embedded Hybrid SQLite Engine, Memory Architecture Specification: 3-Tier Zero-Token Memory Fabric (+4 more)
 
 ### Community 148 - "🚀 Local Google Antigravity Agent (Open-Source Edition)"
-Cohesion: 0.15
-Nodes (13): ⚡ 1-Command Plug & Play (Zero-Friction Setup), 🔬 Advanced: Using Custom Research Harnesses & Servers, 📄 License & Contributing, 🚀 Local Google Antigravity Agent (Open-Source Edition), macOS / Linux:, Pointing to Google's Open-Source Research AI Harness, Pointing to LM Studio, vLLM, or llama.cpp, ⚙️ Prerequisites Checklist (+5 more)
+Cohesion: 0.11
+Nodes (18): ⚡ 1-Command Plug & Play (Zero-Friction Setup), 🧠 3-Tier Zero-Token Memory Fabric: Graphify + LLMWiki + SQLite Hybrid, 🔬 Advanced: Using Custom Research Harnesses & Servers, 💻 Interactive Shell Memory Integration (`code_agent.py`), 📄 License & Contributing, 🚀 Local Google Antigravity Agent (Open-Source Edition), macOS / Linux:, 🛠️ Memory Engine CLI Commands (+10 more)
 
 ### Community 149 - "size"
 Cohesion: 0.33
@@ -1070,8 +1065,8 @@ Cohesion: 0.50
 Nodes (4): $ref, via, items, type
 
 ### Community 187 - "System Execution Flows & Lifecycles"
-Cohesion: 0.18
-Nodes (7): 5. Summary Matrix of Flow Triggers, Flow 1: 1-Command Plug-and-Play Bootstrap Lifecycle, Flow 2: Zero-Redundant Model Inventory Pre-Check Pipeline, Flow 3: Autonomous Tool-Calling Execution Sequence Loop, Flow 4: Interactive Coding Agent Shell Flow (`code_agent.py`), Key Guarantees:, System Execution Flows & Lifecycles
+Cohesion: 0.15
+Nodes (8): graphify, 5. Summary Matrix of Flow Triggers, Flow 1: 1-Command Plug-and-Play Bootstrap Lifecycle, Flow 2: Zero-Redundant Model Inventory Pre-Check Pipeline, Flow 3: Autonomous Tool-Calling Execution Sequence Loop, Flow 4: Interactive Coding Agent Shell Flow (`code_agent.py`), Key Guarantees:, System Execution Flows & Lifecycles
 
 ### Community 188 - "🏛️ System Architecture & Design Diagrams"
 Cohesion: 0.20
@@ -1201,9 +1196,9 @@ Nodes (6): auto, orthogonal-h, orthogonal-v, straight, route, enum
 Cohesion: 0.33
 Nodes (6): viewBox, items, maxItems, minItems, prefixItems, type
 
-### Community 226 - "enum"
-Cohesion: 0.33
-Nodes (6): variant, dashed, default, emphasis, security, enum
+### Community 226 - "layout"
+Cohesion: 0.40
+Nodes (5): mode, additionalProperties, required, type, layout
 
 ### Community 227 - "enum"
 Cohesion: 0.33
@@ -1301,17 +1296,17 @@ Nodes (4): maximum, minimum, type, col
 Cohesion: 0.50
 Nodes (3): How Agents Navigate this Wiki, LLMWiki: Master Knowledge Index & Registry, Topic Registry
 
-### Community 251 - "9. Troubleshooting & Pro-Tips"
+### Community 251 - "common.schema.json"
 Cohesion: 0.50
-Nodes (4): 1. Model Tool Calling Compatibility, 2. File Path Formatting, 3. Windows Terminal Character Encoding, 9. Troubleshooting & Pro-Tips
+Nodes (3): $id, $schema, title
 
 ### Community 252 - "3. Zero Setup (3-Minute Quickstart)"
 Cohesion: 0.50
 Nodes (4): 3. Zero Setup (3-Minute Quickstart), Step 1: Install & Launch Ollama, Step 2: Download the Agent Coding Model, Step 3: Clone & Bootstrap
 
 ### Community 253 - "4. Start Coding: Interactive Pair-Programmer Shell"
-Cohesion: 0.50
-Nodes (4): 4. Start Coding: Interactive Pair-Programmer Shell, Built-in Shell Commands:, Example Interactive Session:, Launch on Any Project Folder:
+Cohesion: 0.40
+Nodes (5): 4. Start Coding: Interactive Pair-Programmer Shell, Automatic Memory Augmentation:, Built-in Shell Commands:, Example Interactive Session:, Launch on Any Project Folder:
 
 ### Community 255 - "labelSegment"
 Cohesion: 0.67
@@ -1325,9 +1320,9 @@ Nodes (3): minimum, type, pad
 Cohesion: 0.67
 Nodes (3): row, minimum, type
 
-### Community 258 - "label"
-Cohesion: 0.67
-Nodes (3): minLength, type, label
+### Community 258 - "enum"
+Cohesion: 0.50
+Nodes (4): enum, animation, none, trace
 
 ### Community 259 - "from"
 Cohesion: 0.67
@@ -1337,33 +1332,25 @@ Nodes (3): $ref, type, from
 Cohesion: 0.67
 Nodes (3): title, minLength, type
 
+### Community 261 - "col"
+Cohesion: 0.50
+Nodes (4): maximum, minimum, type, col
+
 ### Community 270 - "MemoryDatabase"
 Cohesion: 0.43
 Nodes (4): Connection, cmd_status(), MemoryDatabase, Manages SQLite tables and FTS5 virtual indices.
 
-### Community 271 - "meta"
-Cohesion: 0.33
-Nodes (6): output, title, additionalProperties, required, type, meta
-
-### Community 272 - "row"
+### Community 271 - "6. 3 End-to-End Real World Coding Recipes"
 Cohesion: 0.50
-Nodes (4): row, maximum, minimum, type
+Nodes (4): 6. 3 End-to-End Real World Coding Recipes, Recipe 1: Scaffold a Complete FastAPI Backend Microservice, Recipe 2: Write Automated Unit Tests for Existing Code, Recipe 3: Refactor Legacy Code & Modernize Architecture
 
-### Community 273 - "locale"
-Cohesion: 0.50
-Nodes (4): locale, maxLength, pattern, type
+### Community 272 - "col"
+Cohesion: 0.67
+Nodes (3): minimum, type, col
 
 ### Community 274 - "enum"
 Cohesion: 0.50
 Nodes (4): qualityProfile, showcase, standard, enum
-
-### Community 275 - "label"
-Cohesion: 0.67
-Nodes (3): minLength, type, label
-
-### Community 276 - "labelSegment"
-Cohesion: 0.67
-Nodes (3): minimum, type, labelSegment
 
 ### Community 277 - "width"
 Cohesion: 0.67
@@ -1374,9 +1361,9 @@ Cohesion: 0.67
 Nodes (3): minimum, type, height
 
 ## Knowledge Gaps
-- **1860 isolated node(s):** `__dirname`, `skillRoot`, `TYPES`, `DELIVERY_SIDECAR_SUFFIXES`, `COMPARE_SIDECAR_SUFFIXES` (+1855 more)
+- **1865 isolated node(s):** `__dirname`, `skillRoot`, `TYPES`, `DELIVERY_SIDECAR_SUFFIXES`, `COMPARE_SIDECAR_SUFFIXES` (+1860 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **18 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **15 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
@@ -1388,10 +1375,10 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `pageImage()` connect `reader.js` to `image`?**
   _High betweenness centrality (0.044) - this node is a cross-community bridge._
 - **What connects `__dirname`, `skillRoot`, `TYPES` to the rest of the system?**
-  _1860 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _1865 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `archify.mjs` be split into smaller, more focused modules?**
   _Cohesion score 0.057444790678769814 - nodes in this community are weakly interconnected._
 - **Should `check-update.mjs` be split into smaller, more focused modules?**
-  _Cohesion score 0.05427286356821589 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05349248452696728 - nodes in this community are weakly interconnected._
 - **Should `render-erd.mjs` be split into smaller, more focused modules?**
-  _Cohesion score 0.04224664224664225 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.04021887824897401 - nodes in this community are weakly interconnected._

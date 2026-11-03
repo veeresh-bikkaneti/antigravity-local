@@ -78,3 +78,6 @@ workspace/*
 .memory/*.db
 !.memory/.gitkeep
 
+# GStack toolchain junction
+.agents/skills/gstack/
+

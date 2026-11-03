@@ -5697,7 +5697,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "42utt654.js"
     },
@@ -5708,7 +5708,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_ct",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "ct()"
     },
@@ -5719,7 +5719,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_te",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "te()"
     },
@@ -5730,7 +5730,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_vt",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "vt()"
     },
@@ -5741,7 +5741,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_x",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "x()"
     },
@@ -5752,7 +5752,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_setquadrant1text",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "setquadrant1text()"
     },
@@ -5763,7 +5763,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_setquadrant2text",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "setquadrant2text()"
     },
@@ -5774,7 +5774,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_setquadrant3text",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "setquadrant3text()"
     },
@@ -5785,7 +5785,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_setquadrant4text",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "setquadrant4text()"
     },
@@ -5796,7 +5796,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_setxaxislefttext",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "setxaxislefttext()"
     },
@@ -5807,7 +5807,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_setxaxisrighttext",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "setxaxisrighttext()"
     },
@@ -5818,7 +5818,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_setyaxisbottomtext",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "setyaxisbottomtext()"
     },
@@ -5829,7 +5829,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_setyaxistoptext",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "setyaxistoptext()"
     },
@@ -5840,7 +5840,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_addpoint",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "addpoint()"
     },
@@ -5851,7 +5851,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_addclass",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "addclass()"
     },
@@ -5862,7 +5862,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_setdiagramtitle",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "setdiagramtitle()"
     },
@@ -5873,7 +5873,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_setacctitle",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "setacctitle()"
     },
@@ -5884,7 +5884,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_setaccdescription",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "setaccdescription()"
     },
@@ -5896,7 +5896,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_t",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "$t()"
     },
     {
@@ -5906,7 +5906,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_ut",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "ut()"
     },
@@ -5917,7 +5917,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_qt",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "qt()"
     },
@@ -5929,7 +5929,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_b",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "b()"
     },
     {
@@ -5940,7 +5940,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_ht",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "ht()"
     },
     {
@@ -5951,7 +5951,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_kt",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "kt()"
     },
     {
@@ -5961,7 +5961,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_42utt654_parse",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "parse()"
     },
@@ -6324,8 +6324,8 @@
       "source_location": "L2",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_eeix5zyh_et",
-      "community": 46,
-      "community_name": "EEIX5ZYH.js",
+      "community": 81,
+      "community_name": "42UTT654.js",
       "norm_label": "et()"
     },
     {
@@ -6336,7 +6336,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_eeix5zyh_bt",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "bt()"
     },
     {
@@ -6633,7 +6633,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_izokq2gt",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "izokq2gt.js"
     },
     {
@@ -6644,7 +6644,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_izokq2gt_b",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "b()"
     },
     {
@@ -6655,7 +6655,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_izokq2gt_y",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "y()"
     },
     {
@@ -6677,7 +6677,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_izokq2gt_ft",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "ft()"
     },
     {
@@ -6688,7 +6688,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_izokq2gt_t",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "t()"
     },
     {
@@ -6699,7 +6699,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_izokq2gt_q",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "q()"
     },
     {
@@ -6710,7 +6710,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_izokq2gt_m",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "m()"
     },
     {
@@ -6721,7 +6721,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_izokq2gt_n",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "n()"
     },
     {
@@ -6732,7 +6732,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_izokq2gt_gt",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "gt()"
     },
     {
@@ -6743,7 +6743,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_izokq2gt_ht",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "ht()"
     },
     {
@@ -6765,7 +6765,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_izokq2gt_v",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "v()"
     },
     {
@@ -6787,7 +6787,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_izokq2gt_r",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "r()"
     },
     {
@@ -6798,7 +6798,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_izokq2gt_ot",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "ot()"
     },
     {
@@ -6809,7 +6809,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_izokq2gt_rt",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "rt()"
     },
     {
@@ -6820,7 +6820,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_izokq2gt_lt",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "lt()"
     },
     {
@@ -6831,7 +6831,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_izokq2gt_j",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "j()"
     },
     {
@@ -7270,7 +7270,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_rvari57o_s",
-      "community": 14,
+      "community": 81,
       "community_name": "42UTT654.js",
       "norm_label": "s()"
     },
@@ -7535,7 +7535,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_uptxnaxn_pe",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "pe()"
     },
     {
@@ -7655,8 +7655,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_xtduigui_r",
-      "community": 14,
-      "community_name": "42UTT654.js",
+      "community": 46,
+      "community_name": "EEIX5ZYH.js",
       "norm_label": "r()"
     },
     {
@@ -7700,7 +7700,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_xtduigui_b",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "b()"
     },
     {
@@ -7755,7 +7755,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_xtduigui_p",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "p()"
     },
     {
@@ -7766,7 +7766,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_explainer_vendor_pele_chunks_xtduigui_i",
       "community": 81,
-      "community_name": "IZOKQ2GT.js",
+      "community_name": "42UTT654.js",
       "norm_label": "i()"
     },
     {
@@ -8953,8 +8953,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_architecture_labels",
-      "community": 12,
-      "community_name": "render-architecture.mjs",
+      "community": 3,
+      "community_name": "geometry.mjs",
       "norm_label": "labels.mjs"
     },
     {
@@ -9239,8 +9239,8 @@
       "source_location": "L266",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_architecture_render_architecture_slidetitleoffroutes",
-      "community": 12,
-      "community_name": "render-architecture.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "slidetitleoffroutes()"
     },
     {
@@ -9361,7 +9361,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_architecture_render_architecture_componentcontext",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "componentcontext()"
     },
     {
@@ -9393,8 +9393,8 @@
       "source_location": "L487",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_architecture_render_architecture_validatearchitecture",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "validatearchitecture()"
     },
     {
@@ -9415,8 +9415,8 @@
       "source_location": "L1043",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_architecture_render_architecture_renderboundaryframe",
-      "community": 12,
-      "community_name": "render-architecture.mjs",
+      "community": 15,
+      "community_name": "render-timeline.mjs",
       "norm_label": "renderboundaryframe()"
     },
     {
@@ -9426,8 +9426,8 @@
       "source_location": "L1049",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_architecture_render_architecture_renderboundarylabel",
-      "community": 12,
-      "community_name": "render-architecture.mjs",
+      "community": 15,
+      "community_name": "render-timeline.mjs",
       "norm_label": "renderboundarylabel()"
     },
     {
@@ -9448,8 +9448,8 @@
       "source_location": "L1074",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_architecture_render_architecture_renderconnectionlabel",
-      "community": 12,
-      "community_name": "render-architecture.mjs",
+      "community": 15,
+      "community_name": "render-timeline.mjs",
       "norm_label": "renderconnectionlabel()"
     },
     {
@@ -9460,7 +9460,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_architecture_render_architecture_rendercomponent",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "rendercomponent()"
     },
     {
@@ -9481,8 +9481,8 @@
       "source_location": "L1136",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_architecture_render_architecture_rendersvg",
-      "community": 12,
-      "community_name": "render-architecture.mjs",
+      "community": 15,
+      "community_name": "render-timeline.mjs",
       "norm_label": "rendersvg()"
     },
     {
@@ -9493,7 +9493,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_architecture_routing",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "routing.mjs"
     },
     {
@@ -10032,7 +10032,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_class_render_class_busrouteconflict",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "busrouteconflict()"
     },
     {
@@ -10252,7 +10252,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_class_render_class_rendertype",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "rendertype()"
     },
     {
@@ -10284,8 +10284,8 @@
       "source_location": "L983",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_class_render_class_renderrelationshippath",
-      "community": 4,
-      "community_name": "render-class.mjs",
+      "community": 15,
+      "community_name": "render-timeline.mjs",
       "norm_label": "renderrelationshippath()"
     },
     {
@@ -10295,8 +10295,8 @@
       "source_location": "L991",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_class_render_class_renderrelationshiplabel",
-      "community": 4,
-      "community_name": "render-class.mjs",
+      "community": 15,
+      "community_name": "render-timeline.mjs",
       "norm_label": "renderrelationshiplabel()"
     },
     {
@@ -10339,8 +10339,8 @@
       "source_location": "L1027",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_class_render_class_rendersvg",
-      "community": 4,
-      "community_name": "render-class.mjs",
+      "community": 15,
+      "community_name": "render-timeline.mjs",
       "norm_label": "rendersvg()"
     },
     {
@@ -10351,7 +10351,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_dataflow_dataflow_compiler",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "dataflow-compiler.mjs"
     },
     {
@@ -10362,7 +10362,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_dataflow_dataflow_compiler_nodetextfit",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "nodetextfit"
     },
     {
@@ -10384,7 +10384,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_dataflow_joint_label_routing",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "joint-label-routing.mjs"
     },
     {
@@ -10395,7 +10395,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_dataflow_joint_label_routing_segments",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "segments()"
     },
     {
@@ -10406,7 +10406,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_dataflow_joint_label_routing_related",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "related()"
     },
     {
@@ -10417,7 +10417,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_dataflow_joint_label_routing_length",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "length()"
     },
     {
@@ -10428,7 +10428,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_dataflow_joint_label_routing_distance",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "distance()"
     },
     {
@@ -10439,7 +10439,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_dataflow_joint_label_routing_masks",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "masks()"
     },
     {
@@ -10450,7 +10450,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_dataflow_joint_label_routing_pinned",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "pinned()"
     },
     {
@@ -10461,7 +10461,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_dataflow_joint_label_routing_crossingcount",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "crossingcount()"
     },
     {
@@ -10472,7 +10472,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_dataflow_joint_label_routing_repairlabelroutes",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "repairlabelroutes()"
     },
     {
@@ -10482,8 +10482,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_dataflow_label_capacity",
-      "community": 8,
-      "community_name": "render-sequence.mjs",
+      "community": 3,
+      "community_name": "geometry.mjs",
       "norm_label": "label-capacity.mjs"
     },
     {
@@ -10493,8 +10493,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_dataflow_label_capacity_flow_label_height",
-      "community": 8,
-      "community_name": "render-sequence.mjs",
+      "community": 3,
+      "community_name": "geometry.mjs",
       "norm_label": "flow_label_height"
     },
     {
@@ -10504,8 +10504,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_dataflow_label_capacity_flowlabelsize",
-      "community": 8,
-      "community_name": "render-sequence.mjs",
+      "community": 3,
+      "community_name": "geometry.mjs",
       "norm_label": "flowlabelsize()"
     },
     {
@@ -10515,8 +10515,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_dataflow_label_capacity_wrapblockedflowlabels",
-      "community": 8,
-      "community_name": "render-sequence.mjs",
+      "community": 3,
+      "community_name": "geometry.mjs",
       "norm_label": "wrapblockedflowlabels()"
     },
     {
@@ -11121,7 +11121,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_erd_render_erd_autoviewbox",
       "community": 16,
-      "community_name": "render-timeline.mjs",
+      "community_name": "render-waterfall.mjs",
       "norm_label": "autoviewbox()"
     },
     {
@@ -11406,8 +11406,8 @@
       "source_location": "L1049",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_erd_render_erd_rowtextwidths",
-      "community": 2,
-      "community_name": "render-erd.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "rowtextwidths()"
     },
     {
@@ -11418,7 +11418,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_erd_render_erd_entityheader",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "entityheader()"
     },
     {
@@ -11428,8 +11428,8 @@
       "source_location": "L1074",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_erd_render_erd_validateer",
-      "community": 2,
-      "community_name": "render-erd.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "validateer()"
     },
     {
@@ -11462,7 +11462,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_erd_render_erd_renderentity",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "renderentity()"
     },
     {
@@ -11538,8 +11538,8 @@
       "source_location": "L1505",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_erd_render_erd_rendersvg",
-      "community": 2,
-      "community_name": "render-erd.mjs",
+      "community": 15,
+      "community_name": "render-timeline.mjs",
       "norm_label": "rendersvg()"
     },
     {
@@ -11759,7 +11759,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_lifecycle_render_lifecycle_fonts",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "fonts()"
     },
     {
@@ -12265,7 +12265,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_lifecycle_render_lifecycle_renderstate",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "renderstate()"
     },
     {
@@ -12286,8 +12286,8 @@
       "source_location": "L1041",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_lifecycle_render_lifecycle_rendertransition",
-      "community": 10,
-      "community_name": "render-lifecycle.mjs",
+      "community": 15,
+      "community_name": "render-timeline.mjs",
       "norm_label": "rendertransition()"
     },
     {
@@ -12297,8 +12297,8 @@
       "source_location": "L1053",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_lifecycle_render_lifecycle_renderlabel",
-      "community": 10,
-      "community_name": "render-lifecycle.mjs",
+      "community": 15,
+      "community_name": "render-timeline.mjs",
       "norm_label": "renderlabel()"
     },
     {
@@ -12341,8 +12341,8 @@
       "source_location": "L1098",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_lifecycle_render_lifecycle_rendersvg",
-      "community": 10,
-      "community_name": "render-lifecycle.mjs",
+      "community": 15,
+      "community_name": "render-timeline.mjs",
       "norm_label": "rendersvg()"
     },
     {
@@ -12848,7 +12848,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_sequence_render_sequence_renderparticipant",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "renderparticipant()"
     },
     {
@@ -13496,8 +13496,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_automatic_labels",
-      "community": 12,
-      "community_name": "render-architecture.mjs",
+      "community": 3,
+      "community_name": "geometry.mjs",
       "norm_label": "automatic-labels.mjs"
     },
     {
@@ -13507,8 +13507,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_automatic_labels_placeautomaticlabels",
-      "community": 12,
-      "community_name": "render-architecture.mjs",
+      "community": 3,
+      "community_name": "geometry.mjs",
       "norm_label": "placeautomaticlabels()"
     },
     {
@@ -13518,8 +13518,8 @@
       "source_location": "L277",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_automatic_labels_reservedlabelrect",
-      "community": 12,
-      "community_name": "render-architecture.mjs",
+      "community": 3,
+      "community_name": "geometry.mjs",
       "norm_label": "reservedlabelrect()"
     },
     {
@@ -13937,7 +13937,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_brand_marks_brandmarkfor",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "brandmarkfor()"
     },
     {
@@ -13948,7 +13948,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_brand_marks_brandmetadatafor",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "brandmetadatafor()"
     },
     {
@@ -13959,7 +13959,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_brand_marks_brandlabelfitwidth",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "brandlabelfitwidth()"
     },
     {
@@ -13980,8 +13980,8 @@
       "source_location": "L677",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_brand_marks_markattrs",
-      "community": 23,
-      "community_name": "brand-marks.mjs",
+      "community": 15,
+      "community_name": "render-timeline.mjs",
       "norm_label": "markattrs()"
     },
     {
@@ -13992,7 +13992,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_brand_marks_renderbrandmark",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "renderbrandmark()"
     },
     {
@@ -14156,7 +14156,7 @@
       "source_location": "L356",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_cli_validatecrosscollectioncontracts",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "validatecrosscollectioncontracts()"
     },
@@ -14167,8 +14167,8 @@
       "source_location": "L361",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_cli_svgrootattrs",
-      "community": 4,
-      "community_name": "render-class.mjs",
+      "community": 15,
+      "community_name": "render-timeline.mjs",
       "norm_label": "svgrootattrs()"
     },
     {
@@ -14179,7 +14179,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_cli_svgaccessibletext",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "svgaccessibletext()"
     },
     {
@@ -14190,7 +14190,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_cli_animateattr",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "animateattr()"
     },
     {
@@ -14201,7 +14201,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_cli_focusnodeattrs",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "focusnodeattrs()"
     },
     {
@@ -14212,7 +14212,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_cli_focusnodetitle",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "focusnodetitle()"
     },
     {
@@ -14222,8 +14222,8 @@
       "source_location": "L423",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_cli_focusedgeattrs",
-      "community": 10,
-      "community_name": "render-lifecycle.mjs",
+      "community": 15,
+      "community_name": "render-timeline.mjs",
       "norm_label": "focusedgeattrs()"
     },
     {
@@ -14277,8 +14277,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_desktop_readability_desktop_reader_diagram_width",
-      "community": 8,
-      "community_name": "render-sequence.mjs",
+      "community": 99,
+      "community_name": "desktop-readability.mjs",
       "norm_label": "desktop_reader_diagram_width"
     },
     {
@@ -14288,8 +14288,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_desktop_readability_min_projected_node_text_px",
-      "community": 8,
-      "community_name": "render-sequence.mjs",
+      "community": 99,
+      "community_name": "desktop-readability.mjs",
       "norm_label": "min_projected_node_text_px"
     },
     {
@@ -14365,7 +14365,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_desktop_readability_minimumreadablesourcetextpx",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "minimumreadablesourcetextpx()"
     },
@@ -14398,7 +14398,7 @@
       "source_location": "L95",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_desktop_readability_predictedfixedwidthoverflow",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "predictedfixedwidthoverflow()"
     },
@@ -14497,8 +14497,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_diagnostics_recorddiagnostic",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "recorddiagnostic()"
     },
     {
@@ -14508,8 +14508,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_diagnostics_withdiagnosticrecordingsuppressed",
-      "community": 67,
-      "community_name": "workflow-v2.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "withdiagnosticrecordingsuppressed()"
     },
     {
@@ -16104,7 +16104,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "geometry.mjs"
     },
     {
@@ -16114,8 +16114,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_asarray",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "asarray()"
     },
     {
@@ -16126,7 +16126,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_isfinitepoint",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "isfinitepoint()"
     },
     {
@@ -16148,7 +16148,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_segmentintersectsrect",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "segmentintersectsrect()"
     },
     {
@@ -16159,7 +16159,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_segmentrectclearance",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "segmentrectclearance()"
     },
     {
@@ -16170,7 +16170,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_segmentrectclearancewithin",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "segmentrectclearancewithin()"
     },
     {
@@ -16181,7 +16181,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_segmentrectintersectionlength",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "segmentrectintersectionlength()"
     },
     {
@@ -16192,7 +16192,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_routebounds",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "routebounds()"
     },
     {
@@ -16203,7 +16203,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_createroutecandidateindex",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "createroutecandidateindex()"
     },
     {
@@ -16214,7 +16214,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_collectlabelrouteclearance",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "collectlabelrouteclearance()"
     },
     {
@@ -16225,7 +16225,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_minimumlabelrouteclearance",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "minimumlabelrouteclearance()"
     },
     {
@@ -16236,7 +16236,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_relationshipidentity",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "relationshipidentity()"
     },
     {
@@ -16247,7 +16247,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_samerelationship",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "samerelationship()"
     },
     {
@@ -16257,8 +16257,8 @@
       "source_location": "L293",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_relationshipsubject",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "relationshipsubject()"
     },
     {
@@ -16269,7 +16269,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_authored_plan_keys",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "authored_plan_keys"
     },
     {
@@ -16279,8 +16279,8 @@
       "source_location": "L309",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_replanhint",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "replanhint()"
     },
     {
@@ -16291,7 +16291,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_endpoint_side_rules",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "endpoint_side_rules"
     },
     {
@@ -16302,7 +16302,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_endpointsideissue",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "endpointsideissue()"
     },
     {
@@ -16313,7 +16313,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_routehonorsendpointsides",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "routehonorsendpointsides()"
     },
     {
@@ -16323,8 +16323,8 @@
       "source_location": "L388",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_cleanendpointsideproblems",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "cleanendpointsideproblems()"
     },
     {
@@ -16334,8 +16334,8 @@
       "source_location": "L463",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_cleanflowproblems",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "cleanflowproblems()"
     },
     {
@@ -16346,7 +16346,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_forwardcollinearanalysissegments",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "forwardcollinearanalysissegments()"
     },
     {
@@ -16356,7 +16356,7 @@
       "source_location": "L556",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_sourcesegmentindexatpoint",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "sourcesegmentindexatpoint()"
     },
@@ -16367,8 +16367,8 @@
       "source_location": "L563",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_authoredanalysissegments",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "authoredanalysissegments()"
     },
     {
@@ -16379,7 +16379,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_segmentscontinueforward",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "segmentscontinueforward()"
     },
     {
@@ -16390,7 +16390,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_pointliesonsegment",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "pointliesonsegment()"
     },
     {
@@ -16401,7 +16401,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_polylinebendcontacts",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "polylinebendcontacts()"
     },
     {
@@ -16411,8 +16411,8 @@
       "source_location": "L627",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_cleancrossingproblems",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "cleancrossingproblems()"
     },
     {
@@ -16423,7 +16423,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_collectambiguouscorridors",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "collectambiguouscorridors()"
     },
     {
@@ -16434,7 +16434,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_shortworkflowtrunk",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "shortworkflowtrunk()"
     },
     {
@@ -16445,7 +16445,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_collectarrowheadcollisions",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "collectarrowheadcollisions()"
     },
     {
@@ -16455,8 +16455,8 @@
       "source_location": "L863",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_cleanambiguouscorridorproblems",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "cleanambiguouscorridorproblems()"
     },
     {
@@ -16467,7 +16467,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_collectborderruns",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "collectborderruns()"
     },
     {
@@ -16477,8 +16477,8 @@
       "source_location": "L962",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_cleanborderrunproblems",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "cleanborderrunproblems()"
     },
     {
@@ -16489,7 +16489,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_routebudgetmetrics",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "routebudgetmetrics()"
     },
     {
@@ -16500,7 +16500,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_collectrouterhythmissues",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "collectrouterhythmissues()"
     },
     {
@@ -16510,8 +16510,8 @@
       "source_location": "L1106",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_cleanrouterhythmproblems",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "cleanrouterhythmproblems()"
     },
     {
@@ -16521,8 +16521,8 @@
       "source_location": "L1150",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_cleanlabelrouteclearanceproblems",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "cleanlabelrouteclearanceproblems()"
     },
     {
@@ -16533,7 +16533,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_axiscanvasoverflow",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "axiscanvasoverflow()"
     },
     {
@@ -16544,7 +16544,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_collectlabelcanvasoverflow",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "collectlabelcanvasoverflow()"
     },
     {
@@ -16555,7 +16555,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_describelabelcanvasoverflow",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "describelabelcanvasoverflow()"
     },
     {
@@ -16565,8 +16565,8 @@
       "source_location": "L1265",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_cleanlabelcanvascontainmentproblems",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "cleanlabelcanvascontainmentproblems()"
     },
     {
@@ -16576,8 +16576,8 @@
       "source_location": "L1302",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_qualityprofileforgate",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "qualityprofileforgate()"
     },
     {
@@ -16587,8 +16587,8 @@
       "source_location": "L1308",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_collecteligibleroutedrelations",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "collecteligibleroutedrelations()"
     },
     {
@@ -16599,7 +16599,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_segmentposition",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "segmentposition()"
     },
     {
@@ -16610,7 +16610,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_normalized_route_points",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "normalized_route_points"
     },
     {
@@ -16621,7 +16621,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_joinroutepoints",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "joinroutepoints()"
     },
     {
@@ -16632,7 +16632,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_normalizeroutepoints",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "normalizeroutepoints()"
     },
     {
@@ -16643,7 +16643,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_pointrectdistance",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "pointrectdistance()"
     },
     {
@@ -16654,7 +16654,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_pointsegmentdistancexy",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "pointsegmentdistancexy()"
     },
     {
@@ -16665,7 +16665,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_pointsegmentdistance",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "pointsegmentdistance()"
     },
     {
@@ -16676,7 +16676,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_collinearforward",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "collinearforward()"
     },
     {
@@ -16687,7 +16687,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_framebordersegments",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "framebordersegments()"
     },
     {
@@ -16698,7 +16698,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_mergeborderoverlaps",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "mergeborderoverlaps()"
     },
     {
@@ -16709,7 +16709,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_collinearaxisoverlap",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "collinearaxisoverlap()"
     },
     {
@@ -16720,7 +16720,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_propersegmentintersection",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "propersegmentintersection()"
     },
     {
@@ -16731,7 +16731,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_crossproduct",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "crossproduct()"
     },
     {
@@ -16742,7 +16742,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_pointinbox",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "pointinbox()"
     },
     {
@@ -16753,7 +16753,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_segmentsintersect",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "segmentsintersect()"
     },
     {
@@ -16764,7 +16764,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_orientation",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "orientation()"
     },
     {
@@ -16775,7 +16775,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_onsegment",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "onsegment()"
     },
     {
@@ -16786,7 +16786,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_anchor",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "anchor()"
     },
     {
@@ -16797,7 +16797,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_porthascornerclearance",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "porthascornerclearance()"
     },
     {
@@ -16808,7 +16808,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_alignautomaticfacingports",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "alignautomaticfacingports()"
     },
     {
@@ -16819,7 +16819,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_port_outward_vector",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "port_outward_vector"
     },
     {
@@ -16830,7 +16830,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_automaticportrhythmbridge",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "automaticportrhythmbridge()"
     },
     {
@@ -16841,7 +16841,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_automaticportspread",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "automaticportspread()"
     },
     {
@@ -16852,7 +16852,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_defaultfromside",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "defaultfromside()"
     },
     {
@@ -16863,7 +16863,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_defaulttoside",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "defaulttoside()"
     },
     {
@@ -16873,7 +16873,7 @@
       "source_location": "L1800",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_legacydefaultfromside",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "legacydefaultfromside()"
     },
@@ -16884,7 +16884,7 @@
       "source_location": "L1807",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_legacydefaulttoside",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "legacydefaulttoside()"
     },
@@ -16896,7 +16896,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_chosenside",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "chosenside()"
     },
     {
@@ -16906,7 +16906,7 @@
       "source_location": "L1818",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_polylinepath",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "polylinepath()"
     },
@@ -16917,8 +16917,8 @@
       "source_location": "L1822",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_routepointsvalue",
-      "community": 2,
-      "community_name": "render-erd.mjs",
+      "community": 12,
+      "community_name": "render-architecture.mjs",
       "norm_label": "routepointsvalue()"
     },
     {
@@ -16939,8 +16939,8 @@
       "source_location": "L1839",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_roundedpath",
-      "community": 2,
-      "community_name": "render-erd.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "roundedpath()"
     },
     {
@@ -16950,7 +16950,7 @@
       "source_location": "L1868",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_labelpoint",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "labelpoint()"
     },
@@ -16961,8 +16961,8 @@
       "source_location": "L1882",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_componentfill",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 12,
+      "community_name": "render-architecture.mjs",
       "norm_label": "componentfill"
     },
     {
@@ -16973,7 +16973,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_componenttext",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "componenttext"
     },
     {
@@ -16984,7 +16984,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_arrowclassmap",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "arrowclassmap"
     },
     {
@@ -16994,7 +16994,7 @@
       "source_location": "L1910",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_variantaccent",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "variantaccent()"
     },
@@ -17005,7 +17005,7 @@
       "source_location": "L1919",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_edgelabelaccent",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "edgelabelaccent()"
     },
@@ -17016,8 +17016,8 @@
       "source_location": "L1929",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_formatrect",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "formatrect()"
     },
     {
@@ -17028,7 +17028,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_formatvalue",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "formatvalue()"
     },
     {
@@ -17039,7 +17039,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_anchorfitscanvas",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "anchorfitscanvas()"
     },
     {
@@ -17050,7 +17050,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_clampanchortocanvas",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "clampanchortocanvas()"
     },
     {
@@ -17061,7 +17061,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_suggestlabelobstaclefix",
       "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community_name": "geometry.mjs",
       "norm_label": "suggestlabelobstaclefix()"
     },
     {
@@ -17071,7 +17071,7 @@
       "source_location": "L2044",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_suggestlabelpairfix",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "suggestlabelpairfix()"
     },
@@ -17082,8 +17082,8 @@
       "source_location": "L2056",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_componentseparationoptions",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "componentseparationoptions()"
     },
     {
@@ -17093,8 +17093,8 @@
       "source_location": "L2067",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_geometry_suggestcomponentseparation",
-      "community": 3,
-      "community_name": "workflow-compiler.mjs",
+      "community": 8,
+      "community_name": "render-sequence.mjs",
       "norm_label": "suggestcomponentseparation()"
     },
     {
@@ -17138,7 +17138,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_i18n_escapehtml",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "escapehtml()"
     },
     {
@@ -17413,7 +17413,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_i18n_translatemessage",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "translatemessage()"
     },
     {
@@ -17523,7 +17523,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_legend",
       "community": 16,
-      "community_name": "render-timeline.mjs",
+      "community_name": "render-waterfall.mjs",
       "norm_label": "legend.mjs"
     },
     {
@@ -17533,8 +17533,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_legend_relationshiplegendobstacles",
-      "community": 4,
-      "community_name": "render-class.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "relationshiplegendobstacles()"
     },
     {
@@ -17556,7 +17556,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_legend_renderedlegendfontsize",
       "community": 16,
-      "community_name": "render-timeline.mjs",
+      "community_name": "render-waterfall.mjs",
       "norm_label": "renderedlegendfontsize()"
     },
     {
@@ -17567,7 +17567,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_legend_measuredentrywidth",
       "community": 16,
-      "community_name": "render-timeline.mjs",
+      "community_name": "render-waterfall.mjs",
       "norm_label": "measuredentrywidth()"
     },
     {
@@ -17578,7 +17578,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_legend_legendfootprint",
       "community": 16,
-      "community_name": "render-timeline.mjs",
+      "community_name": "render-waterfall.mjs",
       "norm_label": "legendfootprint()"
     },
     {
@@ -17589,7 +17589,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_legend_measurelegend",
       "community": 16,
-      "community_name": "render-timeline.mjs",
+      "community_name": "render-waterfall.mjs",
       "norm_label": "measurelegend()"
     },
     {
@@ -17600,7 +17600,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_legend_renderlegend",
       "community": 16,
-      "community_name": "render-timeline.mjs",
+      "community_name": "render-waterfall.mjs",
       "norm_label": "renderlegend()"
     },
     {
@@ -17610,8 +17610,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_node_card_style",
-      "community": 12,
-      "community_name": "render-architecture.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "node-card-style.mjs"
     },
     {
@@ -17621,8 +17621,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_node_card_style_tones",
-      "community": 12,
-      "community_name": "render-architecture.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "tones"
     },
     {
@@ -17632,8 +17632,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_node_card_style_node_card_attr",
-      "community": 12,
-      "community_name": "render-architecture.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "node_card_attr"
     },
     {
@@ -17643,8 +17643,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_node_card_style_nodecardstyle",
-      "community": 12,
-      "community_name": "render-architecture.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "nodecardstyle()"
     },
     {
@@ -19172,8 +19172,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_spatial_grid",
-      "community": 12,
-      "community_name": "render-architecture.mjs",
+      "community": 3,
+      "community_name": "geometry.mjs",
       "norm_label": "spatial-grid.mjs"
     },
     {
@@ -19183,8 +19183,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_spatial_grid_createspatialgrid",
-      "community": 12,
-      "community_name": "render-architecture.mjs",
+      "community": 3,
+      "community_name": "geometry.mjs",
       "norm_label": "createspatialgrid()"
     },
     {
@@ -19249,8 +19249,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_text_fit",
-      "community": 5,
-      "community_name": "utils.mjs",
+      "community": 10,
+      "community_name": "render-lifecycle.mjs",
       "norm_label": "text-fit.mjs"
     },
     {
@@ -19260,8 +19260,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_text_fit_nodetextfit",
-      "community": 5,
-      "community_name": "utils.mjs",
+      "community": 10,
+      "community_name": "render-lifecycle.mjs",
       "norm_label": "nodetextfit"
     },
     {
@@ -19272,7 +19272,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_text_fit_fittednodefontsize",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "fittednodefontsize()"
     },
     {
@@ -19304,7 +19304,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_text_fit_nodelabellayout",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "nodelabellayout()"
     },
@@ -19315,8 +19315,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_utils",
-      "community": 5,
-      "community_name": "utils.mjs",
+      "community": 10,
+      "community_name": "render-lifecycle.mjs",
       "norm_label": "utils.mjs"
     },
     {
@@ -19326,8 +19326,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_utils_renderdefinitions",
-      "community": 12,
-      "community_name": "render-architecture.mjs",
+      "community": 15,
+      "community_name": "render-timeline.mjs",
       "norm_label": "renderdefinitions()"
     },
     {
@@ -19337,8 +19337,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_utils_sigil_tone",
-      "community": 5,
-      "community_name": "utils.mjs",
+      "community": 10,
+      "community_name": "render-lifecycle.mjs",
       "norm_label": "sigil_tone"
     },
     {
@@ -19348,8 +19348,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_utils_sigil_shape",
-      "community": 5,
-      "community_name": "utils.mjs",
+      "community": 10,
+      "community_name": "render-lifecycle.mjs",
       "norm_label": "sigil_shape"
     },
     {
@@ -19359,8 +19359,8 @@
       "source_location": "L95",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_utils_semantic_sigil_inset",
-      "community": 5,
-      "community_name": "utils.mjs",
+      "community": 10,
+      "community_name": "render-lifecycle.mjs",
       "norm_label": "semantic_sigil_inset"
     },
     {
@@ -19370,8 +19370,8 @@
       "source_location": "L96",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_utils_semantic_sigil_size",
-      "community": 5,
-      "community_name": "utils.mjs",
+      "community": 10,
+      "community_name": "render-lifecycle.mjs",
       "norm_label": "semantic_sigil_size"
     },
     {
@@ -19381,8 +19381,8 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_utils_semantic_sigil_footprint",
-      "community": 5,
-      "community_name": "utils.mjs",
+      "community": 10,
+      "community_name": "render-lifecycle.mjs",
       "norm_label": "semantic_sigil_footprint"
     },
     {
@@ -19392,8 +19392,8 @@
       "source_location": "L101",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_utils_source_badge_footprint",
-      "community": 5,
-      "community_name": "utils.mjs",
+      "community": 10,
+      "community_name": "render-lifecycle.mjs",
       "norm_label": "source_badge_footprint"
     },
     {
@@ -19404,7 +19404,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_utils_rendersemanticsigil",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "rendersemanticsigil()"
     },
     {
@@ -19425,8 +19425,8 @@
       "source_location": "L136",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_utils_serializescriptjson",
-      "community": 5,
-      "community_name": "utils.mjs",
+      "community": 10,
+      "community_name": "render-lifecycle.mjs",
       "norm_label": "serializescriptjson()"
     },
     {
@@ -19436,8 +19436,8 @@
       "source_location": "L143",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_utils_template_placeholders",
-      "community": 5,
-      "community_name": "utils.mjs",
+      "community": 10,
+      "community_name": "render-lifecycle.mjs",
       "norm_label": "template_placeholders"
     },
     {
@@ -19458,8 +19458,8 @@
       "source_location": "L235",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_shared_utils_text_units_cache",
-      "community": 5,
-      "community_name": "utils.mjs",
+      "community": 10,
+      "community_name": "render-lifecycle.mjs",
       "norm_label": "text_units_cache"
     },
     {
@@ -19535,7 +19535,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "render-timeline.mjs"
     },
@@ -19546,7 +19546,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_dirname",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "__dirname"
     },
@@ -19557,7 +19557,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_layoutjsonmode",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "layoutjsonmode"
     },
@@ -19568,7 +19568,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_cliargs",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "cliargs"
     },
@@ -19579,7 +19579,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_diagram_tl_template_outpath_sourceevidence",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "{ diagram: tl, template, outpath, sourceevidence }"
     },
@@ -19590,7 +19590,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_layout",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "layout"
     },
@@ -19601,7 +19601,7 @@
       "source_location": "L67",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_validcalendardate",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "validcalendardate()"
     },
@@ -19612,7 +19612,7 @@
       "source_location": "L113",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_partsformat",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "partsformat"
     },
@@ -19623,7 +19623,7 @@
       "source_location": "L116",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_wall",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "wall()"
     },
@@ -19634,7 +19634,7 @@
       "source_location": "L121",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_zoneoffset",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "zoneoffset()"
     },
@@ -19645,7 +19645,7 @@
       "source_location": "L128",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_offsetlabel",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "offsetlabel()"
     },
@@ -19656,7 +19656,7 @@
       "source_location": "L136",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_events",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "events"
     },
@@ -19667,7 +19667,7 @@
       "source_location": "L139",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_times",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "times"
     },
@@ -19678,7 +19678,7 @@
       "source_location": "L141",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_last",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "last"
     },
@@ -19689,7 +19689,7 @@
       "source_location": "L144",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_showseconds",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "showseconds"
     },
@@ -19700,7 +19700,7 @@
       "source_location": "L145",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_multiday",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "multiday"
     },
@@ -19711,7 +19711,7 @@
       "source_location": "L150",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_clocklabel",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "clocklabel()"
     },
@@ -19722,7 +19722,7 @@
       "source_location": "L156",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_durationlabel",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "durationlabel()"
     },
@@ -19733,7 +19733,7 @@
       "source_location": "L171",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_approximateduration",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "approximateduration()"
     },
@@ -19744,7 +19744,7 @@
       "source_location": "L192",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_gaps",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "gaps"
     },
@@ -19755,7 +19755,7 @@
       "source_location": "L193",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_sortedgaps",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "sortedgaps"
     },
@@ -19766,7 +19766,7 @@
       "source_location": "L204",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_breaks",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "breaks"
     },
@@ -19777,7 +19777,7 @@
       "source_location": "L216",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_segments",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "segments"
     },
@@ -19788,7 +19788,7 @@
       "source_location": "L225",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_lineartime",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "lineartime"
     },
@@ -19799,7 +19799,7 @@
       "source_location": "L251",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_xof",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "xof()"
     },
@@ -19810,7 +19810,7 @@
       "source_location": "L258",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_ticks",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "ticks"
     },
@@ -19821,7 +19821,7 @@
       "source_location": "L261",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_wallclockticks",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "wallclockticks()"
     },
@@ -19832,7 +19832,7 @@
       "source_location": "L291",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_tickseconds",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "tickseconds"
     },
@@ -19843,7 +19843,7 @@
       "source_location": "L295",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_laneof",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "laneof()"
     },
@@ -19854,7 +19854,7 @@
       "source_location": "L297",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_wraptitle",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "wraptitle()"
     },
@@ -19865,7 +19865,7 @@
       "source_location": "L318",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_cards",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "cards"
     },
@@ -19876,7 +19876,7 @@
       "source_location": "L337",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_lanelayout",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "lanelayout"
     },
@@ -19887,7 +19887,7 @@
       "source_location": "L380",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_kind_tone",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "kind_tone"
     },
@@ -19898,7 +19898,7 @@
       "source_location": "L381",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_kindof",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "kindof()"
     },
@@ -19909,7 +19909,7 @@
       "source_location": "L382",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_legendentries",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "legendentries"
     },
@@ -19920,7 +19920,7 @@
       "source_location": "L388",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_width",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "width"
     },
@@ -19931,7 +19931,7 @@
       "source_location": "L389",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_footprint",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "footprint"
     },
@@ -19942,7 +19942,7 @@
       "source_location": "L390",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_height",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "height"
     },
@@ -19953,7 +19953,7 @@
       "source_location": "L391",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_viewbox",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "viewbox"
     },
@@ -19964,7 +19964,7 @@
       "source_location": "L393",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_legendlayout",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "legendlayout()"
     },
@@ -19975,7 +19975,7 @@
       "source_location": "L398",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_renderaxis",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "renderaxis()"
     },
@@ -19986,7 +19986,7 @@
       "source_location": "L440",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_renderheader",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "renderheader()"
     },
@@ -19997,7 +19997,7 @@
       "source_location": "L456",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_renderlanes",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "renderlanes()"
     },
@@ -20009,7 +20009,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_renderevent",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "renderevent()"
     },
     {
@@ -20019,7 +20019,7 @@
       "source_location": "L492",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_legendswatch",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "legendswatch()"
     },
@@ -20030,7 +20030,7 @@
       "source_location": "L496",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_rendersvg",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "rendersvg()"
     },
@@ -20041,7 +20041,7 @@
       "source_location": "L550",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_timeline_render_timeline_buildlayoutreport",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "buildlayoutreport()"
     },
@@ -20053,7 +20053,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "render-tree.mjs"
     },
     {
@@ -20064,7 +20064,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_dirname",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "__dirname"
     },
     {
@@ -20075,7 +20075,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_layoutjsonmode",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "layoutjsonmode"
     },
     {
@@ -20086,7 +20086,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_cliargs",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "cliargs"
     },
     {
@@ -20097,7 +20097,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_diagram_tree_template_outpath_sourceevidence",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "{ diagram: tree, template, outpath, sourceevidence }"
     },
     {
@@ -20108,7 +20108,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_layout",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "layout"
     },
     {
@@ -20130,7 +20130,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_root_authoredroot",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "{ root: authoredroot }"
     },
     {
@@ -20141,7 +20141,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_childrenof",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "childrenof"
     },
     {
@@ -20152,7 +20152,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_wraptext",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "wraptext()"
     },
     {
@@ -20163,7 +20163,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_depthof",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "depthof"
     },
     {
@@ -20174,7 +20174,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_stackof",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "stackof"
     },
     {
@@ -20185,7 +20185,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_groupsof",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "groupsof"
     },
     {
@@ -20196,7 +20196,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_measured",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "measured"
     },
     {
@@ -20207,7 +20207,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_breadthsize",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "breadthsize()"
     },
     {
@@ -20218,7 +20218,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_depthsize",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "depthsize()"
     },
     {
@@ -20229,7 +20229,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_maxdepth",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "maxdepth"
     },
     {
@@ -20240,7 +20240,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_bandsize",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "bandsize"
     },
     {
@@ -20251,7 +20251,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_bandstart",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "bandstart"
     },
     {
@@ -20262,7 +20262,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_groupspan",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "groupspan()"
     },
     {
@@ -20273,7 +20273,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_groupsspan",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "groupsspan()"
     },
     {
@@ -20284,7 +20284,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_span",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "span"
     },
     {
@@ -20295,7 +20295,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_placed",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "placed"
     },
     {
@@ -20306,7 +20306,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_attachof",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "attachof()"
     },
     {
@@ -20317,7 +20317,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_centerof",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "centerof()"
     },
     {
@@ -20328,7 +20328,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_all",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "all"
     },
     {
@@ -20339,7 +20339,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_edgestart",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "edgestart()"
     },
     {
@@ -20350,7 +20350,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_edgepoints",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "edgepoints()"
     },
     {
@@ -20361,7 +20361,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_edges",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "edges"
     },
     {
@@ -20372,7 +20372,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_ancestorsof",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "ancestorsof()"
     },
     {
@@ -20383,7 +20383,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_descendantcount",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "descendantcount()"
     },
     {
@@ -20394,7 +20394,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_buildlayoutreport",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "buildlayoutreport()"
     },
     {
@@ -20405,7 +20405,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_treeattrs",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "treeattrs()"
     },
     {
@@ -20416,7 +20416,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_subtree_hues",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "subtree_hues"
     },
     {
@@ -20427,7 +20427,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_hueof",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "hueof"
     },
     {
@@ -20438,7 +20438,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_hueclass",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "hueclass()"
     },
     {
@@ -20449,7 +20449,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_rendernode",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "rendernode()"
     },
     {
@@ -20460,7 +20460,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_rendertoggle",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "rendertoggle()"
     },
     {
@@ -20471,7 +20471,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_renderedge",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "renderedge()"
     },
     {
@@ -20482,7 +20482,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_tree_render_tree_rendersvg",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "rendersvg()"
     },
     {
@@ -20492,7 +20492,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "render-waterfall.mjs"
     },
@@ -20503,7 +20503,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_dirname",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "__dirname"
     },
@@ -20514,7 +20514,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_layoutjsonmode",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "layoutjsonmode"
     },
@@ -20525,7 +20525,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_cliargs",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "cliargs"
     },
@@ -20536,7 +20536,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_diagram_wf_template_outpath_sourceevidence",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "{ diagram: wf, template, outpath, sourceevidence }"
     },
@@ -20547,7 +20547,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_layout",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "layout"
     },
@@ -20558,7 +20558,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_problems",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "problems"
     },
@@ -20569,7 +20569,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_details",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "details"
     },
@@ -20580,7 +20580,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_fail",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "fail()"
     },
@@ -20591,7 +20591,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_raw",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "raw"
     },
@@ -20602,7 +20602,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_byid",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "byid"
     },
@@ -20613,7 +20613,7 @@
       "source_location": "L108",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_recordedend",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "recordedend()"
     },
@@ -20624,7 +20624,7 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_t0",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "t0"
     },
@@ -20635,7 +20635,7 @@
       "source_location": "L110",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_t1",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "t1"
     },
@@ -20646,7 +20646,7 @@
       "source_location": "L113",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_spans",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "spans"
     },
@@ -20657,7 +20657,7 @@
       "source_location": "L120",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_children",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "children"
     },
@@ -20668,7 +20668,7 @@
       "source_location": "L122",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_bystart",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "bystart()"
     },
@@ -20679,7 +20679,7 @@
       "source_location": "L123",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_rows",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "rows"
     },
@@ -20691,7 +20691,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_number",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "number()"
     },
     {
@@ -20702,7 +20702,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_formatduration",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "formatduration()"
     },
     {
@@ -20712,7 +20712,7 @@
       "source_location": "L140",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_percent",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "percent()"
     },
@@ -20723,7 +20723,7 @@
       "source_location": "L151",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_service_tones",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "service_tones"
     },
@@ -20734,7 +20734,7 @@
       "source_location": "L152",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_services",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "services"
     },
@@ -20745,7 +20745,7 @@
       "source_location": "L153",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_serviceof",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "serviceof"
     },
@@ -20756,7 +20756,7 @@
       "source_location": "L155",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_servicetone",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "servicetone()"
     },
@@ -20767,7 +20767,7 @@
       "source_location": "L156",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_status_tone",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "status_tone"
     },
@@ -20778,7 +20778,7 @@
       "source_location": "L157",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_toneof",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "toneof()"
     },
@@ -20789,7 +20789,7 @@
       "source_location": "L162",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_namewidth",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "namewidth()"
     },
@@ -20800,7 +20800,7 @@
       "source_location": "L163",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_labelw",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "labelw"
     },
@@ -20811,7 +20811,7 @@
       "source_location": "L172",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_xof",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "xof()"
     },
@@ -20822,7 +20822,7 @@
       "source_location": "L175",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_nice",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "nice"
     },
@@ -20833,7 +20833,7 @@
       "source_location": "L176",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_tickstep",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "tickstep"
     },
@@ -20844,7 +20844,7 @@
       "source_location": "L185",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_ticks",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "ticks"
     },
@@ -20855,7 +20855,7 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_tickcount",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "tickcount"
     },
@@ -20866,7 +20866,7 @@
       "source_location": "L197",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_timeresolution",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "timeresolution"
     },
@@ -20878,7 +20878,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_timenumber",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "timenumber()"
     },
     {
@@ -20888,7 +20888,7 @@
       "source_location": "L207",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_parentids",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "parentids"
     },
@@ -20899,7 +20899,7 @@
       "source_location": "L208",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_placed",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "placed"
     },
@@ -20910,7 +20910,7 @@
       "source_location": "L225",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_presentstatuses",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "presentstatuses"
     },
@@ -20921,7 +20921,7 @@
       "source_location": "L228",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_servicelegendentries",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "servicelegendentries"
     },
@@ -20932,7 +20932,7 @@
       "source_location": "L233",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_legendentries",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "legendentries"
     },
@@ -20943,7 +20943,7 @@
       "source_location": "L238",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_labelroom",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "labelroom"
     },
@@ -20954,7 +20954,7 @@
       "source_location": "L239",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_width",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "width"
     },
@@ -20965,7 +20965,7 @@
       "source_location": "L240",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_axislabels",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "axislabels"
     },
@@ -20976,7 +20976,7 @@
       "source_location": "L268",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_footprint",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "footprint"
     },
@@ -20987,7 +20987,7 @@
       "source_location": "L269",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_height",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "height"
     },
@@ -20998,7 +20998,7 @@
       "source_location": "L270",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_viewbox",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "viewbox"
     },
@@ -21010,7 +21010,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_renderheader",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "renderheader()"
     },
     {
@@ -21021,7 +21021,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_renderaxis",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "renderaxis()"
     },
     {
@@ -21032,7 +21032,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_dotx",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "dotx()"
     },
     {
@@ -21043,7 +21043,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_renderguides",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "renderguides()"
     },
     {
@@ -21054,7 +21054,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_renderrow",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "renderrow()"
     },
     {
@@ -21064,7 +21064,7 @@
       "source_location": "L338",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_legendswatch",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "legendswatch()"
     },
@@ -21075,7 +21075,7 @@
       "source_location": "L343",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_solid_tones",
-      "community": 15,
+      "community": 16,
       "community_name": "render-waterfall.mjs",
       "norm_label": "solid_tones"
     },
@@ -21087,7 +21087,7 @@
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_rendersvg",
       "community": 15,
-      "community_name": "render-waterfall.mjs",
+      "community_name": "render-timeline.mjs",
       "norm_label": "rendersvg()"
     },
     {
@@ -21097,7 +21097,7 @@
       "source_location": "L387",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_waterfall_render_waterfall_buildlayoutreport",
-      "community": 16,
+      "community": 15,
       "community_name": "render-timeline.mjs",
       "norm_label": "buildlayoutreport()"
     },
@@ -21141,7 +21141,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "workflow-compiler.mjs"
     },
@@ -21152,7 +21152,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_legacy_column_centers",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "legacy_column_centers"
     },
@@ -21163,7 +21163,7 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_readable_candidate_cost_priority",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "readable_candidate_cost_priority"
     },
@@ -21174,7 +21174,7 @@
       "source_location": "L106",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_hard_route_rhythm",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "hard_route_rhythm"
     },
@@ -21185,7 +21185,7 @@
       "source_location": "L108",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_hardroutesegmentminimum",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "hardroutesegmentminimum()"
     },
@@ -21196,7 +21196,7 @@
       "source_location": "L114",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_workflowlayoutfeedback",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "workflowlayoutfeedback"
     },
@@ -21207,7 +21207,7 @@
       "source_location": "L115",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_workflowlayoutfeedback_constructor",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": ".constructor()"
     },
@@ -21218,7 +21218,7 @@
       "source_location": "L122",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_createlegacylayout",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "createlegacylayout()"
     },
@@ -21229,7 +21229,7 @@
       "source_location": "L138",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_hasabsoluteworkflowpins",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "hasabsoluteworkflowpins()"
     },
@@ -21240,7 +21240,7 @@
       "source_location": "L147",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_hasverticalstack",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "hasverticalstack()"
     },
@@ -21251,7 +21251,7 @@
       "source_location": "L160",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_usesindependentlanemeasurement",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "usesindependentlanemeasurement()"
     },
@@ -21262,7 +21262,7 @@
       "source_location": "L170",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_automaticnodewidths",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "automaticnodewidths"
     },
@@ -21284,7 +21284,7 @@
       "source_location": "L180",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_authorednodewidth",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "authorednodewidth()"
     },
@@ -21295,7 +21295,7 @@
       "source_location": "L184",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_nodewidthcontributor",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "nodewidthcontributor()"
     },
@@ -21306,7 +21306,7 @@
       "source_location": "L188",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_authorednodeheight",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "authorednodeheight()"
     },
@@ -21317,7 +21317,7 @@
       "source_location": "L193",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_workflowlabelwidth",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "workflowlabelwidth()"
     },
@@ -21328,7 +21328,7 @@
       "source_location": "L197",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_readablegroupbounds",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "readablegroupbounds()"
     },
@@ -21339,7 +21339,7 @@
       "source_location": "L226",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_verticalintervalsoverlap",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "verticalintervalsoverlap()"
     },
@@ -21350,7 +21350,7 @@
       "source_location": "L233",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_createreadablelayout",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "createreadablelayout()"
     },
@@ -21361,7 +21361,7 @@
       "source_location": "L663",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_compilerfailure",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "compilerfailure()"
     },
@@ -21372,7 +21372,7 @@
       "source_location": "L672",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_workflowedgename",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "workflowedgename()"
     },
@@ -21383,7 +21383,7 @@
       "source_location": "L676",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_stabletext",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "stabletext()"
     },
@@ -21394,7 +21394,7 @@
       "source_location": "L680",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_stablecompare",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "stablecompare()"
     },
@@ -21405,7 +21405,7 @@
       "source_location": "L686",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_stablevaluekey",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "stablevaluekey()"
     },
@@ -21416,8 +21416,8 @@
       "source_location": "L694",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_cloneworkflow",
-      "community": 67,
-      "community_name": "workflow-v2.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "cloneworkflow()"
     },
     {
@@ -21427,7 +21427,7 @@
       "source_location": "L698",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_compareworkflowedges",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "compareworkflowedges()"
     },
@@ -21438,7 +21438,7 @@
       "source_location": "L707",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_canonicalreadableworkflow",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "canonicalreadableworkflow()"
     },
@@ -21449,7 +21449,7 @@
       "source_location": "L741",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_semanticcontractdiagnostics",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "semanticcontractdiagnostics()"
     },
@@ -21460,7 +21460,7 @@
       "source_location": "L860",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_resolveworkflowlegendfootprint",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "resolveworkflowlegendfootprint()"
     },
@@ -21471,7 +21471,7 @@
       "source_location": "L910",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_createworkflowlanegeometry",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "createworkflowlanegeometry()"
     },
@@ -21482,7 +21482,7 @@
       "source_location": "L984",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_measureworkflownodes",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "measureworkflownodes()"
     },
@@ -21504,7 +21504,7 @@
       "source_location": "L1045",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_createworkflowstepindexes",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "createworkflowstepindexes()"
     },
@@ -21526,7 +21526,7 @@
       "source_location": "L1238",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_createautomaticsideselection",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "createautomaticsideselection()"
     },
@@ -21537,7 +21537,7 @@
       "source_location": "L1362",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_compileworkflowinternal",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "compileworkflowinternal()"
     },
@@ -21548,7 +21548,7 @@
       "source_location": "L5646",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_feedbackfailure",
-      "community": 3,
+      "community": 5,
       "community_name": "workflow-compiler.mjs",
       "norm_label": "feedbackfailure()"
     },
@@ -21559,8 +21559,8 @@
       "source_location": "L5667",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_route_order_codes",
-      "community": 67,
-      "community_name": "workflow-v2.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "route_order_codes"
     },
     {
@@ -21570,8 +21570,8 @@
       "source_location": "L5676",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_errorcount",
-      "community": 67,
-      "community_name": "workflow-v2.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "errorcount()"
     },
     {
@@ -21581,8 +21581,8 @@
       "source_location": "L5679",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_routeorderretryindex",
-      "community": 67,
-      "community_name": "workflow-v2.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "routeorderretryindex()"
     },
     {
@@ -21592,8 +21592,8 @@
       "source_location": "L5695",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_canrepairautomaticsublabels",
-      "community": 8,
-      "community_name": "render-sequence.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "canrepairautomaticsublabels()"
     },
     {
@@ -21603,8 +21603,8 @@
       "source_location": "L5715",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_compilewithrouteorderfeedback",
-      "community": 67,
-      "community_name": "workflow-v2.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "compilewithrouteorderfeedback()"
     },
     {
@@ -21614,8 +21614,8 @@
       "source_location": "L5744",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_compilewithlayoutfeedback",
-      "community": 67,
-      "community_name": "workflow-v2.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "compilewithlayoutfeedback()"
     },
     {
@@ -21625,8 +21625,8 @@
       "source_location": "L5802",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_compileworkflowwithfeedback",
-      "community": 67,
-      "community_name": "workflow-v2.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "compileworkflowwithfeedback()"
     },
     {
@@ -21636,8 +21636,8 @@
       "source_location": "L5850",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_addverifiedcrossingrepair",
-      "community": 67,
-      "community_name": "workflow-v2.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "addverifiedcrossingrepair()"
     },
     {
@@ -21647,8 +21647,8 @@
       "source_location": "L5888",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_compiler_addverifiedplacementrepair",
-      "community": 67,
-      "community_name": "workflow-v2.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "addverifiedplacementrepair()"
     },
     {
@@ -21691,8 +21691,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_migration_geometry_preservesworkflowabsolutegeometry",
-      "community": 67,
-      "community_name": "workflow-v2.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "preservesworkflowabsolutegeometry()"
     },
     {
@@ -21779,8 +21779,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_placement_repair",
-      "community": 67,
-      "community_name": "workflow-v2.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "workflow-placement-repair.mjs"
     },
     {
@@ -21790,8 +21790,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "agents_skills_archify_renderers_workflow_workflow_placement_repair_proposeworkflowplacement",
-      "community": 67,
-      "community_name": "workflow-v2.mjs",
+      "community": 5,
+      "community_name": "workflow-compiler.mjs",
       "norm_label": "proposeworkflowplacement()"
     },
     {
@@ -21977,8 +21977,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_architecture_schema_properties_meta",
-      "community": 271,
-      "community_name": "meta",
+      "community": 88,
+      "community_name": "properties",
       "norm_label": "meta"
     },
     {
@@ -21988,8 +21988,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_architecture_schema_meta_type",
-      "community": 271,
-      "community_name": "meta",
+      "community": 88,
+      "community_name": "properties",
       "norm_label": "type"
     },
     {
@@ -21999,8 +21999,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_architecture_schema_meta_additionalproperties",
-      "community": 271,
-      "community_name": "meta",
+      "community": 88,
+      "community_name": "properties",
       "norm_label": "additionalproperties"
     },
     {
@@ -22010,8 +22010,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_architecture_schema_meta_required",
-      "community": 271,
-      "community_name": "meta",
+      "community": 88,
+      "community_name": "properties",
       "norm_label": "required"
     },
     {
@@ -22021,8 +22021,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_architecture_schema_json_ref_title",
-      "community": 271,
-      "community_name": "meta",
+      "community": 88,
+      "community_name": "properties",
       "norm_label": "title"
     },
     {
@@ -22032,8 +22032,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_architecture_schema_json_ref_output",
-      "community": 271,
-      "community_name": "meta",
+      "community": 88,
+      "community_name": "properties",
       "norm_label": "output"
     },
     {
@@ -22494,7 +22494,7 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_architecture_schema_properties_layout",
-      "community": 88,
+      "community": 75,
       "community_name": "properties",
       "norm_label": "layout"
     },
@@ -22505,7 +22505,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_architecture_schema_layout_type",
-      "community": 88,
+      "community": 75,
       "community_name": "properties",
       "norm_label": "type"
     },
@@ -22516,7 +22516,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_architecture_schema_layout_additionalproperties",
-      "community": 88,
+      "community": 75,
       "community_name": "properties",
       "norm_label": "additionalproperties"
     },
@@ -22527,7 +22527,7 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_architecture_schema_layout_required",
-      "community": 88,
+      "community": 75,
       "community_name": "properties",
       "norm_label": "required"
     },
@@ -22538,7 +22538,7 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_architecture_schema_json_ref_mode",
-      "community": 88,
+      "community": 75,
       "community_name": "properties",
       "norm_label": "mode"
     },
@@ -23121,8 +23121,8 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_architecture_schema_properties_col",
-      "community": 17,
-      "community_name": "properties",
+      "community": 272,
+      "community_name": "col",
       "norm_label": "col"
     },
     {
@@ -23132,8 +23132,8 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_architecture_schema_col_type",
-      "community": 17,
-      "community_name": "properties",
+      "community": 272,
+      "community_name": "col",
       "norm_label": "type"
     },
     {
@@ -23143,8 +23143,8 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_architecture_schema_col_minimum",
-      "community": 17,
-      "community_name": "properties",
+      "community": 272,
+      "community_name": "col",
       "norm_label": "minimum"
     },
     {
@@ -24485,8 +24485,8 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_properties_layout",
-      "community": 68,
-      "community_name": "properties",
+      "community": 226,
+      "community_name": "layout",
       "norm_label": "layout"
     },
     {
@@ -24496,8 +24496,8 @@
       "source_location": "L110",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_layout_type",
-      "community": 68,
-      "community_name": "properties",
+      "community": 226,
+      "community_name": "layout",
       "norm_label": "type"
     },
     {
@@ -24507,8 +24507,8 @@
       "source_location": "L111",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_layout_additionalproperties",
-      "community": 68,
-      "community_name": "properties",
+      "community": 226,
+      "community_name": "layout",
       "norm_label": "additionalproperties"
     },
     {
@@ -24518,8 +24518,8 @@
       "source_location": "L112",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_layout_required",
-      "community": 68,
-      "community_name": "properties",
+      "community": 226,
+      "community_name": "layout",
       "norm_label": "required"
     },
     {
@@ -24529,8 +24529,8 @@
       "source_location": "L112",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_json_ref_mode",
-      "community": 68,
-      "community_name": "properties",
+      "community": 226,
+      "community_name": "layout",
       "norm_label": "mode"
     },
     {
@@ -24870,8 +24870,8 @@
       "source_location": "L157",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_properties_label",
-      "community": 275,
-      "community_name": "label",
+      "community": 36,
+      "community_name": "properties",
       "norm_label": "label"
     },
     {
@@ -24881,8 +24881,8 @@
       "source_location": "L158",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_label_type",
-      "community": 275,
-      "community_name": "label",
+      "community": 36,
+      "community_name": "properties",
       "norm_label": "type"
     },
     {
@@ -24892,8 +24892,8 @@
       "source_location": "L159",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_label_minlength",
-      "community": 275,
-      "community_name": "label",
+      "community": 36,
+      "community_name": "properties",
       "norm_label": "minlength"
     },
     {
@@ -25002,8 +25002,8 @@
       "source_location": "L173",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_properties_row",
-      "community": 272,
-      "community_name": "row",
+      "community": 36,
+      "community_name": "properties",
       "norm_label": "row"
     },
     {
@@ -25013,8 +25013,8 @@
       "source_location": "L174",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_row_type",
-      "community": 272,
-      "community_name": "row",
+      "community": 36,
+      "community_name": "properties",
       "norm_label": "type"
     },
     {
@@ -25024,8 +25024,8 @@
       "source_location": "L175",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_row_minimum",
-      "community": 272,
-      "community_name": "row",
+      "community": 36,
+      "community_name": "properties",
       "norm_label": "minimum"
     },
     {
@@ -25035,8 +25035,8 @@
       "source_location": "L176",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_row_maximum",
-      "community": 272,
-      "community_name": "row",
+      "community": 36,
+      "community_name": "properties",
       "norm_label": "maximum"
     },
     {
@@ -25112,8 +25112,8 @@
       "source_location": "L185",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_properties_pos",
-      "community": 279,
-      "community_name": "pos",
+      "community": 36,
+      "community_name": "properties",
       "norm_label": "pos"
     },
     {
@@ -25123,8 +25123,8 @@
       "source_location": "L186",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_pos_ref",
-      "community": 279,
-      "community_name": "pos",
+      "community": 36,
+      "community_name": "properties",
       "norm_label": "$ref"
     },
     {
@@ -25453,8 +25453,8 @@
       "source_location": "L246",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_properties_toside",
-      "community": 280,
-      "community_name": "toSide",
+      "community": 36,
+      "community_name": "properties",
       "norm_label": "toside"
     },
     {
@@ -25464,8 +25464,8 @@
       "source_location": "L247",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_toside_ref",
-      "community": 280,
-      "community_name": "toSide",
+      "community": 36,
+      "community_name": "properties",
       "norm_label": "$ref"
     },
     {
@@ -25640,8 +25640,8 @@
       "source_location": "L272",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_properties_labelsegment",
-      "community": 276,
-      "community_name": "labelSegment",
+      "community": 36,
+      "community_name": "properties",
       "norm_label": "labelsegment"
     },
     {
@@ -25651,8 +25651,8 @@
       "source_location": "L273",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_labelsegment_type",
-      "community": 276,
-      "community_name": "labelSegment",
+      "community": 36,
+      "community_name": "properties",
       "norm_label": "type"
     },
     {
@@ -25662,8 +25662,8 @@
       "source_location": "L274",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_class_schema_labelsegment_minimum",
-      "community": 276,
-      "community_name": "labelSegment",
+      "community": 36,
+      "community_name": "properties",
       "norm_label": "minimum"
     },
     {
@@ -26080,8 +26080,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema",
-      "community": 42,
-      "community_name": "$defs",
+      "community": 251,
+      "community_name": "common.schema.json",
       "norm_label": "common.schema.json"
     },
     {
@@ -26091,8 +26091,8 @@
       "source_location": "L2",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_schema",
-      "community": 42,
-      "community_name": "$defs",
+      "community": 251,
+      "community_name": "common.schema.json",
       "norm_label": "$schema"
     },
     {
@@ -26102,8 +26102,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_id",
-      "community": 42,
-      "community_name": "$defs",
+      "community": 251,
+      "community_name": "common.schema.json",
       "norm_label": "$id"
     },
     {
@@ -26113,8 +26113,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_title",
-      "community": 42,
-      "community_name": "$defs",
+      "community": 251,
+      "community_name": "common.schema.json",
       "norm_label": "title"
     },
     {
@@ -26168,8 +26168,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_defs_locale",
-      "community": 273,
-      "community_name": "locale",
+      "community": 42,
+      "community_name": "$defs",
       "norm_label": "locale"
     },
     {
@@ -26179,8 +26179,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_locale_type",
-      "community": 273,
-      "community_name": "locale",
+      "community": 42,
+      "community_name": "$defs",
       "norm_label": "type"
     },
     {
@@ -26190,8 +26190,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_locale_pattern",
-      "community": 273,
-      "community_name": "locale",
+      "community": 42,
+      "community_name": "$defs",
       "norm_label": "pattern"
     },
     {
@@ -26201,8 +26201,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_locale_maxlength",
-      "community": 273,
-      "community_name": "locale",
+      "community": 42,
+      "community_name": "$defs",
       "norm_label": "maxlength"
     },
     {
@@ -26311,8 +26311,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_defs_animation",
-      "community": 42,
-      "community_name": "$defs",
+      "community": 258,
+      "community_name": "enum",
       "norm_label": "animation"
     },
     {
@@ -26322,8 +26322,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_animation_enum",
-      "community": 42,
-      "community_name": "$defs",
+      "community": 258,
+      "community_name": "enum",
       "norm_label": "enum"
     },
     {
@@ -26333,8 +26333,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_json_ref_trace",
-      "community": 42,
-      "community_name": "$defs",
+      "community": 258,
+      "community_name": "enum",
       "norm_label": "trace"
     },
     {
@@ -26344,8 +26344,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_json_ref_none",
-      "community": 42,
-      "community_name": "$defs",
+      "community": 258,
+      "community_name": "enum",
       "norm_label": "none"
     },
     {
@@ -26762,7 +26762,7 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_json_ref_security",
-      "community": 226,
+      "community": 51,
       "community_name": "enum",
       "norm_label": "security"
     },
@@ -26795,8 +26795,8 @@
       "source_location": "L74",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_defs_nodeicon",
-      "community": 51,
-      "community_name": "enum",
+      "community": 42,
+      "community_name": "$defs",
       "norm_label": "nodeicon"
     },
     {
@@ -26806,8 +26806,8 @@
       "source_location": "L75",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_nodeicon_description",
-      "community": 51,
-      "community_name": "enum",
+      "community": 42,
+      "community_name": "$defs",
       "norm_label": "description"
     },
     {
@@ -27004,7 +27004,7 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_defs_variant",
-      "community": 226,
+      "community": 51,
       "community_name": "enum",
       "norm_label": "variant"
     },
@@ -27015,7 +27015,7 @@
       "source_location": "L101",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_variant_enum",
-      "community": 226,
+      "community": 51,
       "community_name": "enum",
       "norm_label": "enum"
     },
@@ -27026,7 +27026,7 @@
       "source_location": "L101",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_json_ref_default",
-      "community": 226,
+      "community": 51,
       "community_name": "enum",
       "norm_label": "default"
     },
@@ -27037,7 +27037,7 @@
       "source_location": "L101",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_json_ref_emphasis",
-      "community": 226,
+      "community": 51,
       "community_name": "enum",
       "norm_label": "emphasis"
     },
@@ -27048,7 +27048,7 @@
       "source_location": "L101",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_json_ref_dashed",
-      "community": 226,
+      "community": 51,
       "community_name": "enum",
       "norm_label": "dashed"
     },
@@ -27884,8 +27884,8 @@
       "source_location": "L164",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_defs_cards",
-      "community": 140,
-      "community_name": "required",
+      "community": 42,
+      "community_name": "$defs",
       "norm_label": "cards"
     },
     {
@@ -27895,8 +27895,8 @@
       "source_location": "L165",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_common_schema_cards_type",
-      "community": 140,
-      "community_name": "required",
+      "community": 42,
+      "community_name": "$defs",
       "norm_label": "type"
     },
     {
@@ -30865,8 +30865,8 @@
       "source_location": "L160",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_erd_schema_properties_label",
-      "community": 258,
-      "community_name": "label",
+      "community": 30,
+      "community_name": "properties",
       "norm_label": "label"
     },
     {
@@ -30876,8 +30876,8 @@
       "source_location": "L161",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_erd_schema_label_type",
-      "community": 258,
-      "community_name": "label",
+      "community": 30,
+      "community_name": "properties",
       "norm_label": "type"
     },
     {
@@ -30887,8 +30887,8 @@
       "source_location": "L162",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_erd_schema_label_minlength",
-      "community": 258,
-      "community_name": "label",
+      "community": 30,
+      "community_name": "properties",
       "norm_label": "minlength"
     },
     {
@@ -30986,8 +30986,8 @@
       "source_location": "L175",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_erd_schema_properties_col",
-      "community": 30,
-      "community_name": "properties",
+      "community": 261,
+      "community_name": "col",
       "norm_label": "col"
     },
     {
@@ -30997,8 +30997,8 @@
       "source_location": "L176",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_erd_schema_col_type",
-      "community": 30,
-      "community_name": "properties",
+      "community": 261,
+      "community_name": "col",
       "norm_label": "type"
     },
     {
@@ -31008,8 +31008,8 @@
       "source_location": "L177",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_erd_schema_col_minimum",
-      "community": 30,
-      "community_name": "properties",
+      "community": 261,
+      "community_name": "col",
       "norm_label": "minimum"
     },
     {
@@ -31019,8 +31019,8 @@
       "source_location": "L178",
       "_origin": "ast",
       "id": "agents_skills_archify_schemas_erd_schema_col_maximum",
-      "community": 30,
-      "community_name": "properties",
+      "community": 261,
+      "community_name": "col",
       "norm_label": "maximum"
     },
     {
@@ -44010,8 +44010,8 @@
       "source_location": "L454",
       "_origin": "ast",
       "id": "agents_skills_archify_scripts_check_render_output_collectarrows",
-      "community": 71,
-      "community_name": "parseAttrs",
+      "community": 14,
+      "community_name": "collectArrows",
       "norm_label": "collectarrows()"
     },
     {
@@ -44021,8 +44021,8 @@
       "source_location": "L539",
       "_origin": "ast",
       "id": "agents_skills_archify_scripts_check_render_output_continuousroutepoints",
-      "community": 71,
-      "community_name": "parseAttrs",
+      "community": 14,
+      "community_name": "collectArrows",
       "norm_label": "continuousroutepoints()"
     },
     {
@@ -44032,8 +44032,8 @@
       "source_location": "L554",
       "_origin": "ast",
       "id": "agents_skills_archify_scripts_check_render_output_inspectedpath",
-      "community": 71,
-      "community_name": "parseAttrs",
+      "community": 14,
+      "community_name": "collectArrows",
       "norm_label": "inspectedpath()"
     },
     {
@@ -44131,8 +44131,8 @@
       "source_location": "L731",
       "_origin": "ast",
       "id": "agents_skills_archify_scripts_check_render_output_parseroutepoints",
-      "community": 71,
-      "community_name": "parseAttrs",
+      "community": 14,
+      "community_name": "collectArrows",
       "norm_label": "parseroutepoints()"
     },
     {
@@ -44208,8 +44208,8 @@
       "source_location": "L862",
       "_origin": "ast",
       "id": "agents_skills_archify_scripts_check_render_output_collectcompositionframes",
-      "community": 71,
-      "community_name": "parseAttrs",
+      "community": 14,
+      "community_name": "collectArrows",
       "norm_label": "collectcompositionframes()"
     },
     {
@@ -44285,8 +44285,8 @@
       "source_location": "L1115",
       "_origin": "ast",
       "id": "agents_skills_archify_scripts_check_render_output_linesegments",
-      "community": 71,
-      "community_name": "parseAttrs",
+      "community": 14,
+      "community_name": "collectArrows",
       "norm_label": "linesegments()"
     },
     {
@@ -44516,8 +44516,8 @@
       "source_location": "L1432",
       "_origin": "ast",
       "id": "agents_skills_archify_scripts_check_render_output_decodenumericreferences",
-      "community": 144,
-      "community_name": "collectNonFiniteAttrs",
+      "community": 14,
+      "community_name": "collectArrows",
       "norm_label": "decodenumericreferences()"
     },
     {
@@ -44571,8 +44571,8 @@
       "source_location": "L1463",
       "_origin": "ast",
       "id": "agents_skills_archify_scripts_check_render_output_ispoint",
-      "community": 71,
-      "community_name": "parseAttrs",
+      "community": 14,
+      "community_name": "collectArrows",
       "norm_label": "ispoint()"
     },
     {
@@ -45627,8 +45627,8 @@
       "source_location": "L1697",
       "_origin": "ast",
       "id": "agents_skills_archify_scripts_check_update_ismainmodule",
-      "community": 24,
-      "community_name": "path-semantics.mjs",
+      "community": 1,
+      "community_name": "check-update.mjs",
       "norm_label": "ismainmodule()"
     },
     {
@@ -46262,7 +46262,7 @@
       "label": "execute_task()",
       "file_type": "code",
       "source_file": "code_agent.py",
-      "source_location": "L93",
+      "source_location": "L96",
       "_origin": "ast",
       "id": "code_agent_execute_task",
       "community": 209,
@@ -46284,7 +46284,7 @@
       "label": "run_interactive_session()",
       "file_type": "code",
       "source_file": "code_agent.py",
-      "source_location": "L112",
+      "source_location": "L115",
       "_origin": "ast",
       "id": "code_agent_run_interactive_session",
       "community": 209,
@@ -46295,7 +46295,7 @@
       "label": "run_one_shot()",
       "file_type": "code",
       "source_file": "code_agent.py",
-      "source_location": "L226",
+      "source_location": "L229",
       "_origin": "ast",
       "id": "code_agent_run_one_shot",
       "community": 209,
@@ -46306,7 +46306,7 @@
       "label": "main()",
       "file_type": "code",
       "source_file": "code_agent.py",
-      "source_location": "L260",
+      "source_location": "L263",
       "_origin": "ast",
       "id": "code_agent_main",
       "community": 209,
@@ -46339,9 +46339,9 @@
       "label": "Execute a single coding prompt through the agent with streaming output.",
       "file_type": "rationale",
       "source_file": "code_agent.py",
-      "source_location": "L94",
+      "source_location": "L97",
       "_origin": "ast",
-      "id": "code_agent_rationale_94",
+      "id": "code_agent_rationale_97",
       "community": 209,
       "community_name": "code_agent.py",
       "norm_label": "execute a single coding prompt through the agent with streaming output."
@@ -46350,9 +46350,9 @@
       "label": "Run an interactive pair-programming session with the local agent.",
       "file_type": "rationale",
       "source_file": "code_agent.py",
-      "source_location": "L113",
+      "source_location": "L116",
       "_origin": "ast",
-      "id": "code_agent_rationale_113",
+      "id": "code_agent_rationale_116",
       "community": 209,
       "community_name": "code_agent.py",
       "norm_label": "run an interactive pair-programming session with the local agent."
@@ -46361,9 +46361,9 @@
       "label": "Run a single autonomous task from CLI arguments and exit.",
       "file_type": "rationale",
       "source_file": "code_agent.py",
-      "source_location": "L227",
+      "source_location": "L230",
       "_origin": "ast",
-      "id": "code_agent_rationale_227",
+      "id": "code_agent_rationale_230",
       "community": 209,
       "community_name": "code_agent.py",
       "norm_label": "run a single autonomous task from cli arguments and exit."
@@ -47227,8 +47227,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "agents_rules_graphify",
-      "community": 261,
-      "community_name": "rules/graphify.md",
+      "community": 187,
+      "community_name": "System Execution Flows & Lifecycles",
       "norm_label": "rules/graphify.md"
     },
     {
@@ -47238,8 +47238,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "agents_rules_graphify_graphify",
-      "community": 261,
-      "community_name": "rules/graphify.md",
+      "community": 187,
+      "community_name": "System Execution Flows & Lifecycles",
       "norm_label": "graphify"
     },
     {
@@ -50114,10 +50114,65 @@
       "norm_label": "\ud83d\udee0\ufe0f archify cli quick reference"
     },
     {
-      "label": "\ud83d\udee0\ufe0f Common Gotchas & Troubleshooting",
+      "label": "\ud83e\udde0 3-Tier Zero-Token Memory Fabric: Graphify + LLMWiki + SQLite Hybrid",
       "file_type": "document",
       "source_file": "README.md",
       "source_location": "L457",
+      "_origin": "ast",
+      "id": "readme_3_tier_zero_token_memory_fabric_graphify_llmwiki_sqlite_hybrid",
+      "community": 148,
+      "community_name": "\ud83d\ude80 Local Google Antigravity Agent (Open-Source Edition)",
+      "norm_label": "\ud83e\udde0 3-tier zero-token memory fabric: graphify + llmwiki + sqlite hybrid"
+    },
+    {
+      "label": "Why Not a Standalone Vector DB (Milvus, Qdrant, Chroma)?",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L461",
+      "_origin": "ast",
+      "id": "readme_why_not_a_standalone_vector_db_milvus_qdrant_chroma",
+      "community": 148,
+      "community_name": "\ud83d\ude80 Local Google Antigravity Agent (Open-Source Edition)",
+      "norm_label": "why not a standalone vector db (milvus, qdrant, chroma)?"
+    },
+    {
+      "label": "The Solution: 3-Tier Memory Architecture",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L466",
+      "_origin": "ast",
+      "id": "readme_the_solution_3_tier_memory_architecture",
+      "community": 148,
+      "community_name": "\ud83d\ude80 Local Google Antigravity Agent (Open-Source Edition)",
+      "norm_label": "the solution: 3-tier memory architecture"
+    },
+    {
+      "label": "\ud83d\udee0\ufe0f Memory Engine CLI Commands",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L491",
+      "_origin": "ast",
+      "id": "readme_memory_engine_cli_commands",
+      "community": 148,
+      "community_name": "\ud83d\ude80 Local Google Antigravity Agent (Open-Source Edition)",
+      "norm_label": "\ud83d\udee0\ufe0f memory engine cli commands"
+    },
+    {
+      "label": "\ud83d\udcbb Interactive Shell Memory Integration (`code_agent.py`)",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L511",
+      "_origin": "ast",
+      "id": "readme_interactive_shell_memory_integration_code_agent_py",
+      "community": 148,
+      "community_name": "\ud83d\ude80 Local Google Antigravity Agent (Open-Source Edition)",
+      "norm_label": "\ud83d\udcbb interactive shell memory integration (`code_agent.py`)"
+    },
+    {
+      "label": "\ud83d\udee0\ufe0f Common Gotchas & Troubleshooting",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L530",
       "_origin": "ast",
       "id": "readme_common_gotchas_troubleshooting",
       "community": 239,
@@ -50128,7 +50183,7 @@
       "label": "1. PowerShell: \"Running scripts is disabled on this system\"",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L459",
+      "source_location": "L532",
       "_origin": "ast",
       "id": "readme_1_powershell_running_scripts_is_disabled_on_this_system",
       "community": 239,
@@ -50139,7 +50194,7 @@
       "label": "2. \"Connection Refused\" or Cannot Connect to localhost:11434",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L467",
+      "source_location": "L540",
       "_origin": "ast",
       "id": "readme_2_connection_refused_or_cannot_connect_to_localhost_11434",
       "community": 239,
@@ -50150,7 +50205,7 @@
       "label": "3. Model Error: \"model does not support tools\"",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L471",
+      "source_location": "L544",
       "_origin": "ast",
       "id": "readme_3_model_error_model_does_not_support_tools",
       "community": 239,
@@ -50161,7 +50216,7 @@
       "label": "4. Windows UnicodeEncodeError ('charmap' codec can't encode character)",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L478",
+      "source_location": "L551",
       "_origin": "ast",
       "id": "readme_4_windows_unicodeencodeerror_charmap_codec_can_t_encode_character",
       "community": 239,
@@ -50172,7 +50227,7 @@
       "label": "\ud83d\udd2c Advanced: Using Custom Research Harnesses & Servers",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L489",
+      "source_location": "L562",
       "_origin": "ast",
       "id": "readme_advanced_using_custom_research_harnesses_servers",
       "community": 148,
@@ -50183,7 +50238,7 @@
       "label": "Pointing to LM Studio, vLLM, or llama.cpp",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L491",
+      "source_location": "L564",
       "_origin": "ast",
       "id": "readme_pointing_to_lm_studio_vllm_or_llama_cpp",
       "community": 148,
@@ -50194,7 +50249,7 @@
       "label": "Pointing to Google's Open-Source Research AI Harness",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L503",
+      "source_location": "L576",
       "_origin": "ast",
       "id": "readme_pointing_to_google_s_open_source_research_ai_harness",
       "community": 148,
@@ -50205,7 +50260,7 @@
       "label": "\ud83d\udcc4 License & Contributing",
       "file_type": "document",
       "source_file": "README.md",
-      "source_location": "L517",
+      "source_location": "L590",
       "_origin": "ast",
       "id": "readme_license_contributing",
       "community": 148,
@@ -50378,10 +50433,21 @@
       "norm_label": "built-in shell commands:"
     },
     {
-      "label": "5. Start Coding: One-Shot Autonomous Task CLI",
+      "label": "Automatic Memory Augmentation:",
       "file_type": "document",
       "source_file": "ZERO_TO_CODING.md",
       "source_location": "L166",
+      "_origin": "ast",
+      "id": "zero_to_coding_automatic_memory_augmentation",
+      "community": 253,
+      "community_name": "4. Start Coding: Interactive Pair-Programmer Shell",
+      "norm_label": "automatic memory augmentation:"
+    },
+    {
+      "label": "5. Start Coding: One-Shot Autonomous Task CLI",
+      "file_type": "document",
+      "source_file": "ZERO_TO_CODING.md",
+      "source_location": "L174",
       "_origin": "ast",
       "id": "zero_to_coding_5_start_coding_one_shot_autonomous_task_cli",
       "community": 58,
@@ -50392,51 +50458,51 @@
       "label": "6. 3 End-to-End Real World Coding Recipes",
       "file_type": "document",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L184",
+      "source_location": "L192",
       "_origin": "ast",
       "id": "zero_to_coding_6_3_end_to_end_real_world_coding_recipes",
-      "community": 58,
-      "community_name": "\ud83d\ude80 From Zero to Start Coding with Local Google Antigravity Agent",
+      "community": 271,
+      "community_name": "6. 3 End-to-End Real World Coding Recipes",
       "norm_label": "6. 3 end-to-end real world coding recipes"
     },
     {
       "label": "Recipe 1: Scaffold a Complete FastAPI Backend Microservice",
       "file_type": "document",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L188",
+      "source_location": "L196",
       "_origin": "ast",
       "id": "zero_to_coding_recipe_1_scaffold_a_complete_fastapi_backend_microservice",
-      "community": 58,
-      "community_name": "\ud83d\ude80 From Zero to Start Coding with Local Google Antigravity Agent",
+      "community": 271,
+      "community_name": "6. 3 End-to-End Real World Coding Recipes",
       "norm_label": "recipe 1: scaffold a complete fastapi backend microservice"
     },
     {
       "label": "Recipe 2: Write Automated Unit Tests for Existing Code",
       "file_type": "document",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L205",
+      "source_location": "L213",
       "_origin": "ast",
       "id": "zero_to_coding_recipe_2_write_automated_unit_tests_for_existing_code",
-      "community": 58,
-      "community_name": "\ud83d\ude80 From Zero to Start Coding with Local Google Antigravity Agent",
+      "community": 271,
+      "community_name": "6. 3 End-to-End Real World Coding Recipes",
       "norm_label": "recipe 2: write automated unit tests for existing code"
     },
     {
       "label": "Recipe 3: Refactor Legacy Code & Modernize Architecture",
       "file_type": "document",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L222",
+      "source_location": "L230",
       "_origin": "ast",
       "id": "zero_to_coding_recipe_3_refactor_legacy_code_modernize_architecture",
-      "community": 58,
-      "community_name": "\ud83d\ude80 From Zero to Start Coding with Local Google Antigravity Agent",
+      "community": 271,
+      "community_name": "6. 3 End-to-End Real World Coding Recipes",
       "norm_label": "recipe 3: refactor legacy code & modernize architecture"
     },
     {
       "label": "7. The Developer SDK Handbook (Writing Your Own Agents in Python)",
       "file_type": "document",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L234",
+      "source_location": "L242",
       "_origin": "ast",
       "id": "zero_to_coding_7_the_developer_sdk_handbook_writing_your_own_agents_in_python",
       "community": 58,
@@ -50447,7 +50513,7 @@
       "label": "Minimal Custom Agent Script (`my_custom_agent.py`):",
       "file_type": "document",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L238",
+      "source_location": "L246",
       "_origin": "ast",
       "id": "zero_to_coding_minimal_custom_agent_script_my_custom_agent_py",
       "community": 58,
@@ -50458,7 +50524,7 @@
       "label": "Safety Policies: Autonomous vs. Review Mode",
       "file_type": "document",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L278",
+      "source_location": "L286",
       "_origin": "ast",
       "id": "zero_to_coding_safety_policies_autonomous_vs_review_mode",
       "community": 58,
@@ -50469,7 +50535,7 @@
       "label": "8. Advanced Backend Integration (LM Studio, vLLM & Google Research Harness)",
       "file_type": "document",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L284",
+      "source_location": "L292",
       "_origin": "ast",
       "id": "zero_to_coding_8_advanced_backend_integration_lm_studio_vllm_google_research_harness",
       "community": 58,
@@ -50480,7 +50546,7 @@
       "label": "Option 1: LM Studio",
       "file_type": "document",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L286",
+      "source_location": "L294",
       "_origin": "ast",
       "id": "zero_to_coding_option_1_lm_studio",
       "community": 58,
@@ -50491,7 +50557,7 @@
       "label": "Option 2: vLLM (High-Performance Linux Server)",
       "file_type": "document",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L295",
+      "source_location": "L303",
       "_origin": "ast",
       "id": "zero_to_coding_option_2_vllm_high_performance_linux_server",
       "community": 58,
@@ -50502,7 +50568,7 @@
       "label": "Option 3: Google Research AI Harness Binary",
       "file_type": "document",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L307",
+      "source_location": "L315",
       "_origin": "ast",
       "id": "zero_to_coding_option_3_google_research_ai_harness_binary",
       "community": 58,
@@ -50513,44 +50579,44 @@
       "label": "9. Troubleshooting & Pro-Tips",
       "file_type": "document",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L315",
+      "source_location": "L323",
       "_origin": "ast",
       "id": "zero_to_coding_9_troubleshooting_pro_tips",
-      "community": 251,
-      "community_name": "9. Troubleshooting & Pro-Tips",
+      "community": 58,
+      "community_name": "\ud83d\ude80 From Zero to Start Coding with Local Google Antigravity Agent",
       "norm_label": "9. troubleshooting & pro-tips"
     },
     {
       "label": "1. Model Tool Calling Compatibility",
       "file_type": "document",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L317",
+      "source_location": "L325",
       "_origin": "ast",
       "id": "zero_to_coding_1_model_tool_calling_compatibility",
-      "community": 251,
-      "community_name": "9. Troubleshooting & Pro-Tips",
+      "community": 58,
+      "community_name": "\ud83d\ude80 From Zero to Start Coding with Local Google Antigravity Agent",
       "norm_label": "1. model tool calling compatibility"
     },
     {
       "label": "2. File Path Formatting",
       "file_type": "document",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L322",
+      "source_location": "L330",
       "_origin": "ast",
       "id": "zero_to_coding_2_file_path_formatting",
-      "community": 251,
-      "community_name": "9. Troubleshooting & Pro-Tips",
+      "community": 58,
+      "community_name": "\ud83d\ude80 From Zero to Start Coding with Local Google Antigravity Agent",
       "norm_label": "2. file path formatting"
     },
     {
       "label": "3. Windows Terminal Character Encoding",
       "file_type": "document",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L325",
+      "source_location": "L333",
       "_origin": "ast",
       "id": "zero_to_coding_3_windows_terminal_character_encoding",
-      "community": 251,
-      "community_name": "9. Troubleshooting & Pro-Tips",
+      "community": 58,
+      "community_name": "\ud83d\ude80 From Zero to Start Coding with Local Google Antigravity Agent",
       "norm_label": "3. windows terminal character encoding"
     },
     {
@@ -150487,7 +150553,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L93",
+      "source_location": "L96",
       "weight": 1.0,
       "_origin": "ast",
       "source": "code_agent",
@@ -150520,7 +150586,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L260",
+      "source_location": "L263",
       "weight": 1.0,
       "_origin": "ast",
       "source": "code_agent",
@@ -150531,7 +150597,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L112",
+      "source_location": "L115",
       "weight": 1.0,
       "_origin": "ast",
       "source": "code_agent",
@@ -150542,7 +150608,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L226",
+      "source_location": "L229",
       "weight": 1.0,
       "_origin": "ast",
       "source": "code_agent",
@@ -150613,7 +150679,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L150",
+      "source_location": "L153",
       "weight": 1.0,
       "_origin": "ast",
       "source": "code_agent_run_interactive_session",
@@ -150625,7 +150691,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L252",
+      "source_location": "L255",
       "weight": 1.0,
       "_origin": "ast",
       "source": "code_agent_run_one_shot",
@@ -150637,7 +150703,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L95",
+      "source_location": "L98",
       "weight": 1.0,
       "_origin": "ast",
       "source": "code_agent_execute_task",
@@ -150696,7 +150762,7 @@
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L93",
+      "source_location": "L96",
       "weight": 1.0,
       "_origin": "ast",
       "source": "code_agent_execute_task",
@@ -150707,10 +150773,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L94",
+      "source_location": "L97",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "code_agent_rationale_94",
+      "source": "code_agent_rationale_97",
       "target": "code_agent_execute_task",
       "confidence_score": 1.0
     },
@@ -150719,7 +150785,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L217",
+      "source_location": "L220",
       "weight": 1.0,
       "_origin": "ast",
       "source": "code_agent_run_interactive_session",
@@ -150731,7 +150797,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L250",
+      "source_location": "L253",
       "weight": 1.0,
       "_origin": "ast",
       "source": "code_agent_run_one_shot",
@@ -150743,7 +150809,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L138",
+      "source_location": "L141",
       "weight": 1.0,
       "_origin": "ast",
       "source": "code_agent_run_interactive_session",
@@ -150755,7 +150821,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L249",
+      "source_location": "L252",
       "weight": 1.0,
       "_origin": "ast",
       "source": "code_agent_run_one_shot",
@@ -150791,7 +150857,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L296",
+      "source_location": "L299",
       "weight": 1.0,
       "_origin": "ast",
       "source": "code_agent_main",
@@ -150802,10 +150868,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L113",
+      "source_location": "L116",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "code_agent_rationale_113",
+      "source": "code_agent_rationale_116",
       "target": "code_agent_run_interactive_session",
       "confidence_score": 1.0
     },
@@ -150814,7 +150880,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L168",
+      "source_location": "L171",
       "weight": 1.0,
       "_origin": "ast",
       "source": "code_agent_run_interactive_session",
@@ -150826,7 +150892,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L167",
+      "source_location": "L170",
       "weight": 1.0,
       "_origin": "ast",
       "source": "code_agent_run_interactive_session",
@@ -150838,7 +150904,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L169",
+      "source_location": "L172",
       "weight": 1.0,
       "_origin": "ast",
       "source": "code_agent_run_interactive_session",
@@ -150850,7 +150916,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L294",
+      "source_location": "L297",
       "weight": 1.0,
       "_origin": "ast",
       "source": "code_agent_main",
@@ -150861,10 +150927,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "code_agent.py",
-      "source_location": "L227",
+      "source_location": "L230",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "code_agent_rationale_227",
+      "source": "code_agent_rationale_230",
       "target": "code_agent_run_one_shot",
       "confidence_score": 1.0
     },
@@ -152357,6 +152423,17 @@
       "_origin": "ast",
       "source": "agents_rules_graphify",
       "target": "agents_rules_graphify_graphify",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L487",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "readme",
+      "target": "agents_rules_graphify",
       "confidence_score": 1.0
     },
     {
@@ -154838,7 +154915,18 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "README.md",
-      "source_location": "L489",
+      "source_location": "L457",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "readme_local_google_antigravity_agent_open_source_edition",
+      "target": "readme_3_tier_zero_token_memory_fabric_graphify_llmwiki_sqlite_hybrid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L562",
       "weight": 1.0,
       "_origin": "ast",
       "source": "readme_local_google_antigravity_agent_open_source_edition",
@@ -154849,7 +154937,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "README.md",
-      "source_location": "L457",
+      "source_location": "L530",
       "weight": 1.0,
       "_origin": "ast",
       "source": "readme_local_google_antigravity_agent_open_source_edition",
@@ -154860,7 +154948,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "README.md",
-      "source_location": "L517",
+      "source_location": "L590",
       "weight": 1.0,
       "_origin": "ast",
       "source": "readme_local_google_antigravity_agent_open_source_edition",
@@ -155190,7 +155278,51 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "README.md",
-      "source_location": "L459",
+      "source_location": "L511",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "readme_3_tier_zero_token_memory_fabric_graphify_llmwiki_sqlite_hybrid",
+      "target": "readme_interactive_shell_memory_integration_code_agent_py",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L491",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "readme_3_tier_zero_token_memory_fabric_graphify_llmwiki_sqlite_hybrid",
+      "target": "readme_memory_engine_cli_commands",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L466",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "readme_3_tier_zero_token_memory_fabric_graphify_llmwiki_sqlite_hybrid",
+      "target": "readme_the_solution_3_tier_memory_architecture",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L461",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "readme_3_tier_zero_token_memory_fabric_graphify_llmwiki_sqlite_hybrid",
+      "target": "readme_why_not_a_standalone_vector_db_milvus_qdrant_chroma",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L532",
       "weight": 1.0,
       "_origin": "ast",
       "source": "readme_common_gotchas_troubleshooting",
@@ -155201,7 +155333,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "README.md",
-      "source_location": "L467",
+      "source_location": "L540",
       "weight": 1.0,
       "_origin": "ast",
       "source": "readme_common_gotchas_troubleshooting",
@@ -155212,7 +155344,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "README.md",
-      "source_location": "L471",
+      "source_location": "L544",
       "weight": 1.0,
       "_origin": "ast",
       "source": "readme_common_gotchas_troubleshooting",
@@ -155223,7 +155355,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "README.md",
-      "source_location": "L478",
+      "source_location": "L551",
       "weight": 1.0,
       "_origin": "ast",
       "source": "readme_common_gotchas_troubleshooting",
@@ -155234,7 +155366,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "README.md",
-      "source_location": "L503",
+      "source_location": "L576",
       "weight": 1.0,
       "_origin": "ast",
       "source": "readme_advanced_using_custom_research_harnesses_servers",
@@ -155245,7 +155377,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "README.md",
-      "source_location": "L491",
+      "source_location": "L564",
       "weight": 1.0,
       "_origin": "ast",
       "source": "readme_advanced_using_custom_research_harnesses_servers",
@@ -155311,7 +155443,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L166",
+      "source_location": "L174",
       "weight": 1.0,
       "_origin": "ast",
       "source": "zero_to_coding_from_zero_to_start_coding_with_local_google_antigravity_agent",
@@ -155322,7 +155454,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L184",
+      "source_location": "L192",
       "weight": 1.0,
       "_origin": "ast",
       "source": "zero_to_coding_from_zero_to_start_coding_with_local_google_antigravity_agent",
@@ -155333,7 +155465,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L234",
+      "source_location": "L242",
       "weight": 1.0,
       "_origin": "ast",
       "source": "zero_to_coding_from_zero_to_start_coding_with_local_google_antigravity_agent",
@@ -155344,7 +155476,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L284",
+      "source_location": "L292",
       "weight": 1.0,
       "_origin": "ast",
       "source": "zero_to_coding_from_zero_to_start_coding_with_local_google_antigravity_agent",
@@ -155355,7 +155487,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L315",
+      "source_location": "L323",
       "weight": 1.0,
       "_origin": "ast",
       "source": "zero_to_coding_from_zero_to_start_coding_with_local_google_antigravity_agent",
@@ -155432,6 +155564,17 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ZERO_TO_CODING.md",
+      "source_location": "L166",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "zero_to_coding_4_start_coding_interactive_pair_programmer_shell",
+      "target": "zero_to_coding_automatic_memory_augmentation",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ZERO_TO_CODING.md",
       "source_location": "L159",
       "weight": 1.0,
       "_origin": "ast",
@@ -155465,7 +155608,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L188",
+      "source_location": "L196",
       "weight": 1.0,
       "_origin": "ast",
       "source": "zero_to_coding_6_3_end_to_end_real_world_coding_recipes",
@@ -155476,7 +155619,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L205",
+      "source_location": "L213",
       "weight": 1.0,
       "_origin": "ast",
       "source": "zero_to_coding_6_3_end_to_end_real_world_coding_recipes",
@@ -155487,7 +155630,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L222",
+      "source_location": "L230",
       "weight": 1.0,
       "_origin": "ast",
       "source": "zero_to_coding_6_3_end_to_end_real_world_coding_recipes",
@@ -155498,7 +155641,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L238",
+      "source_location": "L246",
       "weight": 1.0,
       "_origin": "ast",
       "source": "zero_to_coding_7_the_developer_sdk_handbook_writing_your_own_agents_in_python",
@@ -155509,7 +155652,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L278",
+      "source_location": "L286",
       "weight": 1.0,
       "_origin": "ast",
       "source": "zero_to_coding_7_the_developer_sdk_handbook_writing_your_own_agents_in_python",
@@ -155520,7 +155663,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L286",
+      "source_location": "L294",
       "weight": 1.0,
       "_origin": "ast",
       "source": "zero_to_coding_8_advanced_backend_integration_lm_studio_vllm_google_research_harness",
@@ -155531,7 +155674,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L295",
+      "source_location": "L303",
       "weight": 1.0,
       "_origin": "ast",
       "source": "zero_to_coding_8_advanced_backend_integration_lm_studio_vllm_google_research_harness",
@@ -155542,7 +155685,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L307",
+      "source_location": "L315",
       "weight": 1.0,
       "_origin": "ast",
       "source": "zero_to_coding_8_advanced_backend_integration_lm_studio_vllm_google_research_harness",
@@ -155553,7 +155696,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L317",
+      "source_location": "L325",
       "weight": 1.0,
       "_origin": "ast",
       "source": "zero_to_coding_9_troubleshooting_pro_tips",
@@ -155564,7 +155707,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L322",
+      "source_location": "L330",
       "weight": 1.0,
       "_origin": "ast",
       "source": "zero_to_coding_9_troubleshooting_pro_tips",
@@ -155575,7 +155718,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ZERO_TO_CODING.md",
-      "source_location": "L325",
+      "source_location": "L333",
       "weight": 1.0,
       "_origin": "ast",
       "source": "zero_to_coding_9_troubleshooting_pro_tips",
