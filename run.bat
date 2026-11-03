@@ -2,7 +2,13 @@
 setlocal
 cd /d "%~dp0"
 
-REM Find Python executable
+REM 1. Prefer managed virtual environment Python if available
+if exist "%~dp0venv\Scripts\python.exe" (
+    "%~dp0venv\Scripts\python.exe" run.py %*
+    goto :end
+)
+
+REM 2. Otherwise find system Python executable to bootstrap
 python --version >nul 2>&1
 if %ERRORLEVEL% equ 0 (
     python run.py %*

@@ -5,7 +5,14 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $scriptDir) { $scriptDir = (Get-Location).Path }
 Set-Location $scriptDir
 
-# Check Python
+# Prefer managed virtual environment Python if available
+$venvPython = Join-Path $scriptDir "venv\Scripts\python.exe"
+if (Test-Path $venvPython) {
+    & $venvPython run.py @args
+    exit $LASTEXITCODE
+}
+
+# Check system Python
 $pythonCmd = Get-Command python -ErrorAction SilentlyContinue
 if (-not $pythonCmd) {
     $pythonCmd = Get-Command py -ErrorAction SilentlyContinue

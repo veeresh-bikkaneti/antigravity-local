@@ -152,6 +152,10 @@
    - The Antigravity local harness requires `Path`, `Content`, and `Overwrite: bool` arguments when invoking file-creation tools.
 3. **Windows Encoding**:
    - Python on Windows defaults to `cp1252` encoding in PowerShell sessions. Scripts must configure `sys.stdout.reconfigure(encoding='utf-8')` to prevent UnicodeEncodeError during token streaming.
+4. **Windows `os.execv` Space-in-Path Quirk**:
+   - When the repository path contains spaces (e.g. `c:\Users\veere\source\repos\local antigravity`), Python's `os.execv` on Windows delegates to MSVC CRT `_wexecv`, which does not quote argument tokens when constructing the command line for `CreateProcess`.
+   - As a result, `local antigravity\venv\Scripts\python.exe` gets split at the space, causing Python to see `C:\Users\veere\source\repos\local` as the executable and relative path `antigravity\venv\Scripts\python.exe` as the script argument (`[Errno 2] No such file or directory`).
+   - Fix: On Windows, use `subprocess.call([VENV_PYTHON, script_path] + sys.argv[1:])` (which leverages Windows-standard `list2cmdline` argument quoting) and directly target `venv\Scripts\python.exe` in `run.bat` and `run.ps1`.
 
 ---
 

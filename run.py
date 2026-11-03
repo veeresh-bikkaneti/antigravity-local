@@ -140,7 +140,14 @@ def bootstrap_venv():
 
     # Relaunch script using the venv python
     print("       Switching execution to managed environment...\n")
-    os.execv(VENV_PYTHON, [VENV_PYTHON, __file__] + sys.argv[1:])
+    script_path = os.path.abspath(__file__)
+    if IS_WIN:
+        try:
+            sys.exit(subprocess.call([VENV_PYTHON, script_path] + sys.argv[1:]))
+        except KeyboardInterrupt:
+            sys.exit(0)
+    else:
+        os.execv(VENV_PYTHON, [VENV_PYTHON, script_path] + sys.argv[1:])
 
 def check_ollama_service(base_url="http://localhost:11434"):
     """Check if Ollama is running; if not, attempt to start it."""
