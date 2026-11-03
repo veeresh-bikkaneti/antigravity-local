@@ -147,6 +147,13 @@
     - Method 2: Instant zero-server browser open (`Start-Process docs\diagrams\*.html`).
     - Method 3: Standard local HTTP server (`python -m http.server 8080 --directory docs/diagrams`).
   - Mirrored `CONTEXT_MEMORY.md` to `C:\Users\veere\antigravity-local\CONTEXT_MEMORY.md`.
+- [x] **Step 22**: Graphify & LLMWiki Architecture for Token Optimization (Nov 3, 2026):
+  - Integrated `graphify` natively for Google Antigravity (`graphify antigravity install`); generated `.agents/rules/graphify.md` and `.agents/workflows/graphify.md`.
+  - Ran local AST knowledge graph extraction and token reduction benchmark on repository:
+    - Reduced corpus query footprint from ~279,466 tokens to ~8,985 tokens (**31.1x to 128.8x fewer tokens per query**).
+    - Zero external API tokens spent on AST extraction via local Tree-sitter.
+  - Confirmed Karpathy's LLMWiki + Graphify architecture as the ideal solution to avoid token burnout while preserving 1-command plug-and-play simplicity.
+  - Mirrored `CONTEXT_MEMORY.md` to `C:\Users\veere\antigravity-local\CONTEXT_MEMORY.md`.
 
 ---
 

@@ -48,6 +48,9 @@ venv.bak/
 !.vscode/extensions.json
 .idea/
 *.sublime-workspace
+
+# Graphify Ephemeral Caches
+graphify-out/cache/
 *.sublime-project
 *.swp
 *.swo
