@@ -1110,13 +1110,13 @@
     "semantic_hash": ""
   },
   "CONTEXT_MEMORY.md": {
-    "mtime": 1793730318.4948041,
-    "ast_hash": "76803a61dd62ef2e7572da6fdcadace3",
+    "mtime": 1793732134.1385193,
+    "ast_hash": "bd80d25a56a226e63c7e94148d26fd1d",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1793730217.7278037,
-    "ast_hash": "9900b92e92e9f66136d77c2c250a8563",
+    "mtime": 1793732109.805264,
+    "ast_hash": "7b1119e2121b57889f71bb7890712c63",
     "semantic_hash": ""
   },
   "ZERO_TO_CODING.md": {
@@ -1185,8 +1185,8 @@
     "semantic_hash": ""
   },
   ".wiki/consensus-governance.md": {
-    "mtime": 1793730289.6159859,
-    "ast_hash": "2d5fe0bbf23c0d0b9c1c0edd6718afb5",
+    "mtime": 1793730398.787414,
+    "ast_hash": "269b5b29db095adee738eb07efa3d125",
     "semantic_hash": ""
   }
 }

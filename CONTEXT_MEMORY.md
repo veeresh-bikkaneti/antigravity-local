@@ -192,6 +192,12 @@
   - **LLMWiki Topic Registry Updated**: Added `consensus-governance.md` to `.wiki/` and updated `.wiki/index.md`. Re-indexed memory database via `python memory.py index`.
   - **Graphify AST Extraction**: Updated code knowledge graph via `graphify update .` to capture all latest documentation and module structures.
   - Mirrored `CONTEXT_MEMORY.md` to `C:\Users\veere\antigravity-local\CONTEXT_MEMORY.md`.
+- [x] **Step 27**: Mermaid Diagram Parsing Fix & Documentation Polish (Nov 3, 2026):
+  - **Mermaid Edge Label Syntax Fix**: Resolved GitHub parsing error in `README.md` by quoting unescaped parentheses and inequality operators (`ModelWeights -->|"100% VRAM fit (<=16GB)"| GPU`). Verified 100% valid syntax across all diagrams in repository via automated scanner.
+  - **TOC & README Clean-up**: Streamlined `README.md` to a developer-first structure (12 clean, logical sections). Removed internal meta-agent governance jargon from the primary developer navigation.
+  - **Credits & Toolchain Heritage**: Added a tasteful, dedicated section at the bottom of `README.md` crediting Garry Tan's `gstack`, `pstack`, `archify`, `graphify`, `google-antigravity`, and `ollama`, while linking formal specifications (`docs/PRODUCT_SPEC.md`, `docs/CONSENSUS_MANIFEST.md`, `docs/MEMORY_SPEC.md`) for contributors.
+  - **Verification**: Verified all 40 internal documentation links and re-indexed the memory store.
+  - Mirrored `CONTEXT_MEMORY.md` to `C:\Users\veere\antigravity-local\CONTEXT_MEMORY.md`.
 
 ---
 

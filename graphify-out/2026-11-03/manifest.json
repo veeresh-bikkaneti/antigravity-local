@@ -1085,8 +1085,8 @@
     "semantic_hash": ""
   },
   ".wiki/index.md": {
-    "mtime": 1793728417.2692394,
-    "ast_hash": "d4858febe43523c24a5f3b93f938a26f",
+    "mtime": 1793730294.201508,
+    "ast_hash": "0b67b6ec4d8ff4414a25b80610cf9235",
     "semantic_hash": ""
   },
   ".wiki/model-hierarchy.md": {
@@ -1110,28 +1110,28 @@
     "semantic_hash": ""
   },
   "CONTEXT_MEMORY.md": {
-    "mtime": 1793729531.2906828,
-    "ast_hash": "faef077c9864ef87211af56337b6b70c",
+    "mtime": 1793730318.4948041,
+    "ast_hash": "76803a61dd62ef2e7572da6fdcadace3",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1793728249.5069659,
-    "ast_hash": "90433d1d3e7207c8f3a92deaaa88063e",
+    "mtime": 1793730217.7278037,
+    "ast_hash": "9900b92e92e9f66136d77c2c250a8563",
     "semantic_hash": ""
   },
   "ZERO_TO_CODING.md": {
-    "mtime": 1793728521.5686264,
-    "ast_hash": "84054eee3378b90e15679e029c29ba29",
+    "mtime": 1793730236.9925735,
+    "ast_hash": "f8e22f608e7a35476dad3ef949674989",
     "semantic_hash": ""
   },
   "docs/ARCHITECTURE.md": {
-    "mtime": 1793727150.3367302,
-    "ast_hash": "87a3ff746bc848a9b54d4408620a6997",
+    "mtime": 1793730251.974713,
+    "ast_hash": "00d2d102334beef88179466b8554b0d3",
     "semantic_hash": ""
   },
   "docs/FLOWS.md": {
-    "mtime": 1793727165.6944983,
-    "ast_hash": "beee673b2e8cb4feecbbcfe0f99f3a3a",
+    "mtime": 1793730280.2890072,
+    "ast_hash": "8fc83ccee23ceb743481995e3fff6260",
     "semantic_hash": ""
   },
   "docs/MEMORY_SPEC.md": {
@@ -1175,13 +1175,18 @@
     "semantic_hash": ""
   },
   "docs/CONSENSUS_MANIFEST.md": {
-    "mtime": 1793729521.0590253,
-    "ast_hash": "39e0d0977107aff098a13d2eb1d0da04",
+    "mtime": 1793729657.919821,
+    "ast_hash": "ac1aa6e0c308db4e400d5a37a7812ec1",
     "semantic_hash": ""
   },
   "docs/PRODUCT_SPEC.md": {
-    "mtime": 1793729499.1205971,
-    "ast_hash": "0e43f4c1bb7183b40b6314f7a19c6a3a",
+    "mtime": 1793729657.9897087,
+    "ast_hash": "3f22df3b455acb4cb2a3d7cc31f9527c",
+    "semantic_hash": ""
+  },
+  ".wiki/consensus-governance.md": {
+    "mtime": 1793730289.6159859,
+    "ast_hash": "2d5fe0bbf23c0d0b9c1c0edd6718afb5",
     "semantic_hash": ""
   }
 }

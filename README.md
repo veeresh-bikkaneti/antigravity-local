@@ -38,22 +38,17 @@ chmod +x run.sh && ./run.sh
 
 ## 📋 Table of Contents
 1. [⚡ 1-Command Plug & Play](#-1-command-plug--play-zero-friction-setup)
-2. [🐳 1-Command Docker Clean-Room Test Drive](#-1-command-docker-clean-room-test-drive)
-3. [📜 Product Specification & Consensus Manifest](#-product-specification--consensus-manifest)
-4. [🛠️ GStack Review Pipeline & Autonomous Governance](#-gstack-review-pipeline--autonomous-governance)
-5. [🏛️ System Architecture & Specifications (Docs & Archify)](docs/ARCHITECTURE.md)
-6. [📊 System Execution Flows & Lifecycles](docs/FLOWS.md)
-7. [🧠 3-Tier Zero-Token Memory Fabric](#-3-tier-zero-token-memory-fabric-graphify--llmwiki--sqlite-hybrid)
-8. [📖 From Zero to Start Coding (Master Guide)](ZERO_TO_CODING.md)
-9. [💻 Developer Coding Agent (code_agent.py)](#mode-3-developer-pair-programming-shell-code_agentpy)
-10. [What is This?](#-what-is-this)
-11. [Prerequisites Checklist](#-prerequisites-checklist)
-12. [Step-by-Step Manual Setup](#-step-by-step-manual-setup)
-13. [Project Structure](#-project-structure)
-14. [🏛️ System Architecture & Design Diagrams](#-system-architecture--design-diagrams)
-15. [Common Gotchas & Troubleshooting](#-common-gotchas--troubleshooting)
-12. [Advanced: Using Custom Research Harnesses & Servers](#-advanced-using-custom-research-harnesses--servers)
-13. [License & Contributing](#-license--contributing)
+2. [💡 What is Antigravity Local?](#-what-is-this)
+3. [⚙️ Prerequisites & Model Selection](#-prerequisites-checklist)
+4. [💻 Developer Coding Agent (`code_agent.py`)](#mode-3-developer-pair-programming-shell-code_agentpy)
+5. [🧠 3-Tier Zero-Token Memory Fabric](#-3-tier-zero-token-memory-fabric-graphify--llmwiki--sqlite-hybrid)
+6. [🏛️ Architecture & Interactive Diagrams](#-system-architecture--design-diagrams)
+7. [🐳 1-Command Docker Clean-Room Test Drive](#-1-command-docker-clean-room-test-drive)
+8. [📁 Project Structure](#-project-structure)
+9. [🛠️ Common Gotchas & Troubleshooting](#-common-gotchas--troubleshooting)
+10. [🔬 Advanced: Custom Harnesses & Backends](#-advanced-using-custom-research-harnesses--servers)
+11. [🙏 Credits, Toolchain Heritage & Specifications](#-credits-toolchain-heritage--specifications)
+12. [📄 License & Contributing](#-license--contributing)
 
 ---
 
@@ -275,8 +270,8 @@ graph TB
     Router -->|HTTP SSE :11434| Ollama
     Ollama -->|loads active weights| ModelWeights
 
-    ModelWeights -->|100% VRAM fit (<=16GB)| GPU
-    ModelWeights -.->|dynamic layer spill (>16GB)| RAM
+    ModelWeights -->|"100% VRAM fit (<=16GB)"| GPU
+    ModelWeights -.->|"dynamic layer spill (>16GB)"| RAM
 
     Agent -->|permission check| Policy
     Policy -->|authorizes file I/O| Harness
@@ -552,28 +547,6 @@ docker run --rm --add-host=host.docker.internal:host-gateway \
 
 ---
 
-## 📜 Product Specification & Consensus Manifest
-
-This project's architecture and governance are formally specified and approved:
-
-- 📑 **[Refined Product Specification (docs/PRODUCT_SPEC.md)](docs/PRODUCT_SPEC.md)**: Comprehensive specification covering the Decoupled Runtime Engine, Hardware-Aware Model Scheduler, 3-Tier Zero-Token Memory Fabric, Autonomous Tool Calling Boundary, and Developer Shell UX.
-- 🏛️ **[Council Consensus Manifest (docs/CONSENSUS_MANIFEST.md)](docs/CONSENSUS_MANIFEST.md)**: Formal voting and deliberation record signed by the Council of Experts (Architect, QA Lead, Systems Engineer, UX Designer, Security Officer) following P-Stack swarm governance and Advisor approval.
-- 📐 **[3-Tier Memory Fabric Specification (docs/MEMORY_SPEC.md)](docs/MEMORY_SPEC.md)**: Detailed comparative analysis of RAG vs. OKF vs. Standalone Vector DBs vs. LLMWiki, detailing mathematical RRF rank fusion and SQLite schema design.
-
----
-
-## 🛠️ GStack Review Pipeline & Autonomous Governance
-
-The repository integrates Garry Tan's [`gstack`](https://github.com/garrytan/gstack) toolchain (`.agents/skills/gstack/`) to automate rigorous product and engineering reviews:
-
-| GStack Review Mode | Focus & Methodology | Impact |
-| :--- | :--- | :--- |
-| **`/plan-eng-review`** | Blast radius analysis, Larson state diagnosis, McKinley boring technology principle, and error budgets. | Prevents architectural drift; ensures 1-command zero-external-daemon simplicity. |
-| **`plan-design-review`** | Developer journey, cognitive load reduction, sub-10ms feedback loops, and progressive disclosure. | Enforces instant streaming responses and intuitive slash commands (`/memory`, `/wiki`, `/files`). |
-| **`design-consultation`** | Visual hierarchy, Unicode box drawing, dark-mode terminal palettes, and interactive Archify diagrams. | Delivers clean, legible CLI output and responsive standalone HTML architecture visualizers. |
-
----
-
 ## 🛠️ Common Gotchas & Troubleshooting
 
 ### 1. PowerShell: "Running scripts is disabled on this system"
@@ -631,6 +604,25 @@ export ANTIGRAVITY_HARNESS_PATH="/path/to/custom/localharness"
 $env:ANTIGRAVITY_HARNESS_PATH="C:\path\to\custom\localharness.exe"
 ```
 The SDK will automatically detect your custom binary on startup and route all agent operations through it.
+
+---
+
+## 🙏 Credits, Toolchain Heritage & Specifications
+
+This platform was designed, engineered, and battle-tested with inspiration and assistance from pioneering open-source agent tooling and development workflows:
+
+- **[GStack by Garry Tan](https://github.com/garrytan/gstack)**: Inspired the multi-perspective review discipline (`/plan-eng-review`, `plan-design-review`, `design-consultation`) to pressure-test blast radius, streamline developer cognitive load, and establish strict terminal and visual hierarchy.
+- **[P-Stack](https://github.com/veeresh-bikkaneti/antigravity-local)**: Provided the architectural grounding (`/architect`), empirical 5-run benchmarking (`/benchmark-checklist`), and adversarial stress-testing (`/interrogate`) methodologies used to harden our runtime.
+- **[Google Antigravity SDK](https://github.com/google/antigravity)**: The official framework for autonomous agent reasoning, WebSocket harness bridges, and workspace safety policies.
+- **[Ollama](https://ollama.ai)**: Powers seamless local open-weights inference with dynamic layer offloading between dedicated GPU VRAM and host RAM.
+- **[Graphify](https://github.com/veeresh-bikkaneti/antigravity-local)**: Enables deterministic, zero-token AST code knowledge graph extraction and call-graph navigation.
+- **[Archify](https://github.com/tt-a1i/archify)**: Powers our interactive standalone HTML architecture and lifecycle diagrams with live signal tracing.
+
+### 📑 Technical Deep-Dives & Formal Specifications
+For contributors, system architects, and researchers interested in the underlying engineering records:
+- 📑 **[Product Specification](docs/PRODUCT_SPEC.md)**: Deep dive into the runtime engine, hardware scheduler, and security model.
+- 📐 **[3-Tier Memory Fabric Specification](docs/MEMORY_SPEC.md)**: Detailed comparative analysis of RAG vs. OKF vs. Vector DBs and mathematical Reciprocal Rank Fusion formulation.
+- 🏛️ **[Consensus Governance Record](docs/CONSENSUS_MANIFEST.md)**: Deliberation and verification audit record.
 
 ---
 

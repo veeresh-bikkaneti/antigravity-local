@@ -19,3 +19,4 @@ Requires approval from at least **3 of 4 non-Chair seats** and **zero veto from 
 
 ## 4. Advisor Approval Loop
 The Council Verdict and Consensus Manifest are presented to the Advisor. Re-deliberations occur iteratively until final Advisor approval is signed.
+
