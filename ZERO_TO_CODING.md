@@ -365,4 +365,4 @@ The architecture specs and governance records live in these docs:
 
 ---
 
-Run `python code_agent.py` to start your first session.
+Run `python code_agent.py` to start your first session. The loop is simple: you ask, the agent reads and writes files in your workspace, and nothing leaves your machine. Happy coding.

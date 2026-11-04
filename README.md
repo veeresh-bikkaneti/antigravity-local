@@ -2,11 +2,11 @@
 
 > Run fully autonomous, private AI agents on your local machine using the official Google Antigravity SDK (`google-antigravity`) connected to local models (Ollama, LM Studio, vLLM) or Google's open-source Research AI Harness. No cloud lock-in, no API fees.
 >
-> For an end-to-end developer guide with real-world project recipes and the Python SDK handbook, read **[ZERO_TO_CODING.md](ZERO_TO_CODING.md)**.
+> For an end-to-end developer guide with real-world project recipes and the Python SDK handbook, read [ZERO_TO_CODING.md](ZERO_TO_CODING.md).
 
 ---
 
-## 1-Command Plug & Play (Zero-Friction Setup)
+## Run it with one command
 
 No manual environment creation or dependency hunting. Clone the repo and run one command. The bootstrap script sets up your environment, starts Ollama, downloads the best model for your hardware if you have none, runs a demo, and opens an interactive agent chat:
 
@@ -85,7 +85,7 @@ Forgot the container name? `docker ps` lists running ones, then `docker stop <id
 
 ## Table of Contents
 0. [Serve It: Search UI + API on a Free Port](#serve-it-search-ui--api-on-a-free-port-local-or-docker)
-1. [1-Command Plug & Play](#1-command-plug--play-zero-friction-setup)
+1. [Run it with one command](#run-it-with-one-command)
 2. [What is Antigravity Local?](#what-is-this)
 3. [Prerequisites & Model Selection](#prerequisites-checklist)
 4. [Developer Coding Agent (`code_agent.py`)](#mode-3-developer-pair-programming-shell-code_agentpy)
@@ -102,13 +102,13 @@ Forgot the container name? `docker ps` lists running ones, then `docker stop <id
 
 ## What is This?
 
-Google Antigravity is an agentic AI framework designed for autonomous code generation, workspace manipulation, and tool use. 
+Google Antigravity is the SDK this repo builds on. It runs an agent loop that reads and writes files in a workspace and calls tools, and it can talk to any OpenAI-compatible server. 
 
 Normally, developer tools configure Antigravity to call cloud Gemini APIs. This repository shows you how to point Antigravity at local models running on your own PC.
 
 - **100% Private**: Your code, files, and prompts never leave your local hardware.
 - **Zero Cost**: No OpenAI or Google Cloud API subscriptions required.
-- **Autonomous Tool Calling**: The agent can inspect folders, read code, write files, and execute commands locally using standard safety policies.
+- **Autonomous Tool Calling**: The agent can inspect folders, read code, write files, and execute commands locally, under the safety policy you set (the demo scripts use `policy.allow_all()`).
 
 ---
 
@@ -158,9 +158,9 @@ If you prefer to configure each component step-by-step rather than using the 1-c
 
 3. **Only if you have no models installed, pick the model that matches your PC build**:
 
-| PC Build Tier | Hardware Specs | Recommended Cutting-Edge Models | Pull Command |
+| PC Build Tier | Hardware Specs | Recommended models | Pull Command |
 | :--- | :--- | :--- | :--- |
-| **High-End Workstation** | $\ge$ 16 GB VRAM GPU<br/>$\ge$ 32-128 GB System RAM | **`qwen2.5-coder:14b`** *(Fits 100% in 16GB VRAM)*<br/>**`nanbeige2:16b`** *(Top agentic tool caller)*<br/>**`deepseek-coder-v2:16b`** *(Deep code synthesis)*<br/>**`command-r:35b`** *(Layer offload to RAM)* | `ollama pull qwen2.5-coder:14b`<br/>*(or `ollama pull nanbeige2:16b`)* |
+| **High-End Workstation** | $\ge$ 16 GB VRAM GPU<br/>$\ge$ 32-128 GB System RAM | **`qwen2.5-coder:14b`** *(Fits 100% in 16GB VRAM)*<br/>**`nanbeige2:16b`** *(ranked highest for tool calling by `run.py`)*<br/>**`deepseek-coder-v2:16b`** *(Deep code synthesis)*<br/>**`command-r:35b`** *(Layer offload to RAM)* | `ollama pull qwen2.5-coder:14b`<br/>*(or `ollama pull nanbeige2:16b`)* |
 | **Mid-Tier PC** | 8 - 12 GB VRAM GPU<br/>16 - 32 GB System RAM | **`qwen2.5-coder:7b`**<br/>**`nanbeige4.1:3b`**<br/>**`deepseek-coder:6.7b`**<br/>**`glm4:9b`** | `ollama pull qwen2.5-coder:7b` |
 | **Entry / CPU Only** | No dedicated GPU<br/>8 - 16 GB System RAM | **`llama3.2:3b`**<br/>**`qwen2.5:3b`**<br/>**`nanbeige4.1:3b`** | `ollama pull llama3.2:3b` |
 
@@ -667,9 +667,9 @@ These projects and workflows shaped this one:
 
 - **[GStack by Garry Tan](https://github.com/garrytan/gstack)**: Inspired the multi-perspective review habit (`/plan-eng-review`, `plan-design-review`, `design-consultation`) we use to pressure-test blast radius, reduce developer cognitive load, and keep terminal and visual hierarchy strict.
 - **[P-Stack](https://github.com/veeresh-bikkaneti/antigravity-local)**: Provided the methods we used for architecture (`/architect`), 5-run benchmarking (`/benchmark-checklist`), and adversarial stress-testing (`/interrogate`).
-- **[Google Antigravity SDK](https://github.com/google/antigravity)**: The official framework for autonomous agent reasoning, WebSocket harness bridges, and workspace safety policies.
+- **[Google Antigravity SDK](https://github.com/google/antigravity)**: The SDK this repo builds on. It provides the agent loop, the local harness connection over WebSockets, and the safety policies.
 - **[Ollama](https://ollama.ai)**: Runs the local open-weights models and offloads layers between GPU VRAM and host RAM.
-- **[Graphify](https://github.com/veeresh-bikkaneti/antigravity-local)**: Builds the AST code knowledge graph and call graph without spending tokens.
+- **[Graphify](https://github.com/veeresh-bikkaneti/antigravity-local)**: Builds the AST code knowledge graph and call graph deterministically, without spending tokens.
 - **[Archify](https://github.com/tt-a1i/archify)**: Generates the standalone HTML architecture and lifecycle diagrams with live signal tracing.
 
 ### Technical Deep-Dives & Formal Specifications
