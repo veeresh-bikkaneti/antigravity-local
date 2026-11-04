@@ -199,6 +199,12 @@
   - **Verification**: Verified all 40 internal documentation links and re-indexed the memory store.
   - Mirrored `CONTEXT_MEMORY.md` to `C:\Users\veere\antigravity-local\CONTEXT_MEMORY.md`.
 
+- [x] **Step 28**: Fallback Embedding Determinism Fix (Nov 4, 2026, branch `fix/deterministic-fallback-embeddings`):
+  - **Flaw**: `memory.py::_pure_python_embed` used builtin `hash()` (salted per process via PYTHONHASHSEED). Vectors stored at index time never matched query vectors from a later process, so the semantic tier was noise whenever Ollama had no embedding model.
+  - **Proof**: `tests/test_memory_determinism.py` (2 cross-process tests, different PYTHONHASHSEED) failed 2/2 before fix, pass after. 5 seeds now yield 1 unique vector hash.
+  - **Fix**: `zlib.crc32` instead of `hash()`. **Existing indexes are stale: run `python memory.py index --force` once after upgrading** (mtime skip would otherwise keep old vectors).
+  - **Known, not fixed (YAGNI/open)**: embedding backend (Ollama vs fallback) is not recorded per chunk, so switching backends silently zeroes cosine (dim mismatch); removed source files are never purged from the index; SQLite connections are not explicitly closed.
+
 ---
 
 ## 5. Key Architecture & Environment Quirks Discovered
