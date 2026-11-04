@@ -12,6 +12,7 @@ import sys
 import re
 import json
 import math
+import zlib
 import sqlite3
 import argparse
 import subprocess
@@ -103,8 +104,8 @@ class EmbeddingProvider:
         vec = [0.0] * dimensions
         for word in words:
             # Word hash
-            h = hash(word)
-            idx = abs(h) % dimensions
+            h = zlib.crc32(word.encode())  # stable across processes (builtin hash() is salted)
+            idx = h % dimensions
             sign = 1.0 if (h >> 3) & 1 else -1.0
             vec[idx] += sign
 
@@ -112,8 +113,8 @@ class EmbeddingProvider:
             if len(word) >= 3:
                 for i in range(len(word) - 2):
                     trigram = word[i:i+3]
-                    th = hash(trigram)
-                    tidx = abs(th) % dimensions
+                    th = zlib.crc32(trigram.encode())
+                    tidx = th % dimensions
                     tsign = 1.0 if (th >> 2) & 1 else -1.0
                     vec[tidx] += 0.5 * tsign
 
