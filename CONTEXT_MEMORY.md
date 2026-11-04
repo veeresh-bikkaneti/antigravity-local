@@ -246,6 +246,8 @@ pm`, reinstalled `npm install -g ./.agents/skills/archify`; `archify doctor` pas
 
 - [x] **Steps 35-38** (PRs #8-#12, Nov 4 2026): guide quick start rewritten (sentence-case headings, timed steps, `scripts/check_docs.py` in CI; `--baseline` allows new headings, fails on renamed ones). `run.bat` sets `chcp 65001` + `PYTHONUTF8=1`; `*.bat` forced to CRLF. Docker: `/app/.memory` world-writable at build, so `--user 12345` and `--read-only --tmpfs /app/.memory` work (`tests/e2e.py docker` covers both). `workspace/index.html` untracked (demo rewrote it every run). Generated tooling (`.claude/`, `.claude-flow/`, `.swarm/`, `.ai-context/`, `.mcp.json`, `CLAUDE.md`, `.agents/skills/ruflo/`) is gitignored; `tests/test_repo_hygiene.py` guards it. Quirks: edit scripts must not contain doubled backslashes in heredocs (they get halved into control characters, so scan files in binary mode); from Git Bash `cmd /c run.bat` fails because NoDefaultCurrentDirectoryInExePath=1 is set, use \run.bat from PowerShell. Open: macOS/native Linux untested; emoji rendering in a live cmd window unseen; CONTEXT_MEMORY.md sits near its 300-line cap, condense before adding.
 
+- [x] **Step 39**: `--task` no longer says "Task completed" when nothing was written (found by a fresh-clone run: qwen2.5:14b skipped the file tool in 2 of 4 attempts). `task_report.py` (stdlib) snapshots the workspace before/after; `code_agent.py` and `agent_with_workspace.py` print created/changed counts or a plain warning. Exit code stays 0 because read-only tasks are valid. Tests use a stub SDK (`tests/test_task_report.py`).
+
 ---
 
 ## 5. Key Architecture & Environment Quirks Discovered

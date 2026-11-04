@@ -237,7 +237,7 @@ Watch the local Antigravity agent inspect its workspace, invoke its built-in `cr
 ```bash
 python agent_with_workspace.py
 ```
-When it finishes, open the generated file at `workspace/index.html`.
+When it finishes, open the generated file at `workspace/index.html`. If you see a warning that the agent did not create it, run the command again. Small local models sometimes answer without writing anything.
 
 #### Mode 3: developer pair-programming shell (`code_agent.py`)
 Pair program with your local agent, or hand it a one-shot task:
