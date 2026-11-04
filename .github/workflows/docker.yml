@@ -19,8 +19,10 @@ jobs:
           python-version: "3.12"
       - name: AGENTS.md rules (line caps, ASCII, referenced files exist)
         run: python scripts/check_agents_md.py
+      - name: Docs checks (anchors, em dashes, emoji headings)
+        run: python scripts/check_docs.py
       - name: Unit tests
-        run: python -m unittest tests.test_memory_integrity tests.test_memory_determinism tests.test_serve
+        run: python -m unittest tests.test_memory_integrity tests.test_memory_determinism tests.test_serve tests.test_check_docs
       - name: Real E2E (docker path)
         run: python tests/e2e.py docker
       - name: Log in to GHCR
