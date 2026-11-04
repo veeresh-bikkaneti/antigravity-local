@@ -30,6 +30,8 @@ import os
 import sys
 from pathlib import Path
 
+import task_report
+
 # Load environment variables from .env if available
 try:
     from dotenv import load_dotenv
@@ -249,15 +251,12 @@ async def run_one_shot(base_url: str, model: str, workspace_dir: str, task: str,
     print(f" • Memory   : {'ENABLED' if with_memory else 'OFF'}")
     print("=" * 76 + "\n")
 
+    before = task_report.snapshot(workspace_dir)
     async with Agent(config) as agent:
         await execute_task(agent, task, workspace_dir, with_memory=with_memory)
 
-    files = list_workspace_files(workspace_dir)
-    print("=" * 76)
-    print(f"✅ Task completed. Workspace files ({len(files)}):")
-    for f in files:
-        print(f"   📁 {os.path.join(workspace_dir, f)}")
-    print("=" * 76 + "\n")
+    created, changed = task_report.summarize(before, task_report.snapshot(workspace_dir))
+    print("\n".join(task_report.render(workspace_dir, list_workspace_files(workspace_dir), created, changed)) + "\n")
 
 
 def main():

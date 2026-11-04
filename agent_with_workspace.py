@@ -2,6 +2,8 @@ import asyncio
 import os
 import sys
 
+import task_report
+
 # Ensure UTF-8 console output on Windows
 if sys.platform == "win32":
     try:
@@ -57,14 +59,19 @@ async def main():
         "Call write_file or create_file with Path, Content, and Overwrite=True."
     )
     
+    before = task_report.snapshot(workspace_dir)
     try:
         async with Agent(config) as agent:
             response = await agent.chat(prompt)
             async for chunk in response:
                 print(chunk, end="", flush=True)
-            print("\n\n✅ Agent task completed successfully.")
-            if os.path.exists(target_file):
+            created, changed = task_report.summarize(before, task_report.snapshot(workspace_dir))
+            if "index.html" in created + changed:
+                print("\n\n✅ Agent task completed successfully.")
                 print(f"📁 Output file generated: {target_file}")
+            else:
+                print("\n\n⚠️ The agent finished, but it did not create or change index.html.")
+                print("Small local models sometimes answer without writing anything. Run the same command again.")
     except Exception as exc:
         print(f"\n❌ [ERROR] Agent execution failure: {exc}")
         print("\n💡 Troubleshooting Tips:")
