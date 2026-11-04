@@ -1,6 +1,6 @@
 """Docs checks: anchored links resolve, no em dashes, no emoji in headings.
 Usage: python scripts/check_docs.py [--root DIR] [--baseline GIT_REF]
-With --baseline, every heading must keep the same anchor as in that ref, so edits are case-only.
+With --baseline, every anchor that existed in that ref must still exist (new headings are fine).
 Exit 1 on any failure."""
 import argparse, glob, os, re, subprocess, sys
 
@@ -47,8 +47,9 @@ for rel in FILES:
             errors.append(f"{rel}: dead anchor #{anc} in {dest}")
     if args.baseline:
         old = subprocess.run(["git", "-C", root, "show", f"{args.baseline}:{rel}"], capture_output=True, text=True, encoding="utf-8").stdout
-        if slug_list(old.replace("\r\n", "\n")) != slug_list(t):
-            errors.append(f"{rel}: a heading anchor changed versus {args.baseline}")
+        gone = [a for a in slug_list(old.replace("\r\n", "\n")) if a not in slug_list(t)]
+        if gone:
+            errors.append(f"{rel}: anchors renamed or removed versus {args.baseline}: {', '.join(gone)}")
 
 print("\n".join(errors) or "docs ok")
 sys.exit(1 if errors else 0)

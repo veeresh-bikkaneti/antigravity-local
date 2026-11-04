@@ -29,6 +29,22 @@ class CheckDocs(unittest.TestCase):
     def test_emoji_heading_fails(self):
         self.assertEqual(run("# \U0001F680 Title\n").returncode, 1)
 
+    def test_baseline_allows_a_new_heading_but_not_a_renamed_one(self):
+        with tempfile.TemporaryDirectory() as d:
+            def git(*a):
+                subprocess.run(["git", "-C", d, *a], check=True, capture_output=True)
+
+            def base():
+                return subprocess.run([sys.executable, str(SCRIPT), "--root", d, "--baseline", "HEAD"], capture_output=True, text=True)
+
+            git("init", "-q"); git("config", "user.email", "t@t"); git("config", "user.name", "t")
+            (Path(d) / "README.md").write_text("# Title\n", encoding="utf-8")
+            git("add", "."); git("commit", "-q", "-m", "x")
+            (Path(d) / "README.md").write_text("# Title\n\n## New section\n", encoding="utf-8")
+            self.assertEqual(base().returncode, 0)
+            (Path(d) / "README.md").write_text("# Renamed\n", encoding="utf-8")
+            self.assertEqual(base().returncode, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

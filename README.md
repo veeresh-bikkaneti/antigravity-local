@@ -187,8 +187,10 @@ cd antigravity-local
 #### Option B: manual setup
 ```bash
 # 1. Create a virtual environment
-python -m venv venv      # Windows
-python3 -m venv venv     # macOS / Linux (many have no plain 'python')
+#    Windows:
+python -m venv venv
+#    macOS / Linux (many have no plain 'python'), use this line instead:
+# python3 -m venv venv
 ```
 
 **Activate your virtual environment:**

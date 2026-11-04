@@ -78,7 +78,7 @@ Unlike web-based chat interfaces or API-metered plugins, this agent runs on your
 
 ## 3. Zero setup (3-minute quickstart)
 
-Goal: go from nothing to your first AI-written file. Three steps, about 10 minutes of your time, plus a model download that depends on your connection.
+Goal: go from nothing to your first AI-written file. The bootstrap itself takes about 3 minutes, which is the quickstart in the heading. With Ollama installed, plan on about 10 minutes in total, plus a model download if you have none.
 
 ### Step 1: Install & launch Ollama
 Takes about 3 minutes.
@@ -92,11 +92,11 @@ Takes about 3 minutes.
 You should see a version number. If you get "command not found", close the terminal and open a new one. The installer updates your PATH, and an old terminal doesn't know yet.
 
 ### Step 2: Download the agent coding model
-Optional. The download time depends on your connection.
+You can skip this step. Step 3 picks a model that fits your machine and downloads it if you have none, and it reuses any capable model you already have, so nothing downloads twice.
 
-Step 3 picks a model that fits your machine and downloads it if you have none, so you can skip this step. Do it only if you want to choose the model yourself. If a capable model is already installed, the bootstrap reuses it, so nothing downloads twice.
+Want to choose the model yourself? Run one of these. The download time depends on your connection.
 ```bash
-# Recommended (best tool-calling and coding results, needs about 9 GB of VRAM or RAM):
+# Recommended (best tool-calling and coding results, needs about 9 GB of free GPU memory or RAM):
 ollama pull qwen2.5:14b
 
 # Smaller machines (under 12 GB RAM):
@@ -106,14 +106,22 @@ ollama pull qwen2.5:14b
 You should see the model in `ollama list`.
 
 ### Step 3: Clone & bootstrap
-Takes about 3 minutes the first time, and seconds after that.
-1. Get the code:
+Takes about 3 minutes the first time, and under a minute after that.
+1. Check that Python and git are installed (use `python3` instead of `python` on macOS and Linux):
+   ```bash
+   python --version
+   git --version
+   ```
+   You should see Python 3.11 or newer and a git version.
+2. Get the code:
    ```bash
    git clone https://github.com/veeresh-bikkaneti/antigravity-local.git
+   ```
+3. Step into the folder and stay there for the rest of this guide:
+   ```bash
    cd antigravity-local
    ```
-   You are now inside the `antigravity-local` folder. Stay here for the rest of this guide.
-2. Run the one-click bootstrap for your terminal. There are no other choices to make.
+4. Run the one-click bootstrap. Pick the line that matches your terminal.
    - **Windows (PowerShell)**:
      ```powershell
      .\run.ps1
@@ -126,9 +134,9 @@ Takes about 3 minutes the first time, and seconds after that.
      ```bash
      chmod +x run.sh && ./run.sh
      ```
-3. Wait. The middle of the run is quiet, because the packages install silently. It looks stuck, but it isn't. On Windows the first run took 157 to 189 seconds.
+5. Wait. The middle of the run is quiet, because the packages install silently. It looks stuck, but it isn't. On Windows the first run took 157 to 189 seconds, so go make a coffee.
 
-The bootstrap creates your Python virtual environment, installs dependencies, configures `.env`, checks that Ollama answers, and runs a short demo that writes `workspace/index.html`. You should then see a `You >` chat prompt. Type `exit` for now. Section 4 shows how to use it properly.
+The bootstrap creates your Python virtual environment, installs dependencies, configures `.env`, checks that Ollama answers, and runs a short demo that writes `workspace/index.html`. You should see four numbered stages, `[1/4]` to `[4/4]`, and `System Online: Autonomous Agent Ready!` near the end. A lot of HTML scrolls past while the model writes the demo page, and that is normal. You then land at a `You >` chat prompt. Type `exit` for now. Section 4 shows how to use it properly.
 
 If Ollama isn't installed, the bootstrap says so. Go back to Step 1.
 
@@ -149,11 +157,11 @@ You should see `(venv)` at the start of your prompt.
 
 ### Launch on any project folder:
 ```powershell
-# Point to your own application directory:
-python code_agent.py --workspace "C:\path\to\my-app"
-
-# Or work inside the local workspace folder:
+# Start here: work inside the local workspace folder:
 python code_agent.py --workspace ./workspace
+
+# Later, point it at your own project:
+python code_agent.py --workspace "C:\path\to\my-app"
 ```
 
 ### Example interactive session:
@@ -176,7 +184,7 @@ CodeAgent [You] > Create a python module database.py with an SQLite helper class
 CodeAgent [Local LLM] > I have created `database.py` in your workspace with parameterized queries, context manager connection handling, and error logging.
 
 CodeAgent [You] > /files
-📂 Files currently in workspace (3 total):
+📂 Files currently in ./workspace (3 total):
    - .gitkeep
    - database.py
    - index.html
@@ -189,7 +197,7 @@ CodeAgent [Local LLM] > Created `test_database.py` with in-memory SQLite fixture
 Your model's wording will differ a little. `/files` also lists `index.html`, which the setup demo wrote.
 
 ### Built-in shell commands:
-- `/memory <query>` : Searches project memory using SQLite FTS5 BM25 plus dense semantic vectors, merged with Reciprocal Rank Fusion.
+- `/memory <query>` : Searches your project notes and docs and shows the best matches.
 - `/wiki [topic]`   : With no topic, lists the pages in `.wiki/`. With a topic, such as `/wiki architecture`, prints that page.
 - `/files`          : Lists all files currently created in your workspace directory.
 - `/help`           : Displays tips and syntax guides.
@@ -205,17 +213,13 @@ python code_agent.py --workspace ./workspace --with-memory
 
 ## 5. Start coding: one-shot autonomous task CLI
 
-Want to execute a coding task non-interactively from the command line or CI/CD script? Pass the `--task` flag:
+Want to hand the agent one job and let it finish without chatting? Use the same terminal as section 4 (the one showing `(venv)`) and pass the `--task` flag:
 
 ```powershell
 python code_agent.py --workspace "./my-project" --task "Build a CLI tool in cli.py using argparse that converts JSON files to CSV."
 ```
 
-The agent will:
-1. Parse your request.
-2. Formulate the code and structure.
-3. Call the `create_file` tool to save `cli.py` to your specified workspace.
-4. Print its reply and exit.
+The agent writes the code, saves `cli.py` to your workspace with its `create_file` tool, prints its reply, and exits. You should see `Task completed` and the new file listed.
 
 If the workspace folder doesn't exist yet, it is created for you. You may also see a line such as "The workflow is running in the background ... task logs are available at file:///...". That is the SDK's own task log, not an error. Look in your workspace folder for the new file.
 
