@@ -455,7 +455,10 @@ class MemorySearcher:
                     bm25_results = []
 
             # 2. Semantic Vector Search
+            self.embedder.fell_back = False
             query_emb = self.embedder.embed_text(query)
+            # A fallback query vector is not comparable to stored backend vectors: BM25 only.
+            mode = None if self.embedder.fell_back else self.embedder.mode
             cur = conn.execute("""
                 SELECT 
                     c.id AS chunk_id,
@@ -470,7 +473,7 @@ class MemorySearcher:
                 FROM chunks c
                 JOIN documents d ON c.doc_id = d.id
                 WHERE d.embed_mode = ?;
-            """, (self.embedder.mode,))  # only compare vectors from the same backend
+            """, (mode,))  # only compare vectors from the same backend
             all_chunks = cur.fetchall()
 
         vector_results = []

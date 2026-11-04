@@ -153,6 +153,14 @@ class RealProviderAndMigration(IndexIntegrity):
             [t.start() for t in ts]; [t.join() for t in ts]
             self.assertEqual(errors, [])
 
+    def test_query_fallback_does_not_compare_against_ollama_vectors(self):
+        state = {"up": True}
+        self._fake_ollama(state)
+        emb = memory.EmbeddingProvider()
+        self.index(emb)
+        state["up"] = False  # Ollama dies before the query is embedded
+        self.assertEqual(memory.MemorySearcher(self.db, emb).search("qqqzzz"), [])
+
 
 if __name__ == "__main__":
     unittest.main()
