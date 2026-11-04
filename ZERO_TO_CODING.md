@@ -15,7 +15,7 @@
    - [Recipe 2: Write automated unit tests for existing code](#recipe-2-write-automated-unit-tests-for-existing-code)
    - [Recipe 3: Refactor legacy code & modernize architecture](#recipe-3-refactor-legacy-code--modernize-architecture)
 7. [The developer SDK handbook (writing your own agents in Python)](#7-the-developer-sdk-handbook-writing-your-own-agents-in-python)
-8. [Advanced backend integration (LM Studio, vLLM & Google research harness)](#8-advanced-backend-integration-lm-studio-vllm--google-research-harness)
+8. [Advanced backend integration (LM Studio, vLLM & Google Research Harness)](#8-advanced-backend-integration-lm-studio-vllm--google-research-harness)
 9. [Troubleshooting & pro-tips](#9-troubleshooting--pro-tips)
 10. [Docker clean-room test drive](#10-docker-clean-room-test-drive)
 11. [Product specification & consensus governance](#11-product-specification--consensus-governance)
@@ -290,7 +290,7 @@ if __name__ == "__main__":
 
 ---
 
-## 8. Advanced backend integration (LM Studio, vLLM & Google research harness)
+## 8. Advanced backend integration (LM Studio, vLLM & Google Research Harness)
 
 ### Option 1: LM Studio
 1. Open LM Studio, load your model (e.g., `Qwen2.5-14B-Instruct-GGUF`).
@@ -313,7 +313,7 @@ LOCAL_LLM_BASE_URL=http://localhost:8000/v1
 LOCAL_LLM_MODEL=Qwen/Qwen2.5-14B-Instruct
 ```
 
-### Option 3: Google research AI harness binary
+### Option 3: Google Research AI Harness binary
 If you build Google's research agent harness from source, point Antigravity at your custom binary:
 ```powershell
 $env:ANTIGRAVITY_HARNESS_PATH="C:\path\to\custom\localharness.exe"
