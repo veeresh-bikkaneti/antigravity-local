@@ -103,7 +103,11 @@ def build_server(host, port, db_path=None, ollama_url=memory.OLLAMA_API_BASE):
                 return self._send(200, PAGE % {"backend": html.escape(embedder.mode), "diagrams": links}, "text/html")
             return self._json(404, {"error": "not found"})
 
-    return ThreadingHTTPServer((host, port), Handler)
+    class Server(ThreadingHTTPServer):
+        # On Windows SO_REUSEADDR lets two processes bind one port (silent hijack); POSIX needs it for restarts.
+        allow_reuse_address = os.name != "nt"
+
+    return Server((host, port), Handler)
 
 
 def main(argv=None):

@@ -87,6 +87,11 @@ class ServeTest(unittest.TestCase):
         self.assertIn(b"<form", body)
         self.assertEqual(get(self.base + "/nope")[0], 404)
 
+    def test_explicit_port_already_in_use_fails_fast(self):
+        taken = self.servers[0].server_address[1]
+        with self.assertRaises(OSError):
+            serve.build_server("127.0.0.1", taken, Path(self.tmp.name) / "dup.sqlite", DEAD_OLLAMA)
+
 
 if __name__ == "__main__":
     unittest.main()
