@@ -19,5 +19,20 @@ class DemoArtifact(unittest.TestCase):
         self.assertEqual(git("check-ignore", "workspace/.gitkeep").returncode, 1)
 
 
+class GeneratedTooling(unittest.TestCase):
+    """Files that ruflo and the session hooks generate must stay out of git; tracked tooling must not."""
+
+    def test_generated_paths_are_ignored(self):
+        for path in (".claude-flow/data/x", ".claude-flow/config.json", ".swarm/memory.db", ".mcp.json",
+                     ".claude/settings.json", ".claude/helpers/hook-handler.cjs", "CLAUDE.md",
+                     ".ai-context/SESSION_STATE.md", ".agents/skills/ruflo/SKILL.md"):
+            self.assertEqual(git("check-ignore", path).returncode, 0, path)
+
+    def test_tracked_tooling_is_not_ignored(self):
+        for path in (".agents/skills/archify/package.json", ".agents/rules/graphify.md", ".github/workflows/docker.yml",
+                     "AGENTS.md", "scripts/check_docs.py"):
+            self.assertEqual(git("check-ignore", path).returncode, 1, path)
+
+
 if __name__ == "__main__":
     unittest.main()
