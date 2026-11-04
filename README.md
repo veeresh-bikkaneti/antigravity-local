@@ -36,7 +36,55 @@ chmod +x run.sh && ./run.sh
 
 ---
 
+## 🌐 Serve It: Search UI + API on a Free Port (Local or Docker)
+
+Prefer a browser to a terminal? Both paths below start the same small web app: a memory search page, a JSON API, and your interactive diagrams. **No fixed port**: the OS hands out a free one, so it never fights with whatever else is running on your machine.
+
+**Path A: run it locally (bootstrapped, no Docker):**
+```bash
+python run.py --serve          # prints: Serving on http://127.0.0.1:<free-port>
+python run.py --serve --port 9000   # or pick one yourself
+```
+First run builds its own virtualenv and installs dependencies, so grab a coffee. After that it starts in seconds. It needs no Ollama; memory search just uses the built-in fallback vectors.
+
+**Path B: run the Docker image (nothing installed on your machine):**
+```bash
+docker build -t antigravity-local .      # works today, takes about a minute
+docker run -d --rm -p 127.0.0.1::8000 --name ag antigravity-local
+docker port ag 8000            # shows the random host port, e.g. 127.0.0.1:54921
+```
+`127.0.0.1::8000` means "any free host port, reachable only from this machine". Open the printed address in your browser. Once CI has published the image from `main`, you can skip the build: `docker pull ghcr.io/veeresh-bikkaneti/antigravity-local:latest` and run it as above (use that name instead of `antigravity-local`).
+
+| URL | What you get |
+| :--- | :--- |
+| `/` | Search page + diagram links |
+| `/api/search?q=hardware+offloading&limit=5` | JSON results (limit 1-20, query up to 500 chars) |
+| `/healthz` | `{"status":"ok", ...}` (Docker uses this for its HEALTHCHECK) |
+| `/diagrams/system-topology.html` | Interactive architecture diagrams |
+
+**Prove it works (real end-to-end, both paths):**
+```bash
+python tests/e2e.py local    # fresh copy, own venv, two servers on two free ports
+python tests/e2e.py docker   # builds the image, runs two containers on two random host ports
+```
+
+### 🧹 Stop & Clean Up (Teardown)
+
+Everything you start has an off switch, and everything it leaves behind is safe to delete. Nothing here touches your Ollama models.
+
+| What you started | How to stop it | What it leaves behind | Remove that with |
+| :--- | :--- | :--- | :--- |
+| Local server (`run.py --serve`) | `Ctrl+C` in its terminal | `venv/` (about 250 MB) and `.memory/` (search index, about 1 MB). Both rebuild themselves next run. | PowerShell: `Remove-Item -Recurse -Force venv, .memory`. macOS/Linux/Git Bash: `rm -rf venv .memory` |
+| Docker container | `docker stop ag` (it was started with `--rm`, so it deletes itself) | The image (about 480 MB) | `docker rmi antigravity-local` |
+| `tests/e2e.py local` / `docker` | Nothing, they clean up after themselves | Nothing: their servers, containers, images and temp folders are removed | n/a |
+| Archify global install | n/a | A global `archify` command | `npm uninstall -g archify` |
+
+Forgot the container name? `docker ps` lists running ones, then `docker stop <id>`. Want your disk back from Ollama too? That is your call, never ours: `ollama list`, then `ollama rm <model>`.
+
+---
+
 ## 📋 Table of Contents
+0. [🌐 Serve It: Search UI + API on a Free Port](#-serve-it-search-ui--api-on-a-free-port-local-or-docker)
 1. [⚡ 1-Command Plug & Play](#-1-command-plug--play-zero-friction-setup)
 2. [💡 What is Antigravity Local?](#-what-is-this)
 3. [⚙️ Prerequisites & Model Selection](#-prerequisites-checklist)
@@ -71,7 +119,7 @@ Before you start, make sure you have:
 | Requirement | Minimum | Recommended | Notes |
 | :--- | :--- | :--- | :--- |
 | **Operating System** | Windows 10/11, macOS, Linux | Any modern 64-bit OS | Fully tested on Windows 11 & Linux. |
-| **Python** | 3.10 | 3.11 or 3.12 | Check with `python --version`. |
+| **Python** | 3.11 | 3.12 or 3.13 | Check with `python --version`. |
 | **System RAM** | 8 GB | 16 GB - 32 GB | More RAM allows running larger models. |
 | **GPU (Optional)** | None (runs on CPU) | NVIDIA RTX (8GB+) or Apple Silicon | GPU speeds up token generation. |
 | **Ollama** | Installed & running | [ollama.ai](https://ollama.ai/download) | Local LLM inference server. |
@@ -218,7 +266,9 @@ antigravity-local/
 ├── agent_with_workspace.py   # Script 2: Autonomous agent with file creation tools
 ├── code_agent.py             # Script 3: Interactive developer coding shell & pair-programmer
 ├── memory.py                 # Tier 3 memory engine: SQLite FTS5 + vector search
-├── tests/                    # Memory-engine regression tests (stdlib unittest, no pip needed)
+├── serve.py                  # Web UI + JSON API on a free port (python run.py --serve)
+├── Dockerfile                # Image for the Docker path (non-root, HEALTHCHECK)
+├── tests/                    # Regression tests (stdlib unittest) + tests/e2e.py (local & docker)
 └── workspace/                # Sandboxed folder where the agent creates/edits files
     ├── .gitkeep              # Keeps directory tracked in git
     └── index.html            # Artifact generated automatically by the agent
@@ -530,14 +580,16 @@ Inside the interactive shell:
 
 ## 🐳 1-Command Docker Clean-Room Test Drive
 
+> **Looking to *run* the app in Docker?** That is [Serve It](#-serve-it-search-ui--api-on-a-free-port-local-or-docker) above. This section is the older contributor harness (`docker-test-drive.sh`); CI now uses `python tests/e2e.py docker`.
+
 Want to verify the entire system in a clean, disposable Linux container without touching host Python environments? We provide an automated test drive harness [`docker-test-drive.sh`](docker-test-drive.sh) that runs in standard Docker Desktop:
 
 ```bash
 docker run --rm --add-host=host.docker.internal:host-gateway \
-  -v "%cd%:/app" -w /app python:3.11-slim bash docker-test-drive.sh
+  -v "$(pwd):/app" -w /app python:3.11-slim bash docker-test-drive.sh
 ```
 
-*(On macOS/Linux, replace `%cd%` with `$(pwd)`)*
+*(CMD: use `%cd%` instead of `$(pwd)`. PowerShell: use `${PWD}`. **Git Bash on Windows**: put `MSYS_NO_PATHCONV=1` in front of `docker run`, or Git Bash rewrites `/app` into a Windows path. macOS and Linux: as written. Easiest of all: `python tests/e2e.py docker`.)*
 
 ### What the Docker Test Drive Verifies Automatically:
 1. 📦 **Clean-Room Dependency Isolation**: Installs `google-antigravity` and `python-dotenv` from scratch in `python:3.11-slim`.

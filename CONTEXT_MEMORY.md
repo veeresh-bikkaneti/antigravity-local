@@ -221,6 +221,25 @@ pm`, reinstalled `npm install -g ./.agents/skills/archify`; `archify doctor` pas
   - Re-ran `python memory.py index` and `graphify update .`.
   - Quirk: if the repo folder is ever renamed again, re-run the archify global install.
 
+- [x] **Step 31**: Serve + Docker, real E2E on both paths (Nov 4, 2026, branch `feat/serve-and-docker`, stacked on PR #4):
+  - `serve.py` (stdlib): `/`, `/healthz`, `/api/search`, `/diagrams/<name>`. **No fixed port**: default port 0 = OS-assigned, printed on start; `--port`/`PORT` override. Binds 127.0.0.1 locally, `HOST=0.0.0.0` inside Docker. Global search lock because `EmbeddingProvider.fell_back` is shared state.
+  - Local path: `python run.py --serve`. Docker path: `Dockerfile` (python:3.11-slim, non-root `app`, HEALTHCHECK, internal port 8000). Run with `-p 127.0.0.1::8000` then `docker port <name> 8000` for the random host port.
+  - Real E2E: `python tests/e2e.py local` (fresh copy, own venv, 2 servers, 2 ports) and `python tests/e2e.py docker` (build, 2 containers, 2 random host ports, non-root, healthy). Both PASS. Unit: `python -m unittest tests.test_memory_integrity tests.test_memory_determinism tests.test_serve` (26 OK).
+  - **Bug found by the local E2E**: fresh-venv bootstrap crashed on Windows (`pip.exe install --upgrade pip` cannot replace itself). Fixed with `python -m pip`. Only ever hit on first run, so it had gone unnoticed.
+  - `.github/workflows/docker.yml`: unit tests + docker E2E on every PR; pushes `ghcr.io/<owner>/<repo>` only on `main`/tags after tests pass. **Not yet exercised**: needs merge, and the GHCR package must be set public once for anonymous `docker pull`.
+  - README: new "Serve It" section; fixed `%cd%` Docker volume example for non-CMD shells.
+  - Untested: live LLM agent call via `run.py` (non-serve REPL), `docker-test-drive.sh` (superseded by `tests/e2e.py docker`, left in place).
+
+- [x] **Step 32**: PR #5 review round (Nov 4, 2026, branch `feat/serve-and-docker`): 4 siloed workers + own re-runs. Fixed, each reproduced first:
+  - `serve.py`: Windows SO_REUSEADDR let two servers share one `--port` silently -> `allow_reuse_address = os.name != "nt"` (+ test).
+  - `tests/e2e.py`: `terminate()` orphaned the venv python tree on Windows (12 live processes + 3 temp dirs leaked) -> `stop()` uses `taskkill /T /F`; rmtree retries and no longer hides failure (+ `tests/test_e2e_cleanup.py`).
+  - Default Windows checkout (autocrlf=true, no `.gitattributes`) turned `docker-test-drive.sh`/`run.sh` into CRLF, breaking them while the harness still printed PASSED -> added `.gitattributes` (`*.sh`, Dockerfile LF). `docker-test-drive.sh` now passes all gates for real.
+  - Docs: Git Bash needs `MSYS_NO_PATHCONV=1` for `-w /app`; docker command now lives only in README (ZERO_TO_CODING and ARCHITECTURE point to it); Python versions aligned to installers (3.11 min, 3.12/3.13); wiki test command updated.
+  - Quirk: `unittest discover -s tests` works; plain `discover` finds 0 tests.
+  - Not changed: image fails with `--read-only` / arbitrary `--user` (writes `/app/.memory`); `limit=0/-1` is clamped to 1 (documented as 1-20).
+  - Teardown gap (user report): docs said nothing about stopping/cleanup, and `e2e.py docker` leaked a 483 MB image per run (fixed tag also collided with another session). Now: unique tag per run + `docker rmi -f` in finally; serve.py prints a stop hint; README has 'Stop & Clean Up' table (local server, container, image, venv/.memory, archify). Ollama models are never touched.
+  - AGENTS.md draft reviewed (3 skills + 2 adversaries + judge). Verdict: base = candidate 3 (rule registry + checker). Synthesis in the session scratchpad `arena/final/`; NOT installed, user's draft untouched.
+
 ---
 
 ## 5. Key Architecture & Environment Quirks Discovered

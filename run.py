@@ -37,7 +37,6 @@ PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 VENV_DIR = os.path.join(PROJECT_DIR, "venv")
 IS_WIN = sys.platform == "win32"
 VENV_PYTHON = os.path.join(VENV_DIR, "Scripts" if IS_WIN else "bin", "python.exe" if IS_WIN else "python")
-VENV_PIP = os.path.join(VENV_DIR, "Scripts" if IS_WIN else "bin", "pip.exe" if IS_WIN else "pip")
 
 def print_header():
     print("""
@@ -134,8 +133,8 @@ def bootstrap_venv():
     except subprocess.CalledProcessError:
         print("       Installing dependencies from requirements.txt (first run only)...")
         req_file = os.path.join(PROJECT_DIR, "requirements.txt")
-        subprocess.check_call([VENV_PIP, "install", "--upgrade", "pip", "--quiet"])
-        subprocess.check_call([VENV_PIP, "install", "-r", req_file, "--quiet"])
+        subprocess.check_call([VENV_PYTHON, "-m", "pip", "install", "--upgrade", "pip", "--quiet"])  # not pip.exe: Windows cannot self-replace it
+        subprocess.check_call([VENV_PYTHON, "-m", "pip", "install", "-r", req_file, "--quiet"])
         print("       Dependencies successfully installed.")
 
     # Relaunch script using the venv python
@@ -550,6 +549,12 @@ def main():
     # Step 1: Self-bootstrap inside venv if running in system Python
     if not is_in_venv():
         bootstrap_venv()
+        return
+
+    # --serve: web UI + API on a free port. Needs no Ollama (memory falls back to pure Python).
+    if "--serve" in sys.argv:
+        import serve
+        serve.main([a for a in sys.argv[1:] if a != "--serve"])
         return
 
     # Step 2: Ensure Ollama is running
