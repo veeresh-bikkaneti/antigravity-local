@@ -855,8 +855,8 @@
     "semantic_hash": "ab5f0490d17f619b05802104413ef5c7"
   },
   "memory.py": {
-    "mtime": 1793728425.8221126,
-    "ast_hash": "c9e1bf1d25acb452047a64ee5fd64938",
+    "mtime": 1793808884.5800257,
+    "ast_hash": "7e60ae70459da754969ddb4934493d56",
     "semantic_hash": ""
   },
   ".agents/rules/graphify.md": {
@@ -1085,8 +1085,8 @@
     "semantic_hash": ""
   },
   ".wiki/index.md": {
-    "mtime": 1793730294.201508,
-    "ast_hash": "0b67b6ec4d8ff4414a25b80610cf9235",
+    "mtime": 1793809659.781522,
+    "ast_hash": "6db5efe2eeab148225fc9c60901b7f0f",
     "semantic_hash": ""
   },
   ".wiki/model-hierarchy.md": {
@@ -1105,23 +1105,23 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1793394582.5158446,
-    "ast_hash": "262e3f83e62483127455e9706640f300",
+    "mtime": 1793804253.8034449,
+    "ast_hash": "f6f873b38fba896deb74d0a5f140ef18",
     "semantic_hash": ""
   },
   "CONTEXT_MEMORY.md": {
-    "mtime": 1793732134.1385193,
-    "ast_hash": "bd80d25a56a226e63c7e94148d26fd1d",
+    "mtime": 1793808884.5783446,
+    "ast_hash": "b9b3b59ad660a776dce82410924b48f1",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1793732109.805264,
-    "ast_hash": "7b1119e2121b57889f71bb7890712c63",
+    "mtime": 1793809347.009931,
+    "ast_hash": "3668fe07450b87eafa0df5e46f2f1747",
     "semantic_hash": ""
   },
   "ZERO_TO_CODING.md": {
-    "mtime": 1793730236.9925735,
-    "ast_hash": "f8e22f608e7a35476dad3ef949674989",
+    "mtime": 1793809659.783156,
+    "ast_hash": "bfcbe4154eff45d5c9abd21dab5d2530",
     "semantic_hash": ""
   },
   "docs/ARCHITECTURE.md": {
@@ -1135,8 +1135,8 @@
     "semantic_hash": ""
   },
   "docs/MEMORY_SPEC.md": {
-    "mtime": 1793728425.6706786,
-    "ast_hash": "0d29aebb2c6b00f88ee8e1218b22a52b",
+    "mtime": 1793809347.0088885,
+    "ast_hash": "b1ff32a11cd842de720d65d5da73e6eb",
     "semantic_hash": ""
   },
   "docs/diagrams/agent-tool-execution.html": {
@@ -1187,6 +1187,1411 @@
   ".wiki/consensus-governance.md": {
     "mtime": 1793730398.787414,
     "ast_hash": "269b5b29db095adee738eb07efa3d125",
+    "semantic_hash": ""
+  },
+  ".claude-flow/adr-mod/status.json": {
+    "mtime": 1793802998.7990892,
+    "ast_hash": "e7421c27a04e34e1fcc6ff786b44b839",
+    "semantic_hash": ""
+  },
+  ".claude-flow/agent-mod/status.json": {
+    "mtime": 1793802998.775893,
+    "ast_hash": "8e1aac96c40ee278a3bf713d9b24f1f3",
+    "semantic_hash": ""
+  },
+  ".claude-flow/agentdb-mod/status.json": {
+    "mtime": 1793802998.7516906,
+    "ast_hash": "3d2d70b4feba59221cbe3e36120783a2",
+    "semantic_hash": ""
+  },
+  ".claude-flow/aidefence-mod/status.json": {
+    "mtime": 1793802998.731281,
+    "ast_hash": "60f2fce0fe5be581e08e2f711118fe9a",
+    "semantic_hash": ""
+  },
+  ".claude-flow/autopilot-mod/status.json": {
+    "mtime": 1793802998.7064502,
+    "ast_hash": "e888156d72d255eb86650e878eae2d49",
+    "semantic_hash": ""
+  },
+  ".claude-flow/browser-mod/status.json": {
+    "mtime": 1793802998.6794791,
+    "ast_hash": "80486da9fb1dff07317be3ba99b16f8f",
+    "semantic_hash": ""
+  },
+  ".claude-flow/creator-mod/status.json": {
+    "mtime": 1793802998.234598,
+    "ast_hash": "45e408a01c230de437258133449f4286",
+    "semantic_hash": ""
+  },
+  ".claude-flow/daa-mod/status.json": {
+    "mtime": 1793802998.6442456,
+    "ast_hash": "57d2461a36a3ef9468520df411b2de29",
+    "semantic_hash": ""
+  },
+  ".claude-flow/ddd-mod/status.json": {
+    "mtime": 1793802998.621725,
+    "ast_hash": "7ceade49e4eca7c6c2fbadf982516649",
+    "semantic_hash": ""
+  },
+  ".claude-flow/docs-mod/status.json": {
+    "mtime": 1793802998.5758076,
+    "ast_hash": "fff98f1bc40a8b0108fb4ada17663391",
+    "semantic_hash": ""
+  },
+  ".claude-flow/federation-mod/status.json": {
+    "mtime": 1793802998.536075,
+    "ast_hash": "400d3122fa8f997f330fd75a5ddecb42",
+    "semantic_hash": ""
+  },
+  ".claude-flow/goals-mod/status.json": {
+    "mtime": 1793802998.4555354,
+    "ast_hash": "a47c8943b6afbf9d7955035832494c1d",
+    "semantic_hash": ""
+  },
+  ".claude-flow/graph-mod/status.json": {
+    "mtime": 1793802998.4129367,
+    "ast_hash": "d6da795eeebdb221f2ccca7f4e3d3d0c",
+    "semantic_hash": ""
+  },
+  ".claude-flow/harness-active-policy.json": {
+    "mtime": 1793804801.552343,
+    "ast_hash": "fd6c906f709b50d5e48a5df97f22edea",
+    "semantic_hash": ""
+  },
+  ".claude-flow/intelligence-mod/status.json": {
+    "mtime": 1793802998.323433,
+    "ast_hash": "347e71a62fcc26ae5db98e703e503a67",
+    "semantic_hash": ""
+  },
+  ".claude-flow/jujutsu-mod/status.json": {
+    "mtime": 1793802998.3129363,
+    "ast_hash": "c1a8aaecdb54d3bd759b65bd665697a0",
+    "semantic_hash": ""
+  },
+  ".claude-flow/kg-mod/status.json": {
+    "mtime": 1793802998.2911816,
+    "ast_hash": "bc1a878c246f05b26fb839af19bc85b2",
+    "semantic_hash": ""
+  },
+  ".claude-flow/loop-mod/status.json": {
+    "mtime": 1793802998.2843225,
+    "ast_hash": "5892283fd84af91ef1c5fe9ec43c8bee",
+    "semantic_hash": ""
+  },
+  ".claude-flow/memory-package.json": {
+    "mtime": 1793804760.434625,
+    "ast_hash": "118a0fb33c5c4ab97be0269137dcaf6a",
+    "semantic_hash": ""
+  },
+  ".claude-flow/metaharness-mod/status.json": {
+    "mtime": 1793802998.267874,
+    "ast_hash": "896f171a4310142b4d6abdb84b4304f4",
+    "semantic_hash": ""
+  },
+  ".claude-flow/metrics/learning.json": {
+    "mtime": 1793804760.5083733,
+    "ast_hash": "f92986497382a65435577bac5ab4d7fc",
+    "semantic_hash": ""
+  },
+  ".claude-flow/metrics/swarm-activity.json": {
+    "mtime": 1793804760.5083733,
+    "ast_hash": "3e32f81fa7390f597269e1458850d8c5",
+    "semantic_hash": ""
+  },
+  ".claude-flow/metrics/v3-progress.json": {
+    "mtime": 1793804760.507374,
+    "ast_hash": "7733171f983a7c90f5071930ffc3c0e7",
+    "semantic_hash": ""
+  },
+  ".claude-flow/migrations-mod/status.json": {
+    "mtime": 1793802998.2542727,
+    "ast_hash": "05b7a8c6013f211c8081245dad4ecdbf",
+    "semantic_hash": ""
+  },
+  ".claude-flow/mods/install.json": {
+    "mtime": 1793804812.4556308,
+    "ast_hash": "573b2385fe1871eb4e90ab6662b9bff0",
+    "semantic_hash": ""
+  },
+  ".claude-flow/observe-mod/status.json": {
+    "mtime": 1793802998.2449284,
+    "ast_hash": "f12b33f12df35ecd42653d8636e1212e",
+    "semantic_hash": ""
+  },
+  ".claude-flow/policy/ledger-anchors.json": {
+    "mtime": 1793804812.4742665,
+    "ast_hash": "007926408c66678acd89b94e89f30a56",
+    "semantic_hash": ""
+  },
+  ".claude-flow/policy/state.json": {
+    "mtime": 1793804812.4702547,
+    "ast_hash": "fad9f1448da730b29e2598d99a2e5437",
+    "semantic_hash": ""
+  },
+  ".claude-flow/rag-mod/status.json": {
+    "mtime": 1793802998.2229369,
+    "ast_hash": "85ea5a5f7d1ff8114671bf35c7fcc165",
+    "semantic_hash": ""
+  },
+  ".claude-flow/ruvector-mod/status.json": {
+    "mtime": 1793802998.2144344,
+    "ast_hash": "b020f87b6e0a1428fb4b75611a44c64d",
+    "semantic_hash": ""
+  },
+  ".claude-flow/ruvllm-mod/status.json": {
+    "mtime": 1793802998.2037835,
+    "ast_hash": "fb0b1dfdc7c627f64ecbe195daaf735b",
+    "semantic_hash": ""
+  },
+  ".claude-flow/rvf-mod/status.json": {
+    "mtime": 1793802998.1888316,
+    "ast_hash": "8bde1d36858ccd5265a988c022d7b4d2",
+    "semantic_hash": ""
+  },
+  ".claude-flow/secaudit-mod/status.json": {
+    "mtime": 1793802998.1724741,
+    "ast_hash": "c9e13f4e7bc077ed27238d862abf1497",
+    "semantic_hash": ""
+  },
+  ".claude-flow/security/audit-status.json": {
+    "mtime": 1793804760.5093732,
+    "ast_hash": "b432522b548c8249896b9b53759e1e59",
+    "semantic_hash": ""
+  },
+  ".claude-flow/sparc-mod/status.json": {
+    "mtime": 1793802998.1565633,
+    "ast_hash": "91c3037e6236518a90f82cbb6dbb1472",
+    "semantic_hash": ""
+  },
+  ".claude-flow/testgen-mod/status.json": {
+    "mtime": 1793802998.1372046,
+    "ast_hash": "ec18865eaf0af7a5a96b28d3c2c0b948",
+    "semantic_hash": ""
+  },
+  ".claude-flow/wf-mod/status.json": {
+    "mtime": 1793802998.117182,
+    "ast_hash": "9b483fa79d92438aab7384ae432c0b18",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/adr-compliance.sh": {
+    "mtime": 1793504151.9794335,
+    "ast_hash": "cc078b435ac77457a2319a96175a3695",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/auto-commit.sh": {
+    "mtime": 1793504151.9817035,
+    "ast_hash": "73d111164adc0063591135f103aa31a5",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/auto-memory-hook.mjs": {
+    "mtime": 1793504151.911808,
+    "ast_hash": "533dd5d69c6dcd32fd60faab531e5258",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/checkpoint-manager.sh": {
+    "mtime": 1793504151.983182,
+    "ast_hash": "01a2b878cfdee2ce145d5ef1c51ef42c",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/daemon-manager.sh": {
+    "mtime": 1793504151.9851851,
+    "ast_hash": "b482aca36ac2ffccc086d94b51afc63e",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/ddd-tracker.sh": {
+    "mtime": 1793504151.985711,
+    "ast_hash": "3f8ea7fbf016e13acd19e99608ec024d",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/github-safe.js": {
+    "mtime": 1793504149.2019243,
+    "ast_hash": "524ed91c53fb2bb1fbeb52a5e866a679",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/github-setup.sh": {
+    "mtime": 1793504151.9867165,
+    "ast_hash": "2daa171901889b177c0cbb93e08bcceb",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/guidance-hook.sh": {
+    "mtime": 1793504151.988389,
+    "ast_hash": "1914c82242278a0f109b50a0fb443286",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/guidance-hooks.sh": {
+    "mtime": 1793504151.989404,
+    "ast_hash": "52685adf0dd2e228defc56973c856419",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/health-monitor.sh": {
+    "mtime": 1793504151.989404,
+    "ast_hash": "6e06ddf80036ba8e210fe84063552d02",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/helpers.manifest.json": {
+    "mtime": 1793504150.5847442,
+    "ast_hash": "ef14e87cc0a60ba657661605774e44ed",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/hook-handler.cjs": {
+    "mtime": 1793504148.6463883,
+    "ast_hash": "7b5036d94bfe983db7b68b679a22340a",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/intelligence.cjs": {
+    "mtime": 1793504148.6493928,
+    "ast_hash": "352577594c133d9e2e52b4d7cea264e7",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/learning-hooks.sh": {
+    "mtime": 1793504151.9914198,
+    "ast_hash": "aadca2238656e124fe0980abb1df587b",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/learning-loop.cjs": {
+    "mtime": 1793504148.6509452,
+    "ast_hash": "6a7f1df5e6337d3f93e9050d8220763d",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/learning-optimizer.sh": {
+    "mtime": 1793504151.992463,
+    "ast_hash": "15aea203ab2afa6bf7a592031e81dc1d",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/learning-service.mjs": {
+    "mtime": 1793504151.937391,
+    "ast_hash": "952f6ff7a6dc25994eb5de2772aa1fe2",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/memory.cjs": {
+    "mtime": 1793504148.651899,
+    "ast_hash": "b4f3a7308807d8aae6d79e0fb0a292b7",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/metrics-db.mjs": {
+    "mtime": 1793504151.9406598,
+    "ast_hash": "889f47665f853f4f56d91f92028a0968",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/pattern-consolidator.sh": {
+    "mtime": 1793504151.9935577,
+    "ast_hash": "427c9fd1d7b8cd47e921b548a8911f99",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/perf-worker.sh": {
+    "mtime": 1793504151.9944549,
+    "ast_hash": "c1cb73aa19605cbc902035cc9a7e26da",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/post-commit": {
+    "mtime": 1793504148.6398318,
+    "ast_hash": "5f7c9f9f0d3529e348adceca85fc0475",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/pre-commit": {
+    "mtime": 1793504148.641828,
+    "ast_hash": "f1ddac74525b96a3e0d2fa4f6b2a25dd",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/quick-start.sh": {
+    "mtime": 1793504151.9954946,
+    "ast_hash": "fba0292844be7199b033a71bac5abbe8",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/router.cjs": {
+    "mtime": 1793504148.6556664,
+    "ast_hash": "8bf1b7568af35b3e4dd948ab6a4bc13c",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/ruflo-hook.cjs": {
+    "mtime": 1793804760.433627,
+    "ast_hash": "a3e313911a189bf567b97a3f5fda6b56",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/security-scanner.sh": {
+    "mtime": 1793504151.997413,
+    "ast_hash": "0a2a236ac65c3820d83371d793889c09",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/session.cjs": {
+    "mtime": 1793504148.6556664,
+    "ast_hash": "de779406da8ab1fb7f680b1ecbb1ff08",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/setup-mcp.sh": {
+    "mtime": 1793504151.998413,
+    "ast_hash": "46139abfed141225c7ef262bcd96171e",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/standard-checkpoint-hooks.sh": {
+    "mtime": 1793504152.0024118,
+    "ast_hash": "e01a72ccc3dea1c02e47b21049c55736",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/statusline-hook.sh": {
+    "mtime": 1793504152.0034096,
+    "ast_hash": "bb1a99d42dfb256adb87b4516db27440",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/statusline.cjs": {
+    "mtime": 1793504148.6585758,
+    "ast_hash": "b94fff4d805eda1fab0a62628851e762",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/statusline.js": {
+    "mtime": 1793504150.2205868,
+    "ast_hash": "9a614692f90b0c0bbc8791ee60767e5f",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/swarm-comms.sh": {
+    "mtime": 1793504152.0049167,
+    "ast_hash": "058ada90e90e577d57cb749e79ccddcb",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/swarm-hooks.sh": {
+    "mtime": 1793504152.0049167,
+    "ast_hash": "426ed0c562e8d11428e2c9d1a587e955",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/swarm-monitor.sh": {
+    "mtime": 1793504152.0049167,
+    "ast_hash": "218156c4203e3bc2eeb5ce0b65551530",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/sync-v3-metrics.sh": {
+    "mtime": 1793504152.0049167,
+    "ast_hash": "6ba4c963679733b427dc4c3e6b1f77f7",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/update-v3-progress.sh": {
+    "mtime": 1793504152.0049167,
+    "ast_hash": "740976403d12aeb54d3c51158155abf4",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/v3-quick-status.sh": {
+    "mtime": 1793504152.0127294,
+    "ast_hash": "4c69691d17288f86792d95df5020d416",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/v3.sh": {
+    "mtime": 1793504152.0147471,
+    "ast_hash": "295ab3fdc1368dc30f138ed134f6d6bc",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/validate-v3-config.sh": {
+    "mtime": 1793504152.016755,
+    "ast_hash": "02a54392565e2d97901e13de7c4fcc6d",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/worker-manager.sh": {
+    "mtime": 1793504152.0187578,
+    "ast_hash": "bd355d51171e383cebc6eeb094e78d6c",
+    "semantic_hash": ""
+  },
+  ".claude/proven-config.json": {
+    "mtime": 1793804801.5513597,
+    "ast_hash": "b16fa7b1627ade91a5dca9cedab09f8c",
+    "semantic_hash": ""
+  },
+  ".claude/settings.json": {
+    "mtime": 1793804781.1707954,
+    "ast_hash": "325e66a23c9fdba272f2f41cba3b9054",
+    "semantic_hash": ""
+  },
+  ".mcp.json": {
+    "mtime": 1793804760.1921253,
+    "ast_hash": "d3580801aaedc2f6887fcec2c491cfb4",
+    "semantic_hash": ""
+  },
+  ".swarm/hnsw.metadata.json": {
+    "mtime": 1793808972.607556,
+    "ast_hash": "ea79a463a9d5cc09a5f8ce9d0dec35d8",
+    "semantic_hash": ""
+  },
+  ".swarm/schema.sql": {
+    "mtime": 1793804760.498369,
+    "ast_hash": "d7c874910cd4cd53d38c51df41de2182",
+    "semantic_hash": ""
+  },
+  "tests/test_memory_determinism.py": {
+    "mtime": 1793808884.5800257,
+    "ast_hash": "4c11720946868ff4e397780859e0055f",
+    "semantic_hash": ""
+  },
+  "tests/test_memory_integrity.py": {
+    "mtime": 1793808884.5815983,
+    "ast_hash": "5e3c5a763d4e3b8c4dc76dba0a672be2",
+    "semantic_hash": ""
+  },
+  ".agents/skills/ruflo/SKILL.md": {
+    "mtime": 1793804760.515139,
+    "ast_hash": "3338ee7c6baa1e06db3f53d08d125f19",
+    "semantic_hash": ""
+  },
+  ".ai-context/SESSION_STATE.md": {
+    "mtime": 1793808970.9841323,
+    "ast_hash": "52c709b82ec749c815f96c27695d51d1",
+    "semantic_hash": ""
+  },
+  ".claude-flow/CAPABILITIES.md": {
+    "mtime": 1793804760.506373,
+    "ast_hash": "44115af8af882aae3c3c5575f97e8c30",
+    "semantic_hash": ""
+  },
+  ".claude-flow/config.yaml": {
+    "mtime": 1793804760.504374,
+    "ast_hash": "e5a84fe123b96e18d465be631dcbcc34",
+    "semantic_hash": ""
+  },
+  ".claude/agents/browser/browser-agent.yaml": {
+    "mtime": 1793504153.3865101,
+    "ast_hash": "5da4ab156f955c81774e58378b59049b",
+    "semantic_hash": ""
+  },
+  ".claude/agents/consensus/byzantine-coordinator.md": {
+    "mtime": 1793504151.2203188,
+    "ast_hash": "f46d6e3b734fe9fd2bc6ec323ee9b084",
+    "semantic_hash": ""
+  },
+  ".claude/agents/consensus/crdt-synchronizer.md": {
+    "mtime": 1793504151.2734962,
+    "ast_hash": "10155f7a417d9538e3863d3eed85c5c9",
+    "semantic_hash": ""
+  },
+  ".claude/agents/consensus/gossip-coordinator.md": {
+    "mtime": 1793504151.3364713,
+    "ast_hash": "b03e7659757ead6c4b74b7fbeab6c660",
+    "semantic_hash": ""
+  },
+  ".claude/agents/consensus/performance-benchmarker.md": {
+    "mtime": 1793504151.4952123,
+    "ast_hash": "ee0f5a6f7d88c2d37cb065afc15a0264",
+    "semantic_hash": ""
+  },
+  ".claude/agents/consensus/quorum-manager.md": {
+    "mtime": 1793504151.5476937,
+    "ast_hash": "6cbfaaae212a79a3e77f01c5e20adc5c",
+    "semantic_hash": ""
+  },
+  ".claude/agents/consensus/raft-manager.md": {
+    "mtime": 1793504151.5502186,
+    "ast_hash": "c56af651335979c179d5b57f384e8900",
+    "semantic_hash": ""
+  },
+  ".claude/agents/consensus/security-manager.md": {
+    "mtime": 1793504151.6845274,
+    "ast_hash": "701e776cc9d66f243e7d24908c244572",
+    "semantic_hash": ""
+  },
+  ".claude/agents/core/planner.md": {
+    "mtime": 1793504151.5160904,
+    "ast_hash": "5f037212896d72c0a513bb6420b26f71",
+    "semantic_hash": ""
+  },
+  ".claude/agents/sparc/architecture.md": {
+    "mtime": 1793504151.1960752,
+    "ast_hash": "eab976515246612e37ec7672d71bd7ec",
+    "semantic_hash": ""
+  },
+  ".claude/agents/sparc/pseudocode.md": {
+    "mtime": 1793504151.546081,
+    "ast_hash": "36c1affce4ddf135f6a306a4a9141c59",
+    "semantic_hash": ""
+  },
+  ".claude/agents/sparc/refinement.md": {
+    "mtime": 1793504151.6157634,
+    "ast_hash": "b89d30d58925ca34c8860de3a4221199",
+    "semantic_hash": ""
+  },
+  ".claude/agents/sparc/specification.md": {
+    "mtime": 1793504151.8244634,
+    "ast_hash": "91889e6402084651a5cfc3f30b030060",
+    "semantic_hash": ""
+  },
+  ".claude/agents/swarm/adaptive-coordinator.md": {
+    "mtime": 1793504151.147661,
+    "ast_hash": "0f7fbd93f9347c5113130b8cf8552483",
+    "semantic_hash": ""
+  },
+  ".claude/agents/swarm/hierarchical-coordinator.md": {
+    "mtime": 1793504151.3404703,
+    "ast_hash": "0101ea80d665dd4fb33d0ab91ded625d",
+    "semantic_hash": ""
+  },
+  ".claude/agents/swarm/mesh-coordinator.md": {
+    "mtime": 1793504151.424058,
+    "ast_hash": "7f1a1a5c91da262cb3c467d2cad73e7c",
+    "semantic_hash": ""
+  },
+  ".claude/agents/testing/production-validator.md": {
+    "mtime": 1793504151.5392025,
+    "ast_hash": "787e5ce9043268e3e467382bf3714f29",
+    "semantic_hash": ""
+  },
+  ".claude/agents/testing/tdd-london-swarm.md": {
+    "mtime": 1793504151.8647828,
+    "ast_hash": "56027f5b5d0d00afc52f19cbbc056d26",
+    "semantic_hash": ""
+  },
+  ".claude/commands/agents/README.md": {
+    "mtime": 1793504151.5530338,
+    "ast_hash": "77f2aa0f1539c0d26d2acc201bfe5b0c",
+    "semantic_hash": ""
+  },
+  ".claude/commands/agents/agent-capabilities.md": {
+    "mtime": 1793504151.1496782,
+    "ast_hash": "994b66b3dc80b2c1e5ad2977642b68ac",
+    "semantic_hash": ""
+  },
+  ".claude/commands/agents/agent-coordination.md": {
+    "mtime": 1793504151.1526747,
+    "ast_hash": "67b9ee6f9c0b84cfa81125bf7735701a",
+    "semantic_hash": ""
+  },
+  ".claude/commands/agents/agent-spawning.md": {
+    "mtime": 1793504151.1603384,
+    "ast_hash": "872bf3c8f6c3e748fee0bae2f8120404",
+    "semantic_hash": ""
+  },
+  ".claude/commands/agents/agent-types.md": {
+    "mtime": 1793504151.1623733,
+    "ast_hash": "dc3b2b219391a43af76bef0b490c690f",
+    "semantic_hash": ""
+  },
+  ".claude/commands/agents/health.md": {
+    "mtime": 1793504151.338471,
+    "ast_hash": "d052bf121ca16a8267686b6396606531",
+    "semantic_hash": ""
+  },
+  ".claude/commands/agents/list.md": {
+    "mtime": 1793504151.395521,
+    "ast_hash": "d4001ccaba686e842c5557044c39aa99",
+    "semantic_hash": ""
+  },
+  ".claude/commands/agents/logs.md": {
+    "mtime": 1793504151.4026856,
+    "ast_hash": "1e803ba183d119d31348bd6cbbfb66a6",
+    "semantic_hash": ""
+  },
+  ".claude/commands/agents/metrics.md": {
+    "mtime": 1793504151.432937,
+    "ast_hash": "ef26b3b036233c4ef5be261cd828a60c",
+    "semantic_hash": ""
+  },
+  ".claude/commands/agents/pool.md": {
+    "mtime": 1793504151.5180874,
+    "ast_hash": "3c78376d8225bac8dad3f5885b483889",
+    "semantic_hash": ""
+  },
+  ".claude/commands/agents/spawn.md": {
+    "mtime": 1793504151.814458,
+    "ast_hash": "2d5bec6c3817e8e1b393a026ca447f3f",
+    "semantic_hash": ""
+  },
+  ".claude/commands/agents/status.md": {
+    "mtime": 1793504151.830987,
+    "ast_hash": "fa263e6e179aa0ca13452de6cfa78009",
+    "semantic_hash": ""
+  },
+  ".claude/commands/agents/stop.md": {
+    "mtime": 1793504151.8339982,
+    "ast_hash": "d2afbb59204741b0975bb1b478b565e7",
+    "semantic_hash": ""
+  },
+  ".claude/commands/analysis/COMMAND_COMPLIANCE_REPORT.md": {
+    "mtime": 1793504151.26008,
+    "ast_hash": "31b438d034454f7a90141914253d1aca",
+    "semantic_hash": ""
+  },
+  ".claude/commands/analysis/README.md": {
+    "mtime": 1793504151.5551612,
+    "ast_hash": "c04ca0005d3801255051c33e9a1bea4e",
+    "semantic_hash": ""
+  },
+  ".claude/commands/analysis/bottleneck-detect.md": {
+    "mtime": 1793504151.2183204,
+    "ast_hash": "c828842ebc6574ab8b19e41c8236234b",
+    "semantic_hash": ""
+  },
+  ".claude/commands/analysis/performance-bottlenecks.md": {
+    "mtime": 1793504151.4967263,
+    "ast_hash": "0b61ca28dad061f98695cd25de71ea8a",
+    "semantic_hash": ""
+  },
+  ".claude/commands/analysis/performance-report.md": {
+    "mtime": 1793504151.5063944,
+    "ast_hash": "8877e71e0d7db538f25930e10d79dcd9",
+    "semantic_hash": ""
+  },
+  ".claude/commands/analysis/token-efficiency.md": {
+    "mtime": 1793504151.8707073,
+    "ast_hash": "244623c63580104daa138ebef6b9bf6f",
+    "semantic_hash": ""
+  },
+  ".claude/commands/analysis/token-usage.md": {
+    "mtime": 1793504151.8707073,
+    "ast_hash": "70300ed7d8eb82b647f94e0256fa611a",
+    "semantic_hash": ""
+  },
+  ".claude/commands/automation/README.md": {
+    "mtime": 1793504151.5566702,
+    "ast_hash": "7b4e61cce3f0295ed75c8536c46b9175",
+    "semantic_hash": ""
+  },
+  ".claude/commands/automation/auto-agent.md": {
+    "mtime": 1793504151.2041786,
+    "ast_hash": "81082c4a9926d14bf93853dba2a72533",
+    "semantic_hash": ""
+  },
+  ".claude/commands/automation/self-healing.md": {
+    "mtime": 1793504151.6890588,
+    "ast_hash": "61c6dacd45fef67d51b797fd48f86f49",
+    "semantic_hash": ""
+  },
+  ".claude/commands/automation/session-memory.md": {
+    "mtime": 1793504151.6930614,
+    "ast_hash": "a30d50e30ca4f7be853681e4b6f26ae4",
+    "semantic_hash": ""
+  },
+  ".claude/commands/automation/smart-agents.md": {
+    "mtime": 1793504151.8036718,
+    "ast_hash": "5bfb10368d40f70438e61a06eb0a112e",
+    "semantic_hash": ""
+  },
+  ".claude/commands/automation/smart-spawn.md": {
+    "mtime": 1793504151.8064547,
+    "ast_hash": "0aa547d24614ab02c015fef1493413c0",
+    "semantic_hash": ""
+  },
+  ".claude/commands/automation/workflow-select.md": {
+    "mtime": 1793504151.893478,
+    "ast_hash": "bb3aa7914e90adedd9b3ed67da310e8e",
+    "semantic_hash": ""
+  },
+  ".claude/commands/claude-flow-help.md": {
+    "mtime": 1793504151.2347507,
+    "ast_hash": "65f4b9dcb55c5dff69fafccea7a8e1ba",
+    "semantic_hash": ""
+  },
+  ".claude/commands/claude-flow-memory.md": {
+    "mtime": 1793504151.2357504,
+    "ast_hash": "9b61de2d08b793d943833a77363adf21",
+    "semantic_hash": ""
+  },
+  ".claude/commands/claude-flow-swarm.md": {
+    "mtime": 1793504151.2377532,
+    "ast_hash": "5ee66f411d2ce9e10d41f47138c65684",
+    "semantic_hash": ""
+  },
+  ".claude/commands/coordination/README.md": {
+    "mtime": 1793504151.5596952,
+    "ast_hash": "22f400b115f8ef3c80647db46e167c57",
+    "semantic_hash": ""
+  },
+  ".claude/commands/coordination/agent-spawn.md": {
+    "mtime": 1793504151.1572177,
+    "ast_hash": "d1068669ec43d3ae67ae305fadc42332",
+    "semantic_hash": ""
+  },
+  ".claude/commands/coordination/init.md": {
+    "mtime": 1793504151.3703518,
+    "ast_hash": "acd2ed7731bdb6fed28aebcce9aad448",
+    "semantic_hash": ""
+  },
+  ".claude/commands/coordination/orchestrate.md": {
+    "mtime": 1793504151.4664502,
+    "ast_hash": "23dde3fae25945b4d88d7f7e2bb76f85",
+    "semantic_hash": ""
+  },
+  ".claude/commands/coordination/spawn.md": {
+    "mtime": 1793504151.8164642,
+    "ast_hash": "80a72b271d6a6cf90c900da720ab10a8",
+    "semantic_hash": ""
+  },
+  ".claude/commands/coordination/swarm-init.md": {
+    "mtime": 1793504151.8356926,
+    "ast_hash": "a78f1da308ecb1e55213e90a4e4d0e33",
+    "semantic_hash": ""
+  },
+  ".claude/commands/coordination/task-orchestrate.md": {
+    "mtime": 1793504151.8626804,
+    "ast_hash": "cd89ec11fc37590be38275b967003c4b",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/README.md": {
+    "mtime": 1793504151.5596952,
+    "ast_hash": "6a932bba9dc604921bb8b16901cdaf0e",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/code-review-swarm.md": {
+    "mtime": 1793504151.2462513,
+    "ast_hash": "951be36c2a54bb3bded844c3df41e963",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/code-review.md": {
+    "mtime": 1793504151.2492585,
+    "ast_hash": "d1f0ad40668c0da6d59f7514baec4b8e",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/github-modes.md": {
+    "mtime": 1793504151.3282866,
+    "ast_hash": "4f70170a7775e3dc56746ff0bb9aacb3",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/github-swarm.md": {
+    "mtime": 1793504151.3334708,
+    "ast_hash": "74ae7293a9f6c0c93b7b702c248d9a19",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/issue-tracker.md": {
+    "mtime": 1793504151.3894582,
+    "ast_hash": "99a299417daed9d692d5c5171313df42",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/issue-triage.md": {
+    "mtime": 1793504151.3920271,
+    "ast_hash": "bf9fc5e8875dda41de99be4e0c52c342",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/multi-repo-swarm.md": {
+    "mtime": 1793504151.444552,
+    "ast_hash": "1557b2637d70bd7147ce844b406a2c44",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/pr-enhance.md": {
+    "mtime": 1793504151.527177,
+    "ast_hash": "73fc54cfe5df0489ca482b0d3615dba9",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/pr-manager.md": {
+    "mtime": 1793504151.531178,
+    "ast_hash": "0233722095419c870d5a64e073163efa",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/project-board-sync.md": {
+    "mtime": 1793504151.5432067,
+    "ast_hash": "3d1c954fdb0333958c13c4204bd4e067",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/release-manager.md": {
+    "mtime": 1793504151.6213334,
+    "ast_hash": "2926a8d2110e200a735f4705a97068a8",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/release-swarm.md": {
+    "mtime": 1793504151.6263897,
+    "ast_hash": "48b3c5b3136a6f757789165d1e5a2aa9",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/repo-analyze.md": {
+    "mtime": 1793504151.6294355,
+    "ast_hash": "a0a1466a6db82717de62d68822c08d95",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/repo-architect.md": {
+    "mtime": 1793504151.6356921,
+    "ast_hash": "86dc83baa16d0362c6ed731557e60b4e",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/swarm-issue.md": {
+    "mtime": 1793504151.8441298,
+    "ast_hash": "d2561716e99404223360914b9de10dee",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/swarm-pr.md": {
+    "mtime": 1793504151.8521519,
+    "ast_hash": "8fffbf4d154df912d7cf8a7b081c809c",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/sync-coordinator.md": {
+    "mtime": 1793504151.8606343,
+    "ast_hash": "f7d0e5ba3975abfb04f33fc85dfcb57c",
+    "semantic_hash": ""
+  },
+  ".claude/commands/github/workflow-automation.md": {
+    "mtime": 1793504151.886465,
+    "ast_hash": "4fd153a6840ee84b1d80215808593daa",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hive-mind/README.md": {
+    "mtime": 1793504151.5637226,
+    "ast_hash": "e15c0701386ea4251a0a348e8d3c764d",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hive-mind/hive-mind-consensus.md": {
+    "mtime": 1793504151.3429837,
+    "ast_hash": "f10675a8bf7697ac55984f32ee481658",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hive-mind/hive-mind-init.md": {
+    "mtime": 1793504151.3452795,
+    "ast_hash": "d5f0113c8fea75b628aa25e089eed1ef",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hive-mind/hive-mind-memory.md": {
+    "mtime": 1793504151.3471105,
+    "ast_hash": "016047fc20545bcd5469f5af77a9bad0",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hive-mind/hive-mind-metrics.md": {
+    "mtime": 1793504151.349303,
+    "ast_hash": "26eda19c4c3e04f019e0145cb18e63ec",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hive-mind/hive-mind-resume.md": {
+    "mtime": 1793504151.3508165,
+    "ast_hash": "a83b072711143e15323dba35b049ae44",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hive-mind/hive-mind-sessions.md": {
+    "mtime": 1793504151.3538275,
+    "ast_hash": "40f8cd92b323465959cb794165b8a19d",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hive-mind/hive-mind-spawn.md": {
+    "mtime": 1793504151.3568313,
+    "ast_hash": "3e733d1fe29c03106b476cb1e2d91a55",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hive-mind/hive-mind-status.md": {
+    "mtime": 1793504151.3583403,
+    "ast_hash": "71ea3d21b37b60af2311c8e7005a8d51",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hive-mind/hive-mind-stop.md": {
+    "mtime": 1793504151.3604274,
+    "ast_hash": "16040dd6d66287aa98e63d6039b32a4b",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hive-mind/hive-mind-wizard.md": {
+    "mtime": 1793504151.3624525,
+    "ast_hash": "010d9049f3b1e8003b2728e1be5283d8",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hive-mind/hive-mind.md": {
+    "mtime": 1793504151.3641903,
+    "ast_hash": "598b7d749b207af83ce9379f9870fd54",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hooks/README.md": {
+    "mtime": 1793504151.564721,
+    "ast_hash": "34a2bc7d37def2f5838d23068652ce86",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hooks/overview.md": {
+    "mtime": 1793504151.4712842,
+    "ast_hash": "f76d95aafd815b3013af20394ce44598",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hooks/post-edit.md": {
+    "mtime": 1793504151.5221715,
+    "ast_hash": "4e11655bb778c4df77fb9154e613bce1",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hooks/post-task.md": {
+    "mtime": 1793504151.5251775,
+    "ast_hash": "35ab4c88fd61671d5c56678a9e323cf9",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hooks/pre-edit.md": {
+    "mtime": 1793504151.5331788,
+    "ast_hash": "b736524b6b87b22fa574015d8eda1bf1",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hooks/pre-task.md": {
+    "mtime": 1793504151.5361774,
+    "ast_hash": "014a5ff6410ddc46abaec916ff3ee820",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hooks/session-end.md": {
+    "mtime": 1793504151.691059,
+    "ast_hash": "30dc9ec549499b3c883d742255bcc4fd",
+    "semantic_hash": ""
+  },
+  ".claude/commands/hooks/setup.md": {
+    "mtime": 1793504151.6982043,
+    "ast_hash": "64fce2340ece2fc5c44f35ddd78b7cc7",
+    "semantic_hash": ""
+  },
+  ".claude/commands/memory/README.md": {
+    "mtime": 1793504151.5672333,
+    "ast_hash": "3b77b86e37ff8c0f487efca0f059464d",
+    "semantic_hash": ""
+  },
+  ".claude/commands/memory/memory-persist.md": {
+    "mtime": 1793504151.4207067,
+    "ast_hash": "6e01c0695a34de033a21fad7e02d2a7c",
+    "semantic_hash": ""
+  },
+  ".claude/commands/memory/memory-search.md": {
+    "mtime": 1793504151.4207067,
+    "ast_hash": "d1f53d743dc536ce30f2accd8e737db0",
+    "semantic_hash": ""
+  },
+  ".claude/commands/memory/memory-usage.md": {
+    "mtime": 1793504151.424058,
+    "ast_hash": "1ff20e53bbe17dd0b1dee5a913e6d5bf",
+    "semantic_hash": ""
+  },
+  ".claude/commands/memory/neural.md": {
+    "mtime": 1793504151.4542813,
+    "ast_hash": "c6bed720257ca33d5c0cadfa3a71e2f6",
+    "semantic_hash": ""
+  },
+  ".claude/commands/monitoring/README.md": {
+    "mtime": 1793504151.5688603,
+    "ast_hash": "388887f82c9351e3793a3fa16c920402",
+    "semantic_hash": ""
+  },
+  ".claude/commands/monitoring/agent-metrics.md": {
+    "mtime": 1793504151.153685,
+    "ast_hash": "16c37e12fce68164152d23d9cdabde8f",
+    "semantic_hash": ""
+  },
+  ".claude/commands/monitoring/agents.md": {
+    "mtime": 1793504151.1710265,
+    "ast_hash": "2e30105c4a902f9a42505118a0ddf22c",
+    "semantic_hash": ""
+  },
+  ".claude/commands/monitoring/real-time-view.md": {
+    "mtime": 1793504151.6050248,
+    "ast_hash": "119671dd91128dfe2a3831e6610659c3",
+    "semantic_hash": ""
+  },
+  ".claude/commands/monitoring/status.md": {
+    "mtime": 1793504151.8319874,
+    "ast_hash": "5e981fe7639e33a4cee5a7c3056c961d",
+    "semantic_hash": ""
+  },
+  ".claude/commands/monitoring/swarm-monitor.md": {
+    "mtime": 1793504151.8481703,
+    "ast_hash": "f488151afc915896bddb455dbf826975",
+    "semantic_hash": ""
+  },
+  ".claude/commands/optimization/README.md": {
+    "mtime": 1793504151.571517,
+    "ast_hash": "b51fec578fbb7c430071b2ae456379c6",
+    "semantic_hash": ""
+  },
+  ".claude/commands/optimization/auto-topology.md": {
+    "mtime": 1793504151.2067504,
+    "ast_hash": "d99253fc877ed4a8cc11be9e2f92a2ef",
+    "semantic_hash": ""
+  },
+  ".claude/commands/optimization/cache-manage.md": {
+    "mtime": 1793504151.22232,
+    "ast_hash": "ee6cfb6d3a0017f0e9e1fe6b3cdd69b5",
+    "semantic_hash": ""
+  },
+  ".claude/commands/optimization/parallel-execute.md": {
+    "mtime": 1793504151.4815853,
+    "ast_hash": "fe53267cc279356f128f278416fa63e6",
+    "semantic_hash": ""
+  },
+  ".claude/commands/optimization/parallel-execution.md": {
+    "mtime": 1793504151.4840271,
+    "ast_hash": "0bf14078c9f6d930db6642ab55cee4df",
+    "semantic_hash": ""
+  },
+  ".claude/commands/optimization/topology-optimize.md": {
+    "mtime": 1793504151.8707073,
+    "ast_hash": "5092948b5cd9c33b116454f761b77a21",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/analyzer.md": {
+    "mtime": 1793504151.1831093,
+    "ast_hash": "8ab54a00083a194686f6105bb9f8652b",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/architect.md": {
+    "mtime": 1793504151.1901314,
+    "ast_hash": "a8ad23b63b050bb136a1d616e58e172e",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/ask.md": {
+    "mtime": 1793504151.198742,
+    "ast_hash": "24d1d87f76f3ead3e86c71371bd704ee",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/batch-executor.md": {
+    "mtime": 1793504151.2142653,
+    "ast_hash": "b7997bdf54b9ffa67f8c8746a290bdec",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/code.md": {
+    "mtime": 1793504151.2517686,
+    "ast_hash": "bbfbaa4d78089407869e8eb72bdff959",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/coder.md": {
+    "mtime": 1793504151.2532775,
+    "ast_hash": "77f86cb052e19bb7b340f8105cc1191a",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/debug.md": {
+    "mtime": 1793504151.284448,
+    "ast_hash": "cc41910b8b7618e0877caa14cee23008",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/debugger.md": {
+    "mtime": 1793504151.2864506,
+    "ast_hash": "60a88209eacf08b611548c0d95e5334c",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/designer.md": {
+    "mtime": 1793504151.2884467,
+    "ast_hash": "0c823dcad5fcc187eab886a45ddc9afb",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/devops.md": {
+    "mtime": 1793504151.3018506,
+    "ast_hash": "75f99d8d16d1477c7796c2c98281a5d7",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/docs-writer.md": {
+    "mtime": 1793504151.3110516,
+    "ast_hash": "9ac7c46902c59b41f2d69e710b139e20",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/documenter.md": {
+    "mtime": 1793504151.3130522,
+    "ast_hash": "2105835f50746284e0c7b482ca09ce04",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/innovator.md": {
+    "mtime": 1793504151.3762608,
+    "ast_hash": "b642f0ab84a24a0a521d524a3db8257e",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/integration.md": {
+    "mtime": 1793504151.3826194,
+    "ast_hash": "5876a04f6bf9720ed48b588446b8a270",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/mcp.md": {
+    "mtime": 1793504151.4125729,
+    "ast_hash": "d8bb20e38c72c6f074b5a276715e1f31",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/memory-manager.md": {
+    "mtime": 1793504151.4186738,
+    "ast_hash": "1c0b206e498675b6505988e0baf926d0",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/optimizer.md": {
+    "mtime": 1793504151.4664502,
+    "ast_hash": "eb664dbf77825354290a4ad7857e5cde",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/orchestrator.md": {
+    "mtime": 1793504151.4712842,
+    "ast_hash": "894abc829453204bb0a344ca6148a081",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/post-deployment-monitoring-mode.md": {
+    "mtime": 1793504151.5201397,
+    "ast_hash": "6b0b5e6ee312e23d8511793ef307738d",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/refinement-optimization-mode.md": {
+    "mtime": 1793504151.6115127,
+    "ast_hash": "4971adbc5e3763fc766730c97ce099f4",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/researcher.md": {
+    "mtime": 1793504151.6465878,
+    "ast_hash": "617ab2849cdb9e20a90be180081cd73b",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/reviewer.md": {
+    "mtime": 1793504151.653232,
+    "ast_hash": "5d1e9b39c060de59689004e44fe8ca37",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/security-review.md": {
+    "mtime": 1793504151.687049,
+    "ast_hash": "699b9f1d47560ab715484943d6c18f7e",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/sparc-modes.md": {
+    "mtime": 1793504151.8104496,
+    "ast_hash": "a4c45f626b97683e772ca45be79032d0",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/sparc.md": {
+    "mtime": 1793504151.8134587,
+    "ast_hash": "52a97f41a52d41cf48bf837e19b59241",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/spec-pseudocode.md": {
+    "mtime": 1793504151.8214643,
+    "ast_hash": "58a509a21a692e043484c0363e77d430",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/supabase-admin.md": {
+    "mtime": 1793504151.8356926,
+    "ast_hash": "64e8f7567b585a41da2607ebbc7e2263",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/swarm-coordinator.md": {
+    "mtime": 1793504151.8356926,
+    "ast_hash": "2dbc0892cbecb491319cdf3e16cc2233",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/tdd.md": {
+    "mtime": 1793504151.8667097,
+    "ast_hash": "e40ecce5b14a3c01c1c8e4936ed5095c",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/tester.md": {
+    "mtime": 1793504151.868714,
+    "ast_hash": "e222563108493c74e93e81d07aeddf3e",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/tutorial.md": {
+    "mtime": 1793504151.879348,
+    "ast_hash": "949b3055c7a5c5ba2bebe532ba18b2c2",
+    "semantic_hash": ""
+  },
+  ".claude/commands/sparc/workflow-manager.md": {
+    "mtime": 1793504151.8924794,
+    "ast_hash": "8d9a988d3c693b8e458ef3e95c7f1b0e",
+    "semantic_hash": ""
+  },
+  ".claude/commands/swarm/README.md": {
+    "mtime": 1793504151.576027,
+    "ast_hash": "070ba7cb4c5ad76653472b3024e045d0",
+    "semantic_hash": ""
+  },
+  ".claude/commands/swarm/analysis.md": {
+    "mtime": 1793504151.1710265,
+    "ast_hash": "f834e9713a4e39e7553f965a62f3b208",
+    "semantic_hash": ""
+  },
+  ".claude/commands/swarm/development.md": {
+    "mtime": 1793504151.2973454,
+    "ast_hash": "5b2dc1504e194b5c0c07393416fc4c5f",
+    "semantic_hash": ""
+  },
+  ".claude/commands/swarm/examples.md": {
+    "mtime": 1793504151.3247488,
+    "ast_hash": "9f1fe596c2a0b494675fa9a58e228f0b",
+    "semantic_hash": ""
+  },
+  ".claude/commands/swarm/maintenance.md": {
+    "mtime": 1793504151.4060564,
+    "ast_hash": "73a24f990f4d88ef2fa5083fd00d0e3b",
+    "semantic_hash": ""
+  },
+  ".claude/commands/swarm/optimization.md": {
+    "mtime": 1793504151.464337,
+    "ast_hash": "1e8ecf5915a757b6ecd159cb2252611d",
+    "semantic_hash": ""
+  },
+  ".claude/commands/swarm/research.md": {
+    "mtime": 1793504151.6386983,
+    "ast_hash": "ed409017187314183d6a8ac90491e04f",
+    "semantic_hash": ""
+  },
+  ".claude/commands/swarm/swarm-analysis.md": {
+    "mtime": 1793504151.8356926,
+    "ast_hash": "5715dabbd3993760a7ebcc88f79ca6b3",
+    "semantic_hash": ""
+  },
+  ".claude/commands/swarm/swarm-background.md": {
+    "mtime": 1793504151.8356926,
+    "ast_hash": "5b332b97eb7e3065196c0386a955ae9d",
+    "semantic_hash": ""
+  },
+  ".claude/commands/swarm/swarm-init.md": {
+    "mtime": 1793504151.8419538,
+    "ast_hash": "8efc4a52f76bb17545423cc77643e18a",
+    "semantic_hash": ""
+  },
+  ".claude/commands/swarm/swarm-modes.md": {
+    "mtime": 1793504151.8471713,
+    "ast_hash": "cb2a1a017a11087980f3b3f886e2a49f",
+    "semantic_hash": ""
+  },
+  ".claude/commands/swarm/swarm-monitor.md": {
+    "mtime": 1793504151.8481703,
+    "ast_hash": "7cee47afc1a54b6fd55cd0d06f55addb",
+    "semantic_hash": ""
+  },
+  ".claude/commands/swarm/swarm-spawn.md": {
+    "mtime": 1793504151.8521519,
+    "ast_hash": "2d5a64b9f98d69b5236379ac63c8a9c0",
+    "semantic_hash": ""
+  },
+  ".claude/commands/swarm/swarm-status.md": {
+    "mtime": 1793504151.8521519,
+    "ast_hash": "41b7039c661206027f2fbdba1262fd92",
+    "semantic_hash": ""
+  },
+  ".claude/commands/swarm/swarm-strategies.md": {
+    "mtime": 1793504151.8567138,
+    "ast_hash": "e74e266a39ec10eb65499da7a1a600a1",
+    "semantic_hash": ""
+  },
+  ".claude/commands/swarm/swarm.md": {
+    "mtime": 1793504151.8581247,
+    "ast_hash": "9e0f4b5c8ace219ca799adb735fea8ff",
+    "semantic_hash": ""
+  },
+  ".claude/commands/swarm/testing.md": {
+    "mtime": 1793504151.8707073,
+    "ast_hash": "ac48a3a938cded67cd3745c9e8f9bbc1",
+    "semantic_hash": ""
+  },
+  ".claude/commands/workflows/README.md": {
+    "mtime": 1793504151.5800295,
+    "ast_hash": "8463e3579551e291de12b772041bfd99",
+    "semantic_hash": ""
+  },
+  ".claude/commands/workflows/development.md": {
+    "mtime": 1793504151.3003368,
+    "ast_hash": "8114da15c3d58eeeaaf35152ed3d007f",
+    "semantic_hash": ""
+  },
+  ".claude/commands/workflows/research.md": {
+    "mtime": 1793504151.6427274,
+    "ast_hash": "210a7d9cee3b627411ae55c620e1a076",
+    "semantic_hash": ""
+  },
+  ".claude/commands/workflows/workflow-create.md": {
+    "mtime": 1793504151.8884785,
+    "ast_hash": "4e38f7d8d92db92ea4f1d3bf358c2e7c",
+    "semantic_hash": ""
+  },
+  ".claude/commands/workflows/workflow-execute.md": {
+    "mtime": 1793504151.8884785,
+    "ast_hash": "e1e7becf0d62fc11058635f1a5b093cf",
+    "semantic_hash": ""
+  },
+  ".claude/commands/workflows/workflow-export.md": {
+    "mtime": 1793504151.890479,
+    "ast_hash": "9ba829fa715bc5b99cf2c3a2a6ad6439",
+    "semantic_hash": ""
+  },
+  ".claude/helpers/README.md": {
+    "mtime": 1793504151.5820265,
+    "ast_hash": "8234495992effd85ddabb306494c8d7d",
+    "semantic_hash": ""
+  },
+  ".claude/skills/agentdb-advanced/SKILL.md": {
+    "mtime": 1793504151.7017314,
+    "ast_hash": "b7f843715aa90808bb18bdd58b781dce",
+    "semantic_hash": ""
+  },
+  ".claude/skills/agentdb-learning/SKILL.md": {
+    "mtime": 1793504151.7047312,
+    "ast_hash": "70a6cb40dea509e687fe30d4dc9e0be6",
+    "semantic_hash": ""
+  },
+  ".claude/skills/agentdb-memory-patterns/SKILL.md": {
+    "mtime": 1793504151.7076948,
+    "ast_hash": "afc37b6b02f0943852d133f0d4fa3c8c",
+    "semantic_hash": ""
+  },
+  ".claude/skills/agentdb-optimization/SKILL.md": {
+    "mtime": 1793504151.7097218,
+    "ast_hash": "0a60a750b7dd6699f251e838a0bf6ff1",
+    "semantic_hash": ""
+  },
+  ".claude/skills/agentdb-vector-search/SKILL.md": {
+    "mtime": 1793504151.7127135,
+    "ast_hash": "2a5c642bd92aaf5f630bdc6e70aa0ac9",
+    "semantic_hash": ""
+  },
+  ".claude/skills/browser/SKILL.md": {
+    "mtime": 1793504151.7148118,
+    "ast_hash": "45b6dd7a53825d4f2623cd6d8cfc7f4d",
+    "semantic_hash": ""
+  },
+  ".claude/skills/github-code-review/SKILL.md": {
+    "mtime": 1793504151.7246163,
+    "ast_hash": "cc6534c9db098e4e4e13a281c58a2c8d",
+    "semantic_hash": ""
+  },
+  ".claude/skills/github-multi-repo/SKILL.md": {
+    "mtime": 1793504151.725155,
+    "ast_hash": "46668fe08941c8d2451ebe11f69a82f8",
+    "semantic_hash": ""
+  },
+  ".claude/skills/github-project-management/SKILL.md": {
+    "mtime": 1793504151.7304933,
+    "ast_hash": "36623bd7e63f0da517195c9845e52edd",
+    "semantic_hash": ""
+  },
+  ".claude/skills/github-release-management/SKILL.md": {
+    "mtime": 1793504151.732167,
+    "ast_hash": "cd9304b40189b232e1bc1050525a43e7",
+    "semantic_hash": ""
+  },
+  ".claude/skills/github-workflow-automation/SKILL.md": {
+    "mtime": 1793504151.734166,
+    "ast_hash": "e3663bd70fc6255c2b8710ab0fed7b84",
+    "semantic_hash": ""
+  },
+  ".claude/skills/hooks-automation/SKILL.md": {
+    "mtime": 1793504151.7361653,
+    "ast_hash": "291b2eea21202b6867b3a8d9eef03788",
+    "semantic_hash": ""
+  },
+  ".claude/skills/pair-programming/SKILL.md": {
+    "mtime": 1793504151.7371583,
+    "ast_hash": "f5d1ae30ddc694612273632b69094270",
+    "semantic_hash": ""
+  },
+  ".claude/skills/reasoningbank-agentdb/SKILL.md": {
+    "mtime": 1793504151.7391653,
+    "ast_hash": "dd4cc4af01ce001c2d9336da3b5f90c6",
+    "semantic_hash": ""
+  },
+  ".claude/skills/reasoningbank-intelligence/SKILL.md": {
+    "mtime": 1793504151.7401655,
+    "ast_hash": "9cbc56a6f6a759adf5fc5ff0204b8a75",
+    "semantic_hash": ""
+  },
+  ".claude/skills/skill-builder/SKILL.md": {
+    "mtime": 1793504151.7421646,
+    "ast_hash": "0e0493dd5c9b0ffe3e25d24986d49d8e",
+    "semantic_hash": ""
+  },
+  ".claude/skills/sparc-methodology/SKILL.md": {
+    "mtime": 1793504151.7431648,
+    "ast_hash": "a5439e0cbe18cb2e6d47dff6af769a76",
+    "semantic_hash": ""
+  },
+  ".claude/skills/stream-chain/SKILL.md": {
+    "mtime": 1793504151.7446764,
+    "ast_hash": "c274fd621c9356a0f637b64e86c0e75c",
+    "semantic_hash": ""
+  },
+  ".claude/skills/swarm-advanced/SKILL.md": {
+    "mtime": 1793504151.7476861,
+    "ast_hash": "2efc183b13b3998d70c21e68fbf6b810",
+    "semantic_hash": ""
+  },
+  ".claude/skills/swarm-orchestration/SKILL.md": {
+    "mtime": 1793504151.7486868,
+    "ast_hash": "395bf6762e48ad9fa5f7a0b8322b7eda",
+    "semantic_hash": ""
+  },
+  ".claude/skills/verification-quality/SKILL.md": {
+    "mtime": 1793504151.7652247,
+    "ast_hash": "d1f26c9fa65462b5624d4f7245e3af6f",
+    "semantic_hash": ""
+  },
+  ".wiki/memory-integrity.md": {
+    "mtime": 1793809347.0109875,
+    "ast_hash": "7a7a55817d83ac8b5e87565f5d5c043c",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1793804760.5093732,
+    "ast_hash": "a12aafedf472e5242976fc435176c9bb",
     "semantic_hash": ""
   }
 }

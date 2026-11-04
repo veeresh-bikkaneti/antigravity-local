@@ -213,6 +213,14 @@
   - Interrogate round 1 (3 siloed adversaries): purge claim held (mutation-tested). 2 verified findings fixed test-first: (a) all-fallback docs during an Ollama outage were stamped with the Ollama mode (fix: `EmbeddingProvider.fell_back` flag, doc stays NULL and is retried); (b) concurrent open of a legacy DB raised `duplicate column name` (fix: tolerate it on ALTER). Round 2 (1 adversary): 1 verified finding fixed test-first - a fallback *query* vector was compared against Ollama-stored vectors (ghost RRF hits); search now goes BM25-only when the query embedding fell back. Review cap reached; PR opened for human review.
   - Residual: a transient Ollama outage at index start forces re-embedding onto fallback (loud stderr warning only).
 
+- [x] **Step 30**: Bootstrap & Docs Sync (Nov 4, 2026, branch `docs/memory-integrity-sync`):
+  - Documented index-integrity invariants in `docs/MEMORY_SPEC.md` (schema + invariants), new `.wiki/memory-integrity.md` (+ index), README tree (`memory.py`, `tests/`).
+  - Fixed stale absolute links (`local%20antigravity`) in `.wiki/index.md` -> relative; `ZERO_TO_CODING.md` path updated to `local-antigravity`.
+  - **Archify global install was broken** (symlink -> old `local antigravity` folder after the repo dir rename). Removed stale npm shims in `%APPDATA%
+pm`, reinstalled `npm install -g ./.agents/skills/archify`; `archify doctor` passes. The 4 diagrams do not depict memory internals, so no regeneration was needed.
+  - Re-ran `python memory.py index` and `graphify update .`.
+  - Quirk: if the repo folder is ever renamed again, re-run the archify global install.
+
 ---
 
 ## 5. Key Architecture & Environment Quirks Discovered

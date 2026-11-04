@@ -217,6 +217,8 @@ antigravity-local/
 ├── test_local.py             # Script 1: Tests local connection & real-time token streaming
 ├── agent_with_workspace.py   # Script 2: Autonomous agent with file creation tools
 ├── code_agent.py             # Script 3: Interactive developer coding shell & pair-programmer
+├── memory.py                 # Tier 3 memory engine: SQLite FTS5 + vector search
+├── tests/                    # Memory-engine regression tests (stdlib unittest, no pip needed)
 └── workspace/                # Sandboxed folder where the agent creates/edits files
     ├── .gitkeep              # Keeps directory tracked in git
     └── index.html            # Artifact generated automatically by the agent
