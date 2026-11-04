@@ -244,6 +244,8 @@ pm`, reinstalled `npm install -g ./.agents/skills/archify`; `archify doctor` pas
 
 - [x] **Step 34**: Docs unslop pass (PR #7). 5 writers on disjoint files + 1 independent reviewer; em-dashes 0; 24 emoji headings stripped with all anchors remapped (30 anchored links, 0 broken). Heading case left as written (automatic sentence-casing broke names). Merged #6 (rule-registry AGENTS.md) first.
 
+- [x] **Step 35**: Guide polish merged (PR #8, `c071020`). Sentence-case headings (anchors unchanged), guide sections 3-5 rewritten from a 3-seat council + 1 reviewer, `scripts/check_docs.py` (+CI). Quirks: edit scripts must avoid doubled backslashes in heredocs (they get halved and turn into control chars); `check_docs.py --baseline` allows new headings, fails on renamed ones. Open follow-up: `run.bat` garbles emojis in default CMD (needs `chcp 65001`).
+
 ---
 
 ## 5. Key Architecture & Environment Quirks Discovered
