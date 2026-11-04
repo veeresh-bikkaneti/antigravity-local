@@ -17,6 +17,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: AGENTS.md rules (line caps, ASCII, referenced files exist)
+        run: python scripts/check_agents_md.py
       - name: Unit tests
         run: python -m unittest tests.test_memory_integrity tests.test_memory_determinism tests.test_serve
       - name: Real E2E (docker path)
