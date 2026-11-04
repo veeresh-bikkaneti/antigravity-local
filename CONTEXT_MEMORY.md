@@ -248,6 +248,8 @@ pm`, reinstalled `npm install -g ./.agents/skills/archify`; `archify doctor` pas
 
 - [x] **Step 36**: `run.bat` sets `chcp 65001` + `PYTHONUTF8=1` (console was code page 437, emojis showed as mojibake); `.gitattributes` forces CRLF for `*.bat`. Docker: `/app/.memory` is created world-writable at build, so `--user 12345` and `--read-only --tmpfs /app/.memory` both work (covered by `tests/e2e.py docker`). Quirk: from Git Bash, `cmd /c run.bat` fails; `NoDefaultCurrentDirectoryInExePath=1` is set here, use `.\run.bat`.
 
+- [x] **Step 37**: `workspace/index.html` untracked and ignored (setup demo rewrote it every run, dirtying the tree); only `workspace/.gitkeep` stays tracked. Pruning note: this file is at the 300-line cap, so the next entry must replace or condense older steps.
+
 ---
 
 ## 5. Key Architecture & Environment Quirks Discovered
