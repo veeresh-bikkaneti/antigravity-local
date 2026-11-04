@@ -119,6 +119,7 @@ def main(argv=None):
     server = build_server(args.host, args.port)
     shown = "127.0.0.1" if args.host in ("0.0.0.0", "") else args.host
     print(f"Serving on http://{shown}:{server.server_address[1]}", flush=True)
+    print("Stop with Ctrl+C (in Docker: docker stop <name>).", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

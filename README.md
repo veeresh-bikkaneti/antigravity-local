@@ -68,6 +68,19 @@ python tests/e2e.py local    # fresh copy, own venv, two servers on two free por
 python tests/e2e.py docker   # builds the image, runs two containers on two random host ports
 ```
 
+### 🧹 Stop & Clean Up (Teardown)
+
+Everything you start has an off switch, and everything it leaves behind is safe to delete. Nothing here touches your Ollama models.
+
+| What you started | How to stop it | What it leaves behind | Remove that with |
+| :--- | :--- | :--- | :--- |
+| Local server (`run.py --serve`) | `Ctrl+C` in its terminal | `venv/` (about 250 MB) and `.memory/` (search index, about 1 MB). Both rebuild themselves next run. | PowerShell: `Remove-Item -Recurse -Force venv, .memory`. macOS/Linux/Git Bash: `rm -rf venv .memory` |
+| Docker container | `docker stop ag` (it was started with `--rm`, so it deletes itself) | The image (about 480 MB) | `docker rmi antigravity-local` |
+| `tests/e2e.py local` / `docker` | Nothing, they clean up after themselves | Nothing: their servers, containers, images and temp folders are removed | n/a |
+| Archify global install | n/a | A global `archify` command | `npm uninstall -g archify` |
+
+Forgot the container name? `docker ps` lists running ones, then `docker stop <id>`. Want your disk back from Ollama too? That is your call, never ours: `ollama list`, then `ollama rm <model>`.
+
 ---
 
 ## 📋 Table of Contents

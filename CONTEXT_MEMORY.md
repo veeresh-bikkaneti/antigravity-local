@@ -237,6 +237,7 @@ pm`, reinstalled `npm install -g ./.agents/skills/archify`; `archify doctor` pas
   - Docs: Git Bash needs `MSYS_NO_PATHCONV=1` for `-w /app`; docker command now lives only in README (ZERO_TO_CODING and ARCHITECTURE point to it); Python versions aligned to installers (3.11 min, 3.12/3.13); wiki test command updated.
   - Quirk: `unittest discover -s tests` works; plain `discover` finds 0 tests.
   - Not changed: image fails with `--read-only` / arbitrary `--user` (writes `/app/.memory`); `limit=0/-1` is clamped to 1 (documented as 1-20).
+  - Teardown gap (user report): docs said nothing about stopping/cleanup, and `e2e.py docker` leaked a 483 MB image per run (fixed tag also collided with another session). Now: unique tag per run + `docker rmi -f` in finally; serve.py prints a stop hint; README has 'Stop & Clean Up' table (local server, container, image, venv/.memory, archify). Ollama models are never touched.
   - AGENTS.md draft reviewed (3 skills + 2 adversaries + judge). Verdict: base = candidate 3 (rule registry + checker). Synthesis in the session scratchpad `arena/final/`; NOT installed, user's draft untouched.
 
 ---

@@ -7,6 +7,7 @@
 Same HTTP assertions for both, so "works locally" and "works in the image" mean the same thing.
 """
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -18,7 +19,7 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-IMAGE = "antigravity-local:e2e"
+IMAGE = f"antigravity-local:e2e-{os.getpid()}"  # unique per run, removed in docker()'s finally
 
 
 def get(url):
@@ -134,7 +135,8 @@ def docker():
         print("   [ok] runs as non-root user 'app'; HEALTHCHECK reports healthy")
     finally:
         for c in ids:
-            subprocess.run(["docker", "stop", "-t", "2", c], capture_output=True)
+            subprocess.run(["docker", "stop", "-t", "2", c], capture_output=True)  # --rm deletes the container
+        subprocess.run(["docker", "rmi", "-f", IMAGE], capture_output=True)  # leave no image behind
 
 
 if __name__ == "__main__":
