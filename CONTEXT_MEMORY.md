@@ -242,6 +242,8 @@ pm`, reinstalled `npm install -g ./.agents/skills/archify`; `archify doctor` pas
 
 - [x] **Step 33**: Merged #4 (merge commit) and #5 (squash) to main (`67ca324`); CI on #5 green incl. docker e2e on Linux. Installed rule-registry `AGENTS.md` (64 lines, from arena candidate 3 + judge grafts) with `scripts/check_agents_md.py` (also a CI step). Previous 425-line draft is kept on the owner's machine only (untracked .ai-context folder, file AGENTS.draft-2026-11-04.md). Removed leftover reviewer worktrees.
 
+- [x] **Step 34**: Docs unslop pass (PR #7). 5 writers on disjoint files + 1 independent reviewer; em-dashes 0; 24 emoji headings stripped with all anchors remapped (30 anchored links, 0 broken). Heading case left as written (automatic sentence-casing broke names). Merged #6 (rule-registry AGENTS.md) first.
+
 ---
 
 ## 5. Key Architecture & Environment Quirks Discovered

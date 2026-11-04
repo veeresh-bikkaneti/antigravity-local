@@ -9,29 +9,29 @@
 
 ## 1. Executive Summary & Design Rationale
 
-When running local autonomous coding agents (such as Qwen 2.5 14B or Gemma 2 27B via Ollama) and pairing them with cloud IDE models (Antigravity Gemini / Claude), maintaining persistent context across sessions without overwhelming model context windows is the single biggest engineering bottleneck.
+When you run local autonomous coding agents (such as Qwen 2.5 14B or Gemma 2 27B via Ollama) alongside cloud IDE models (Antigravity Gemini / Claude), the hardest engineering problem is keeping context across sessions without overflowing the model's context window.
 
-A typical codebase contains hundreds of thousands of tokens. Ingesting raw files into prompts burns tokens at an unsustainable rate (e.g., 280,000 tokens per prompt), causing:
-1. **Context Exhaustion**: Rapidly exceeding context windows (e.g. 32k or 128k tokens).
-2. **"Needle-in-a-Haystack" Degradation**: Reasoning accuracy drops dramatically as prompt size increases.
-3. **Severe Local Inference Latency**: Local models experience massive time-to-first-token (TTFT) slowdowns when processing 50k+ input tokens on consumer or workstation GPUs.
+A typical codebase contains hundreds of thousands of tokens. Putting raw files into prompts burns tokens fast (e.g., 280,000 tokens per prompt). That causes three problems:
+1. **Context exhaustion**: Prompts exceed context windows (e.g. 32k or 128k tokens).
+2. **"Needle-in-a-Haystack" Degradation**: Reasoning accuracy drops as prompt size increases.
+3. **Local inference latency**: Local models see long time-to-first-token (TTFT) delays when processing 50k+ input tokens on consumer or workstation GPUs.
 
 ### The Architectural Question: RAG vs. OKF vs. Vector DB vs. LLMWiki
 
 | Dimension | Standalone Vector DB (Milvus, Qdrant, Chroma) | Traditional Naive RAG (Vector-only) | OKF / Knowledge Graph (Graphify) | LLMWiki (Karpathy Paradigm) | **Our 3-Tier Fabric (Graphify + LLMWiki + SQLite Hybrid)** |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **External Dependencies** | Requires Docker, C++ binaries, or external daemon ports (6333, 8000, 19530). | Moderate to High (vector libraries, API keys). | **Zero** (local Python CLI, Tree-sitter AST parser). | **Zero** (pure Markdown repository files). | **ZERO** (built into Python standard library `sqlite3` + Markdown + local AST). |
-| **Code Structure Accuracy** | Poor (treats code as generic unstructured prose chunks). | Poor (misses call graphs, inheritance, module boundaries). | **100% Deterministic** (extracts exact functions, calls, classes). | High (human/agent curated domain knowledge). | **Deterministic AST + Curated Domain Truth + Fuzzy Semantic Retrieval**. |
-| **Exact Symbol Search (BM25)** | Weak (vector embeddings struggle with exact token hits like `get_hardware_profile`). | Missing or secondary. | Indirect (AST node lookup). | Fast (grep / markdown file reading). | **Built-in FTS5 BM25** with rank scoring. |
-| **Semantic / Fuzzy Search** | Strong. | Strong. | Weak (relationship-based only). | Moderate (topic navigation). | **Dual-Engine**: Local Ollama embedding with fallback cosine similarity. |
-| **Token Consumption** | High (dumps multi-chunk text snippets into prompt). | High (8,000–30,000 tokens per query). | **Zero tokens to build**; ~800 tokens to query (up to **128x reduction**). | **Ultra-Low** (curated 500–1,500 token atomic pages). | **Ultra-Low (<1,200 tokens loaded per targeted action)**. |
-| **Plug & Play Ethos** | Breaks 1-command bootstrap. | Fragile setup. | Native CLI & rules. | Native Git files. | **100% 1-Command Plug & Play**. |
+| **External Dependencies** | Requires Docker, C++ binaries, or external daemon ports (6333, 8000, 19530). | Moderate to High (vector libraries, API keys). | Zero (local Python CLI, Tree-sitter AST parser). | Zero (pure Markdown repository files). | Zero (built into Python standard library `sqlite3` + Markdown + local AST). |
+| **Code Structure Accuracy** | Poor (treats code as generic unstructured prose chunks). | Poor (misses call graphs, inheritance, module boundaries). | 100% Deterministic (extracts exact functions, calls, classes). | High (human/agent curated domain knowledge). | Deterministic AST + Curated Domain Truth + Fuzzy Semantic Retrieval. |
+| **Exact Symbol Search (BM25)** | Weak (vector embeddings struggle with exact token hits like `get_hardware_profile`). | Missing or secondary. | Indirect (AST node lookup). | Fast (grep / markdown file reading). | Built-in FTS5 BM25 with rank scoring. |
+| **Semantic / Fuzzy Search** | Strong. | Strong. | Weak (relationship-based only). | Moderate (topic navigation). | Dual-engine. Local Ollama embedding with fallback cosine similarity. |
+| **Token Consumption** | High (dumps multi-chunk text snippets into prompt). | High (8,000–30,000 tokens per query). | Zero tokens to build; ~800 tokens to query (up to 128x reduction). | Ultra-Low (curated 500–1,500 token atomic pages). | Ultra-Low (<1,200 tokens loaded per targeted action). |
+| **Plug & Play Ethos** | Breaks 1-command bootstrap. | Fragile setup. | Native CLI & rules. | Native Git files. | 100% 1-Command Plug & Play. |
 
 ---
 
 ## 2. The 3-Tier Memory Fabric Architecture
 
-Rather than relying on a heavy vector database that breaks the 1-command plug-and-play promise, this repository implements a unified 3-tier memory fabric:
+Instead of a heavy vector database that breaks the 1-command plug-and-play promise, this repository uses a 3-tier memory fabric:
 
 ```mermaid
 flowchart TD
@@ -78,37 +78,37 @@ flowchart TD
 
 ### Tier 1: Graphify (AST Code Knowledge Graph)
 - **Location**: `graphify-out/graph.json` and `.agents/rules/graphify.md`
-- **Purpose**: Answer structural code questions with zero hallucinations and zero token waste.
+- **Purpose**: Answer structural code questions directly from the AST graph, with no hallucination and no wasted tokens.
 - **How it Works**: Tree-sitter parses the repository's Python, Bash, HTML, and Markdown files into an AST graph. Nodes represent files, functions, classes, and environment variables; edges represent imports, calls, and file containment.
 - **Commands**:
-  - `graphify query "<question>"`: Returns a tightly bounded subgraph.
+  - `graphify query "<question>"`: Returns a small, bounded subgraph.
   - `graphify path "<node_A>" "<node_B>"`: Returns exact call-chain or dependency path.
   - `graphify explain "<concept>"`: Explains community cluster connections.
-  - `graphify update .`: Synchronizes the graph after local code changes at **zero API cost**.
-- **Benchmark Measured**: 31.1x to 128.8x token reduction compared to full-context file reading.
+  - `graphify update .`: Syncs the graph after local code changes, at no API cost.
+- **Benchmark**: 31.1x to 128.8x token reduction compared to reading full files.
 
 ### Tier 2: LLMWiki (Karpathy Concept Pages)
 - **Location**: `.wiki/`
-- **Purpose**: Maintain canonical, high-density, human- and LLM-curated Markdown files that serve as the project's single source of truth for conceptual knowledge.
+- **Purpose**: Keep Markdown files, curated by humans and the LLM, as the project's single source of truth for concepts.
 - **Concept Anatomy**:
-  - Each wiki file is atomic (500–1,500 tokens), structured with clear headings, bulleted invariants, and cross-references.
-  - Models read an individual `.wiki/<topic>.md` file in a single tool call rather than trawling dozens of documentation pages.
+  - Each wiki file is atomic (500–1,500 tokens) and has headings, bulleted invariants, and cross-references.
+  - Models read one `.wiki/<topic>.md` file in a single tool call instead of dozens of documentation pages.
 - **Core Topics**:
   1. `index.md`: Master topic registry and cross-reference table.
   2. `architecture.md`: Local decoupled runtime, harness connection, and air-gapped guarantees.
-  3. `hardware-matrix.md`: GPU VRAM offloading physics (RTX 5000 Ada 16GB + 128GB DDR5 RAM).
+  3. `hardware-matrix.md`: How GPU VRAM offloading works (RTX 5000 Ada 16GB + 128GB DDR5 RAM).
   4. `model-hierarchy.md`: Dynamic model capability scoring (Nanbeige > Qwen 2.5 > DeepSeek > Gemma 2) and zero-download logic.
   5. `tool-execution.md`: Antigravity SDK workspace tool schemas and safety policy enforcement.
-  6. `token-optimization.md`: Token physics, benchmarking results, and memory switchboard guidance.
+  6. `token-optimization.md`: Token costs, benchmark results, and memory switchboard guidance.
 
 ### Tier 3: Embedded Hybrid Memory Engine (`memory.py`)
 - **Location**: `memory.py` and persistent store at `.memory/index.sqlite`
 - **Engine Principles**:
   - **Zero External Dependencies**: Uses Python's standard library `sqlite3`, `re`, `json`, `math`, `urllib.request`. No `pip install` required for base functionality.
-  - **FTS5 Full-Text Search (BM25)**: SQLite's native FTS5 extension tokenizes documents into trigrams/words, scoring exact matches via BM25 ranking.
+  - **FTS5 Full-Text Search (BM25)**: SQLite's native FTS5 extension tokenizes documents into trigrams or words and scores exact matches with BM25.
   - **Dense Vector Embedding Engine**:
     - Queries local Ollama embedding API (`http://localhost:11434/api/embeddings`) using model `nomic-embed-text` (or `all-minilm`) if present.
-    - If no embedding model is present in Ollama, automatically falls back to an internal pure-Python n-gram/TF-IDF term vectorizer with cosine similarity.
+    - If no embedding model is present in Ollama, falls back to an internal pure-Python n-gram/TF-IDF term vectorizer with cosine similarity.
   - **Reciprocal Rank Fusion (RRF)**:
     Combines BM25 lexical rank with dense vector similarity rank using the standard information retrieval formula:
     $$RRF\_Score(d) = \frac{w_{lex}}{k + Rank_{BM25}(d)} + \frac{w_{sem}}{k + Rank_{vector}(d)}$$
@@ -125,7 +125,7 @@ flowchart TD
 
 ## 4. SQLite Schema (`.memory/index.sqlite`)
 
-The database is structured for durability, instant queries (<50ms), and zero-maintenance schema migrations:
+The database is built for durability, fast queries (<50ms), and schema migrations that need no manual work:
 
 ```sql
 -- Document Metadata Table
@@ -164,7 +164,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5(
 
 ## 5. CLI & Agent Integration Interface
 
-`memory.py` provides an intuitive CLI and programmatic API:
+`memory.py` has a CLI and a programmatic API:
 
 ```powershell
 # 1. Index or re-index all memory (wiki, docs, context, code)
@@ -185,7 +185,7 @@ python memory.py sync
 ```
 
 ### Agent Integration:
-In `code_agent.py`, interactive slash commands are exposed:
-- `/memory <query>`: Executes a hybrid search and injects the top-K relevant chunks into the agent's immediate context.
-- `/wiki [topic]`: Loads the requested wiki page directly without burning context on full repo files.
+`code_agent.py` has two interactive slash commands:
+- `/memory <query>`: Runs a hybrid search and adds the top-K relevant chunks to the agent's context.
+- `/wiki [topic]`: Loads the wiki page directly, so full repo files stay out of context.
 

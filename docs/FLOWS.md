@@ -1,12 +1,12 @@
 # System Execution Flows & Lifecycles
 
-This document provides detailed step-by-step lifecycle specifications and execution flows for **Antigravity Local**.
+This document walks through the lifecycle and execution flows of Antigravity Local, step by step.
 
-> **Interactive Archify Visualizations**: Open the standalone interactive HTML files in your browser for smooth zoom, dark/light toggle, and live signal tracing:
-> - 🚀 [**1-Command Bootstrap Workflow (HTML)**](diagrams/bootstrap-workflow.html)
-> - ⚡ [**Autonomous Tool Execution Sequence (HTML)**](diagrams/agent-tool-execution.html)
-> - 🧠 [**Model Pre-Check & Capability Selection Pipeline (HTML)**](diagrams/model-pipeline-workflow.html)
-> - 🏛️ [**Overall System Topology Architecture (HTML)**](diagrams/system-topology.html)
+> **Interactive Archify Visualizations**: Open the standalone HTML files in your browser to zoom, toggle dark/light themes, and trace signals live:
+> - [1-Command Bootstrap Workflow (HTML)](diagrams/bootstrap-workflow.html)
+> - [Autonomous Tool Execution Sequence (HTML)](diagrams/agent-tool-execution.html)
+> - [Model Pre-Check & Capability Selection Pipeline (HTML)](diagrams/model-pipeline-workflow.html)
+> - [Overall System Topology Architecture (HTML)](diagrams/system-topology.html)
 >
 > **Live CLI Preview**:
 > ```bash
@@ -22,7 +22,7 @@ This document provides detailed step-by-step lifecycle specifications and execut
 
 ## Flow 1: 1-Command Plug-and-Play Bootstrap Lifecycle
 
-When a user clones the repository and executes `run.bat`, `run.sh`, or `run.ps1`, `run.py` takes over to autonomously provision the complete environment.
+After you clone the repository and run `run.bat`, `run.sh`, or `run.ps1`, `run.py` takes over and provisions the whole environment on its own.
 
 ```mermaid
 flowchart TD
@@ -63,15 +63,15 @@ flowchart TD
 ```
 
 ### Key Guarantees:
-- **Zero Configuration**: No manual virtualenv activation or pip commands required.
-- **Idempotent**: Safe to run repeatedly; skips any step already satisfied.
-- **Self-Healing**: If Ollama daemon is down, automatically starts it in the background.
+- Zero configuration: you never activate a virtualenv or run pip by hand.
+- Idempotent: safe to run repeatedly, and it skips any step that is already satisfied.
+- Self-healing: if the Ollama daemon is down, `run.py` starts it in the background.
 
 ---
 
 ## Flow 2: Zero-Redundant Model Inventory Pre-Check Pipeline
 
-To prevent downloading multi-gigabyte models when weights are already present locally, the system uses a dual-tier pre-flight inventory inspection:
+To avoid downloading multi-gigabyte models you already have, the system checks the local inventory in two tiers before it pulls anything:
 
 ```mermaid
 flowchart LR
@@ -106,7 +106,7 @@ flowchart LR
 
 ## Flow 3: Autonomous Tool-Calling Execution Sequence Loop
 
-When the agent receives a task requiring workspace modifications, it executes the following sequence:
+When the agent gets a task that changes the workspace, it runs this sequence:
 
 ```mermaid
 sequenceDiagram
@@ -153,7 +153,7 @@ sequenceDiagram
 
 ## Flow 4: Interactive Coding Agent Shell Flow (`code_agent.py`)
 
-The developer coding agent provides both one-shot task execution and a continuous conversational pair-programming loop:
+The coding agent handles one-shot tasks and a continuous pair-programming conversation:
 
 ```mermaid
 stateDiagram-v2
@@ -194,7 +194,7 @@ stateDiagram-v2
 
 ## Flow 4: Hive Mind Consensus & Clean-Room Verification Lifecycle
 
-This lifecycle defines the formal review, adversarial testing, and council consensus process required before merging changes into `main`.
+This lifecycle is the review, adversarial testing, and council consensus every change goes through before it merges into `main`.
 
 ```mermaid
 flowchart TD

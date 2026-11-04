@@ -12,9 +12,9 @@ On local models (e.g. Qwen 2.5 14B), this causes:
 | :--- | :--- | :--- |
 | Naive Full Repo Reading | ~279,466 tokens | 1.0x (Baseline) |
 | Traditional Unfiltered RAG | ~25,000 tokens | ~11.1x |
-| **Graphify AST Knowledge Graph** | **~2,170 tokens** | **128.8x** |
-| **LLMWiki Topic Reading** | **~850 tokens** | **328.7x** |
-| **Hybrid Memory Engine (memory.py)** | **~1,200 tokens** | **232.8x** |
+| Graphify AST Knowledge Graph | ~2,170 tokens | 128.8x |
+| LLMWiki Topic Reading | ~850 tokens | 328.7x |
+| Hybrid Memory Engine (memory.py) | ~1,200 tokens | 232.8x |
 
 ## 3. Retrieval Strategy Rules
 1. **Structural Code Questions** (e.g., "Where is function X called?"):
