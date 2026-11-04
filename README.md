@@ -49,11 +49,11 @@ First run builds its own virtualenv and installs dependencies, so grab a coffee.
 
 **Path B: run the Docker image (nothing installed on your machine):**
 ```bash
-docker pull ghcr.io/veeresh-bikkaneti/antigravity-local:latest   # or: docker build -t antigravity-local .
+docker build -t antigravity-local .      # works today, takes about a minute
 docker run -d --rm -p 127.0.0.1::8000 --name ag antigravity-local
 docker port ag 8000            # shows the random host port, e.g. 127.0.0.1:54921
 ```
-`127.0.0.1::8000` means "any free host port, reachable only from this machine". Open the printed address in your browser. (The `pull` works once the CI workflow has published the image from `main`; until then, build it yourself.)
+`127.0.0.1::8000` means "any free host port, reachable only from this machine". Open the printed address in your browser. Once CI has published the image from `main`, you can skip the build: `docker pull ghcr.io/veeresh-bikkaneti/antigravity-local:latest` and run it as above (use that name instead of `antigravity-local`).
 
 | URL | What you get |
 | :--- | :--- |
@@ -566,6 +566,8 @@ Inside the interactive shell:
 ---
 
 ## 🐳 1-Command Docker Clean-Room Test Drive
+
+> **Looking to *run* the app in Docker?** That is [Serve It](#-serve-it-search-ui--api-on-a-free-port-local-or-docker) above. This section is the older contributor harness (`docker-test-drive.sh`); CI now uses `python tests/e2e.py docker`.
 
 Want to verify the entire system in a clean, disposable Linux container without touching host Python environments? We provide an automated test drive harness [`docker-test-drive.sh`](docker-test-drive.sh) that runs in standard Docker Desktop:
 
