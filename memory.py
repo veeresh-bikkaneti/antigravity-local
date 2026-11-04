@@ -13,6 +13,7 @@ import re
 import json
 import math
 import zlib
+import contextlib
 import sqlite3
 import argparse
 import subprocess
@@ -144,11 +145,20 @@ class MemoryDatabase:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_schema()
 
-    def get_connection(self) -> sqlite3.Connection:
+    @contextlib.contextmanager
+    def get_connection(self):
+        """Yield a connection: commit on success, roll back on error, always close."""
         conn = sqlite3.connect(str(self.db_path))
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA foreign_keys = ON;")
-        return conn
+        try:
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA foreign_keys = ON;")
+            yield conn
+            conn.commit()
+        except BaseException:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
 
     def _init_schema(self):
         with self.get_connection() as conn:
@@ -160,9 +170,14 @@ class MemoryDatabase:
                     category TEXT NOT NULL,
                     mtime REAL NOT NULL,
                     chunk_count INTEGER NOT NULL,
-                    indexed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    indexed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    embed_mode TEXT
                 );
             """)
+            # Migrate pre-embed_mode DBs. NULL = unknown backend = re-embedded on next index.
+            cols = [r["name"] for r in conn.execute("PRAGMA table_info(documents)")]
+            if "embed_mode" not in cols:
+                conn.execute("ALTER TABLE documents ADD COLUMN embed_mode TEXT")
 
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS chunks (
@@ -299,20 +314,30 @@ class MemoryIndexer:
     def index_all(self, force: bool = False) -> dict:
         """Scan, chunk, and index all repository memory files."""
         targets = self.collect_target_files()
-        stats = {"indexed": 0, "skipped": 0, "chunks": 0}
+        stats = {"indexed": 0, "skipped": 0, "chunks": 0, "purged": 0}
 
         with self.db.get_connection() as conn:
+            # Purge docs whose source file vanished (FTS5 has no FK cascade, delete it by hand).
+            live = {str(p.relative_to(REPO_ROOT)).replace("\\", "/") for p, _ in targets}
+            for r in conn.execute("SELECT id, path FROM documents").fetchall():
+                if r["path"] not in live:
+                    conn.execute("DELETE FROM chunks_fts WHERE doc_id = ?", (r["id"],))
+                    conn.execute("DELETE FROM documents WHERE id = ?", (r["id"],))  # chunks cascade
+                    stats["purged"] += 1
+
             for file_path, category in targets:
                 rel_path = str(file_path.relative_to(REPO_ROOT)).replace("\\", "/")
                 mtime = file_path.stat().st_mtime
 
                 # Check if already indexed and up to date
-                cur = conn.execute("SELECT id, mtime FROM documents WHERE path = ?", (rel_path,))
+                cur = conn.execute("SELECT id, mtime, embed_mode FROM documents WHERE path = ?", (rel_path,))
                 row = cur.fetchone()
 
-                if row and not force and abs(row["mtime"] - mtime) < 1e-4:
+                if row and not force and abs(row["mtime"] - mtime) < 1e-4                         and row["embed_mode"] == self.embedder.mode:
                     stats["skipped"] += 1
                     continue
+                if row and row["embed_mode"] not in (None, self.embedder.mode):
+                    print(f"[!] Embedding backend changed ({row['embed_mode']} -> {self.embedder.mode}); re-embedding {rel_path}", file=sys.stderr)
 
                 # Delete existing entries for this doc
                 if row:
@@ -336,8 +361,10 @@ class MemoryIndexer:
                 doc_id = cur.lastrowid
 
                 # Insert chunks and compute embeddings
+                dims = set()
                 for idx, ch in enumerate(raw_chunks):
                     emb = self.embedder.embed_text(ch["content"])
+                    dims.add(len(emb))
                     emb_json = json.dumps(emb)
 
                     cur_chunk = conn.execute("""
@@ -351,6 +378,12 @@ class MemoryIndexer:
                         INSERT INTO chunks_fts (content, doc_id, chunk_id)
                         VALUES (?, ?, ?)
                     """, (ch["content"], doc_id, chunk_id))
+
+                # Mixed vector sizes = backend flaked mid-doc: leave NULL so the next run retries.
+                if len(dims) == 1:
+                    conn.execute("UPDATE documents SET embed_mode = ? WHERE id = ?", (self.embedder.mode, doc_id))
+                else:
+                    print(f"[!] Inconsistent embedding sizes for {rel_path}; will retry next index", file=sys.stderr)
 
                 stats["indexed"] += 1
                 stats["chunks"] += len(raw_chunks)
@@ -428,8 +461,9 @@ class MemorySearcher:
                     d.title,
                     d.category
                 FROM chunks c
-                JOIN documents d ON c.doc_id = d.id;
-            """)
+                JOIN documents d ON c.doc_id = d.id
+                WHERE d.embed_mode = ?;
+            """, (self.embedder.mode,))  # only compare vectors from the same backend
             all_chunks = cur.fetchall()
 
         vector_results = []
