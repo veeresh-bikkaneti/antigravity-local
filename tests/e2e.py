@@ -62,6 +62,22 @@ def wait_url(proc, pattern, timeout):
     raise TimeoutError("server never announced its URL")
 
 
+def stop(p):
+    """Stop a server we started, children included.
+
+    Windows terminate() kills only the top process, which orphans the venv python that run.py
+    spawns (and keeps its port and temp dir alive). taskkill /T kills the whole tree.
+    """
+    if sys.platform == "win32":
+        subprocess.run(["taskkill", "/T", "/F", "/PID", str(p.pid)], capture_output=True)
+    else:
+        p.terminate()
+    try:
+        p.wait(10)
+    except Exception:
+        p.kill()
+
+
 def local():
     work = Path(tempfile.mkdtemp(prefix="ag-e2e-"))
     dest = work / "repo"
@@ -81,11 +97,15 @@ def local():
             print(f"[local] checking {b}"); check(b)
     finally:
         for p in procs:
-            p.terminate()
-        for p in procs:
-            try: p.wait(10)
-            except Exception: p.kill()
-        shutil.rmtree(work, ignore_errors=True)
+            stop(p)
+        for attempt in range(5):  # Windows may need a moment to release files
+            try:
+                shutil.rmtree(work)
+                break
+            except OSError:
+                if attempt == 4:
+                    raise
+                time.sleep(1)
 
 
 def docker():

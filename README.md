@@ -106,7 +106,7 @@ Before you start, make sure you have:
 | Requirement | Minimum | Recommended | Notes |
 | :--- | :--- | :--- | :--- |
 | **Operating System** | Windows 10/11, macOS, Linux | Any modern 64-bit OS | Fully tested on Windows 11 & Linux. |
-| **Python** | 3.10 | 3.11 or 3.12 | Check with `python --version`. |
+| **Python** | 3.11 | 3.12 or 3.13 | Check with `python --version`. |
 | **System RAM** | 8 GB | 16 GB - 32 GB | More RAM allows running larger models. |
 | **GPU (Optional)** | None (runs on CPU) | NVIDIA RTX (8GB+) or Apple Silicon | GPU speeds up token generation. |
 | **Ollama** | Installed & running | [ollama.ai](https://ollama.ai/download) | Local LLM inference server. |
@@ -576,7 +576,7 @@ docker run --rm --add-host=host.docker.internal:host-gateway \
   -v "$(pwd):/app" -w /app python:3.11-slim bash docker-test-drive.sh
 ```
 
-*(CMD: use `%cd%` instead of `$(pwd)`. PowerShell: use `${PWD}`. Git Bash, macOS and Linux: as written.)*
+*(CMD: use `%cd%` instead of `$(pwd)`. PowerShell: use `${PWD}`. **Git Bash on Windows**: put `MSYS_NO_PATHCONV=1` in front of `docker run`, or Git Bash rewrites `/app` into a Windows path. macOS and Linux: as written. Easiest of all: `python tests/e2e.py docker`.)*
 
 ### What the Docker Test Drive Verifies Automatically:
 1. 📦 **Clean-Room Dependency Isolation**: Installs `google-antigravity` and `python-dotenv` from scratch in `python:3.11-slim`.

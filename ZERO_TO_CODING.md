@@ -41,7 +41,7 @@ Unlike web-based chat interfaces or API-metered plugins, this agent runs **local
 | **OS** | Windows 10/11, macOS, Linux | Any modern 64-bit OS | Fully tested on Windows 11 & Linux |
 | **RAM** | 8 GB | 16 GB - 32 GB | System memory is used for CPU offloading |
 | **GPU** | None (runs on CPU) | NVIDIA RTX (8GB+) or Apple Silicon | GPU accelerates token generation |
-| **Python** | 3.10 | 3.11, 3.12, or 3.14 | Global or managed via `uv` / `pyenv` |
+| **Python** | 3.11 | 3.12 or 3.13 | Global or managed via `uv` / `pyenv` |
 | **Inference Server** | [Ollama](https://ollama.ai) | Ollama running locally | Serves OpenAI-compatible REST API |
 
 ### How It Works Under the Hood
@@ -346,12 +346,7 @@ if sys.platform == "win32":
 
 If you want to run the entire Antigravity Local stack inside a pristine, disposable container without modifying your local host's Python environments, run our 1-command Docker test drive harness:
 
-```bash
-docker run --rm --add-host=host.docker.internal:host-gateway \
-  -v "%cd%:/app" -w /app python:3.11-slim bash docker-test-drive.sh
-```
-
-*(On Linux / macOS: use `-v "$(pwd):/app"`)*
+The exact command differs by shell (CMD, PowerShell, Git Bash, macOS, Linux), so it lives in one place: see the [README Docker section](README.md#-1-command-docker-clean-room-test-drive). The one-liner that works everywhere: `python tests/e2e.py docker`.
 
 This automated harness validates:
 1. Pure pip dependency installation in an unpolluted Linux environment.

@@ -230,6 +230,15 @@ pm`, reinstalled `npm install -g ./.agents/skills/archify`; `archify doctor` pas
   - README: new "Serve It" section; fixed `%cd%` Docker volume example for non-CMD shells.
   - Untested: live LLM agent call via `run.py` (non-serve REPL), `docker-test-drive.sh` (superseded by `tests/e2e.py docker`, left in place).
 
+- [x] **Step 32**: PR #5 review round (Nov 4, 2026, branch `feat/serve-and-docker`): 4 siloed workers + own re-runs. Fixed, each reproduced first:
+  - `serve.py`: Windows SO_REUSEADDR let two servers share one `--port` silently -> `allow_reuse_address = os.name != "nt"` (+ test).
+  - `tests/e2e.py`: `terminate()` orphaned the venv python tree on Windows (12 live processes + 3 temp dirs leaked) -> `stop()` uses `taskkill /T /F`; rmtree retries and no longer hides failure (+ `tests/test_e2e_cleanup.py`).
+  - Default Windows checkout (autocrlf=true, no `.gitattributes`) turned `docker-test-drive.sh`/`run.sh` into CRLF, breaking them while the harness still printed PASSED -> added `.gitattributes` (`*.sh`, Dockerfile LF). `docker-test-drive.sh` now passes all gates for real.
+  - Docs: Git Bash needs `MSYS_NO_PATHCONV=1` for `-w /app`; docker command now lives only in README (ZERO_TO_CODING and ARCHITECTURE point to it); Python versions aligned to installers (3.11 min, 3.12/3.13); wiki test command updated.
+  - Quirk: `unittest discover -s tests` works; plain `discover` finds 0 tests.
+  - Not changed: image fails with `--read-only` / arbitrary `--user` (writes `/app/.memory`); `limit=0/-1` is clamped to 1 (documented as 1-20).
+  - AGENTS.md draft reviewed (3 skills + 2 adversaries + judge). Verdict: base = candidate 3 (rule registry + checker). Synthesis in the session scratchpad `arena/final/`; NOT installed, user's draft untouched.
+
 ---
 
 ## 5. Key Architecture & Environment Quirks Discovered
