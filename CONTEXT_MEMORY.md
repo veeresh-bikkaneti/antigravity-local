@@ -246,6 +246,8 @@ pm`, reinstalled `npm install -g ./.agents/skills/archify`; `archify doctor` pas
 
 - [x] **Step 35**: Guide polish merged (PR #8, `c071020`). Sentence-case headings (anchors unchanged), guide sections 3-5 rewritten from a 3-seat council + 1 reviewer, `scripts/check_docs.py` (+CI). Quirks: edit scripts must avoid doubled backslashes in heredocs (they get halved and turn into control chars); `check_docs.py --baseline` allows new headings, fails on renamed ones. Open follow-up: `run.bat` garbles emojis in default CMD (needs `chcp 65001`).
 
+- [x] **Step 36**: `run.bat` sets `chcp 65001` + `PYTHONUTF8=1` (console was code page 437, emojis showed as mojibake); `.gitattributes` forces CRLF for `*.bat`. Docker: `/app/.memory` is created world-writable at build, so `--user 12345` and `--read-only --tmpfs /app/.memory` both work (covered by `tests/e2e.py docker`). Quirk: from Git Bash, `cmd /c run.bat` fails; `NoDefaultCurrentDirectoryInExePath=1` is set here, use `.\run.bat`.
+
 ---
 
 ## 5. Key Architecture & Environment Quirks Discovered

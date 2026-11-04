@@ -2,6 +2,10 @@
 setlocal
 cd /d "%~dp0"
 
+REM 0. Show emojis correctly: switch this console to UTF-8 and make Python write UTF-8
+chcp 65001 >nul
+set PYTHONUTF8=1
+
 REM 1. Prefer managed virtual environment Python if available
 if exist "%~dp0venv\Scripts\python.exe" (
     "%~dp0venv\Scripts\python.exe" run.py %*
