@@ -240,6 +240,8 @@ pm`, reinstalled `npm install -g ./.agents/skills/archify`; `archify doctor` pas
   - Teardown gap (user report): docs said nothing about stopping/cleanup, and `e2e.py docker` leaked a 483 MB image per run (fixed tag also collided with another session). Now: unique tag per run + `docker rmi -f` in finally; serve.py prints a stop hint; README has 'Stop & Clean Up' table (local server, container, image, venv/.memory, archify). Ollama models are never touched.
   - AGENTS.md draft reviewed (3 skills + 2 adversaries + judge). Verdict: base = candidate 3 (rule registry + checker). Synthesis in the session scratchpad `arena/final/`; NOT installed, user's draft untouched.
 
+- [x] **Step 33**: Merged #4 (merge commit) and #5 (squash) to main (`67ca324`); CI on #5 green incl. docker e2e on Linux. Installed rule-registry `AGENTS.md` (64 lines, from arena candidate 3 + judge grafts) with `scripts/check_agents_md.py` (also a CI step). Previous 425-line draft kept at `.ai-context/AGENTS.draft-2026-11-04.md` (untracked). Removed leftover reviewer worktrees.
+
 ---
 
 ## 5. Key Architecture & Environment Quirks Discovered
