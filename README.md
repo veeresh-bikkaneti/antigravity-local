@@ -83,22 +83,59 @@ Everything you start has an off switch, and everything it leaves behind is safe 
 
 Forgot the container name? `docker ps` lists running ones, then `docker stop <id>`. Want your disk back from Ollama too? That is up to you, and this repo never does it for you. Run `ollama list`, then `ollama rm <model>`.
 
+## Use your local model from Antigravity or VS Code
+
+Ollama holds the model. Every tool below just knocks on its door at `http://localhost:11434` (the OpenAI-style address is `http://localhost:11434/v1`). So the order is always the same: start Ollama, run `ollama list`, and copy the model name exactly as it prints, for example `qwen2.5:14b`. Then pick your editor.
+
+*Checked on Nov. 4, 2026. Editor extensions rename their settings often. If a label differs from what you see, follow the linked guide.*
+
+### Antigravity
+- **The Antigravity SDK works with your local model.** Google added local-model support on Sept. 23, 2026. `LocalOpenAIAgentConfig` connects to any OpenAI-compatible server, including Ollama ([Google's announcement](https://developers.googleblog.com/introducing-support-for-local-ai-models-in-the-antigravity-sdk/)). This repo already uses it. `python run.py` and `python code_agent.py` talk to `LOCAL_LLM_BASE_URL` (default `http://localhost:11434/v1`) and `LOCAL_LLM_MODEL` (default `qwen2.5:14b`). To change either, set the variable in `.env` or pass `--base-url` and `--model`.
+- **The Antigravity IDE chat panel has no setting for Ollama, as far as we found.** Google's announcement covers the SDK and does not mention the IDE or its CLI. We found no official setting that points the IDE chat at a local server. A community proxy claims it can, but it is unofficial and we have not tested it. If Google adds a setting, this page is the place to update.
+- **What works today inside the IDE:** open your project, open the built-in terminal, activate the venv (see [the guide](ZERO_TO_CODING.md#before-you-start-activate-the-virtual-environment)), and run `python code_agent.py --workspace .`. The agent writes into the folder you have open, so new files show up in the editor as they appear.
+
+### VS Code
+Four ways, easiest first. All of them use the same Ollama on `http://localhost:11434`.
+
+1. **Our shell in the built-in terminal.** Open Terminal, then New Terminal. Activate the venv and run `python code_agent.py --workspace .`. No extension needed.
+2. **The Ollama extension** ([Ollama's guide](https://docs.ollama.com/integrations/vscode)). Install the extension with the ID `Ollama.ollama`, open Chat, open the model picker at the bottom of the chat box, and choose your model from the **Ollama** section. It needs VS Code 1.127 or newer. For local models, set the context length to at least 64k in Ollama's Settings, then reload the VS Code window. If your model is missing, run **Ollama: Refresh Models** or **Ollama: Diagnose Models** from the Command Palette.
+3. **Continue** ([Continue's guide](https://docs.continue.dev/guides/ollama-guide)). Add this model to Continue's `config.yaml`:
+   ```yaml
+   models:
+     - name: Qwen 2.5 14B
+       provider: ollama
+       model: qwen2.5:14b   # must match `ollama list` exactly
+       apiBase: http://localhost:11434
+       roles:
+         - chat
+         - edit
+       capabilities:
+         - tool_use
+   ```
+4. **Cline** ([Cline's guide](https://docs.cline.bot/running-models-locally/ollama)). Open Cline's settings, choose **Ollama** as the provider, keep the Base URL at `http://localhost:11434`, and pick your model from the dropdown. Cline suggests turning on **Use Compact Prompt** for local models.
+
+Good to know:
+- Agent modes need a model that supports tools. `qwen2.5:14b` does. `gemma2` does not (see [troubleshooting](#common-gotchas--troubleshooting)).
+- When you run `code_agent.py --workspace .`, the agent can change any file in that folder. Use a git repo, so `git status` and `git diff` show what it did, and `git restore .` reverts its edits to existing files. New files stay until you delete them.
+- We tested the terminal route and the endpoints above on Windows. The extension routes come from their official guides, and we have not run them in VS Code ourselves.
+
 ---
 
 ## Table of contents
 0. [Serve it: search UI + API on a free port](#serve-it-search-ui--api-on-a-free-port-local-or-docker)
-1. [Run it with one command](#run-it-with-one-command)
-2. [What is Antigravity Local?](#what-is-this)
-3. [Prerequisites & model selection](#prerequisites-checklist)
-4. [Developer coding agent (`code_agent.py`)](#mode-3-developer-pair-programming-shell-code_agentpy)
-5. [3-tier zero-token memory fabric](#3-tier-zero-token-memory-fabric-graphify--llmwiki--sqlite-hybrid)
-6. [Architecture & interactive diagrams](#system-architecture--design-diagrams)
-7. [1-command Docker clean-room test drive](#1-command-docker-clean-room-test-drive)
-8. [Project structure](#project-structure)
-9. [Common gotchas & troubleshooting](#common-gotchas--troubleshooting)
-10. [Advanced: custom harnesses & backends](#advanced-using-custom-research-harnesses--servers)
-11. [Credits, toolchain heritage & specifications](#credits-toolchain-heritage--specifications)
-12. [License & contributing](#license--contributing)
+1. [Use your local model from Antigravity or VS Code](#use-your-local-model-from-antigravity-or-vs-code)
+2. [Run it with one command](#run-it-with-one-command)
+3. [What is Antigravity Local?](#what-is-this)
+4. [Prerequisites & model selection](#prerequisites-checklist)
+5. [Developer coding agent (`code_agent.py`)](#mode-3-developer-pair-programming-shell-code_agentpy)
+6. [3-tier zero-token memory fabric](#3-tier-zero-token-memory-fabric-graphify--llmwiki--sqlite-hybrid)
+7. [Architecture & interactive diagrams](#system-architecture--design-diagrams)
+8. [1-command Docker clean-room test drive](#1-command-docker-clean-room-test-drive)
+9. [Project structure](#project-structure)
+10. [Common gotchas & troubleshooting](#common-gotchas--troubleshooting)
+11. [Advanced: custom harnesses & backends](#advanced-using-custom-research-harnesses--servers)
+12. [Credits, toolchain heritage & specifications](#credits-toolchain-heritage--specifications)
+13. [License & contributing](#license--contributing)
 
 ---
 

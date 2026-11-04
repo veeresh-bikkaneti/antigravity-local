@@ -144,7 +144,7 @@ If Ollama isn't installed, the bootstrap says so. Go back to Step 1.
 
 ## 4. Start coding: interactive pair-programmer shell
 
-The interactive shell lets you chat with your local agent about any project folder on your machine.
+The interactive shell lets you chat with your local agent about any project folder on your machine. Prefer working inside an editor? See [Use your local model from Antigravity or VS Code](README.md#use-your-local-model-from-antigravity-or-vs-code).
 
 ### Before you start: activate the virtual environment
 Do this once per terminal window, from inside the `antigravity-local` folder. After that, plain `python` is the right command for everything below.
