@@ -26,6 +26,8 @@ chmod +x run.sh && ./run.sh
 ```
 *(Or: `python3 run.py`)*
 
+**What to expect:** the first run takes about 3 minutes and goes quiet in the middle, because packages install silently. That is normal, so grab a coffee. Setup ends at a `You >` chat prompt. Type `exit` to leave, or carry on with [the guide](ZERO_TO_CODING.md#4-start-coding-interactive-pair-programmer-shell).
+
 #### What the 1-command bootstrap does automatically:
 1. **Hardware & Inventory Inspection**: Probes dedicated GPU VRAM (via `nvidia-smi` / Apple Silicon) and System RAM. Checks local Ollama inventory first to reuse existing weights with **zero downloads**.
 2. **Model Matching**: Compares your PC build against a list of agentic models (Nanbeige, DeepSeek, Qwen 2.5 Coder, Command-R, Codestral, GLM-4) and picks the most capable one your hardware can run.
@@ -185,7 +187,8 @@ cd antigravity-local
 #### Option B: manual setup
 ```bash
 # 1. Create a virtual environment
-python -m venv venv
+python -m venv venv      # Windows
+python3 -m venv venv     # macOS / Linux (many have no plain 'python')
 ```
 
 **Activate your virtual environment:**
@@ -195,6 +198,8 @@ python -m venv venv
   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
   .\venv\Scripts\Activate.ps1
   ```
+- **Windows Command Prompt**: `venv\Scripts\activate.bat`
+- **Git Bash on Windows**: `source venv/Scripts/activate`
 - **macOS / Linux**:
   ```bash
   source venv/bin/activate

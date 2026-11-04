@@ -78,45 +78,59 @@ Unlike web-based chat interfaces or API-metered plugins, this agent runs on your
 
 ## 3. Zero setup (3-minute quickstart)
 
+Goal: go from nothing to your first AI-written file. Three steps, about 10 minutes of your time, plus a model download that depends on your connection.
+
 ### Step 1: Install & launch Ollama
-1. Download Ollama from [ollama.ai/download](https://ollama.ai/download).
-2. Start Ollama (on Windows, it runs automatically in your system tray; or run `ollama serve` in a terminal).
-3. Verify it is running:
+Takes about 3 minutes.
+1. Download Ollama from [ollama.ai/download](https://ollama.ai/download) and install it.
+2. Start it. On Windows it runs from the system tray on its own. Otherwise run `ollama serve` in a terminal and leave that window open.
+3. Check that it answers:
    ```bash
    ollama --version
    ```
 
+You should see a version number. If you get "command not found", close the terminal and open a new one. The installer updates your PATH, and an old terminal doesn't know yet.
+
 ### Step 2: Download the agent coding model
-Run this in any terminal:
+Optional. The download time depends on your connection.
+
+Step 3 picks a model that fits your machine and downloads it if you have none, so you can skip this step. Do it only if you want to choose the model yourself. If a capable model is already installed, the bootstrap reuses it, so nothing downloads twice.
 ```bash
-# Recommended (best agent tool-calling & coding performance, requires ~9GB VRAM/RAM):
+# Recommended (best tool-calling and coding results, needs about 9 GB of VRAM or RAM):
 ollama pull qwen2.5:14b
 
-# Alternative for compact machines / laptops (under 12GB RAM):
+# Smaller machines (under 12 GB RAM):
 # ollama pull llama3.1:8b
 ```
 
+You should see the model in `ollama list`.
+
 ### Step 3: Clone & bootstrap
-```bash
-git clone https://github.com/veeresh-bikkaneti/antigravity-local.git
-cd antigravity-local
-```
+Takes about 3 minutes the first time, and seconds after that.
+1. Get the code:
+   ```bash
+   git clone https://github.com/veeresh-bikkaneti/antigravity-local.git
+   cd antigravity-local
+   ```
+   You are now inside the `antigravity-local` folder. Stay here for the rest of this guide.
+2. Run the one-click bootstrap for your terminal. There are no other choices to make.
+   - **Windows (PowerShell)**:
+     ```powershell
+     .\run.ps1
+     ```
+   - **Windows (Command Prompt)**:
+     ```cmd
+     run.bat
+     ```
+   - **macOS / Linux**:
+     ```bash
+     chmod +x run.sh && ./run.sh
+     ```
+3. Wait. The middle of the run is quiet, because the packages install silently. It looks stuck, but it isn't. On Windows the first run took 157 to 189 seconds.
 
-Run the 1-click bootstrap:
-- **Windows (PowerShell)**:
-  ```powershell
-  .\run.ps1
-  ```
-- **Windows (Command Prompt)**:
-  ```cmd
-  run.bat
-  ```
-- **macOS / Linux**:
-  ```bash
-  chmod +x run.sh && ./run.sh
-  ```
+The bootstrap creates your Python virtual environment, installs dependencies, configures `.env`, checks that Ollama answers, and runs a short demo that writes `workspace/index.html`. You should then see a `You >` chat prompt. Type `exit` for now. Section 4 shows how to use it properly.
 
-The bootstrap creates your Python virtual environment, installs dependencies, configures `.env`, and tests connectivity.
+If Ollama isn't installed, the bootstrap says so. Go back to Step 1.
 
 ---
 
@@ -124,13 +138,22 @@ The bootstrap creates your Python virtual environment, installs dependencies, co
 
 The interactive shell lets you chat with your local agent about any project folder on your machine.
 
+### Before you start: activate the virtual environment
+Do this once per terminal window, from inside the `antigravity-local` folder. After that, plain `python` is the right command for everything below.
+- **Windows PowerShell**: `.\venv\Scripts\Activate.ps1` (if PowerShell blocks scripts, run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first)
+- **Windows Command Prompt**: `venv\Scripts\activate.bat`
+- **Git Bash on Windows**: `source venv/Scripts/activate`
+- **macOS / Linux**: `source venv/bin/activate`
+
+You should see `(venv)` at the start of your prompt.
+
 ### Launch on any project folder:
 ```powershell
 # Point to your own application directory:
-.\venv\Scripts\python code_agent.py --workspace "C:\path\to\my-app"
+python code_agent.py --workspace "C:\path\to\my-app"
 
 # Or work inside the local workspace folder:
-.\venv\Scripts\python code_agent.py --workspace ./workspace
+python code_agent.py --workspace ./workspace
 ```
 
 ### Example interactive session:
@@ -140,8 +163,12 @@ The interactive shell lets you chat with your local agent about any project fold
 ============================================================================
  • Server Endpoint : http://localhost:11434/v1
  • Active Model    : qwen2.5:14b
- • Active Workspace: C:\Users\veere\source\repos\local-antigravity\workspace
+ • Active Workspace: C:\path\to\antigravity-local\workspace
  • Safety Policy   : policy.allow_all() (Autonomous Disk Access)
+ • Memory Fabric   : AVAILABLE (/memory, /wiki)
+============================================================================
+ Type your coding request below (e.g., 'Create a calculator CLI in Python').
+ Commands: /memory <query>, /wiki [topic], /files, /help, exit/quit
 ============================================================================
 
 CodeAgent [You] > Create a python module database.py with an SQLite helper class that handles creating tables and inserting records safely.
@@ -149,17 +176,21 @@ CodeAgent [You] > Create a python module database.py with an SQLite helper class
 CodeAgent [Local LLM] > I have created `database.py` in your workspace with parameterized queries, context manager connection handling, and error logging.
 
 CodeAgent [You] > /files
-📂 Files currently in workspace (1 total):
+📂 Files currently in workspace (3 total):
+   - .gitkeep
    - database.py
+   - index.html
 
 CodeAgent [You] > Now create a test_database.py using pytest to verify table creation and inserts.
 
 CodeAgent [Local LLM] > Created `test_database.py` with in-memory SQLite fixtures and test assertions.
 ```
 
+Your model's wording will differ a little. `/files` also lists `index.html`, which the setup demo wrote.
+
 ### Built-in shell commands:
 - `/memory <query>` : Searches project memory using SQLite FTS5 BM25 plus dense semantic vectors, merged with Reciprocal Rank Fusion.
-- `/wiki [topic]`   : Loads canonical domain knowledge pages from `.wiki/` with zero token waste.
+- `/wiki [topic]`   : With no topic, lists the pages in `.wiki/`. With a topic, such as `/wiki architecture`, prints that page.
 - `/files`          : Lists all files currently created in your workspace directory.
 - `/help`           : Displays tips and syntax guides.
 - `exit` or `quit`  : Closes the coding session.
@@ -177,16 +208,16 @@ python code_agent.py --workspace ./workspace --with-memory
 Want to execute a coding task non-interactively from the command line or CI/CD script? Pass the `--task` flag:
 
 ```powershell
-.\venv\Scripts\python code_agent.py `
-  --workspace "./my-project" `
-  --task "Build a CLI tool in cli.py using argparse that converts JSON files to CSV."
+python code_agent.py --workspace "./my-project" --task "Build a CLI tool in cli.py using argparse that converts JSON files to CSV."
 ```
 
 The agent will:
 1. Parse your request.
 2. Formulate the code and structure.
 3. Call the `create_file` tool to save `cli.py` to your specified workspace.
-4. Report the created files and exit.
+4. Print its reply and exit.
+
+If the workspace folder doesn't exist yet, it is created for you. You may also see a line such as "The workflow is running in the background ... task logs are available at file:///...". That is the SDK's own task log, not an error. Look in your workspace folder for the new file.
 
 ---
 
@@ -198,9 +229,7 @@ Here are three copy-paste workflows you can run right now:
 
 Run this single command:
 ```powershell
-.\venv\Scripts\python code_agent.py `
-  --workspace "./api_backend" `
-  --task "Build a complete FastAPI REST API in main.py for a Task Manager with endpoints: GET /tasks, POST /tasks, GET /tasks/{id}, and DELETE /tasks/{id}. Include Pydantic schemas for input validation and SQLite for storage."
+python code_agent.py --workspace "./api_backend" --task "Build a complete FastAPI REST API in main.py for a Task Manager with endpoints: GET /tasks, POST /tasks, GET /tasks/{id}, and DELETE /tasks/{id}. Include Pydantic schemas for input validation and SQLite for storage."
 ```
 
 The agent generates this inside `./api_backend/main.py`:
@@ -216,9 +245,7 @@ The agent generates this inside `./api_backend/main.py`:
 Suppose you have an existing file `calculator.py` in your project folder. Tell the agent to inspect it and write tests:
 
 ```powershell
-.\venv\Scripts\python code_agent.py `
-  --workspace "./my_codebase" `
-  --task "Inspect calculator.py and create tests/test_calculator.py with full pytest unit tests, including tests for boundary conditions, invalid types, and zero-division errors."
+python code_agent.py --workspace "./my_codebase" --task "Inspect calculator.py and create tests/test_calculator.py with full pytest unit tests, including tests for boundary conditions, invalid types, and zero-division errors."
 ```
 
 Then run your tests immediately:
@@ -233,9 +260,7 @@ pytest ./my_codebase/tests/test_calculator.py
 Ask the agent to refactor synchronous or blocking Python code into `asyncio`:
 
 ```powershell
-.\venv\Scripts\python code_agent.py `
-  --workspace "./my_codebase" `
-  --task "Refactor fetcher.py to use httpx and asyncio instead of the blocking requests library. Ensure proper exception handling and timeout configurations."
+python code_agent.py --workspace "./my_codebase" --task "Refactor fetcher.py to use httpx and asyncio instead of the blocking requests library. Ensure proper exception handling and timeout configurations."
 ```
 
 ---
