@@ -113,6 +113,13 @@ flowchart TD
     Combines BM25 lexical rank with dense vector similarity rank using the standard information retrieval formula:
     $$RRF\_Score(d) = \frac{w_{lex}}{k + Rank_{BM25}(d)} + \frac{w_{sem}}{k + Rank_{vector}(d)}$$
     *(Default constants: $k = 60$, $w_{lex} = 0.5$, $w_{sem} = 0.5$)*.
+  - **Index Integrity Invariants** (regression-tested in `tests/`):
+    - Fallback embeddings use `zlib.crc32`, never builtin `hash()` (salted per process), so vectors match across runs.
+    - Each document records the backend that embedded it (`documents.embed_mode`). A document is skipped only when its mtime *and* backend match; switching Ollama and the fallback re-embeds automatically. Old databases migrate themselves (`NULL` = re-embed once), so no manual `--force` is needed.
+    - A document is stamped only if all its vectors came from one backend at one size. A partial Ollama outage leaves it `NULL`, and the next `index` retries it.
+    - Search compares vectors only against same-backend documents. If the query embedding itself fell back, the vector leg is skipped and BM25 answers alone.
+    - Source files that disappear are purged from `documents`, `chunks` and `chunks_fts` (FTS5 has no cascade, so it is deleted by hand).
+    - `get_connection()` is a context manager: commit on success, rollback on error, always close.
 
 ---
 
@@ -129,7 +136,8 @@ CREATE TABLE IF NOT EXISTS documents (
     category TEXT NOT NULL,       -- 'wiki', 'doc', 'context', 'workspace'
     mtime REAL NOT NULL,
     chunk_count INTEGER NOT NULL,
-    indexed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    indexed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    embed_mode TEXT               -- backend that embedded this doc; NULL = unknown/retry
 );
 
 -- Text Chunks Table

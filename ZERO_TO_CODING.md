@@ -141,7 +141,7 @@ The interactive coding shell gives you a continuous conversation with your local
 ============================================================================
  • Server Endpoint : http://localhost:11434/v1
  • Active Model    : qwen2.5:14b
- • Active Workspace: C:\Users\veere\source\repos\local antigravity\workspace
+ • Active Workspace: C:\Users\veere\source\repos\local-antigravity\workspace
  • Safety Policy   : policy.allow_all() (Autonomous Disk Access)
 ============================================================================
 
