@@ -144,7 +144,7 @@ If Ollama isn't installed, the bootstrap says so. Go back to Step 1.
 
 ## 4. Start coding: interactive pair-programmer shell
 
-The interactive shell lets you chat with your local agent about any project folder on your machine.
+The interactive shell lets you chat with your local agent about any project folder on your machine. Prefer working inside an editor? See [Use your local model from Antigravity or VS Code](README.md#use-your-local-model-from-antigravity-or-vs-code).
 
 ### Before you start: activate the virtual environment
 Do this once per terminal window, from inside the `antigravity-local` folder. After that, plain `python` is the right command for everything below.
@@ -225,6 +225,8 @@ See a warning that no files were created instead? The model answered without wri
 
 If the workspace folder doesn't exist yet, it is created for you. You may also see a line such as "The workflow is running in the background ... task logs are available at file:///...". That is the SDK's own task log, not an error. Look in your workspace folder for the new file.
 
+**What works best.** Small local models do one-step jobs best, such as creating a new file from a clear prompt. In our tests, jobs that start from an existing file often failed: none of 14 attempts at editing a file, or at reading one and writing a new one, gave a correct result. Commit before you start, and run `git diff` after every task.
+
 ---
 
 ## 6. 3 end-to-end real world coding recipes
@@ -248,7 +250,9 @@ The agent generates this inside `./api_backend/main.py`:
 
 ### Recipe 2: Write automated unit tests for existing code
 
-Suppose you have an existing file `calculator.py` in your project folder. Tell the agent to inspect it and write tests:
+Suppose you have an existing file `calculator.py` in your project folder. Tell the agent to inspect it and write tests.
+
+> Heads-up: this recipe starts from an existing file, which is the weak spot of `qwen2.5:14b`. It may write nothing or write the wrong thing. Commit first, and see the note in section 5.
 
 ```powershell
 python code_agent.py --workspace "./my_codebase" --task "Inspect calculator.py and create tests/test_calculator.py with full pytest unit tests, including tests for boundary conditions, invalid types, and zero-division errors."
@@ -263,7 +267,9 @@ pytest ./my_codebase/tests/test_calculator.py
 
 ### Recipe 3: Refactor legacy code & modernize architecture
 
-Ask the agent to refactor synchronous or blocking Python code into `asyncio`:
+Ask the agent to refactor synchronous or blocking Python code into `asyncio`.
+
+> Heads-up: editing an existing file is the weakest spot of `qwen2.5:14b`. In our tests it emptied or rewrote the file wrongly, or did nothing. Commit first and check `git diff`. A larger model may do better; we have not tested one.
 
 ```powershell
 python code_agent.py --workspace "./my_codebase" --task "Refactor fetcher.py to use httpx and asyncio instead of the blocking requests library. Ensure proper exception handling and timeout configurations."

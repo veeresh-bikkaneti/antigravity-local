@@ -497,7 +497,7 @@ async def run_agent(model, base_url="http://localhost:11434/v1"):
     print("💡 Example prompts to try:")
     print("   - 'What files are in this repository?'")
     print("   - 'Create a python script called calculator.py with basic math functions.'")
-    print("   - 'Inspect workspace/index.html and add a footer with copyright 2026.'\n")
+    print("   - 'Create about.html, a small page with a heading and one paragraph.'\n")
 
     async with Agent(config) as agent:
         while True:
