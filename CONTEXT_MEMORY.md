@@ -221,6 +221,15 @@ pm`, reinstalled `npm install -g ./.agents/skills/archify`; `archify doctor` pas
   - Re-ran `python memory.py index` and `graphify update .`.
   - Quirk: if the repo folder is ever renamed again, re-run the archify global install.
 
+- [x] **Step 31**: Serve + Docker, real E2E on both paths (Nov 4, 2026, branch `feat/serve-and-docker`, stacked on PR #4):
+  - `serve.py` (stdlib): `/`, `/healthz`, `/api/search`, `/diagrams/<name>`. **No fixed port**: default port 0 = OS-assigned, printed on start; `--port`/`PORT` override. Binds 127.0.0.1 locally, `HOST=0.0.0.0` inside Docker. Global search lock because `EmbeddingProvider.fell_back` is shared state.
+  - Local path: `python run.py --serve`. Docker path: `Dockerfile` (python:3.11-slim, non-root `app`, HEALTHCHECK, internal port 8000). Run with `-p 127.0.0.1::8000` then `docker port <name> 8000` for the random host port.
+  - Real E2E: `python tests/e2e.py local` (fresh copy, own venv, 2 servers, 2 ports) and `python tests/e2e.py docker` (build, 2 containers, 2 random host ports, non-root, healthy). Both PASS. Unit: `python -m unittest tests.test_memory_integrity tests.test_memory_determinism tests.test_serve` (26 OK).
+  - **Bug found by the local E2E**: fresh-venv bootstrap crashed on Windows (`pip.exe install --upgrade pip` cannot replace itself). Fixed with `python -m pip`. Only ever hit on first run, so it had gone unnoticed.
+  - `.github/workflows/docker.yml`: unit tests + docker E2E on every PR; pushes `ghcr.io/<owner>/<repo>` only on `main`/tags after tests pass. **Not yet exercised**: needs merge, and the GHCR package must be set public once for anonymous `docker pull`.
+  - README: new "Serve It" section; fixed `%cd%` Docker volume example for non-CMD shells.
+  - Untested: live LLM agent call via `run.py` (non-serve REPL), `docker-test-drive.sh` (superseded by `tests/e2e.py docker`, left in place).
+
 ---
 
 ## 5. Key Architecture & Environment Quirks Discovered

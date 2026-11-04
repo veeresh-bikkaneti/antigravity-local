@@ -1,0 +1,36 @@
+name: docker
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  e2e-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Unit tests
+        run: python -m unittest tests.test_memory_integrity tests.test_memory_determinism tests.test_serve
+      - name: Real E2E (docker path)
+        run: python tests/e2e.py docker
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push image (only after tests pass, never on PRs)
+        if: github.event_name != 'pull_request'
+        run: |
+          IMG=ghcr.io/${GITHUB_REPOSITORY,,}
+          docker build -t "$IMG:latest" -t "$IMG:${GITHUB_SHA::7}" .
+          docker push --all-tags "$IMG"
