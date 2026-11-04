@@ -119,17 +119,32 @@ def docker():
             ids.append(run("docker", "run", "-d", "--rm", "-p", "127.0.0.1::8000", IMAGE))
         ports = [re.search(r":(\d+)\s*$", run("docker", "port", c, "8000").splitlines()[0]).group(1) for c in ids]
         assert ports[0] != ports[1], ports
-        for c, port in zip(ids, ports):
-            base = f"http://127.0.0.1:{port}"
+        def wait_healthy(c, base):
             print(f"[docker] waiting for {base}")
             for _ in range(60):
-                if run("docker", "inspect", "-f", "{{.State.Health.Status}}", c) == "healthy":
-                    break
+                try:
+                    status = run("docker", "inspect", "-f", "{{.State.Health.Status}}", c)
+                except subprocess.CalledProcessError:
+                    raise RuntimeError("container exited before it became healthy (--rm already removed it)")
+                if status == "healthy":
+                    return
                 time.sleep(2)
-            else:
-                raise TimeoutError("container never became healthy: " + subprocess.run(
-                    ["docker", "logs", c], capture_output=True, text=True).stdout[-800:])
+            raise TimeoutError("container never became healthy: " + subprocess.run(
+                ["docker", "logs", c], capture_output=True, text=True).stdout[-800:])
+
+        for c, port in zip(ids, ports):
+            base = f"http://127.0.0.1:{port}"
+            wait_healthy(c, base)
             check(base)
+        # Permission variants: an arbitrary user id (as some platforms force) and a read-only root filesystem.
+        for label, extra in (("arbitrary user id", ["--user", "12345:12345"]),
+                             ("read-only filesystem", ["--read-only", "--tmpfs", "/app/.memory"])):
+            c = run("docker", "run", "-d", "--rm", "-p", "127.0.0.1::8000", *extra, IMAGE)
+            ids.append(c)
+            base = "http://127.0.0.1:" + re.search(r":(\d+)\s*$", run("docker", "port", c, "8000").splitlines()[0]).group(1)
+            wait_healthy(c, base)
+            check(base)
+            print(f"   [ok] runs with {label}")
         user = run("docker", "exec", ids[0], "id", "-un")
         assert user == "app", f"container runs as {user}, expected non-root"
         print("   [ok] runs as non-root user 'app'; HEALTHCHECK reports healthy")

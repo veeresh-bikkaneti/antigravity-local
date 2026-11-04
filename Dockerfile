@@ -2,7 +2,8 @@ FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 HOST=0.0.0.0 PORT=8000
 
-RUN useradd --create-home app && mkdir /app && chown app /app
+# /app/.memory holds the search index. World-writable so a forced user id (--user 12345) can create it too.
+RUN useradd --create-home app && mkdir -p /app/.memory && chown app /app && chmod 777 /app/.memory
 WORKDIR /app
 
 COPY requirements.txt .
