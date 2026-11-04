@@ -53,7 +53,7 @@ docker build -t antigravity-local .      # works today, takes about a minute
 docker run -d --rm -p 127.0.0.1::8000 --name ag antigravity-local
 docker port ag 8000            # shows the random host port, e.g. 127.0.0.1:54921
 ```
-`127.0.0.1::8000` means "any free host port, reachable only from this machine". Open the printed address in your browser. Once CI has published the image from `main`, you can skip the build: `docker pull ghcr.io/veeresh-bikkaneti/antigravity-local:latest` and run it as above (use that name instead of `antigravity-local`).
+`127.0.0.1::8000` means "any free host port, reachable only from this machine". Open the printed address in your browser. Want to skip the build? The image is public on GitHub's container registry. Run `docker pull ghcr.io/veeresh-bikkaneti/antigravity-local:latest`, then use `ghcr.io/veeresh-bikkaneti/antigravity-local:latest` in place of `antigravity-local` in the `docker run` command above.
 
 | URL | What you get |
 | :--- | :--- |
