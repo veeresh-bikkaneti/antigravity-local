@@ -30,7 +30,7 @@ import memory
 db = memory.MemoryDatabase(memory.Path(sys.argv[1]))
 emb = memory.EmbeddingProvider._pure_python_embed(None, {TEXT!r})
 with db.get_connection() as c:
-    c.execute("INSERT INTO documents (id,path,title,category,mtime,chunk_count) VALUES (1,'a.md','A','doc',0,1)")
+    c.execute("INSERT INTO documents (id,path,title,category,mtime,chunk_count,embed_mode) VALUES (1,'a.md','A','doc',0,1,'pure_python_tfidf')")
     c.execute("INSERT INTO chunks (id,doc_id,chunk_index,start_line,end_line,content,embedding) VALUES (1,1,0,1,1,?,?)", ({TEXT!r}, json.dumps(emb)))
 """
 
