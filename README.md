@@ -91,7 +91,7 @@ Ollama holds the model. Every tool below just knocks on its door at `http://loca
 
 ### Antigravity
 - **The Antigravity SDK works with your local model.** Google added local-model support on Sept. 23, 2026. `LocalOpenAIAgentConfig` connects to any OpenAI-compatible server, including Ollama ([Google's announcement](https://developers.googleblog.com/introducing-support-for-local-ai-models-in-the-antigravity-sdk/)). This repo already uses it. `python run.py` and `python code_agent.py` talk to `LOCAL_LLM_BASE_URL` (default `http://localhost:11434/v1`) and `LOCAL_LLM_MODEL` (default `qwen2.5:14b`). To change either, set the variable in `.env` or pass `--base-url` and `--model`.
-- **The Antigravity IDE chat panel has no setting for Ollama, as far as we found.** Google's announcement covers the SDK and does not mention the IDE or its CLI. We found no official setting that points the IDE chat at a local server. A community proxy claims it can, but it is unofficial and we have not tested it. If Google adds a setting, this page is the place to update.
+- **The Antigravity IDE chat panel has no setting for Ollama, as far as we found.** Google's announcement covers the SDK and does not mention the IDE or its CLI. We found no official setting that points the IDE chat at a local server. If Google adds a setting, this page is the place to update.
 - **What works today inside the IDE:** open your project, open the built-in terminal, activate the venv (see [the guide](ZERO_TO_CODING.md#before-you-start-activate-the-virtual-environment)), and run `python code_agent.py --workspace .`. The agent writes into the folder you have open, so new files show up in the editor as they appear.
 
 ### VS Code
@@ -112,11 +112,12 @@ Four ways, easiest first. All of them use the same Ollama on `http://localhost:1
        capabilities:
          - tool_use
    ```
-4. **Cline** ([Cline's guide](https://docs.cline.bot/running-models-locally/ollama)). Open Cline's settings, choose **Ollama** as the provider, keep the Base URL at `http://localhost:11434`, and pick your model from the dropdown. Cline suggests turning on **Use Compact Prompt** for local models.
+4. **Cline** ([Cline's guide](https://docs.cline.bot/running-models-locally/ollama)). Open Cline's settings, choose **Ollama** as the provider, keep the Base URL at `http://localhost:11434`, and pick your model from the dropdown. Cline's guide says to turn on **Use Compact Prompt**.
 
 Good to know:
 - Agent modes need a model that supports tools. `qwen2.5:14b` does. `gemma2` does not (see [troubleshooting](#common-gotchas--troubleshooting)).
-- When you run `code_agent.py --workspace .`, the agent can change any file in that folder. Use a git repo, so `git status` and `git diff` show what it did, and `git restore .` reverts its edits to existing files. New files stay until you delete them.
+- **Know the limits of a small local model.** With the default `qwen2.5:14b`, creating a new file from a plain prompt worked in most of our runs. Jobs that start from an existing file did not. In 14 attempts to edit a file, or to read one and write a new one, none gave a correct result. Some runs wrote nothing, some rewrote the file wrongly, and one answered in Thai. For work on existing code, use the editor routes above with the same local model, or try a larger tool-calling model from the table in this README (we have not tested one).
+- When you run `code_agent.py --workspace .`, the agent can change any file in that folder. Commit first. Then `git status` and `git diff` show what it did, and `git restore .` reverts its edits to existing files. New files stay until you delete them. Check `git diff` before you trust a "Task completed" line, because that line only means a file changed.
 - We tested the terminal route and the endpoints above on Windows. The extension routes come from their official guides, and we have not run them in VS Code ourselves.
 
 ---
