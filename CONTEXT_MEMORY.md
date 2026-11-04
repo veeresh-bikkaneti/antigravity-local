@@ -210,6 +210,7 @@
   - Fixed: (1) backend switch now re-embeds and search only compares vectors from the same backend; mixed-dimension docs are left NULL; (2) deleted source files purged incl. FTS rows (FTS5 has no FK cascade); (3) `get_connection` is now a context manager (commit/rollback, always close).
   - Tests: `tests/test_memory_integrity.py` (7) failed first, 9/9 pass with determinism suite. Run: `python -m unittest tests.test_memory_integrity tests.test_memory_determinism`.
   - Quirk: `unittest discover` fails (tests/ has no `__init__.py`); name modules explicitly.
+  - Interrogate round 1 (3 siloed adversaries): purge claim held (mutation-tested). 2 verified findings fixed test-first: (a) all-fallback docs during an Ollama outage were stamped with the Ollama mode (fix: `EmbeddingProvider.fell_back` flag, doc stays NULL and is retried); (b) concurrent open of a legacy DB raised `duplicate column name` (fix: tolerate it on ALTER). Round 2 review pending.
   - Residual: a transient Ollama outage at index start forces re-embedding onto fallback (loud stderr warning only).
 
 ---

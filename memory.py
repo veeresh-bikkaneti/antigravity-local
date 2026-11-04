@@ -57,6 +57,7 @@ class EmbeddingProvider:
         self.base_url = base_url.rstrip("/")
         self.ollama_model = self._detect_ollama_embedding_model()
         self.mode = f"ollama ({self.ollama_model})" if self.ollama_model else "pure_python_tfidf"
+        self.fell_back = False  # set when an Ollama call failed and a fallback vector was returned
 
     def _detect_ollama_embedding_model(self) -> str | None:
         """Check if Ollama has a known embedding model installed."""
@@ -92,6 +93,7 @@ class EmbeddingProvider:
                         return emb
             except Exception:
                 pass
+            self.fell_back = True
 
         # Fallback to pure Python feature vectorizer
         return self._pure_python_embed(text)
@@ -177,7 +179,11 @@ class MemoryDatabase:
             # Migrate pre-embed_mode DBs. NULL = unknown backend = re-embedded on next index.
             cols = [r["name"] for r in conn.execute("PRAGMA table_info(documents)")]
             if "embed_mode" not in cols:
-                conn.execute("ALTER TABLE documents ADD COLUMN embed_mode TEXT")
+                try:
+                    conn.execute("ALTER TABLE documents ADD COLUMN embed_mode TEXT")
+                except sqlite3.OperationalError as e:  # another process migrated first
+                    if "duplicate column" not in str(e):
+                        raise
 
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS chunks (
@@ -362,6 +368,7 @@ class MemoryIndexer:
 
                 # Insert chunks and compute embeddings
                 dims = set()
+                self.embedder.fell_back = False
                 for idx, ch in enumerate(raw_chunks):
                     emb = self.embedder.embed_text(ch["content"])
                     dims.add(len(emb))
@@ -379,8 +386,8 @@ class MemoryIndexer:
                         VALUES (?, ?, ?)
                     """, (ch["content"], doc_id, chunk_id))
 
-                # Mixed vector sizes = backend flaked mid-doc: leave NULL so the next run retries.
-                if len(dims) == 1:
+                # Mixed sizes or any fallback vector = backend flaked mid-doc: leave NULL so the next run retries.
+                if len(dims) == 1 and not self.embedder.fell_back:
                     conn.execute("UPDATE documents SET embed_mode = ? WHERE id = ?", (self.embedder.mode, doc_id))
                 else:
                     print(f"[!] Inconsistent embedding sizes for {rel_path}; will retry next index", file=sys.stderr)

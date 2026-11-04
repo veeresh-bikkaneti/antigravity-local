@@ -1,7 +1,10 @@
 """Regressions for index integrity: backend switch, ghost docs, leaked connections."""
+import json
 import sqlite3
 import sys
 import tempfile
+import threading
+import urllib.request
 import unittest
 from pathlib import Path
 
@@ -95,6 +98,60 @@ class IndexIntegrity(unittest.TestCase):
                 c.execute("INSERT INTO documents (path,title,category,mtime,chunk_count) VALUES ('b','b','doc',0,0)")
                 raise RuntimeError
         self.assertEqual([r[0] for r in self.q("SELECT path FROM documents")], ["a"])
+
+
+class _Resp:
+    def __init__(self, body): self.body = body
+    def read(self): return self.body
+    def __enter__(self): return self
+    def __exit__(self, *a): pass
+
+
+class RealProviderAndMigration(IndexIntegrity):
+    """Uses the real EmbeddingProvider (HTTP faked) and real concurrent opens."""
+
+    def _fake_ollama(self, state):
+        def fake(req, timeout=None):
+            if req.full_url.endswith("/api/tags"):
+                return _Resp(json.dumps({"models": [{"name": "nomic-embed-text:latest"}]}).encode())
+            if not state["up"]:
+                raise OSError("ollama down")
+            return _Resp(json.dumps({"embedding": [0.1] * 768}).encode())
+        saved = urllib.request.urlopen
+        urllib.request.urlopen = fake
+        self.addCleanup(setattr, urllib.request, "urlopen", saved)
+
+    def test_total_fallback_during_ollama_outage_is_retried_not_stamped_ollama(self):
+        state = {"up": False}
+        self._fake_ollama(state)
+        emb = memory.EmbeddingProvider()
+        self.assertTrue(emb.mode.startswith("ollama"))
+        self.index(emb)  # every embed call fails -> 128-dim fallback vectors
+        self.assertTrue(all(r[0] is None for r in self.q("SELECT embed_mode FROM documents")))
+        state["up"] = True
+        self.index(memory.EmbeddingProvider())
+        dims = {len(json.loads(r[0])) for r in self.q("SELECT embedding FROM chunks")}
+        self.assertEqual(dims, {768})
+
+    def test_concurrent_open_of_legacy_db_does_not_crash(self):
+        for n in range(15):
+            legacy = self.root / f"old{n}.sqlite"
+            c = sqlite3.connect(legacy)
+            c.execute("CREATE TABLE documents (id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT UNIQUE NOT NULL,"
+                      " title TEXT NOT NULL, category TEXT NOT NULL, mtime REAL NOT NULL, chunk_count INTEGER NOT NULL,"
+                      " indexed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)")
+            c.commit(); c.close()
+            barrier, errors = threading.Barrier(6), []
+
+            def opener():
+                barrier.wait()
+                try:
+                    memory.MemoryDatabase(legacy)
+                except Exception as e:  # noqa: BLE001
+                    errors.append(repr(e))
+            ts = [threading.Thread(target=opener) for _ in range(6)]
+            [t.start() for t in ts]; [t.join() for t in ts]
+            self.assertEqual(errors, [])
 
 
 if __name__ == "__main__":
