@@ -1,4 +1,4 @@
-# 🚀 Local Google Antigravity Agent (Open-Source Edition)
+# Local Google Antigravity Agent (Open-Source Edition)
 
 > Run fully autonomous, private AI agents on your local machine using the official Google Antigravity SDK (`google-antigravity`) connected to local models (Ollama, LM Studio, vLLM) or Google's open-source Research AI Harness. No cloud lock-in, no API fees.
 >
@@ -6,7 +6,7 @@
 
 ---
 
-## ⚡ 1-Command Plug & Play (Zero-Friction Setup)
+## 1-Command Plug & Play (Zero-Friction Setup)
 
 No manual environment creation or dependency hunting. Clone the repo and run one command. The bootstrap script sets up your environment, starts Ollama, downloads the best model for your hardware if you have none, runs a demo, and opens an interactive agent chat:
 
@@ -26,7 +26,7 @@ chmod +x run.sh && ./run.sh
 ```
 *(Or: `python3 run.py`)*
 
-#### 🤖 What the 1-Command Bootstrap Does Automatically:
+#### What the 1-Command Bootstrap Does Automatically:
 1. **Hardware & Inventory Inspection**: Probes dedicated GPU VRAM (via `nvidia-smi` / Apple Silicon) and System RAM. Checks local Ollama inventory first to reuse existing weights with **zero downloads**.
 2. **Model Matching**: Compares your PC build against a list of agentic models (Nanbeige, DeepSeek, Qwen 2.5 Coder, Command-R, Codestral, GLM-4) and picks the most capable one your hardware can run.
 3. **Virtual Environment Setup**: Creates isolated `venv`, installs `requirements.txt`, and generates `.env` if missing.
@@ -36,7 +36,7 @@ chmod +x run.sh && ./run.sh
 
 ---
 
-## 🌐 Serve It: Search UI + API on a Free Port (Local or Docker)
+## Serve It: Search UI + API on a Free Port (Local or Docker)
 
 Prefer a browser to a terminal? Both paths below start the same small web app: a memory search page, a JSON API, and your interactive diagrams. There is no fixed port. The OS hands out a free one, so it never fights with whatever else is running on your machine.
 
@@ -68,7 +68,7 @@ python tests/e2e.py local    # fresh copy, own venv, two servers on two free por
 python tests/e2e.py docker   # builds the image, runs two containers on two random host ports
 ```
 
-### 🧹 Stop & Clean Up (Teardown)
+### Stop & Clean Up (Teardown)
 
 Everything you start has an off switch, and everything it leaves behind is safe to delete. Nothing here touches your Ollama models.
 
@@ -83,24 +83,24 @@ Forgot the container name? `docker ps` lists running ones, then `docker stop <id
 
 ---
 
-## 📋 Table of Contents
-0. [🌐 Serve It: Search UI + API on a Free Port](#-serve-it-search-ui--api-on-a-free-port-local-or-docker)
-1. [⚡ 1-Command Plug & Play](#-1-command-plug--play-zero-friction-setup)
-2. [💡 What is Antigravity Local?](#-what-is-this)
-3. [⚙️ Prerequisites & Model Selection](#-prerequisites-checklist)
-4. [💻 Developer Coding Agent (`code_agent.py`)](#mode-3-developer-pair-programming-shell-code_agentpy)
-5. [🧠 3-Tier Zero-Token Memory Fabric](#-3-tier-zero-token-memory-fabric-graphify--llmwiki--sqlite-hybrid)
-6. [🏛️ Architecture & Interactive Diagrams](#-system-architecture--design-diagrams)
-7. [🐳 1-Command Docker Clean-Room Test Drive](#-1-command-docker-clean-room-test-drive)
-8. [📁 Project Structure](#-project-structure)
-9. [🛠️ Common Gotchas & Troubleshooting](#-common-gotchas--troubleshooting)
-10. [🔬 Advanced: Custom Harnesses & Backends](#-advanced-using-custom-research-harnesses--servers)
-11. [🙏 Credits, Toolchain Heritage & Specifications](#-credits-toolchain-heritage--specifications)
-12. [📄 License & Contributing](#-license--contributing)
+## Table of Contents
+0. [Serve It: Search UI + API on a Free Port](#serve-it-search-ui--api-on-a-free-port-local-or-docker)
+1. [1-Command Plug & Play](#1-command-plug--play-zero-friction-setup)
+2. [What is Antigravity Local?](#what-is-this)
+3. [Prerequisites & Model Selection](#prerequisites-checklist)
+4. [Developer Coding Agent (`code_agent.py`)](#mode-3-developer-pair-programming-shell-code_agentpy)
+5. [3-Tier Zero-Token Memory Fabric](#3-tier-zero-token-memory-fabric-graphify--llmwiki--sqlite-hybrid)
+6. [Architecture & Interactive Diagrams](#system-architecture--design-diagrams)
+7. [1-Command Docker Clean-Room Test Drive](#1-command-docker-clean-room-test-drive)
+8. [Project Structure](#project-structure)
+9. [Common Gotchas & Troubleshooting](#common-gotchas--troubleshooting)
+10. [Advanced: Custom Harnesses & Backends](#advanced-using-custom-research-harnesses--servers)
+11. [Credits, Toolchain Heritage & Specifications](#credits-toolchain-heritage--specifications)
+12. [License & Contributing](#license--contributing)
 
 ---
 
-## 💡 What is This?
+## What is This?
 
 Google Antigravity is an agentic AI framework designed for autonomous code generation, workspace manipulation, and tool use. 
 
@@ -112,7 +112,7 @@ Normally, developer tools configure Antigravity to call cloud Gemini APIs. This 
 
 ---
 
-## ⚙️ Prerequisites Checklist
+## Prerequisites Checklist
 
 Before you start, make sure you have:
 
@@ -126,7 +126,7 @@ Before you start, make sure you have:
 
 ---
 
-## 🛠️ Step-by-Step Manual Setup (Optional Alternative)
+## Step-by-Step Manual Setup (Optional Alternative)
 
 If you prefer to configure each component step-by-step rather than using the 1-command bootstrap (`run.bat` / `run.sh` / `run.py`):
 
@@ -247,7 +247,7 @@ python code_agent.py --model nanbeige4.1:3b
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 antigravity-local/
@@ -276,7 +276,7 @@ antigravity-local/
 
 ---
 
-## 🏛️ System Architecture & Design Diagrams
+## System Architecture & Design Diagrams
 
 Antigravity Local runs the Google Antigravity SDK's agent loop on your machine and sends model calls to a local inference server, so nothing goes to the cloud.
 
@@ -442,7 +442,7 @@ This repository uses [**Archify** (`tt-a1i/archify`)](https://github.com/tt-a1i/
 
 ---
 
-### 🌐 How to View & Serve Interactive Archify Diagrams
+### How to View & Serve Interactive Archify Diagrams
 
 There are three ways to preview the diagrams:
 
@@ -491,7 +491,7 @@ python -m http.server 8080 --directory docs/diagrams
 ```
 Navigate to: [http://localhost:8080/system-topology.html](http://localhost:8080/system-topology.html)
 
-#### 🛠️ Archify CLI Quick Reference
+#### Archify CLI Quick Reference
 ```bash
 # Verify Archify installation & system health:
 archify doctor
@@ -505,7 +505,7 @@ archify render architecture docs/diagrams/system-topology.architecture.json docs
 
 ---
 
-## 🧠 3-Tier Zero-Token Memory Fabric: Graphify + LLMWiki + SQLite Hybrid
+## 3-Tier Zero-Token Memory Fabric: Graphify + LLMWiki + SQLite Hybrid
 
 Local coding agents (such as Qwen 2.5 14B or Gemma 2 27B) paired with cloud IDE sessions (Antigravity Gemini/Claude) need to keep context across sessions without filling the prompt context window.
 
@@ -539,7 +539,7 @@ flowchart LR
 | **Tier 2: High-Density LLMWiki** | `.wiki/*.md` (Karpathy-style) | Atomic, curated Markdown concept pages (`architecture.md`, `hardware-matrix.md`, `model-hierarchy.md`). | **~850 tokens** per topic page (**328x token reduction**). |
 | **Tier 3: Embedded Hybrid Store** | [`memory.py`](memory.py) (`.memory/index.sqlite`) | SQLite FTS5 BM25 exact match + cosine semantic vector fusion with Reciprocal Rank Fusion (RRF). | **~1,200 tokens** per hybrid search (**232x token reduction**). |
 
-### 🛠️ Memory Engine CLI Commands
+### Memory Engine CLI Commands
 
 ```bash
 # 1. Index all repository memory (wiki, docs, context memory, and core code):
@@ -559,7 +559,7 @@ python memory.py wiki hardware-matrix
 python memory.py sync
 ```
 
-### 💻 Interactive Shell Memory Integration (`code_agent.py`)
+### Interactive Shell Memory Integration (`code_agent.py`)
 
 In the developer pair-programming shell, use memory commands directly:
 
@@ -578,9 +578,9 @@ Inside the interactive shell:
 
 ---
 
-## 🐳 1-Command Docker Clean-Room Test Drive
+## 1-Command Docker Clean-Room Test Drive
 
-> Looking to *run* the app in Docker? That is [Serve It](#-serve-it-search-ui--api-on-a-free-port-local-or-docker) above. This section covers the older contributor test script (`docker-test-drive.sh`). CI now uses `python tests/e2e.py docker`.
+> Looking to *run* the app in Docker? That is [Serve It](#serve-it-search-ui--api-on-a-free-port-local-or-docker) above. This section covers the older contributor test script (`docker-test-drive.sh`). CI now uses `python tests/e2e.py docker`.
 
 Want to check everything in a clean, disposable Linux container without touching your host Python? [`docker-test-drive.sh`](docker-test-drive.sh) does that in standard Docker Desktop:
 
@@ -601,7 +601,7 @@ docker run --rm --add-host=host.docker.internal:host-gateway \
 
 ---
 
-## 🛠️ Common Gotchas & Troubleshooting
+## Common Gotchas & Troubleshooting
 
 ### 1. PowerShell: "Running scripts is disabled on this system"
 **Cause**: Windows restricts PowerShell script execution by default.  
@@ -633,7 +633,7 @@ if sys.platform == "win32":
 
 ---
 
-## 🔬 Advanced: Using Custom Research Harnesses & Servers
+## Advanced: Using Custom Research Harnesses & Servers
 
 ### Pointing to LM Studio, vLLM, or llama.cpp
 To use a server other than Ollama, change the `LOCAL_LLM_BASE_URL` in `.env`:
@@ -661,7 +661,7 @@ The SDK detects your custom binary on startup and routes all agent operations th
 
 ---
 
-## 🙏 Credits, Toolchain Heritage & Specifications
+## Credits, Toolchain Heritage & Specifications
 
 These projects and workflows shaped this one:
 
@@ -672,7 +672,7 @@ These projects and workflows shaped this one:
 - **[Graphify](https://github.com/veeresh-bikkaneti/antigravity-local)**: Builds the AST code knowledge graph and call graph without spending tokens.
 - **[Archify](https://github.com/tt-a1i/archify)**: Generates the standalone HTML architecture and lifecycle diagrams with live signal tracing.
 
-### 📑 Technical Deep-Dives & Formal Specifications
+### Technical Deep-Dives & Formal Specifications
 For contributors who want the engineering records behind the project:
 - **[Product Specification](docs/PRODUCT_SPEC.md)**: Covers the runtime engine, hardware scheduler, and security model.
 - **[3-Tier Memory Fabric Specification](docs/MEMORY_SPEC.md)**: Compares RAG, OKF, and vector DBs, and gives the math for Reciprocal Rank Fusion.
@@ -680,7 +680,7 @@ For contributors who want the engineering records behind the project:
 
 ---
 
-## 📄 License & Contributing
+## License & Contributing
 
 This project is licensed under the [MIT License](LICENSE) - free to use, modify, and distribute for personal and commercial projects.
 

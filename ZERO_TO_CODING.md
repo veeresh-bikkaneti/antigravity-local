@@ -1,10 +1,10 @@
-# 🚀 From Zero to Start Coding with Local Google Antigravity Agent
+# From Zero to Start Coding with Local Google Antigravity Agent
 
 > A start-to-finish guide to setting up and using a private AI pair programmer on your own machine. It runs on the official Google Antigravity SDK (`google-antigravity`) and local open-source models (Ollama, LM Studio, vLLM).
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 1. [What Can This Agent Do?](#1-what-can-this-agent-do)
 2. [Prerequisites & System Architecture](#2-prerequisites--system-architecture)
 3. [Zero Setup (3-Minute Quickstart)](#3-zero-setup-3-minute-quickstart)
@@ -345,7 +345,7 @@ if sys.platform == "win32":
 
 To run the whole Antigravity Local stack in a disposable container without touching your host's Python environments, use the 1-command Docker test drive.
 
-The exact command differs by shell (CMD, PowerShell, Git Bash, macOS, Linux), so it lives in one place. See the [README Docker section](README.md#-1-command-docker-clean-room-test-drive). The one-liner that works everywhere: `python tests/e2e.py docker`.
+The exact command differs by shell (CMD, PowerShell, Git Bash, macOS, Linux), so it lives in one place. See the [README Docker section](README.md#1-command-docker-clean-room-test-drive). The one-liner that works everywhere: `python tests/e2e.py docker`.
 
 The test drive checks:
 1. Pure pip dependency installation in an unpolluted Linux environment.

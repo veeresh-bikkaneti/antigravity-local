@@ -168,4 +168,4 @@ Antigravity Local checks open-source models at runtime instead of defaulting to 
 3. **3-Tier Zero-Token Memory Fabric**:
    - See [`docs/MEMORY_SPEC.md`](MEMORY_SPEC.md) for the mathematical formulation of Reciprocal Rank Fusion, SQLite FTS5 schema, and token benchmark reduction analysis.
 4. **Docker Clean-Room Test Drive**:
-   - Run `python tests/e2e.py docker` (or see the [README Docker section](../README.md#-1-command-docker-clean-room-test-drive) for the shell-specific `docker run` form) to verify all 7 runtime gates in a clean-room Linux container.
+   - Run `python tests/e2e.py docker` (or see the [README Docker section](../README.md#1-command-docker-clean-room-test-drive) for the shell-specific `docker run` form) to verify all 7 runtime gates in a clean-room Linux container.
