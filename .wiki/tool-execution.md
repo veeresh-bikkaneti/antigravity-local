@@ -7,10 +7,10 @@ The Antigravity SDK routes tool calls via the OpenAI function-calling format to 
   - Note: Case-sensitivity matters. `Path` and `Content` are capitalized in the local harness schema.
 
 ## 2. Safety Policies
-- **`policy.allow_all()`**: Enabled in `agent_with_workspace.py` and `code_agent.py` to allow the local autonomous agent to create and modify files inside the designated workspace without interactive prompt freezes.
-- **Path Sanitization**: Relative paths are resolved strictly against `WORKSPACE_DIR` (default: `./workspace`). Attempts to break out of workspace are blocked by the harness boundary.
+- **`policy.allow_all()`**: Enabled in `agent_with_workspace.py` and `code_agent.py` so the local agent can create and modify files inside the workspace without freezing on interactive prompts.
+- **Path Sanitization**: Relative paths resolve against `WORKSPACE_DIR` (default: `./workspace`). The harness blocks attempts to leave the workspace.
 
 ## 3. Model Compatibility Caveat
-- `qwen2.5:14b` natively parses OpenAI function calls and executes tools cleanly.
+- `qwen2.5:14b` natively parses OpenAI function calls and executes tools.
 - `gemma2:27b` in Ollama does NOT support tools schema (`registry.ollama.ai/library/gemma2:27b does not support tools`). For Gemma, tool execution must be disabled via `capabilities=CapabilitiesConfig(enabled_tools=[])`.
 

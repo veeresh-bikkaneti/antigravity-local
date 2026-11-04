@@ -1,7 +1,6 @@
 # 🚀 From Zero to Start Coding with Local Google Antigravity Agent
 
-> **The Definitive End-to-End Developer Guide**  
-> Learn how to set up, configure, and use a 100% private, autonomous AI pair programmer running entirely on your local machine using the official **Google Antigravity SDK** (`google-antigravity`) and local open-source models (**Ollama**, **LM Studio**, **vLLM**).
+> A start-to-finish guide to setting up and using a private AI pair programmer on your own machine. It runs on the official Google Antigravity SDK (`google-antigravity`) and local open-source models (Ollama, LM Studio, vLLM).
 
 ---
 
@@ -25,11 +24,11 @@
 
 ## 1. What Can This Agent Do?
 
-Unlike web-based chat interfaces or API-metered plugins, this agent runs **locally on your hardware**:
-- 🔒 **100% Private**: Zero telemetry, zero cloud calls, zero data leakage. Code stays on your SSD.
-- 💸 **Zero Fees**: No monthly subscriptions ($0/mo) and no token billing.
-- 🛠️ **Real Autonomous Disk Access**: The agent inspects folders, reads existing source code, writes new files, and applies changes directly to your project workspace.
-- 🧠 **Model Freedom**: Swap models instantly—use **`qwen2.5:14b`** for complex code reasoning, **`llama3.1:8b`** for lightweight laptops, or **`gemma2:27b`** for creative design.
+Unlike web-based chat interfaces or API-metered plugins, this agent runs on your own hardware. Here is what that gets you:
+- **100% Private**: No telemetry and no cloud calls, so your code stays on your SSD.
+- **Zero Fees**: No monthly subscription ($0/mo) and no token billing.
+- **Real Disk Access**: The agent inspects folders, reads your source code, writes new files, and applies changes directly in your project workspace.
+- **Model Freedom**: Swap models whenever you like. Use `qwen2.5:14b` for complex code reasoning, `llama3.1:8b` for lightweight laptops, or `gemma2:27b` for creative design.
 
 ---
 
@@ -103,7 +102,7 @@ git clone https://github.com/veeresh-bikkaneti/antigravity-local.git
 cd antigravity-local
 ```
 
-**Run the 1-Click Bootstrap:**
+Run the 1-click bootstrap:
 - **Windows (PowerShell)**:
   ```powershell
   .\run.ps1
@@ -117,13 +116,13 @@ cd antigravity-local
   chmod +x run.sh && ./run.sh
   ```
 
-*The bootstrap automatically creates your Python virtual environment, installs dependencies, configures `.env`, and tests connectivity.*
+The bootstrap creates your Python virtual environment, installs dependencies, configures `.env`, and tests connectivity.
 
 ---
 
 ## 4. Start Coding: Interactive Pair-Programmer Shell
 
-The interactive coding shell gives you a continuous conversation with your local agent, directly bound to any target project folder on your machine.
+The interactive shell lets you chat with your local agent about any project folder on your machine.
 
 ### Launch on Any Project Folder:
 ```powershell
@@ -159,14 +158,14 @@ CodeAgent [Local LLM] > Created `test_database.py` with in-memory SQLite fixture
 ```
 
 ### Built-in Shell Commands:
-- `/memory <query>` : Searches project memory using SQLite FTS5 BM25 + dense semantic vector fusion with Reciprocal Rank Fusion.
-- `/wiki [topic]`   : Instantly loads canonical domain knowledge pages from `.wiki/` with zero token waste.
+- `/memory <query>` : Searches project memory using SQLite FTS5 BM25 plus dense semantic vectors, merged with Reciprocal Rank Fusion.
+- `/wiki [topic]`   : Loads canonical domain knowledge pages from `.wiki/` with zero token waste.
 - `/files`          : Lists all files currently created in your workspace directory.
 - `/help`           : Displays tips and syntax guides.
 - `exit` or `quit`  : Closes the coding session.
 
 ### Automatic Memory Augmentation:
-Launch with `--with-memory` to automatically prepend the top 2-3 most relevant project memory chunks directly into the model's context for each coding task without blowing up token windows:
+Launch with `--with-memory` to prepend the top 2-3 most relevant project memory chunks to the model's context for each coding task, which keeps the token window small:
 ```powershell
 python code_agent.py --workspace ./workspace --with-memory
 ```
@@ -183,17 +182,17 @@ Want to execute a coding task non-interactively from the command line or CI/CD s
   --task "Build a CLI tool in cli.py using argparse that converts JSON files to CSV."
 ```
 
-The agent will autonomously:
+The agent will:
 1. Parse your request.
 2. Formulate the code and structure.
 3. Call the `create_file` tool to save `cli.py` to your specified workspace.
-4. Report the created files and exit cleanly.
+4. Report the created files and exit.
 
 ---
 
 ## 6. 3 End-to-End Real World Coding Recipes
 
-Here are copy-paste workflows to start building real-world software right now:
+Here are three copy-paste workflows you can run right now:
 
 ### Recipe 1: Scaffold a Complete FastAPI Backend Microservice
 
@@ -204,11 +203,11 @@ Run this single command:
   --task "Build a complete FastAPI REST API in main.py for a Task Manager with endpoints: GET /tasks, POST /tasks, GET /tasks/{id}, and DELETE /tasks/{id}. Include Pydantic schemas for input validation and SQLite for storage."
 ```
 
-**What the agent generates inside `./api_backend/main.py`:**
+The agent generates this inside `./api_backend/main.py`:
 - Pydantic models: `TaskBase`, `TaskCreate`, `TaskResponse`.
 - SQLite database initialization with auto-created tables.
 - FastAPI dependency injection for database connections.
-- Clean JSON responses with HTTP status codes (200, 201, 404).
+- JSON responses with HTTP status codes (200, 201, 404).
 
 ---
 
@@ -231,7 +230,7 @@ pytest ./my_codebase/tests/test_calculator.py
 
 ### Recipe 3: Refactor Legacy Code & Modernize Architecture
 
-Ask the agent to refactor synchronous or blocking Python code into modern `asyncio`:
+Ask the agent to refactor synchronous or blocking Python code into `asyncio`:
 
 ```powershell
 .\venv\Scripts\python code_agent.py `
@@ -243,7 +242,7 @@ Ask the agent to refactor synchronous or blocking Python code into modern `async
 
 ## 7. The Developer SDK Handbook (Writing Your Own Agents in Python)
 
-You don't need to limit yourself to pre-made scripts. The Google Antigravity SDK lets you build your own custom agents in under 30 lines of Python.
+You aren't stuck with the pre-made scripts. The Google Antigravity SDK lets you build your own agents in under 30 lines of Python.
 
 ### Minimal Custom Agent Script (`my_custom_agent.py`):
 
@@ -286,7 +285,7 @@ if __name__ == "__main__":
 ```
 
 ### Safety Policies: Autonomous vs. Review Mode
-- **Autonomous Mode (`policy.allow_all()`)**: The agent can inspect and create files without asking for confirmation each time. Recommended for rapid prototyping and automated tasks.
+- **Autonomous Mode (`policy.allow_all()`)**: The agent can inspect and create files without asking for confirmation each time. Good for quick prototyping and automated tasks.
 - **Review Mode (`policy.ask_review()`)**: The agent prompts you for confirmation before executing file writes or terminal commands.
 
 ---
@@ -315,7 +314,7 @@ LOCAL_LLM_MODEL=Qwen/Qwen2.5-14B-Instruct
 ```
 
 ### Option 3: Google Research AI Harness Binary
-If you build Google's research agent harness from source, tell Antigravity to route through your custom binary:
+If you build Google's research agent harness from source, point Antigravity at your custom binary:
 ```powershell
 $env:ANTIGRAVITY_HARNESS_PATH="C:\path\to\custom\localharness.exe"
 ```
@@ -325,15 +324,15 @@ $env:ANTIGRAVITY_HARNESS_PATH="C:\path\to\custom\localharness.exe"
 ## 9. Troubleshooting & Pro-Tips
 
 ### 1. Model Tool Calling Compatibility
-- ✅ **Qwen 2.5 (`qwen2.5:14b` or `qwen2.5:7b`)**: Top-tier agent performance. Native support for OpenAI tool schemas.
+- ✅ **Qwen 2.5 (`qwen2.5:14b` or `qwen2.5:7b`)**: Strong agent performance. Native support for OpenAI tool schemas.
 - ✅ **Llama 3.1 (`llama3.1:8b`)**: Lightweight, fast, supports function calling.
-- ⚠️ **Gemma 2 (`gemma2:27b`)**: Excellent for streaming text and reasoning, but Ollama does not currently enable tool schemas on Gemma 2. Use for text generation via `test_local.py`.
+- ⚠️ **Gemma 2 (`gemma2:27b`)**: Good for streaming text and reasoning, but Ollama does not currently enable tool schemas on Gemma 2. Use it for text generation via `test_local.py`.
 
 ### 2. File Path Formatting
-Always use absolute paths or relative paths inside the configured `workspaces` array. `policy.allow_all()` automatically ensures the agent can write within declared workspaces.
+Use absolute paths, or relative paths inside the configured `workspaces` array. `policy.allow_all()` lets the agent write within declared workspaces.
 
 ### 3. Windows Terminal Character Encoding
-If you see `'charmap' codec can't encode character`, ensure your Python scripts reconfigure stdout to UTF-8 (already built into `code_agent.py`, `run.py`, and `test_local.py`):
+If you see `'charmap' codec can't encode character`, make sure your Python scripts reconfigure stdout to UTF-8. `code_agent.py`, `run.py`, and `test_local.py` already do this:
 ```python
 import sys
 if sys.platform == "win32":
@@ -344,27 +343,26 @@ if sys.platform == "win32":
 
 ## 10. Docker Clean-Room Test Drive
 
-If you want to run the entire Antigravity Local stack inside a pristine, disposable container without modifying your local host's Python environments, run our 1-command Docker test drive harness:
+To run the whole Antigravity Local stack in a disposable container without touching your host's Python environments, use the 1-command Docker test drive.
 
-The exact command differs by shell (CMD, PowerShell, Git Bash, macOS, Linux), so it lives in one place: see the [README Docker section](README.md#-1-command-docker-clean-room-test-drive). The one-liner that works everywhere: `python tests/e2e.py docker`.
+The exact command differs by shell (CMD, PowerShell, Git Bash, macOS, Linux), so it lives in one place. See the [README Docker section](README.md#-1-command-docker-clean-room-test-drive). The one-liner that works everywhere: `python tests/e2e.py docker`.
 
-This automated harness validates:
+The test drive checks:
 1. Pure pip dependency installation in an unpolluted Linux environment.
 2. SQLite FTS5 database initialization and BM25 index generation.
 3. Hybrid semantic vector search and Reciprocal Rank Fusion retrieval.
 4. Canonical topic loading from `.wiki/` with zero token waste.
-5. Container-to-host bridge connection (`host.docker.internal:11434`) communicating with your local Ollama instance.
+5. Container-to-host bridge connection (`host.docker.internal:11434`) to your local Ollama instance.
 
 ---
 
 ## 11. Product Specification & Consensus Governance
 
-For comprehensive architectural specifications and formal engineering governance records:
-- **[Refined Product Specification](docs/PRODUCT_SPEC.md)**: Exhaustive breakdown of the runtime engine, zero-download model scheduler, 3-tier zero-token memory fabric, and security policies.
+The architecture specs and governance records live in these docs:
+- **[Refined Product Specification](docs/PRODUCT_SPEC.md)**: Covers the runtime engine, zero-download model scheduler, 3-tier zero-token memory fabric, and security policies.
 - **[Council Consensus Manifest](docs/CONSENSUS_MANIFEST.md)**: Voting and deliberation record signed by the Council of Experts (Architect, QA Lead, Systems Engineer, UX Designer, Security Officer) and approved by the Advisor.
-- **[3-Tier Memory Fabric Specification](docs/MEMORY_SPEC.md)**: RAG vs. OKF vs. Vector DBs comparison and Reciprocal Rank Fusion mathematical formulation.
+- **[3-Tier Memory Fabric Specification](docs/MEMORY_SPEC.md)**: Compares RAG, OKF, and vector DBs, and gives the math for Reciprocal Rank Fusion.
 
 ---
 
-**You are now fully equipped to code with your own private, autonomous agent!**  
 Run `python code_agent.py` to start your first session.

@@ -5,12 +5,12 @@ This repository runs Google Antigravity autonomous coding agents on local, air-g
 
 ## 2. Core Invariants
 - **Decoupled LLM Backend**: `google-antigravity` communicates with Ollama via `LocalOpenAIConnectionStrategy` at `http://localhost:11434/v1/chat/completions`.
-- **Harness Communication**: Agents interact with workspace files via a local background binary harness communicating over WebSockets using Protocol Buffers (`localharness_pb2`).
+- **Harness Communication**: Agents interact with workspace files through a local background binary harness. It talks over WebSockets using Protocol Buffers (`localharness_pb2`).
 - **Open-Source Compatibility**: Compatible with custom builds of Google's Research AI Harness via `ANTIGRAVITY_HARNESS_PATH`.
 - **Air-Gapped Operation**: No telemetry, model weights, or source code leave the local machine.
 
 ## 3. Session Topology
-- **Antigravity IDE UI Session**: The upper chat panel in the Antigravity IDE is hosted by Google Cloud (Gemini Flash/Pro).
-- **Local Agent Terminal Session**: The integrated terminal runs the local agent scripts (`run.py`, `code_agent.py`, `agent_with_workspace.py`), executing locally against Ollama.
-- **Shared Memory Bridge**: Both environments share and read the same file-backed state (`CONTEXT_MEMORY.md`, `.wiki/`, `graphify-out/graph.json`, and `.memory/index.sqlite`).
+- **Antigravity IDE UI Session**: The upper chat panel in the Antigravity IDE runs on Google Cloud (Gemini Flash/Pro).
+- **Local Agent Terminal Session**: The integrated terminal runs the local agent scripts (`run.py`, `code_agent.py`, `agent_with_workspace.py`) against Ollama.
+- **Shared Memory Bridge**: Both environments read the same file-backed state (`CONTEXT_MEMORY.md`, `.wiki/`, `graphify-out/graph.json`, and `.memory/index.sqlite`).
 

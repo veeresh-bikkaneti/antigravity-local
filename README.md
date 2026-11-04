@@ -1,14 +1,14 @@
 # 🚀 Local Google Antigravity Agent (Open-Source Edition)
 
-> Run fully autonomous, private AI agents on your local machine using the official **Google Antigravity SDK** (`google-antigravity`) connected to local models (**Ollama**, **LM Studio**, **vLLM**) or Google's open-source **Research AI Harness**—with zero cloud lock-in and zero API fees.
+> Run fully autonomous, private AI agents on your local machine using the official Google Antigravity SDK (`google-antigravity`) connected to local models (Ollama, LM Studio, vLLM) or Google's open-source Research AI Harness. No cloud lock-in, no API fees.
 >
-> 📖 **From Zero to Start Coding**: For an end-to-end developer guide with real-world project recipes and the Python SDK handbook, read **[ZERO_TO_CODING.md](ZERO_TO_CODING.md)**.
+> For an end-to-end developer guide with real-world project recipes and the Python SDK handbook, read **[ZERO_TO_CODING.md](ZERO_TO_CODING.md)**.
 
 ---
 
 ## ⚡ 1-Command Plug & Play (Zero-Friction Setup)
 
-No manual environment creation or dependency hunting. Clone and run **one command**—the bootstrap orchestrator automatically configures your environment, starts Ollama, downloads the best model for your hardware, runs an autonomous demonstration, and opens an interactive agent chat:
+No manual environment creation or dependency hunting. Clone the repo and run one command. The bootstrap script sets up your environment, starts Ollama, downloads the best model for your hardware if you have none, runs a demo, and opens an interactive agent chat:
 
 ### Windows (CMD or PowerShell):
 ```cmd
@@ -27,18 +27,18 @@ chmod +x run.sh && ./run.sh
 *(Or: `python3 run.py`)*
 
 #### 🤖 What the 1-Command Bootstrap Does Automatically:
-1. 🔍 **Hardware & Inventory Inspection**: Probes dedicated GPU VRAM (via `nvidia-smi` / Apple Silicon) and System RAM. Checks local Ollama inventory first to reuse existing weights with **zero downloads**.
-2. 🧠 **Cutting-Edge Model Matching**: Evaluates your PC build against modern agentic powerhouses (Nanbeige, DeepSeek, Qwen 2.5 Coder, Command-R, Codestral, GLM-4) and selects the most capable model matching your hardware.
-3. 📦 **Virtual Environment Setup**: Creates isolated `venv`, installs `requirements.txt`, and generates `.env` if missing.
-4. ⚙️ **Ollama Auto-Start**: Pings `http://localhost:11434`. If down, launches `ollama serve` in the background.
-5. 🛠️ **Autonomous Verification**: Invokes the local agent to create a modern responsive `workspace/index.html` file using built-in tool calling.
-6. 💬 **Interactive Shell**: Drops you straight into an interactive terminal where you can prompt your private local agent to write code, inspect files, or perform tasks!
+1. **Hardware & Inventory Inspection**: Probes dedicated GPU VRAM (via `nvidia-smi` / Apple Silicon) and System RAM. Checks local Ollama inventory first to reuse existing weights with **zero downloads**.
+2. **Model Matching**: Compares your PC build against a list of agentic models (Nanbeige, DeepSeek, Qwen 2.5 Coder, Command-R, Codestral, GLM-4) and picks the most capable one your hardware can run.
+3. **Virtual Environment Setup**: Creates isolated `venv`, installs `requirements.txt`, and generates `.env` if missing.
+4. **Ollama Auto-Start**: Pings `http://localhost:11434`. If down, launches `ollama serve` in the background.
+5. **Autonomous Verification**: Asks the local agent to create `workspace/index.html` with its built-in tool calling.
+6. **Interactive Shell**: Drops you into an interactive terminal where you can ask your local agent to write code or inspect files.
 
 ---
 
 ## 🌐 Serve It: Search UI + API on a Free Port (Local or Docker)
 
-Prefer a browser to a terminal? Both paths below start the same small web app: a memory search page, a JSON API, and your interactive diagrams. **No fixed port**: the OS hands out a free one, so it never fights with whatever else is running on your machine.
+Prefer a browser to a terminal? Both paths below start the same small web app: a memory search page, a JSON API, and your interactive diagrams. There is no fixed port. The OS hands out a free one, so it never fights with whatever else is running on your machine.
 
 **Path A: run it locally (bootstrapped, no Docker):**
 ```bash
@@ -76,10 +76,10 @@ Everything you start has an off switch, and everything it leaves behind is safe 
 | :--- | :--- | :--- | :--- |
 | Local server (`run.py --serve`) | `Ctrl+C` in its terminal | `venv/` (about 250 MB) and `.memory/` (search index, about 1 MB). Both rebuild themselves next run. | PowerShell: `Remove-Item -Recurse -Force venv, .memory`. macOS/Linux/Git Bash: `rm -rf venv .memory` |
 | Docker container | `docker stop ag` (it was started with `--rm`, so it deletes itself) | The image (about 480 MB) | `docker rmi antigravity-local` |
-| `tests/e2e.py local` / `docker` | Nothing, they clean up after themselves | Nothing: their servers, containers, images and temp folders are removed | n/a |
+| `tests/e2e.py local` / `docker` | Nothing, they clean up after themselves | Nothing. Their servers, containers, images and temp folders are removed | n/a |
 | Archify global install | n/a | A global `archify` command | `npm uninstall -g archify` |
 
-Forgot the container name? `docker ps` lists running ones, then `docker stop <id>`. Want your disk back from Ollama too? That is your call, never ours: `ollama list`, then `ollama rm <model>`.
+Forgot the container name? `docker ps` lists running ones, then `docker stop <id>`. Want your disk back from Ollama too? That is up to you, and this repo never does it for you. Run `ollama list`, then `ollama rm <model>`.
 
 ---
 
@@ -104,11 +104,11 @@ Forgot the container name? `docker ps` lists running ones, then `docker stop <id
 
 Google Antigravity is an agentic AI framework designed for autonomous code generation, workspace manipulation, and tool use. 
 
-Normally, developer tools configure Antigravity to call cloud Gemini APIs. **This repository shows you how to point Antigravity entirely at local models running on your own PC.**
+Normally, developer tools configure Antigravity to call cloud Gemini APIs. This repository shows you how to point Antigravity at local models running on your own PC.
 
-- 🔒 **100% Private**: Your code, files, and prompts never leave your local hardware.
-- 💸 **Zero Cost**: No OpenAI or Google Cloud API subscriptions required.
-- 🛠️ **Autonomous Tool Calling**: The agent can inspect folders, read code, write files, and execute commands locally using standard safety policies.
+- **100% Private**: Your code, files, and prompts never leave your local hardware.
+- **Zero Cost**: No OpenAI or Google Cloud API subscriptions required.
+- **Autonomous Tool Calling**: The agent can inspect folders, read code, write files, and execute commands locally using standard safety policies.
 
 ---
 
@@ -139,24 +139,24 @@ If you prefer to configure each component step-by-step rather than using the 1-c
 
 ### Step 2: Check Local Models & Select Best for Your PC Build
 
-> 💡 **Best Engineering Practice**: Never default to a hardcoded download! Always check what is already installed on your machine first. If you have any capable agent model, the system reuses it with **zero download delay**.
+> Check what is already installed before downloading anything. If you have a capable agent model, the bootstrap reuses it with no download.
 
 1. **Check what models are already on your machine**:
    ```bash
    ollama list
    ```
-2. **If you already have any capable model installed, SKIP downloading—you are ready to code!**  
-   Our bootstrap orchestrator scans your local inventory and automatically adopts the highest-scoring model:
-   - **`nanbeige`** (e.g., `nanbeige2:16b`, `nanbeige4.3:16b`, `nanbeige4.1:3b`): Top-tier multi-step agentic search and complex sequential tool calling.
-   - **`deepseek-coder-v2` / `deepseek-r1`** (e.g., `deepseek-coder-v2:16b`, `deepseek-r1:14b`): State-of-the-art coding synthesis, fill-in-the-middle, and algorithmic problem solving.
-   - **`qwen2.5-coder` / `qwen2.5`** (e.g., `qwen2.5-coder:14b`, `qwen2.5:14b`, `qwen2.5-coder:32b`): Open-weights coding benchmark champion with native OpenAI function calling.
-   - **`command-r`** (e.g., `command-r:35b`): Cohere's enterprise model purpose-built for multi-step tool execution and structured outputs.
-   - **`codestral`** (e.g., `codestral:22b`): Mistral's dedicated 32k context coding engine.
-   - **`glm4`** (e.g., `glm4:9b`): Outstanding tool use, function calling, and multilingual reasoning.
-   - **`llama3.3` / `llama3.1`** (e.g., `llama3.3:70b`, `llama3.1:8b`): Battle-tested general foundation models.
-   - **`gemma2`** (e.g., `gemma2:27b`, `gemma2:9b`): Dense reasoning and high-speed streaming (tools disabled).
+2. **If you already have a capable model installed, skip the download. You are ready to code.**  
+   The bootstrap script scans your local inventory and picks the highest-scoring model:
+   - **`nanbeige`** (e.g., `nanbeige2:16b`, `nanbeige4.3:16b`, `nanbeige4.1:3b`): Multi-step agentic search and sequential tool calling.
+   - **`deepseek-coder-v2` / `deepseek-r1`** (e.g., `deepseek-coder-v2:16b`, `deepseek-r1:14b`): Code generation, fill-in-the-middle, and algorithmic problem solving.
+   - **`qwen2.5-coder` / `qwen2.5`** (e.g., `qwen2.5-coder:14b`, `qwen2.5:14b`, `qwen2.5-coder:32b`): Open-weights coding model with native OpenAI function calling.
+   - **`command-r`** (e.g., `command-r:35b`): Cohere's model built for multi-step tool execution and structured outputs.
+   - **`codestral`** (e.g., `codestral:22b`): Mistral's coding model with a 32k context window.
+   - **`glm4`** (e.g., `glm4:9b`): Good tool use, function calling, and multilingual reasoning.
+   - **`llama3.3` / `llama3.1`** (e.g., `llama3.3:70b`, `llama3.1:8b`): General-purpose models.
+   - **`gemma2`** (e.g., `gemma2:27b`, `gemma2:9b`): Dense reasoning and fast streaming (tools disabled).
 
-3. **Only if you have ZERO models installed, choose the cutting-edge model that matches your PC build**:
+3. **Only if you have no models installed, pick the model that matches your PC build**:
 
 | PC Build Tier | Hardware Specs | Recommended Cutting-Edge Models | Pull Command |
 | :--- | :--- | :--- | :--- |
@@ -215,7 +215,7 @@ Copy the example environment configuration:
   ```bash
   cp .env.example .env
   ```
-*By default, the `.env` points to `http://localhost:11434/v1` with model `qwen2.5:14b`. No edits needed if using defaults!*
+*By default, the `.env` points to `http://localhost:11434/v1` with model `qwen2.5:14b`. No edits needed if you use the defaults.*
 
 ### Step 6: Test Your Agent!
 
@@ -226,14 +226,14 @@ python test_local.py
 ```
 
 #### Test 2: Autonomous Workspace Agent (`agent_with_workspace.py`)
-Watch the local Antigravity agent inspect its workspace, invoke its built-in `create_file` tool, and write a modern dark-mode `index.html` to disk:
+Watch the local Antigravity agent inspect its workspace, invoke its built-in `create_file` tool, and write a dark-mode `index.html` to disk:
 ```bash
 python agent_with_workspace.py
 ```
-After completion, inspect your newly generated file at `workspace/index.html`!
+When it finishes, open the generated file at `workspace/index.html`.
 
 #### Mode 3: Developer Pair-Programming Shell (`code_agent.py`)
-Pair program with your local agent to write code, generate project scaffolds, or execute one-shot autonomous tasks:
+Pair program with your local agent, or hand it a one-shot task:
 ```bash
 # 1. Interactive pair-programming shell in ./workspace:
 python code_agent.py --workspace ./workspace
@@ -278,11 +278,11 @@ antigravity-local/
 
 ## 🏛️ System Architecture & Design Diagrams
 
-Antigravity Local decouples the Google Antigravity SDK from cloud infrastructure by combining an air-gapped agent loop with local inference. 
+Antigravity Local runs the Google Antigravity SDK's agent loop on your machine and sends model calls to a local inference server, so nothing goes to the cloud.
 
 ### 1. System Topology Architecture
 
-The diagram below shows how the client orchestration layer, Google Antigravity SDK, Ollama inference daemon, and hardware memory offloading interconnect:
+The diagram below shows how the launcher scripts, the Google Antigravity SDK, Ollama, and GPU/RAM offloading connect:
 
 ```mermaid
 graph TB
@@ -347,7 +347,7 @@ graph TB
 
 ### 2. Autonomous Tool Calling Execution Sequence
 
-This sequence diagram illustrates the execution loop when the agent receives a task requiring workspace modifications:
+This sequence diagram shows the loop the agent runs when a task needs workspace changes:
 
 ```mermaid
 sequenceDiagram
@@ -431,7 +431,7 @@ flowchart LR
 
 ### 4. Interactive Visualizations & Archify Integration
 
-This repository is integrated with [**Archify** (`tt-a1i/archify`)](https://github.com/tt-a1i/archify). Archify compiles structured JSON intermediate representations (IR) into standalone, interactive HTML files featuring dark/light themes, smooth pan/zoom, and live trace motion:
+This repository uses [**Archify** (`tt-a1i/archify`)](https://github.com/tt-a1i/archify). Archify compiles structured JSON intermediate representations (IR) into standalone, interactive HTML files with dark/light themes, pan/zoom, and live trace motion:
 
 | Diagram | Type | Scope | Standalone Interactive Link |
 |---|---|---|---|
@@ -444,10 +444,10 @@ This repository is integrated with [**Archify** (`tt-a1i/archify`)](https://gith
 
 ### 🌐 How to View & Serve Interactive Archify Diagrams
 
-You can preview and serve the interactive diagrams in three easy ways:
+There are three ways to preview the diagrams:
 
 #### Option 1: Live Interactive Preview via Archify CLI (Recommended)
-Archify is installed globally as a developer CLI. Running `archify preview` launches a local live-reload server and opens your browser immediately:
+Archify is installed globally as a CLI. Running `archify preview` starts a local live-reload server and opens your browser:
 
 ```bash
 # 1. Preview System Topology & Component Architecture:
@@ -464,7 +464,7 @@ archify preview workflow docs/diagrams/model-pipeline-workflow.workflow.json
 ```
 
 #### Option 2: Instant Browser Open (Zero Server / Zero Dependencies)
-Because Archify compiles into **100% self-contained standalone HTML files** (all CSS, SVG, themes, and motion engine are bundled directly inside the file), you can open any diagram directly in your web browser with no server running:
+Archify compiles each diagram into a self-contained HTML file (the CSS, SVG, themes, and motion engine are all inside it), so you can open any diagram in your browser with no server running:
 
 * **Windows PowerShell**:
   ```powershell
@@ -507,11 +507,11 @@ archify render architecture docs/diagrams/system-topology.architecture.json docs
 
 ## 🧠 3-Tier Zero-Token Memory Fabric: Graphify + LLMWiki + SQLite Hybrid
 
-When working with autonomous coding agents on local models (such as Qwen 2.5 14B or Gemma 2 27B) paired with cloud IDE sessions (Antigravity Gemini/Claude), preserving context across sessions without exhausting prompt context windows is critical.
+Local coding agents (such as Qwen 2.5 14B or Gemma 2 27B) paired with cloud IDE sessions (Antigravity Gemini/Claude) need to keep context across sessions without filling the prompt context window.
 
 ### Why Not a Standalone Vector DB (Milvus, Qdrant, Chroma)?
-- **1-Command Plug-and-Play Principle**: Standalone vector DBs require Docker daemons, listening ports (6333, 8000, 19530), and complex C++ dependencies, violating our zero-dependency air-gapped promise.
-- **Exact Code Matching**: Vector embeddings frequently fail on exact identifiers (e.g. `get_hardware_profile` or CLI flags).
+- **1-Command Plug-and-Play**: Standalone vector DBs need Docker daemons, listening ports (6333, 8000, 19530), and C++ dependencies. That breaks our zero-dependency, air-gapped promise.
+- **Exact Code Matching**: Vector embeddings often miss exact identifiers (e.g. `get_hardware_profile` or CLI flags).
 - **Token Inefficiency**: Traditional RAG injects large text chunks into prompts, burning 20,000+ tokens per query.
 
 ### The Solution: 3-Tier Memory Architecture
@@ -536,7 +536,7 @@ flowchart LR
 | Tier | Engine & Location | Purpose | Token Cost |
 | :--- | :--- | :--- | :--- |
 | **Tier 1: Deterministic Code Graph** | [`graphify`](.agents/rules/graphify.md) in `graphify-out/` | Deterministic AST code relationships, call hierarchies, and community clusters. | **0 tokens to build**; ~800 tokens to query (**31x–128x token reduction**). |
-| **Tier 2: High-Density LLMWiki** | `.wiki/*.md` (Karpathy Paradigm) | Atomic, curated Markdown concept pages (`architecture.md`, `hardware-matrix.md`, `model-hierarchy.md`). | **~850 tokens** per topic page (**328x token reduction**). |
+| **Tier 2: High-Density LLMWiki** | `.wiki/*.md` (Karpathy-style) | Atomic, curated Markdown concept pages (`architecture.md`, `hardware-matrix.md`, `model-hierarchy.md`). | **~850 tokens** per topic page (**328x token reduction**). |
 | **Tier 3: Embedded Hybrid Store** | [`memory.py`](memory.py) (`.memory/index.sqlite`) | SQLite FTS5 BM25 exact match + cosine semantic vector fusion with Reciprocal Rank Fusion (RRF). | **~1,200 tokens** per hybrid search (**232x token reduction**). |
 
 ### 🛠️ Memory Engine CLI Commands
@@ -573,31 +573,31 @@ python code_agent.py --with-memory
 
 Inside the interactive shell:
 - `/memory <query>` : Searches project memory with BM25 + Vector fusion and displays matching lines.
-- `/wiki [topic]`   : Displays canonical domain truth pages directly from `.wiki/`.
+- `/wiki [topic]`   : Shows the canonical topic pages from `.wiki/`.
 - `/files`          : Lists all files currently in the workspace.
 
 ---
 
 ## 🐳 1-Command Docker Clean-Room Test Drive
 
-> **Looking to *run* the app in Docker?** That is [Serve It](#-serve-it-search-ui--api-on-a-free-port-local-or-docker) above. This section is the older contributor harness (`docker-test-drive.sh`); CI now uses `python tests/e2e.py docker`.
+> Looking to *run* the app in Docker? That is [Serve It](#-serve-it-search-ui--api-on-a-free-port-local-or-docker) above. This section covers the older contributor test script (`docker-test-drive.sh`). CI now uses `python tests/e2e.py docker`.
 
-Want to verify the entire system in a clean, disposable Linux container without touching host Python environments? We provide an automated test drive harness [`docker-test-drive.sh`](docker-test-drive.sh) that runs in standard Docker Desktop:
+Want to check everything in a clean, disposable Linux container without touching your host Python? [`docker-test-drive.sh`](docker-test-drive.sh) does that in standard Docker Desktop:
 
 ```bash
 docker run --rm --add-host=host.docker.internal:host-gateway \
   -v "$(pwd):/app" -w /app python:3.11-slim bash docker-test-drive.sh
 ```
 
-*(CMD: use `%cd%` instead of `$(pwd)`. PowerShell: use `${PWD}`. **Git Bash on Windows**: put `MSYS_NO_PATHCONV=1` in front of `docker run`, or Git Bash rewrites `/app` into a Windows path. macOS and Linux: as written. Easiest of all: `python tests/e2e.py docker`.)*
+*(CMD: use `%cd%` instead of `$(pwd)`. PowerShell: use `${PWD}`. Git Bash on Windows: put `MSYS_NO_PATHCONV=1` in front of `docker run`, or Git Bash rewrites `/app` into a Windows path. macOS and Linux: as written. Easiest of all, run `python tests/e2e.py docker`.)*
 
 ### What the Docker Test Drive Verifies Automatically:
-1. 📦 **Clean-Room Dependency Isolation**: Installs `google-antigravity` and `python-dotenv` from scratch in `python:3.11-slim`.
-2. 🧠 **Memory Engine Initialization**: Validates the SQLite FTS5 database engine and indexes repository knowledge.
-3. 🔍 **Hybrid Retrieval**: Runs BM25 + dense semantic vector fusion queries with Reciprocal Rank Fusion (RRF).
-4. 📖 **Canonical LLMWiki Loading**: Verifies atomic topic retrieval from `.wiki/` with zero token waste.
-5. 💻 **CLI Parsing & Safety Flags**: Checks `code_agent.py` CLI arguments and `--with-memory` context clamp.
-6. 🌉 **Host Inference Bridge**: Tests the container-to-host network bridge (`host.docker.internal:11434`), auto-detecting host Ollama models (`qwen2.5:14b`, `gemma2:27b`).
+1. **Clean-Room Dependency Isolation**: Installs `google-antigravity` and `python-dotenv` from scratch in `python:3.11-slim`.
+2. **Memory Engine Initialization**: Checks the SQLite FTS5 database and indexes repository knowledge.
+3. **Hybrid Retrieval**: Runs BM25 + dense semantic vector fusion queries with Reciprocal Rank Fusion (RRF).
+4. **Canonical LLMWiki Loading**: Checks that topic pages load from `.wiki/`.
+5. **CLI Parsing & Safety Flags**: Checks `code_agent.py` CLI arguments and `--with-memory` context clamp.
+6. **Host Inference Bridge**: Tests the container-to-host network bridge (`host.docker.internal:11434`), auto-detecting host Ollama models (`qwen2.5:14b`, `gemma2:27b`).
 
 ---
 
@@ -624,7 +624,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 ### 4. Windows UnicodeEncodeError ('charmap' codec can't encode character)
 **Cause**: The Windows terminal defaults to legacy `cp1252` encoding instead of `UTF-8`.  
-**Fix**: Our scripts automatically handle this with:
+**Fix**: Our scripts handle this with:
 ```python
 import sys
 if sys.platform == "win32":
@@ -636,7 +636,7 @@ if sys.platform == "win32":
 ## 🔬 Advanced: Using Custom Research Harnesses & Servers
 
 ### Pointing to LM Studio, vLLM, or llama.cpp
-If you prefer running a server other than Ollama, simply change the `LOCAL_LLM_BASE_URL` in `.env`:
+To use a server other than Ollama, change the `LOCAL_LLM_BASE_URL` in `.env`:
 ```bash
 # Example for LM Studio local server:
 LOCAL_LLM_BASE_URL=http://localhost:1234/v1
@@ -657,26 +657,26 @@ export ANTIGRAVITY_HARNESS_PATH="/path/to/custom/localharness"
 # Windows PowerShell:
 $env:ANTIGRAVITY_HARNESS_PATH="C:\path\to\custom\localharness.exe"
 ```
-The SDK will automatically detect your custom binary on startup and route all agent operations through it.
+The SDK detects your custom binary on startup and routes all agent operations through it.
 
 ---
 
 ## 🙏 Credits, Toolchain Heritage & Specifications
 
-This platform was designed, engineered, and battle-tested with inspiration and assistance from pioneering open-source agent tooling and development workflows:
+These projects and workflows shaped this one:
 
-- **[GStack by Garry Tan](https://github.com/garrytan/gstack)**: Inspired the multi-perspective review discipline (`/plan-eng-review`, `plan-design-review`, `design-consultation`) to pressure-test blast radius, streamline developer cognitive load, and establish strict terminal and visual hierarchy.
-- **[P-Stack](https://github.com/veeresh-bikkaneti/antigravity-local)**: Provided the architectural grounding (`/architect`), empirical 5-run benchmarking (`/benchmark-checklist`), and adversarial stress-testing (`/interrogate`) methodologies used to harden our runtime.
+- **[GStack by Garry Tan](https://github.com/garrytan/gstack)**: Inspired the multi-perspective review habit (`/plan-eng-review`, `plan-design-review`, `design-consultation`) we use to pressure-test blast radius, reduce developer cognitive load, and keep terminal and visual hierarchy strict.
+- **[P-Stack](https://github.com/veeresh-bikkaneti/antigravity-local)**: Provided the methods we used for architecture (`/architect`), 5-run benchmarking (`/benchmark-checklist`), and adversarial stress-testing (`/interrogate`).
 - **[Google Antigravity SDK](https://github.com/google/antigravity)**: The official framework for autonomous agent reasoning, WebSocket harness bridges, and workspace safety policies.
-- **[Ollama](https://ollama.ai)**: Powers seamless local open-weights inference with dynamic layer offloading between dedicated GPU VRAM and host RAM.
-- **[Graphify](https://github.com/veeresh-bikkaneti/antigravity-local)**: Enables deterministic, zero-token AST code knowledge graph extraction and call-graph navigation.
-- **[Archify](https://github.com/tt-a1i/archify)**: Powers our interactive standalone HTML architecture and lifecycle diagrams with live signal tracing.
+- **[Ollama](https://ollama.ai)**: Runs the local open-weights models and offloads layers between GPU VRAM and host RAM.
+- **[Graphify](https://github.com/veeresh-bikkaneti/antigravity-local)**: Builds the AST code knowledge graph and call graph without spending tokens.
+- **[Archify](https://github.com/tt-a1i/archify)**: Generates the standalone HTML architecture and lifecycle diagrams with live signal tracing.
 
 ### 📑 Technical Deep-Dives & Formal Specifications
-For contributors, system architects, and researchers interested in the underlying engineering records:
-- 📑 **[Product Specification](docs/PRODUCT_SPEC.md)**: Deep dive into the runtime engine, hardware scheduler, and security model.
-- 📐 **[3-Tier Memory Fabric Specification](docs/MEMORY_SPEC.md)**: Detailed comparative analysis of RAG vs. OKF vs. Vector DBs and mathematical Reciprocal Rank Fusion formulation.
-- 🏛️ **[Consensus Governance Record](docs/CONSENSUS_MANIFEST.md)**: Deliberation and verification audit record.
+For contributors who want the engineering records behind the project:
+- **[Product Specification](docs/PRODUCT_SPEC.md)**: Covers the runtime engine, hardware scheduler, and security model.
+- **[3-Tier Memory Fabric Specification](docs/MEMORY_SPEC.md)**: Compares RAG, OKF, and vector DBs, and gives the math for Reciprocal Rank Fusion.
+- **[Consensus Governance Record](docs/CONSENSUS_MANIFEST.md)**: Record of the deliberation and verification audit.
 
 ---
 
@@ -684,4 +684,4 @@ For contributors, system architects, and researchers interested in the underlyin
 
 This project is licensed under the [MIT License](LICENSE) - free to use, modify, and distribute for personal and commercial projects.
 
-Contributions are welcome! Please open an issue or pull request if you have suggestions, optimizations, or new tool integrations.
+Contributions are welcome. Open an issue or pull request with suggestions, optimizations, or new tool integrations.
