@@ -1,20 +1,19 @@
-# Memory Architecture Specification: 3-Tier Zero-Token Memory Fabric
-## Graphify (AST OKF) + LLMWiki (Karpathy Paradigm) + Embedded Hybrid SQLite Engine
+# Memory architecture specification: three-tier memory fabric
+## Graphify (AST OKF) + LLMWiki (Karpathy paradigm) + embedded hybrid SQLite engine
 
-> **Status**: APPROVED & IMPLEMENTED  
-> **Philosophy**: 1-Command Plug-and-Play, 100% Local Air-Gapped, Zero External Daemons, Minimal Token Burn  
-> **Authors**: Antigravity Autonomous Agent Architecture Council  
+> Status: implemented. Graphify is not part of the runtime agent path. Only `python memory.py sync` calls it.  
+> Philosophy: one command to set up, local inference, no external daemons, few tokens per query.
 
 ---
 
-## 1. Executive Summary & Design Rationale
+## 1. Summary and design rationale
 
-When you run local autonomous coding agents (such as Qwen 2.5 14B or Gemma 2 27B via Ollama) alongside cloud IDE models (Antigravity Gemini / Claude), the hardest engineering problem is keeping context across sessions without overflowing the model's context window.
+When you run local autonomous coding agents (such as Qwen 2.5 14B via Ollama) alongside cloud IDE models (Antigravity Gemini / Claude), the hardest engineering problem is keeping context across sessions without overflowing the model's context window.
 
 A typical codebase contains hundreds of thousands of tokens. Putting raw files into prompts burns tokens fast (e.g., 280,000 tokens per prompt). That causes three problems:
-1. **Context exhaustion**: Prompts exceed context windows (e.g. 32k or 128k tokens).
-2. **"Needle-in-a-Haystack" Degradation**: Reasoning accuracy drops as prompt size increases.
-3. **Local inference latency**: Local models see long time-to-first-token (TTFT) delays when processing 50k+ input tokens on consumer or workstation GPUs.
+1. Context exhaustion: Prompts exceed context windows (e.g. 32k or 128k tokens).
+2. "Needle-in-a-Haystack" Degradation: Reasoning accuracy drops as prompt size increases.
+3. Local inference latency: Local models see long time-to-first-token (TTFT) delays when processing 50k+ input tokens on consumer or workstation GPUs.
 
 ### The Architectural Question: RAG vs. OKF vs. Vector DB vs. LLMWiki
 
@@ -40,7 +39,7 @@ flowchart TD
     end
 
     subgraph TIER1["Tier 1: Deterministic Structural Graph (Graphify)"]
-        G_DB[("graphify-out/graph.json<br/>4,192 Nodes | 8,674 Edges")]
+        G_DB[("graphify-out/graph.json<br/>8,547 nodes | 13,383 edges")]
         G_CMD["graphify query / path / explain"]
         Q -->|"Code structure, call-flow, imports"| G_CMD
         G_CMD --> G_DB
@@ -69,47 +68,47 @@ flowchart TD
     TIER1 -->|"Tight context (<1k tokens)"| CTX["Targeted Prompt Context"]
     TIER2 -->|"Atomic topic (<1.2k tokens)"| CTX
     TIER3 -->|"Fused Top-K Snippets (<1.5k tokens)"| CTX
-    CTX --> LOCAL_LLM["Local LLM (Qwen 2.5 14B / Gemma 2 27B) / Cloud Model"]
+    CTX --> LOCAL_LLM["Local LLM (for example Qwen 2.5 14B) or a cloud model"]
 ```
 
 ---
 
-## 3. Tier Deep-Dive Specifications
+## 3. Tier specifications
 
 ### Tier 1: Graphify (AST Code Knowledge Graph)
-- **Location**: `graphify-out/graph.json` and `.agents/rules/graphify.md`
-- **Purpose**: Answer structural code questions directly from the AST graph, with no hallucination and no wasted tokens.
-- **How it Works**: Tree-sitter parses the repository's Python, Bash, HTML, and Markdown files into an AST graph. Nodes represent files, functions, classes, and environment variables; edges represent imports, calls, and file containment.
-- **Commands**:
+- Location: `graphify-out/graph.json` and `.agents/rules/graphify.md`
+- Purpose: Answer structural code questions directly from the AST graph, with no hallucination and no wasted tokens.
+- How it works: Tree-sitter parses the repository's Python, Bash, HTML, and Markdown files into an AST graph. Nodes represent files, functions, classes, and environment variables; edges represent imports, calls, and file containment.
+- Commands:
   - `graphify query "<question>"`: Returns a small, bounded subgraph.
   - `graphify path "<node_A>" "<node_B>"`: Returns exact call-chain or dependency path.
   - `graphify explain "<concept>"`: Explains community cluster connections.
   - `graphify update .`: Syncs the graph after local code changes, at no API cost.
-- **Benchmark**: 31.1x to 128.8x token reduction compared to reading full files.
+- Measured: Graphify's own report cites a 31.1x to 128.8x token reduction against reading full files. We did not re-measure it. Current graph size: 8,547 nodes, 13,383 edges, 591 communities.
 
 ### Tier 2: LLMWiki (Karpathy Concept Pages)
-- **Location**: `.wiki/`
-- **Purpose**: Keep Markdown files, curated by humans and the LLM, as the project's single source of truth for concepts.
-- **Concept Anatomy**:
+- Location: `.wiki/`
+- Purpose: Keep Markdown files, curated by humans and the LLM, as the project's single source of truth for concepts.
+- Concept Anatomy:
   - Each wiki file is atomic (500–1,500 tokens) and has headings, bulleted invariants, and cross-references.
   - Models read one `.wiki/<topic>.md` file in a single tool call instead of dozens of documentation pages.
-- **Core Topics**:
+- Core Topics:
   1. `index.md`: Master topic registry and cross-reference table.
   2. `architecture.md`: Local decoupled runtime, harness connection, and air-gapped guarantees.
-  3. `hardware-matrix.md`: How GPU VRAM offloading works (RTX 5000 Ada 16GB + 128GB DDR5 RAM).
-  4. `model-hierarchy.md`: Dynamic model capability scoring (Nanbeige > Qwen 2.5 > DeepSeek > Gemma 2) and zero-download logic.
+  3. `hardware-matrix.md`: How GPU VRAM offloading works (written around one example machine, a 16 GB GPU with 128 GB RAM).
+  4. `model-hierarchy.md`: Model capability scoring and zero-download logic. See the [product spec](PRODUCT_SPEC.md#module-2-hardware-aware-model-selection) for the real formula.
   5. `tool-execution.md`: Antigravity SDK workspace tool schemas and safety policy enforcement.
   6. `token-optimization.md`: Token costs, benchmark results, and memory switchboard guidance.
 
 ### Tier 3: Embedded Hybrid Memory Engine (`memory.py`)
-- **Location**: `memory.py` and persistent store at `.memory/index.sqlite`
-- **Engine Principles**:
-  - **Zero External Dependencies**: Uses Python's standard library `sqlite3`, `re`, `json`, `math`, `urllib.request`. No `pip install` required for base functionality.
-  - **FTS5 Full-Text Search (BM25)**: SQLite's native FTS5 extension tokenizes documents into trigrams or words and scores exact matches with BM25.
-  - **Dense Vector Embedding Engine**:
+- Location: `memory.py` and persistent store at `.memory/index.sqlite`
+- Engine Principles:
+  - Zero External Dependencies: Uses Python's standard library `sqlite3`, `re`, `json`, `math`, `urllib.request`. No `pip install` required for base functionality.
+  - FTS5 Full-Text Search (BM25): SQLite's native FTS5 extension tokenizes documents into trigrams or words and scores exact matches with BM25.
+  - Dense Vector Embedding Engine:
     - Queries local Ollama embedding API (`http://localhost:11434/api/embeddings`) using model `nomic-embed-text` (or `all-minilm`) if present.
     - If no embedding model is present in Ollama, falls back to an internal pure-Python n-gram/TF-IDF term vectorizer with cosine similarity.
-  - **Reciprocal Rank Fusion (RRF)**:
+  - Reciprocal Rank Fusion (RRF):
     Combines BM25 lexical rank with dense vector similarity rank using the standard information retrieval formula:
     $$RRF\_Score(d) = \frac{w_{lex}}{k + Rank_{BM25}(d)} + \frac{w_{sem}}{k + Rank_{vector}(d)}$$
     *(Default constants: $k = 60$, $w_{lex} = 0.5$, $w_{sem} = 0.5$)*.
@@ -185,7 +184,10 @@ python memory.py sync
 ```
 
 ### Agent Integration:
-`code_agent.py` has two interactive slash commands:
-- `/memory <query>`: Runs a hybrid search and adds the top-K relevant chunks to the agent's context.
-- `/wiki [topic]`: Loads the wiki page directly, so full repo files stay out of context.
+`code_agent.py` has two memory slash commands. For automatic context, start it with `--with-memory`, which prepends the top 2 excerpts (1,200 characters each) to every prompt.
+- `/memory <query>`: Runs a hybrid search and prints the top 3 matches. It does not add them to the agent's context.
+- `/wiki [topic]`: Prints the wiki page for you to read.
 
+
+### Web app (`serve.py`)
+`python run.py --serve` or the Docker image serves the same search over HTTP (`GET /api/search`, `GET /healthz`). It indexes memory on startup, has no authentication, and binds to `127.0.0.1` locally. The Docker image sets `HOST=0.0.0.0`, so publish its port to `127.0.0.1` only.

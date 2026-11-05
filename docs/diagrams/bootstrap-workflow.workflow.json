@@ -21,11 +21,11 @@
   ],
   "nodes": [
     { "id": "user_cmd", "lane": "launcher", "col": 0, "type": "external", "label": "Run Launcher", "sublabel": "run.bat / run.sh / run.ps1", "width": 140 },
-    { "id": "sys_audit", "lane": "environment", "col": 1, "type": "backend", "label": "Hardware Audit", "sublabel": "detect RAM & VRAM", "tag": "16GB VRAM / 128GB RAM", "width": 140 },
+    { "id": "sys_audit", "lane": "environment", "col": 1, "type": "backend", "label": "Hardware Audit", "sublabel": "detect RAM & VRAM", "tag": "VRAM and RAM", "width": 140 },
     { "id": "venv_mgr", "lane": "environment", "col": 2, "type": "backend", "label": "Venv Provisioner", "sublabel": "isolated venv & pip", "width": 140 },
     { "id": "daemon_check", "lane": "ollama", "col": 3, "type": "database", "label": "Daemon Health", "sublabel": "ping localhost:11434", "tag": "auto-start", "width": 140 },
     { "id": "inventory_check", "lane": "ollama", "col": 4, "type": "database", "label": "Model Pre-Check", "sublabel": "/api/tags inspection", "tag": "zero re-download", "width": 140 },
-    { "id": "model_selector", "lane": "environment", "col": 4, "type": "backend", "label": "Capability Ranker", "sublabel": "Nanbeige > Qwen > Gemma", "width": 140 },
+    { "id": "model_selector", "lane": "environment", "col": 4, "type": "backend", "label": "Capability Ranker", "sublabel": "score, capped at 100", "width": 140 },
     { "id": "workspace_demo", "lane": "agent", "col": 5, "type": "backend", "label": "Workspace Agent", "sublabel": "generate index.html", "tag": "autonomous test", "width": 140 },
     { "id": "coding_repl", "lane": "launcher", "col": 5, "type": "frontend", "label": "Coding Agent Shell", "sublabel": "code_agent.py ready", "tag": "developer REPL", "width": 140 }
   ],

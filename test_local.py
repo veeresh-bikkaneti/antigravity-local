@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import os
 import sys
@@ -17,6 +18,10 @@ try:
 except ImportError:
     pass
 
+_parser = argparse.ArgumentParser(description="Streaming smoke test against the local LLM server.")
+_parser.add_argument("model", nargs="?", default=None, help="Model name (default: $LOCAL_LLM_MODEL or gemma2:27b).")
+ARGS = _parser.parse_args()  # before the SDK import so --help works without it
+
 # Verify dependencies
 try:
     from google.antigravity import Agent, LocalOpenAIAgentConfig
@@ -28,7 +33,7 @@ except ImportError:
 
 async def main():
     base_url = os.environ.get("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1")
-    model = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("LOCAL_LLM_MODEL", "gemma2:27b")
+    model = ARGS.model or os.environ.get("LOCAL_LLM_MODEL", "gemma2:27b")
     
     # Gemma models in Ollama do not support tool calling schema; disable tools if running gemma
     capabilities = CapabilitiesConfig(enabled_tools=[]) if "gemma" in model.lower() else None

@@ -24,6 +24,9 @@ import time
 import json
 import urllib.request
 import urllib.error
+import argparse
+
+import task_report
 
 # Ensure UTF-8 console output on Windows
 if sys.platform == "win32":
@@ -37,6 +40,8 @@ PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 VENV_DIR = os.path.join(PROJECT_DIR, "venv")
 IS_WIN = sys.platform == "win32"
 VENV_PYTHON = os.path.join(VENV_DIR, "Scripts" if IS_WIN else "bin", "python.exe" if IS_WIN else "python")
+
+MAX_SHELL_FAILURES = 3
 
 def print_header():
     print("""
@@ -67,8 +72,8 @@ def get_system_ram_gb():
                         kb = float(line.split()[1])
                         return kb / (1024 ** 2)
     except Exception:
-        return 16.0  # safe default assumption
-    return 16.0
+        pass
+    return 0.0  # unknown: never invent RAM; tier logic then picks the smallest model
 
 def get_hardware_profile():
     """
@@ -229,7 +234,6 @@ def get_installed_ollama_models(base_url="http://localhost:11434"):
                     models.add(name)
                     clean_name = name.split("/")[-1]
                     models.add(clean_name)
-                    models.add(clean_name.split(":")[0])
     except Exception:
         pass
 
@@ -244,7 +248,6 @@ def get_installed_ollama_models(base_url="http://localhost:11434"):
                     models.add(name)
                     clean_name = name.split("/")[-1]
                     models.add(clean_name)
-                    models.add(clean_name.split(":")[0])
         except Exception:
             pass
 
@@ -309,23 +312,20 @@ def get_model_capability_score(model_name: str) -> float:
     if "instruct" in name or "chat" in name:
         score += 4.0
 
-    return score
+    return min(score, 100.0)
+
+def _with_tag(name):
+    """'qwen2.5-coder' -> 'qwen2.5-coder:latest' (Ollama's implicit tag). '' stays ''."""
+    name = name.strip().lower()
+    return name if not name or ":" in name.split("/")[-1] else name + ":latest"
 
 def is_model_installed(target_model, installed_models):
-    """Check if target_model matches any locally installed model."""
-    target = target_model.strip().lower()
-    clean_target = target.split("/")[-1]
-    
-    # Exact match or base match
-    if target in installed_models or clean_target in installed_models:
-        return True
-    
-    # Substring match (e.g. 'qwen2.5:14b' in 'qwen2.5:14b-instruct-q4_K_M')
-    for m in installed_models:
-        if clean_target in m or m in clean_target:
-            return True
-            
-    return False
+    """Exact match (an implicit ':latest' tag counts). No substring or bare-family matching."""
+    target = _with_tag(target_model or "")
+    if not target:
+        return False
+    installed = {_with_tag(m) for m in installed_models}
+    return target in installed or target.split("/")[-1] in installed
 
 def update_env_model(model_name: str):
     """Keep .env synchronized with the active local model."""
@@ -343,7 +343,7 @@ def update_env_model(model_name: str):
         except Exception:
             pass
 
-def select_and_pull_model(base_url="http://localhost:11434"):
+def select_and_pull_model(base_url="http://localhost:11434", requested_model=None):
     """
     Engineering Best Practice:
     1. NEVER download if compatible models are already present on the machine!
@@ -367,7 +367,8 @@ def select_and_pull_model(base_url="http://localhost:11434"):
     ram_gb = hw["ram_gb"]
     vram_gb = hw["vram_gb"]
     gpu_name = hw["gpu_name"]
-    print(f"       Detected PC Build: {gpu_name} ({vram_gb:.1f} GB VRAM) | {ram_gb:.1f} GB RAM")
+    ram_txt = f"{ram_gb:.1f} GB RAM" if ram_gb else "RAM unknown"
+    print(f"       Detected PC Build: {gpu_name} ({vram_gb:.1f} GB VRAM) | {ram_txt}")
 
     # Check existing models locally FIRST
     installed_models = get_installed_ollama_models(base_url)
@@ -378,9 +379,7 @@ def select_and_pull_model(base_url="http://localhost:11434"):
         print("       No local models found in machine inventory.")
 
     # 1. Did the user explicitly pass a model via CLI command-line?
-    cli_requested_model = None
-    if len(sys.argv) > 1 and not sys.argv[1].startswith("-"):
-        cli_requested_model = sys.argv[1]
+    cli_requested_model = requested_model
 
     if cli_requested_model:
         if is_model_installed(cli_requested_model, installed_models):
@@ -441,7 +440,7 @@ def select_and_pull_model(base_url="http://localhost:11434"):
     except Exception as exc:
         print(f"\n❌ Failed to pull model: {exc}")
         print(f"   You can manually pull it via: ollama pull {target_to_pull}\n")
-        return target_to_pull
+        return None
 
 async def run_agent(model, base_url="http://localhost:11434/v1"):
     """Run autonomous demonstration and interactive shell."""
@@ -480,12 +479,18 @@ async def run_agent(model, base_url="http://localhost:11434/v1"):
         "Call write_file or create_file with Path, Content, and Overwrite=True."
     )
     
+    before = task_report.snapshot(workspace_dir)
     try:
         async with Agent(config) as agent:
             response = await agent.chat(demo_prompt)
             async for chunk in response:
                 print(chunk, end="", flush=True)
-            print("\n\n✅ Demonstration complete! File generated at: workspace/index.html\n")
+            created, changed = task_report.summarize(before, task_report.snapshot(workspace_dir))
+            if "index.html" in created + changed:
+                print("\n\n✅ Demonstration complete! File generated at: workspace/index.html\n")
+            else:
+                print("\n\n⚠️ The agent finished, but it did not create or change workspace/index.html.")
+                print("Small local models sometimes answer without writing anything. Try the same prompt below.\n")
     except Exception as exc:
         print(f"\n⚠️ Demo notice: {exc}\n")
 
@@ -499,6 +504,7 @@ async def run_agent(model, base_url="http://localhost:11434/v1"):
     print("   - 'Create a python script called calculator.py with basic math functions.'")
     print("   - 'Create about.html, a small page with a heading and one paragraph.'\n")
 
+    failures = 0  # consecutive per-turn errors; a dead backend must not loop forever
     async with Agent(config) as agent:
         while True:
             try:
@@ -514,11 +520,16 @@ async def run_agent(model, base_url="http://localhost:11434/v1"):
                 async for chunk in response:
                     print(chunk, end="", flush=True)
                 print("\n")
+                failures = 0
             except (KeyboardInterrupt, EOFError):
                 print("\n\n👋 Goodbye!\n")
                 break
             except Exception as exc:
                 print(f"\n❌ Error during response: {exc}\n")
+                failures += 1
+                if failures >= MAX_SHELL_FAILURES:
+                    print(f"Stopping after {failures} errors in a row. Check that Ollama is running.\n")
+                    break
 
 def check_or_update_memory():
     """Ensure the 3-Tier Memory Fabric (.memory/index.sqlite) is indexed and up to date."""
@@ -534,10 +545,21 @@ def check_or_update_memory():
         pass
 
 
-def main():
+def parse_args(argv=None):
+    ap = argparse.ArgumentParser(description="Plug-and-play bootstrap for Antigravity with a local Ollama model.")
+    ap.add_argument("model", nargs="?", help="Ollama model to use (pulled if missing)")
+    ap.add_argument("--serve", action="store_true", help="start the web UI + API (needs no Ollama)")
+    ap.add_argument("--host", help="with --serve: bind address")
+    ap.add_argument("--port", type=int, help="with --serve: port (default: a free one)")
+    ap.add_argument("--sync-memory", action="store_true", help="re-index the memory fabric and exit")
+    return ap.parse_args(argv)
+
+
+def main(argv=None):
+    args = parse_args(argv)  # before bootstrap_venv: --help / bad flags must not touch pip
     print_header()
 
-    if "--sync-memory" in sys.argv:
+    if args.sync_memory:
         try:
             from memory import cmd_sync
             import types
@@ -552,9 +574,14 @@ def main():
         return
 
     # --serve: web UI + API on a free port. Needs no Ollama (memory falls back to pure Python).
-    if "--serve" in sys.argv:
+    if args.serve:
         import serve
-        serve.main([a for a in sys.argv[1:] if a != "--serve"])
+        serve_argv = []
+        if args.host:
+            serve_argv += ["--host", args.host]
+        if args.port is not None:
+            serve_argv += ["--port", str(args.port)]
+        serve.main(serve_argv)
         return
 
     # Step 2: Ensure Ollama is running
@@ -564,7 +591,9 @@ def main():
         sys.exit(1)
 
     # Step 3: Check local inventory & auto-select most capable model
-    model = select_and_pull_model(ollama_host)
+    model = select_and_pull_model(ollama_host, args.model)
+    if not model:
+        sys.exit(1)
 
     # Step 3.5: Auto-index memory fabric
     check_or_update_memory()

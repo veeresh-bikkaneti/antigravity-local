@@ -22,8 +22,8 @@
   "nodes": [
     { "id": "req_start", "lane": "request", "col": 0, "type": "external", "label": "Model Request", "sublabel": "cli argument or default", "width": 140 },
     { "id": "inv_scan", "lane": "inventory", "col": 1, "type": "database", "label": "Ollama /api/tags", "sublabel": "inspect local weights", "tag": "zero re-download", "width": 140 },
-    { "id": "hw_check", "lane": "request", "col": 2, "type": "security", "label": "Hardware Profile", "sublabel": "verify 16GB VRAM budget", "tag": "OOM prevention", "width": 140 },
-    { "id": "score_matrix", "lane": "evaluator", "col": 3, "type": "backend", "label": "Capability Ranker", "sublabel": "Nanbeige > Qwen > Gemma", "tag": "agentic priority", "width": 140 },
+    { "id": "hw_check", "lane": "request", "col": 2, "type": "security", "label": "Hardware Profile", "sublabel": "read VRAM and RAM", "tag": "OOM prevention", "width": 140 },
+    { "id": "score_matrix", "lane": "evaluator", "col": 3, "type": "backend", "label": "Capability Ranker", "sublabel": "score, capped at 100", "tag": "agentic priority", "width": 140 },
     { "id": "pull_guard", "lane": "inventory", "col": 4, "type": "cloud", "label": "Defensive Pull", "sublabel": "pull only if uninstalled", "width": 140 },
     { "id": "runtime_bind", "lane": "execution", "col": 5, "type": "frontend", "label": "Antigravity Agent", "sublabel": "LocalOpenAI initialized", "tag": "tool-ready", "width": 140 }
   ],
@@ -46,11 +46,11 @@
     },
     {
       "dot": "cyan",
-      "title": "Cutting-Edge Model Hierarchy",
+      "title": "Family base scores (before size and keyword bonuses, capped at 100)",
       "items": [
         "1. Nanbeige (92 pts): Top agentic search and sequential multi-step tool calling",
         "2. DeepSeek Coder / R1 (90 pts): State-of-the-art coding and algorithmic synthesis",
-        "3. Qwen 2.5 Coder (88 pts): Open-weights champion, 100% 16GB VRAM tool fit",
+        "3. Qwen 2.5 Coder (88 pts): Open-weights coding family with native tool calling",
         "4. Command R / Codestral / GLM-4 (82-86 pts): Dedicated tool calling & 32k context"
       ]
     },
@@ -58,9 +58,9 @@
       "dot": "rose",
       "title": "PC Build Hardware Matching",
       "items": [
-        "High-End Workstation (>=16GB VRAM, >=32GB RAM): Nanbeige 16B/32B, Qwen2.5-Coder, DeepSeek",
-        "Mid-Tier PC (8-12GB VRAM): Qwen2.5-Coder 7B, Nanbeige 4.1 3B, GLM-4 9B",
-        "Entry / CPU (<16GB RAM): LLaMA 3.2 3B, Qwen 2.5 3B"
+        "Workstation (VRAM 15 GB+, or 8 GB+ with 32 GB RAM): qwen2.5-coder:14b",
+        "Mid-tier (VRAM 8 GB+ or RAM 16 GB+): qwen2.5-coder:7b",
+        "Otherwise: llama3.2:3b"
       ]
     }
   ]

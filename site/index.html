@@ -45,10 +45,19 @@
         <h1 id="hero-title">Your coding agent, on your own machine</h1>
         <p class="lede">Local Antigravity runs the Google Antigravity SDK against a model on your computer, served by Ollama. Setup needs no cloud account and no API key.</p>
         <p class="actions">
-          <a class="btn btn-primary" href="#guide">Start in ten minutes</a>
+          <a class="btn btn-primary" href="#guide">Start the guide</a>
           <a class="btn" href="https://github.com/veeresh-bikkaneti/antigravity-local">See the code on GitHub</a>
         </p>
         <p class="fine">Version 1.0.0. Tested on Windows 11. macOS and Linux are not tested yet.</p>
+        <div class="preflight">
+          <h2 class="preflight-title">Before you start</h2>
+          <ul>
+            <li>Windows 11 is the only system we tested natively.</li>
+            <li>About 10 GB of free disk for the 14B model, and 16 GB of RAM or more for comfort.</li>
+            <li>Python 3.11 or newer, git, and <a href="https://ollama.com/download">Ollama for Windows, macOS, or Linux</a>.</li>
+            <li>Time: a few minutes of setup plus the model download, which is roughly 9 GB for the 14B model.</li>
+          </ul>
+        </div>
       </div>
     </section>
 
@@ -87,8 +96,8 @@
 
         <li class="step" data-step="2" data-focus="ollama-core">
           <h3>Choose a model (optional)</h3>
-          <p>Step 3 picks a model that fits your machine, so you can skip this. To choose one yourself, pull it by name.</p>
-          <div class="code"><pre><code>ollama pull qwen2.5:14b</code></pre><button class="copy" type="button" aria-label="Copy command: ollama pull qwen2.5:14b">Copy</button></div>
+          <p>Step 3 picks a model that fits your machine, so you can skip this. To choose one yourself, pull the model <code>run.py</code> would pick: <code>qwen2.5-coder:14b</code> with 15 GB or more of VRAM, <code>qwen2.5-coder:7b</code> with 8 GB of VRAM or 16 GB of RAM, and <code>llama3.2:3b</code> otherwise.</p>
+          <div class="code"><pre><code>ollama pull qwen2.5-coder:7b</code></pre><button class="copy" type="button" aria-label="Copy command: ollama pull qwen2.5-coder:7b">Copy</button></div>
           <p class="check">You should see the model in <code>ollama list</code>.</p>
           <p class="time">Depends on your connection</p>
         </li>
@@ -100,7 +109,8 @@
 cd antigravity-local
 python run.py</code></pre><button class="copy" type="button" aria-label="Copy the three setup commands">Copy</button></div>
           <p class="check">You should see four numbered stages and then a <code>You&nbsp;&gt;</code> prompt. Type <code>exit</code> for now. On macOS and Linux, use <code>python3</code>. On Windows you can also run <code>.\run.ps1</code> or <code>run.bat</code>.</p>
-          <p class="time">About 3 minutes the first time. It goes quiet in the middle while packages install, and that is normal.</p>
+          <p class="time">About 3 minutes the first time, not counting a model download. It goes quiet in the middle while packages install, and that is normal.</p>
+          <p class="check">Two common errors. <code>No module named 'google'</code> means you are outside the virtual environment, so activate it (step 4). <code>Connection refused</code> on <code>:11434</code> means Ollama is not running, so start the app or run <code>ollama serve</code>.</p>
         </li>
 
         <li class="step" data-step="4" data-focus="agent">
@@ -116,9 +126,9 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
 
         <li class="step" data-step="5" data-focus="chat">
           <h3>Chat with your agent</h3>
-          <p>Open the coding shell on a workspace folder. Type a request in plain English.</p>
+          <p>Open the coding shell on a workspace folder. Type a request in plain English. Creating a new file works most of the time. Editing an existing file does not, so read <a href="#limits">the limits below</a> before you point it at real code.</p>
           <div class="code"><pre><code>python code_agent.py --workspace ./workspace</code></pre><button class="copy" type="button" aria-label="Copy command: python code_agent.py --workspace ./workspace">Copy</button></div>
-          <p class="check">A banner shows your model and workspace. Try <code>/files</code>, then <code>/wiki</code>, then <code>exit</code>.</p>
+          <p class="check">A banner shows your model and workspace, then a <code>CodeAgent [You] &gt;</code> prompt. Try <code>/files</code>, then <code>/wiki</code>, then <code>exit</code>. <code>/clear</code> starts a fresh session.</p>
           <p class="time">1 minute</p>
         </li>
 
@@ -134,7 +144,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
           <h3>Use it from your editor or the browser</h3>
           <p>Start a search page on a free port, or run the Docker image. For VS Code, the README lists four routes: our shell in the terminal, the Ollama extension, Continue, and Cline.</p>
           <div class="code"><pre><code>python run.py --serve</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --serve">Copy</button></div>
-          <p class="check">You should see <code>Serving on http://127.0.0.1:</code> followed by a port number. Open that address.</p>
+          <p class="check">You should see <code>Serving on http://127.0.0.1:</code> followed by a port number. Open that address. The first run builds its own virtual environment and installs packages, so it takes a few minutes. The page has no login, so keep it on your machine.</p>
           <p class="time">Under a minute. <a href="https://github.com/veeresh-bikkaneti/antigravity-local#use-your-local-model-from-antigravity-or-vs-code">Editor setup in the README</a></p>
         </li>
       </ol>
@@ -165,9 +175,9 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
       <h2 id="limits-title">What it cannot do yet</h2>
       <p>These are measured limits from our own tests, not guesses.</p>
       <ul>
-        <li><strong>Editing an existing file does not work reliably.</strong> With the default model, <code>qwen2.5:14b</code>, none of 14 attempts to edit a file, or to read one and write a new one, gave a correct result. Creating a new file from a plain prompt mostly works. Commit first and check <code>git diff</code>. A larger model may do better, and we have not tested one.</li>
-        <li><strong>The Antigravity IDE chat panel has no documented setting for a local model.</strong> Google's local-model support covers the SDK, which this project uses. In the IDE, run our shell in its built-in terminal.</li>
-        <li><strong>Only Windows 11 was tested.</strong> Native macOS and Linux, and the VS Code extension steps, are not tested yet.</li>
+        <li>Editing an existing file does not work reliably. With the default model, <code>qwen2.5:14b</code>, none of 14 attempts to edit a file, or to read one and write a new one, gave a correct result. Creating a new file from a plain prompt mostly works. Commit first and check <code>git diff</code>. A larger model may do better, and we have not tested one.</li>
+        <li>The Antigravity IDE chat panel has no documented setting for a local model. Google's local-model support covers the SDK, which this project uses. In the IDE, run our shell in its built-in terminal.</li>
+        <li>Only Windows 11 was tested. Native macOS and Linux, and the VS Code extension steps, are not tested yet.</li>
       </ul>
       <p><a href="https://github.com/veeresh-bikkaneti/antigravity-local/releases/tag/v1.0.0">Read the v1.0.0 release notes</a></p>
     </section>
@@ -179,7 +189,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
       </details>
       <details>
         <summary>Does it send my code anywhere?</summary>
-        <p>Not through this setup. The agent talks to Ollama on your own machine. Google's Antigravity IDE and its chat panel are separate products, and this project does not control them.</p>
+        <p>Not during inference. The agent talks to Ollama on your own machine. Setup does download packages, Ollama, and the model. Google's Antigravity IDE and its chat panel are separate products, and this project does not control them.</p>
       </details>
       <details>
         <summary>Why did my task create no file?</summary>

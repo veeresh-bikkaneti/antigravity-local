@@ -18,7 +18,7 @@
     { "id": "ollama_service", "type": "database", "label": "Ollama Daemon", "sublabel": "http://localhost:11434/v1", "pos": [1000, 240], "size": [160, 60], "tag": "OpenAI Compatible" },
     { "id": "model_qwen", "type": "database", "label": "Qwen 2.5 / Nanbeige", "sublabel": "Tool-Calling Weights", "pos": [1240, 150], "size": [160, 60], "tag": "14B/16B Function Call" },
     { "id": "model_gemma", "type": "database", "label": "Gemma 2:27b", "sublabel": "Streaming / Reasoning", "pos": [1240, 260], "size": [160, 60], "tag": "27B Dense Reasoning" },
-    { "id": "hardware_gpu", "type": "cloud", "label": "GPU VRAM Engine", "sublabel": "RTX 5000 Ada (16 GB)", "pos": [1240, 370], "size": [160, 60], "tag": "100% On-Chip Layer" },
+    { "id": "hardware_gpu", "type": "cloud", "label": "GPU VRAM Engine", "sublabel": "Example: 16 GB GPU", "pos": [1240, 370], "size": [160, 60], "tag": "100% On-Chip Layer" },
     { "id": "hardware_ram", "type": "cloud", "label": "System DDR5 RAM", "sublabel": "128 GB Host Memory", "pos": [1240, 480], "size": [160, 60], "tag": "Seamless CPU Offload" }
   ],
   "boundaries": [
@@ -38,8 +38,8 @@
     { "id": "tools-to-fs", "from": "workspace_tools", "to": "workspace_fs", "label": "create / edit files", "variant": "emphasis", "fromSide": "left", "toSide": "right" },
     { "id": "ollama-to-qwen", "from": "ollama_service", "to": "model_qwen", "label": "loads weights", "fromSide": "top", "toSide": "left" },
     { "id": "ollama-to-gemma", "from": "ollama_service", "to": "model_gemma", "label": "loads weights" },
-    { "id": "qwen-to-gpu", "from": "model_qwen", "to": "hardware_gpu", "label": "VRAM fit (9GB < 16GB)", "variant": "emphasis", "fromSide": "bottom", "toSide": "top" },
-    { "id": "gemma-to-ram", "from": "model_gemma", "to": "hardware_ram", "label": "21% RAM offload", "variant": "dashed", "fromSide": "bottom", "toSide": "top" }
+    { "id": "qwen-to-gpu", "from": "model_qwen", "to": "hardware_gpu", "label": "weights fit in VRAM", "variant": "emphasis", "fromSide": "bottom", "toSide": "top" },
+    { "id": "gemma-to-ram", "from": "model_gemma", "to": "hardware_ram", "label": "layers spill to RAM", "variant": "dashed", "fromSide": "bottom", "toSide": "top" }
   ],
   "cards": [
     {
@@ -55,8 +55,8 @@
       "dot": "emerald",
       "title": "Adaptive Hardware Offload",
       "items": [
-        "Qwen 2.5 (14B) and Nanbeige (16B) fit 100% inside 16 GB dedicated VRAM for fast tool calling",
-        "Gemma 2 (27B, 15 GB weights) automatically splits layers: 79% GPU VRAM + 21% CPU DDR5 RAM"
+        "A 14B model (about 9 GB of weights) fits in 16 GB of VRAM and runs fast",
+        "When weights exceed VRAM, Ollama splits layers between GPU and CPU RAM (on one example 16 GB machine, Gemma 2 27B split about 79% GPU and 21% CPU)"
       ]
     },
     {
@@ -65,7 +65,7 @@
       "items": [
         "Antigravity Agent operates within isolated ./workspace directory",
         "Local filesystem modifications are strictly scoped to user workspace",
-        "Multi-turn state and session progress logged to CONTEXT_MEMORY.md"
+        "Memory search reads CONTEXT_MEMORY.md, which people edit by hand"
       ]
     }
   ]

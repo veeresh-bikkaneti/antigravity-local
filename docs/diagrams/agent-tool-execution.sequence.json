@@ -33,7 +33,7 @@
     { "id": "m7", "from": "policy", "to": "agent", "y": 350, "label": "policy.allow_all() approved", "variant": "security" },
     { "id": "m8", "from": "agent", "to": "harness", "y": 385, "label": "invoke create_file(path, content)", "variant": "emphasis" },
     { "id": "m9", "from": "harness", "to": "disk", "y": 415, "label": "write ./workspace/index.html", "variant": "default" },
-    { "id": "m10", "from": "disk", "to": "harness", "y": 445, "label": "file written (3,420 bytes)", "variant": "return" },
+    { "id": "m10", "from": "disk", "to": "harness", "y": 445, "label": "file written", "variant": "return" },
     { "id": "m11", "from": "harness", "to": "agent", "y": 475, "label": "tool result: success", "variant": "return" },
     { "id": "m12", "from": "agent", "to": "dev", "y": 505, "label": "Task complete: index.html generated", "variant": "emphasis" }
   ],

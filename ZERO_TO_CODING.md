@@ -25,10 +25,10 @@
 ## 1. What can this agent do?
 
 Unlike web-based chat interfaces or API-metered plugins, this agent runs on your own hardware. Here is what that gets you:
-- **100% Private**: No telemetry and no cloud calls, so your code stays on your SSD.
-- **Zero Fees**: No monthly subscription ($0/mo) and no token billing.
-- **Real Disk Access**: The agent inspects folders, reads your source code, writes new files, and applies changes directly in your project workspace.
-- **Model Freedom**: Swap models whenever you like. Use `qwen2.5:14b` for complex code reasoning, `llama3.1:8b` for lightweight laptops, or `gemma2:27b` for creative design.
+- Private inference: no telemetry and no cloud calls while the model runs, so your code stays on your SSD. Setup downloads packages, Ollama, and the model.
+- Zero fees: No monthly subscription ($0/mo) and no token billing.
+- Real disk access: The agent inspects folders, reads your source code, writes new files, and applies changes directly in your project workspace.
+- Model freedom: swap models whenever you like. Use `qwen2.5:14b` for code reasoning, `llama3.1:8b` for lightweight laptops, or `gemma2:27b` for creative design.
 
 ---
 
@@ -37,7 +37,7 @@ Unlike web-based chat interfaces or API-metered plugins, this agent runs on your
 ### Hardware matrix
 | Component | Minimum | Recommended | Notes |
 | :--- | :--- | :--- | :--- |
-| **OS** | Windows 10/11, macOS, Linux | Any modern 64-bit OS | Fully tested on Windows 11 & Linux |
+| **OS** | Windows 10/11, macOS, Linux | Any modern 64-bit OS | Native setup tested on Windows 11 only. The Docker image runs on Linux in CI. |
 | **RAM** | 8 GB | 16 GB - 32 GB | System memory is used for CPU offloading |
 | **GPU** | None (runs on CPU) | NVIDIA RTX (8GB+) or Apple Silicon | GPU accelerates token generation |
 | **Python** | 3.11 | 3.12 or 3.13 | Global or managed via `uv` / `pyenv` |
@@ -78,7 +78,15 @@ Unlike web-based chat interfaces or API-metered plugins, this agent runs on your
 
 ## 3. Zero setup (3-minute quickstart)
 
-Goal: go from nothing to your first AI-written file. The bootstrap itself takes about 3 minutes, which is the quickstart in the heading. With Ollama installed, plan on about 10 minutes in total, plus a model download if you have none.
+Goal: go from nothing to your first AI-written file. The bootstrap itself takes a few minutes. Add the model download if you have no model yet. The download is roughly 9 GB for the 14B model.
+
+> Pre-flight checklist
+> - Windows 11 is the only system we tested natively. macOS and Linux should work, and we have not checked.
+> - Free disk: about 10 GB for the 14B model.
+> - RAM: 16 GB or more is comfortable. With 8 GB, use a 3B or 7B model, and let `run.py` pick.
+> - Python 3.11 or newer and git.
+> - Ollama: install it from [ollama.com/download](https://ollama.com/download) (Windows, macOS, and Linux installers are all there).
+> - Time: a few minutes of setup plus the download, and the first run goes quiet while packages install.
 
 ### Step 1: Install & launch Ollama
 Takes about 3 minutes.
@@ -92,21 +100,20 @@ Takes about 3 minutes.
 You should see a version number. If you get "command not found", close the terminal and open a new one. The installer updates your PATH, and an old terminal doesn't know yet.
 
 ### Step 2: Download the agent coding model
-You can skip this step. Step 3 picks a model that fits your machine and downloads it if you have none, and it reuses any capable model you already have, so nothing downloads twice.
+You can skip this step. Step 3 picks a model that fits your machine and downloads it if you have none, and it reuses any capable model you already have, so nothing downloads twice. If you want the default pick for your hardware, skip ahead.
 
-Want to choose the model yourself? Run one of these. The download time depends on your connection.
+Want to choose the model yourself? Pull the one `run.py` would pick for your machine, or any tool-capable model. The download time depends on your connection.
 ```bash
-# Recommended (best tool-calling and coding results, needs about 9 GB of free GPU memory or RAM):
-ollama pull qwen2.5:14b
-
-# Smaller machines (under 12 GB RAM):
-# ollama pull llama3.1:8b
+# What run.py picks when no model is installed:
+#   15 GB+ VRAM (or 8 GB VRAM and 32 GB RAM):  ollama pull qwen2.5-coder:14b   (about 9 GB)
+#   8 GB+ VRAM or 16 GB+ RAM:                  ollama pull qwen2.5-coder:7b
+#   anything smaller:                          ollama pull llama3.2:3b
 ```
 
 You should see the model in `ollama list`.
 
 ### Step 3: Clone & bootstrap
-Takes about 3 minutes the first time, and under a minute after that.
+The bootstrap takes about 3 minutes the first time, not counting any model download, and under a minute after that.
 1. Check that Python and git are installed (use `python3` instead of `python` on macOS and Linux):
    ```bash
    python --version
@@ -122,15 +129,15 @@ Takes about 3 minutes the first time, and under a minute after that.
    cd antigravity-local
    ```
 4. Run the one-click bootstrap. Pick the line that matches your terminal.
-   - **Windows (PowerShell)**:
+   - Windows (PowerShell):
      ```powershell
      .\run.ps1
      ```
-   - **Windows (Command Prompt)**:
+   - Windows (Command Prompt):
      ```cmd
      run.bat
      ```
-   - **macOS / Linux**:
+   - macOS / Linux:
      ```bash
      chmod +x run.sh && ./run.sh
      ```
@@ -140,6 +147,12 @@ The bootstrap creates your Python virtual environment, installs dependencies, co
 
 If Ollama isn't installed, the bootstrap says so. Go back to Step 1.
 
+Prefer a browser? `python run.py --serve` starts a memory search page on a free port. On its first run it builds its own virtual environment and installs packages, so expect a wait. It has no login, so keep it on your own machine.
+
+#### Two errors you may meet
+- `No module named 'google'`: you are outside the virtual environment. Activate it (see the start of section 4), then run the command again.
+- `Connection refused` on `localhost:11434`: Ollama is not running. Start the Ollama app, or run `ollama serve` in a terminal and leave it open.
+
 ---
 
 ## 4. Start coding: interactive pair-programmer shell
@@ -148,10 +161,10 @@ The interactive shell lets you chat with your local agent about any project fold
 
 ### Before you start: activate the virtual environment
 Do this once per terminal window, from inside the `antigravity-local` folder. After that, plain `python` is the right command for everything below.
-- **Windows PowerShell**: `.\venv\Scripts\Activate.ps1` (if PowerShell blocks scripts, run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first)
-- **Windows Command Prompt**: `venv\Scripts\activate.bat`
-- **Git Bash on Windows**: `source venv/Scripts/activate`
-- **macOS / Linux**: `source venv/bin/activate`
+- Windows PowerShell: `.\venv\Scripts\Activate.ps1` (if PowerShell blocks scripts, run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first)
+- Windows Command Prompt: `venv\Scripts\activate.bat`
+- Git Bash on Windows: `source venv/Scripts/activate`
+- macOS / Linux: `source venv/bin/activate`
 
 You should see `(venv)` at the start of your prompt.
 
@@ -176,7 +189,7 @@ python code_agent.py --workspace "C:\path\to\my-app"
  • Memory Fabric   : AVAILABLE (/memory, /wiki)
 ============================================================================
  Type your coding request below (e.g., 'Create a calculator CLI in Python').
- Commands: /memory <query>, /wiki [topic], /files, /help, exit/quit
+ Commands: /memory <query>, /wiki [topic], /files, /clear, /help, exit/quit
 ============================================================================
 
 CodeAgent [You] > Create a python module database.py with an SQLite helper class that handles creating tables and inserting records safely.
@@ -196,15 +209,18 @@ CodeAgent [Local LLM] > Created `test_database.py` with in-memory SQLite fixture
 
 Your model's wording will differ a little. `/files` also lists `index.html`, which the setup demo wrote.
 
+One limit before you try this on real code. Creating a new file from a plain prompt, as above, mostly works. Editing an existing file does not work reliably. With `qwen2.5:14b`, none of 14 attempts to edit a file, or to read one and write a new one, gave a correct result. Commit first and check `git diff`.
+
 ### Built-in shell commands:
 - `/memory <query>` : Searches your project notes and docs and shows the best matches.
 - `/wiki [topic]`   : With no topic, lists the pages in `.wiki/`. With a topic, such as `/wiki architecture`, prints that page.
 - `/files`          : Lists all files currently created in your workspace directory.
+- `/clear`          : Resets the conversation with a fresh agent session.
 - `/help`           : Displays tips and syntax guides.
 - `exit` or `quit`  : Closes the coding session.
 
 ### Automatic memory augmentation:
-Launch with `--with-memory` to prepend the top 2-3 most relevant project memory chunks to the model's context for each coding task, which keeps the token window small:
+Launch with `--with-memory` to prepend the top 2 most relevant project memory chunks (1,200 characters each at most) to the model's context for each coding task, which keeps the token window small:
 ```powershell
 python code_agent.py --workspace ./workspace --with-memory
 ```
@@ -322,8 +338,8 @@ if __name__ == "__main__":
 ```
 
 ### Safety policies: autonomous vs. review mode
-- **Autonomous Mode (`policy.allow_all()`)**: The agent can inspect and create files without asking for confirmation each time. Good for quick prototyping and automated tasks.
-- **Review Mode (`policy.ask_review()`)**: The agent prompts you for confirmation before executing file writes or terminal commands.
+- Autonomous Mode (`policy.allow_all()`): The agent can inspect and create files without asking for confirmation each time. Good for quick prototyping and automated tasks.
+- Review Mode (`policy.ask_review()`): The agent prompts you for confirmation before executing file writes or terminal commands.
 
 ---
 
@@ -391,14 +407,16 @@ The test drive checks:
 4. Canonical topic loading from `.wiki/` with zero token waste.
 5. Container-to-host bridge connection (`host.docker.internal:11434`) to your local Ollama instance.
 
+The script prints what it sees but does not assert, and CI does not run it. CI runs `python tests/e2e.py docker`.
+
 ---
 
 ## 11. Product specification & consensus governance
 
 The architecture specs and governance records live in these docs:
-- **[Refined Product Specification](docs/PRODUCT_SPEC.md)**: Covers the runtime engine, zero-download model scheduler, 3-tier zero-token memory fabric, and security policies.
-- **[Council Consensus Manifest](docs/CONSENSUS_MANIFEST.md)**: Voting and deliberation record signed by the Council of Experts (Architect, QA Lead, Systems Engineer, UX Designer, Security Officer) and approved by the Advisor.
-- **[3-Tier Memory Fabric Specification](docs/MEMORY_SPEC.md)**: Compares RAG, OKF, and vector DBs, and gives the math for Reciprocal Rank Fusion.
+- [Refined Product Specification](docs/PRODUCT_SPEC.md): Covers the runtime engine, zero-download model scheduler, 3-tier zero-token memory fabric, and security policies.
+- [Council Consensus Manifest](docs/CONSENSUS_MANIFEST.md): Voting and deliberation record signed by the Council of Experts (Architect, QA Lead, Systems Engineer, UX Designer, Security Officer) and approved by the Advisor.
+- [3-Tier Memory Fabric Specification](docs/MEMORY_SPEC.md): Compares RAG, OKF, and vector DBs, and gives the math for Reciprocal Rank Fusion.
 
 ---
 

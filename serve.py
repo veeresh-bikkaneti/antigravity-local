@@ -26,7 +26,7 @@ import memory
 
 DIAGRAMS = memory.REPO_ROOT / "docs" / "diagrams"
 MAX_QUERY_CHARS = 500
-MAX_LIMIT = 20
+MAX_LIMIT = memory.MAX_LIMIT
 DIAGRAM_NAME = re.compile(r"^[\w.-]+\.html$")
 
 PAGE = """<!doctype html><meta charset="utf-8"><title>Local Antigravity Memory</title>
@@ -79,21 +79,25 @@ def build_server(host, port, db_path=None, ollama_url=memory.OLLAMA_API_BASE):
                     n = c.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
                 return self._json(200, {"status": "ok", "backend": embedder.mode, "documents": n})
             if url.path == "/api/search":
-                qs = parse_qs(url.query)
+                qs = parse_qs(url.query, keep_blank_values=True)  # blank limit= must 400, not default
                 q = (qs.get("q") or [""])[0].strip()
                 if not q or len(q) > MAX_QUERY_CHARS:
                     return self._json(400, {"error": f"q must be 1-{MAX_QUERY_CHARS} characters"})
                 try:
-                    limit = min(max(int((qs.get("limit") or ["5"])[0]), 1), MAX_LIMIT)
+                    limit = int((qs.get("limit") or ["5"])[0])
                 except ValueError:
                     return self._json(400, {"error": "limit must be an integer"})
+                if limit < 1:
+                    return self._json(400, {"error": "limit must be >= 1"})
+                limit = min(limit, MAX_LIMIT)
                 with lock:
                     results = searcher.search(q, limit=limit)
                 return self._json(200, {"query": q, "results": results})
             if url.path.startswith("/diagrams/"):
                 name = url.path[len("/diagrams/"):]
                 f = DIAGRAMS / name
-                if DIAGRAM_NAME.match(name) and f.is_file():
+                # resolve() follows symlinks: a link pointing outside docs/diagrams must 404.
+                if DIAGRAM_NAME.match(name) and f.is_file() and f.resolve().is_relative_to(DIAGRAMS.resolve()):
                     return self._send(200, f.read_bytes(), "text/html")
                 return self._json(404, {"error": "not found"})
             if url.path == "/":

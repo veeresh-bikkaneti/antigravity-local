@@ -9,6 +9,7 @@ Zero external dependencies: runs on pure Python standard library.
 
 import os
 import sys
+import time
 import re
 import json
 import math
@@ -35,6 +36,17 @@ DB_DIR = REPO_ROOT / ".memory"
 DB_PATH = DB_DIR / "index.sqlite"
 WIKI_DIR = REPO_ROOT / ".wiki"
 OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
+
+# Relevance gates (calibrated on this repo's index with the pure-python backend: gibberish tops out
+# near 0.31 cosine, real questions sit 0.35-0.7). A vector-only hit must clear VECTOR_SIM_FLOOR; a
+# BM25 hit still needs BM25_MIN_SIM so a stray token like "00" in "%00" cannot drag in noise.
+# ponytail: one floor for all backends; Ollama vectors run higher, tune per-mode if that matters.
+VECTOR_SIM_FLOOR = 0.35
+BM25_MIN_SIM = 0.15
+MAX_LIMIT = 20  # hard cap on results per search (CLI and /api/search)
+
+# Chunking: oversize markdown sections are split on paragraph/line boundaries
+MAX_CHUNK_CHARS = 2000
 
 # Category priorities for ranking boost
 CATEGORY_BOOSTS = {
@@ -142,17 +154,23 @@ def cosine_similarity(v1: list[float], v2: list[float]) -> float:
 class MemoryDatabase:
     """Manages SQLite tables and FTS5 virtual indices."""
 
-    def __init__(self, db_path: Path = DB_PATH):
-        self.db_path = db_path
+    def __init__(self, db_path: Path | None = None):
+        self.db_path = db_path or DB_PATH  # looked up at call time so tests/tools can repoint DB_PATH
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_schema()
 
     @contextlib.contextmanager
     def get_connection(self):
         """Yield a connection: commit on success, roll back on error, always close."""
-        conn = sqlite3.connect(str(self.db_path))
+        conn = sqlite3.connect(str(self.db_path), timeout=30)
         try:
             conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA busy_timeout = 30000;")
+            if conn.execute("PRAGMA journal_mode;").fetchone()[0] != "wal":  # sticky once set
+                try:
+                    conn.execute("PRAGMA journal_mode = WAL;")
+                except sqlite3.OperationalError:  # another process is switching it; rollback mode still works
+                    pass
             conn.execute("PRAGMA foreign_keys = ON;")
             yield conn
             conn.commit()
@@ -254,6 +272,34 @@ class MemoryIndexer:
 
         return targets
 
+    @staticmethod
+    def _split_oversize(lines: list[str], start_line: int) -> list[dict]:
+        """Cut a section into pieces <= MAX_CHUNK_CHARS, preferring blank-line (paragraph) breaks."""
+        # Hard cap: a single giant line is sliced.
+        pieces = []  # (line_no, text)
+        for n, ln in enumerate(lines, start=start_line):
+            for i in range(0, max(len(ln), 1), MAX_CHUNK_CHARS):
+                pieces.append((n, ln[i:i + MAX_CHUNK_CHARS]))
+        out, buf = [], []
+
+        def flush(items):
+            text = "\n".join(t for _, t in items).strip()
+            if text:
+                out.append({"start_line": items[0][0], "end_line": items[-1][0], "content": text})
+
+        size = 0
+        for item in pieces:
+            if buf and size + len(item[1]) + 1 > MAX_CHUNK_CHARS:
+                cut = next((i for i in range(len(buf) - 1, 0, -1) if not buf[i][1].strip()), None)
+                head, buf = (buf[:cut], buf[cut:]) if cut else (buf, [])
+                flush(head)
+                size = sum(len(t) + 1 for _, t in buf)
+            buf.append(item)
+            size += len(item[1]) + 1
+        if buf:
+            flush(buf)
+        return out
+
     def chunk_file(self, path: Path) -> list[dict]:
         """Split a file into semantically meaningful chunks with line bounds."""
         try:
@@ -278,11 +324,7 @@ class MemoryIndexer:
                 if (line.startswith("## ") or line.startswith("# ")) and current_chunk:
                     chunk_text = "\n".join(current_chunk).strip()
                     if len(chunk_text) > 30:
-                        chunks.append({
-                            "start_line": start_line,
-                            "end_line": idx - 1,
-                            "content": chunk_text
-                        })
+                        chunks.extend(self._split_oversize(current_chunk, start_line))
                     current_chunk = [line]
                     start_line = idx
                 else:
@@ -292,11 +334,7 @@ class MemoryIndexer:
             if current_chunk:
                 chunk_text = "\n".join(current_chunk).strip()
                 if len(chunk_text) > 20:
-                    chunks.append({
-                        "start_line": start_line,
-                        "end_line": len(lines),
-                        "content": chunk_text
-                    })
+                    chunks.extend(self._split_oversize(current_chunk, start_line))
         else:
             # Code sliding window: 60 lines with 10 lines overlap
             window_size = 60
@@ -323,6 +361,8 @@ class MemoryIndexer:
         stats = {"indexed": 0, "skipped": 0, "chunks": 0, "purged": 0}
 
         with self.db.get_connection() as conn:
+            # One writer at a time: parallel `index` runs queue here instead of hitting IntegrityError.
+            conn.execute("BEGIN IMMEDIATE")
             # Purge docs whose source file vanished (FTS5 has no FK cascade, delete it by hand).
             live = {str(p.relative_to(REPO_ROOT)).replace("\\", "/") for p, _ in targets}
             for r in conn.execute("SELECT id, path FROM documents").fetchall():
@@ -477,10 +517,12 @@ class MemorySearcher:
             all_chunks = cur.fetchall()
 
         vector_results = []
+        sims: dict[int, float] = {}
         for ch in all_chunks:
             if ch["embedding"]:
                 emb = json.loads(ch["embedding"])
                 sim = cosine_similarity(query_emb, emb)
+                sims[ch["chunk_id"]] = sim
                 vector_results.append((ch, sim))
 
         # Sort vector results by cosine similarity descending
@@ -531,8 +573,20 @@ class MemorySearcher:
             boost = CATEGORY_BOOSTS.get(row["category"], 1.0)
             scores[cid]["rrf_score"] += boost * (0.5 / (k + rank + 1))
 
-        # Rank all candidates by fused score
-        ranked = sorted(scores.values(), key=lambda x: x["rrf_score"], reverse=True)
+        # Relevance gate: drop vector-only noise and BM25 hits with no semantic support.
+        # No comparable vectors (backend flaked/mismatch) -> trust BM25 alone.
+        kept = {}
+        for cid, r in scores.items():
+            has_vec = cid in sims
+            r["vector_sim"] = sims.get(cid, r["vector_sim"])
+            if r["bm25_rank"] == 999:
+                ok = r["vector_sim"] >= VECTOR_SIM_FLOOR
+            else:
+                # A chunk with no embedding cannot be judged semantically, so keep its BM25 hit.
+                ok = not has_vec or r["vector_sim"] >= BM25_MIN_SIM
+            if ok:
+                kept[cid] = r
+        ranked = sorted(kept.values(), key=lambda x: x["rrf_score"], reverse=True)
         return ranked[:limit]
 
 
@@ -540,24 +594,67 @@ class MemorySearcher:
 # 5. CLI & User-Facing Operations
 # ==============================================================================
 
+REINDEX_HINT = "Run: python memory.py index --force"
+
+
+def _run_index(force: bool, embedder) -> dict:
+    """Index; if the DB file is corrupt, move it aside to .bak and rebuild from scratch."""
+    try:
+        return MemoryIndexer(MemoryDatabase(), embedder).index_all(force=force)
+    except sqlite3.DatabaseError as e:
+        msg = str(e).lower()
+        if "malformed" not in msg and "not a database" not in msg:
+            raise  # locked, disk I/O, read-only and similar are not corruption
+        bak = DB_PATH.with_name(f"{DB_PATH.name}.{int(time.time())}.bak")
+        print(f"[!] Index database is corrupt ({e}); moving it to {bak.name} and rebuilding.", file=sys.stderr)
+        try:
+            for suffix in ("-wal", "-shm", ""):
+                p = DB_PATH.with_name(DB_PATH.name + suffix)
+                if p.exists():
+                    os.replace(p, bak.with_name(bak.name + suffix) if suffix else bak)
+        except OSError as oe:
+            sys.exit(f"[!] Could not move the corrupt index aside ({oe}). Close other memory.py or serve.py processes and retry.")
+        return MemoryIndexer(MemoryDatabase(), embedder).index_all(force=True)
+
+
+def _positive_limit(value: str) -> int:
+    try:
+        n = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"limit must be an integer, got {value!r}")
+    if n < 1:
+        raise argparse.ArgumentTypeError("limit must be >= 1")
+    return min(n, MAX_LIMIT)
+
+
+def _need_index() -> bool:
+    if DB_PATH.exists():
+        return False
+    print("No index found. Run: python memory.py index", file=sys.stderr)
+    return True
+
+
 def cmd_index(args):
     print("=" * 70)
     print("MEMORY FABRIC: Scanning & Indexing Repository Knowledge Base")
     print("=" * 70)
-    db = MemoryDatabase()
     embedder = EmbeddingProvider()
     print(f"[*] Vector Embedding Backend: {embedder.mode}")
-    indexer = MemoryIndexer(db, embedder)
-    stats = indexer.index_all(force=args.force)
+    stats = _run_index(args.force, embedder)
     print(f"[+] Indexing Complete: {stats['indexed']} files updated, {stats['skipped']} files unchanged, {stats['chunks']} chunks stored.")
     print(f"[+] Memory Store Location: {DB_PATH}")
 
 
 def cmd_search(args):
-    db = MemoryDatabase()
+    if _need_index():
+        sys.exit(1)
     embedder = EmbeddingProvider()
-    searcher = MemorySearcher(db, embedder)
-    results = searcher.search(args.query, limit=args.limit)
+    try:
+        searcher = MemorySearcher(MemoryDatabase(), embedder)
+        results = searcher.search(args.query, limit=args.limit)
+    except sqlite3.DatabaseError as e:
+        print(f"Memory index is unreadable ({e}). {REINDEX_HINT}", file=sys.stderr)
+        sys.exit(1)
 
     if args.json:
         print(json.dumps(results, indent=2))
@@ -569,7 +666,7 @@ def cmd_search(args):
     print("=" * 70)
 
     if not results:
-        print("No matching memory chunks found. Try re-indexing with: python memory.py index")
+        print("No results. (If you expected some, re-index with: python memory.py index)")
         return
 
     for i, res in enumerate(results, start=1):
@@ -586,7 +683,6 @@ def cmd_search(args):
 
 
 def cmd_status(args):
-    db = MemoryDatabase()
     embedder = EmbeddingProvider()
     print("=" * 70)
     print("MEMORY FABRIC STATUS")
@@ -601,6 +697,14 @@ def cmd_status(args):
     size_kb = DB_PATH.stat().st_size / 1024
     print(f"Database Size: {size_kb:.1f} KB")
 
+    try:
+        _print_status(MemoryDatabase())
+    except sqlite3.DatabaseError as e:
+        print(f"Memory index is unreadable ({e}). {REINDEX_HINT}", file=sys.stderr)
+        sys.exit(1)
+
+
+def _print_status(db):
     with db.get_connection() as conn:
         doc_count = conn.execute("SELECT COUNT(*) FROM documents;").fetchone()[0]
         chunk_count = conn.execute("SELECT COUNT(*) FROM chunks;").fetchone()[0]
@@ -638,15 +742,17 @@ def cmd_wiki(args):
         print("\nUsage: python memory.py wiki <topic>")
         return
 
-    target = WIKI_DIR / f"{args.topic}.md"
-    if not target.exists():
-        # Try matching stem
-        matches = [p for p in WIKI_DIR.glob("*.md") if args.topic.lower() in p.stem.lower()]
+    wiki_root = WIKI_DIR.resolve()
+    target = (WIKI_DIR / f"{args.topic}.md").resolve()
+    if not (target.is_relative_to(wiki_root) and target.is_file()):
+        # Try matching stem (never leave .wiki/, even via symlinks)
+        matches = [p for p in WIKI_DIR.glob("*.md")
+                   if args.topic.lower() in p.stem.lower() and p.resolve().is_relative_to(wiki_root)]
         if matches:
             target = matches[0]
         else:
             print(f"Wiki topic '{args.topic}' not found in {WIKI_DIR}.")
-            return
+            sys.exit(1)
 
     print("=" * 70)
     print(f"LLMWIKI: {target.stem.upper()} ({target.name})")
@@ -661,10 +767,8 @@ def cmd_sync(args):
     print("=" * 70)
 
     # 1. Run memory indexing
-    db = MemoryDatabase()
     embedder = EmbeddingProvider()
-    indexer = MemoryIndexer(db, embedder)
-    stats = indexer.index_all(force=True)
+    stats = _run_index(True, embedder)
     print(f"[+] Memory Index Updated: {stats['indexed']} files, {stats['chunks']} chunks.")
 
     # 2. Run graphify update if installed
@@ -694,7 +798,8 @@ def main():
     # search
     p_search = subparsers.add_parser("search", help="Hybrid BM25 + Vector search across memory")
     p_search.add_argument("query", type=str, help="Search query string")
-    p_search.add_argument("--limit", type=int, default=5, help="Number of results to return (default: 5)")
+    p_search.add_argument("--limit", type=_positive_limit, default=5,
+                          help=f"Number of results, 1-{MAX_LIMIT} (default: 5; larger values are capped)")
     p_search.add_argument("--json", action="store_true", help="Output results in JSON format")
     p_search.set_defaults(func=cmd_search)
 

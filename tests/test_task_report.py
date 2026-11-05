@@ -24,6 +24,31 @@ class Pure(unittest.TestCase):
             created, changed = task_report.summarize(before, task_report.snapshot(d))
         self.assertEqual((created, changed), (["b.txt"], ["a.txt"]))
 
+    def test_same_size_edit_is_changed_but_touch_only_is_not(self):
+        import task_report
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "a.txt"
+            f.write_text("aaaa", encoding="utf-8")
+            snap = task_report.snapshot(d)
+            f.write_text("bbbb", encoding="utf-8")
+            self.assertEqual(task_report.summarize(snap, task_report.snapshot(d)), ([], ["a.txt"]))
+            f.write_text("aaaa", encoding="utf-8")
+            os.utime(f, (1, 1))
+            self.assertEqual(task_report.summarize(snap, task_report.snapshot(d)), ([], []))
+
+    def test_deleted_files_are_reported(self):
+        import task_report
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "gone.txt").write_text("x", encoding="utf-8")
+            (Path(d) / "keep.txt").write_text("y", encoding="utf-8")
+            before = task_report.snapshot(d)
+            (Path(d) / "gone.txt").unlink()
+            after = task_report.snapshot(d)
+        self.assertEqual(task_report.deleted(before, after), ["gone.txt"])
+        text = "\n".join(task_report.render("ws", ["keep.txt"], [], [], ["gone.txt"]))
+        self.assertIn("Deleted 1: gone.txt", text)
+        self.assertNotIn("created or changed no files", text)
+
     def test_nothing_written_gives_a_warning_not_task_completed(self):
         import task_report
         text = "\n".join(task_report.render("ws", ["old.txt"], [], []))
