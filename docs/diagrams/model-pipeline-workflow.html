@@ -5296,8 +5296,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <text data-detail="context" x="118" y="132" class="t-muted" font-size="8" text-anchor="middle">cli argument or default</text>
         </g>
 
-        <g id="node-hw_check" data-node-id="hw_check" data-node-label="Hardware Profile" tabindex="0" role="button" aria-label="Focus Hardware Profile, verify 16GB VRAM budget, Model Request &amp; Budget › Phase 2: Capability Evaluation" aria-pressed="false" data-node-kind="security" data-node-sublabel="verify 16GB VRAM budget" data-node-tag="OOM prevention" data-node-context="Model Request &amp; Budget › Phase 2: Capability Evaluation">
-          <title>Hardware Profile · verify 16GB VRAM budget · Model Request &amp; Budget › Phase 2: Capability Evaluation · OOM prevention</title>
+        <g id="node-hw_check" data-node-id="hw_check" data-node-label="Hardware Profile" tabindex="0" role="button" aria-label="Focus Hardware Profile, read VRAM and RAM, Model Request &amp; Budget › Phase 2: Capability Evaluation" aria-pressed="false" data-node-kind="security" data-node-sublabel="read VRAM and RAM" data-node-tag="OOM prevention" data-node-context="Model Request &amp; Budget › Phase 2: Capability Evaluation">
+          <title>Hardware Profile · read VRAM and RAM · Model Request &amp; Budget › Phase 2: Capability Evaluation · OOM prevention</title>
           <rect x="288" y="86" width="140" height="68" rx="8" class="c-mask"/>
           <rect x="288" y="86" width="140" height="68" rx="8" class="c-security" data-animate="node" style="--step:1" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(294 92) scale(0.6875)">
@@ -5305,7 +5305,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
             <path d="m5.8 8 1.5 1.5 3-3"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="359.8" y="107" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Hardware Profile</text>
-          <text data-detail="context" x="358" y="124" class="t-muted" font-size="8" text-anchor="middle">verify 16GB VRAM budget</text>
+          <text data-detail="context" x="358" y="124" class="t-muted" font-size="8" text-anchor="middle">read VRAM and RAM</text>
         <text data-detail="fine" x="358" y="142" class="t-security" font-size="7" text-anchor="middle">OOM prevention</text>
         </g>
 
@@ -5333,15 +5333,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <text data-detail="context" x="598" y="258" class="t-muted" font-size="8" text-anchor="middle">pull only if uninstalled</text>
         </g>
 
-        <g id="node-score_matrix" data-node-id="score_matrix" data-node-label="Capability Ranker" tabindex="0" role="button" aria-label="Focus Capability Ranker, Nanbeige &gt; Qwen &gt; Gemma, Capability Scoring Matrix › Phase 2: Capability Evaluation" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Nanbeige &gt; Qwen &gt; Gemma" data-node-tag="agentic priority" data-node-context="Capability Scoring Matrix › Phase 2: Capability Evaluation">
-          <title>Capability Ranker · Nanbeige &gt; Qwen &gt; Gemma · Capability Scoring Matrix › Phase 2: Capability Evaluation · agentic priority</title>
+        <g id="node-score_matrix" data-node-id="score_matrix" data-node-label="Capability Ranker" tabindex="0" role="button" aria-label="Focus Capability Ranker, score, capped at 100, Capability Scoring Matrix › Phase 2: Capability Evaluation" aria-pressed="false" data-node-kind="backend" data-node-sublabel="score, capped at 100" data-node-tag="agentic priority" data-node-context="Capability Scoring Matrix › Phase 2: Capability Evaluation">
+          <title>Capability Ranker · score, capped at 100 · Capability Scoring Matrix › Phase 2: Capability Evaluation · agentic priority</title>
           <rect x="408" y="338" width="140" height="68" rx="8" class="c-mask"/>
           <rect x="408" y="338" width="140" height="68" rx="8" class="c-backend" data-animate="node" style="--step:4" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(414 344) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="483.1" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Capability Ranker</text>
-          <text data-detail="context" x="478" y="376" class="t-muted" font-size="8" text-anchor="middle">Nanbeige &gt; Qwen &gt; Gemma</text>
+          <text data-detail="context" x="478" y="376" class="t-muted" font-size="8" text-anchor="middle">score, capped at 100</text>
         <text data-detail="fine" x="478" y="394" class="t-backend" font-size="7" text-anchor="middle">agentic priority</text>
         </g>
 
@@ -5602,12 +5602,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       <div class="card">
         <div class="card-header">
           <div class="card-dot cyan"></div>
-          <h3>Cutting-Edge Model Hierarchy</h3>
+          <h3>Family base scores (before size and keyword bonuses, capped at 100)</h3>
         </div>
         <ul>
           <li>1. Nanbeige (92 pts): Top agentic search and sequential multi-step tool calling</li>
           <li>2. DeepSeek Coder / R1 (90 pts): State-of-the-art coding and algorithmic synthesis</li>
-          <li>3. Qwen 2.5 Coder (88 pts): Open-weights champion, 100% 16GB VRAM tool fit</li>
+          <li>3. Qwen 2.5 Coder (88 pts): Open-weights coding family with native tool calling</li>
           <li>4. Command R / Codestral / GLM-4 (82-86 pts): Dedicated tool calling &amp; 32k context</li>
         </ul>
       </div>
@@ -5618,9 +5618,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <h3>PC Build Hardware Matching</h3>
         </div>
         <ul>
-          <li>High-End Workstation (&gt;=16GB VRAM, &gt;=32GB RAM): Nanbeige 16B/32B, Qwen2.5-Coder, DeepSeek</li>
-          <li>Mid-Tier PC (8-12GB VRAM): Qwen2.5-Coder 7B, Nanbeige 4.1 3B, GLM-4 9B</li>
-          <li>Entry / CPU (&lt;16GB RAM): LLaMA 3.2 3B, Qwen 2.5 3B</li>
+          <li>Workstation (VRAM 15 GB+, or 8 GB+ with 32 GB RAM): qwen2.5-coder:14b</li>
+          <li>Mid-tier (VRAM 8 GB+ or RAM 16 GB+): qwen2.5-coder:7b</li>
+          <li>Otherwise: llama3.2:3b</li>
         </ul>
       </div>
     </div>
