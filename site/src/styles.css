@@ -114,6 +114,9 @@ main, footer { position: relative; z-index: 2; }
 .btn-primary { background: var(--signal); border-color: var(--signal); color: var(--on-signal); }
 .btn-primary:hover { background: transparent; color: var(--signal); }
 .fine { font-size: 0.92rem; color: var(--soft); }
+.preflight { margin-top: 1.5rem; padding: 1rem 1.25rem; background: var(--sheet); border: 1px solid var(--rule); max-width: 38rem; }
+.preflight-title { font-size: 1.05rem; margin: 0 0 0.5rem; }
+.preflight ul { margin: 0; padding-left: 1.2rem; }
 
 /* Three pillars: sheets of paper with a little depth, offset so they do not read as a grid of clones. */
 .pillars { padding: 6rem var(--gutter) 3rem; }

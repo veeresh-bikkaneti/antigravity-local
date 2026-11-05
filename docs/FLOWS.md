@@ -1,14 +1,14 @@
 # System Execution Flows & Lifecycles
 
-This document walks through the lifecycle and execution flows of Antigravity Local, step by step.
+This document walks through the lifecycle and execution flows of Antigravity Local, step by step. The standalone diagram HTML files are generated and can lag behind this text. The Mermaid blocks here follow the current code.
 
-> **Interactive Archify Visualizations**: Open the standalone HTML files in your browser to zoom, toggle dark/light themes, and trace signals live:
+> Interactive Archify visualizations. Open the standalone HTML files in your browser to zoom, toggle dark/light themes, and trace signals live:
 > - [1-Command Bootstrap Workflow (HTML)](diagrams/bootstrap-workflow.html)
 > - [Autonomous Tool Execution Sequence (HTML)](diagrams/agent-tool-execution.html)
 > - [Model Pre-Check & Capability Selection Pipeline (HTML)](diagrams/model-pipeline-workflow.html)
 > - [Overall System Topology Architecture (HTML)](diagrams/system-topology.html)
 >
-> **Live CLI Preview**:
+> Live CLI preview:
 > ```bash
 > # Preview any diagram with live reload in your browser:
 > archify preview workflow docs/diagrams/bootstrap-workflow.workflow.json
@@ -20,9 +20,9 @@ This document walks through the lifecycle and execution flows of Antigravity Loc
 
 ---
 
-## Flow 1: 1-Command Plug-and-Play Bootstrap Lifecycle
+## Flow 1: one-command bootstrap lifecycle
 
-After you clone the repository and run `run.bat`, `run.sh`, or `run.ps1`, `run.py` takes over and provisions the whole environment on its own.
+After you clone the repository and run `run.bat`, `run.sh`, or `run.ps1`, `run.py` takes over and sets up the environment on its own. Plan on a few minutes plus the model download, which is roughly 9 GB for the 14B model.
 
 ```mermaid
 flowchart TD
@@ -45,7 +45,7 @@ flowchart TD
 
     ModelInventory --> ModelFound{"Capable model installed?<br/>(Nanbeige / Qwen / Gemma)"}
     ModelFound -- Yes --> ReUseModel["Zero-Download Fast Path:<br/>Select highest-scoring local model"]
-    ModelFound -- No --> PullModel["Auto-pull recommended model<br/>(e.g., qwen2.5:14b)"]
+    ModelFound -- No --> PullModel["Auto-pull the model for your hardware<br/>(e.g., qwen2.5-coder:14b)"]
     PullModel --> ReUseModel
 
     ReUseModel --> WorkspaceDemo["Phase 5: Autonomous Verification Test<br/>Execute agent_with_workspace.py<br/>Generates workspace/index.html"]
@@ -62,16 +62,16 @@ flowchart TD
     class VenvCheck,DepsInstalled,DaemonRunning,ModelFound branch;
 ```
 
-### Key Guarantees:
-- Zero configuration: you never activate a virtualenv or run pip by hand.
-- Idempotent: safe to run repeatedly, and it skips any step that is already satisfied.
-- Self-healing: if the Ollama daemon is down, `run.py` starts it in the background.
+### What you can count on
+- You never run pip by hand. `run.py` builds the virtualenv and installs packages. You do activate the venv yourself before calling `python code_agent.py` directly.
+- Safe to run repeatedly. It skips any step that is already satisfied.
+- If the Ollama daemon is down, `run.py` starts it in the background.
 
 ---
 
-## Flow 2: Zero-Redundant Model Inventory Pre-Check Pipeline
+## Flow 2: model inventory pre-check
 
-To avoid downloading multi-gigabyte models you already have, the system checks the local inventory in two tiers before it pulls anything:
+To avoid downloading multi-gigabyte models you already have, the system checks the local inventory in two tiers before it pulls anything. Ranking uses `get_model_capability_score`, which caps at 100, so several large coder models tie at the top. Example scores: `nanbeige4.1:3b` 92.9, `qwen2.5:14b` 92.2, `qwen2.5-coder:7b` 98.1, `llama3.1:8b` 76.4. The family base is not the whole score, so Nanbeige does not always rank first.
 
 ```mermaid
 flowchart LR
@@ -83,12 +83,12 @@ flowchart LR
     CLIFallback --> ParseTags
 
     ParseTags --> Normalize["Normalize Model Tags<br/>Strip ':latest' suffixes & case differences"]
-    Normalize --> CandidateScoring["Score Local Candidates:<br/>1. Nanbeige: 92 pts (Top Agentic)<br/>2. DeepSeek Coder/R1: 90 pts (Top Code)<br/>3. Qwen 2.5 Coder: 88 pts (Tool Fit)<br/>4. Command R: 86 pts (Enterprise)<br/>5. Codestral: 84 pts (32k Code)<br/>6. GLM-4: 82 pts (Tool Use)<br/>7. Gemma 2: 76 pts (Reasoning)<br/>8. LLaMA 3.x: 74 pts"]
+    Normalize --> CandidateScoring["Score local candidates:<br/>family base (Nanbeige 92, DeepSeek 90, Qwen 2.5 88, ... LLaMA 3.x 74)<br/>+ 0.3 per billion parameters (cap 72B)<br/>+ keyword bonuses, total capped at 100"]
 
     CandidateScoring --> BestCandidate{"Models exist in local inventory?"}
     BestCandidate -- Yes --> FastPath["Zero-Download Fast Path<br/>Reuse highest-scoring local model<br/>(0s delay, 0 GB downloaded)"]
-    BestCandidate -- No --> HWEval["Inspect PC Hardware Profile<br/>Evaluate VRAM + System RAM"]
-    HWEval --> PullWeights["Hardware-Tailored Pull<br/>Workstation: qwen2.5-coder:14b / nanbeige<br/>Mid-Tier: qwen2.5-coder:7b<br/>Entry: llama3.2:3b"]
+    BestCandidate -- No --> HWEval["Inspect hardware profile<br/>VRAM and system RAM"]
+    HWEval --> PullWeights["Hardware-based pull<br/>Workstation (VRAM 15 GB+, or 8 GB+ with 32 GB RAM): qwen2.5-coder:14b<br/>Mid-tier (VRAM 8 GB+ or RAM 16 GB+): qwen2.5-coder:7b<br/>Otherwise: llama3.2:3b"]
     
     PullWeights --> BindModel["Bind to LocalOpenAIConnectionStrategy"]
     FastPath --> BindModel
@@ -104,7 +104,7 @@ flowchart LR
 
 ---
 
-## Flow 3: Autonomous Tool-Calling Execution Sequence Loop
+## Flow 3: tool-calling loop
 
 When the agent gets a task that changes the workspace, it runs this sequence:
 
@@ -140,7 +140,7 @@ sequenceDiagram
     Agent->>Harness: invoke create_file("index.html", content, overwrite=True)
     activate Harness
     Harness->>Disk: Write ./workspace/index.html
-    Disk-->>Harness: 3,420 bytes written successfully
+    Disk-->>Harness: file written
     Harness-->>Agent: Observation: "File index.html created successfully"
     deactivate Harness
 
@@ -151,9 +151,9 @@ sequenceDiagram
 
 ---
 
-## Flow 4: Interactive Coding Agent Shell Flow (`code_agent.py`)
+## Flow 4: interactive coding shell (`code_agent.py`)
 
-The coding agent handles one-shot tasks and a continuous pair-programming conversation:
+The coding agent handles one-shot tasks and a continuous conversation. With `--with-memory`, each prompt gets the top 2 memory excerpts (1,200 characters each) prepended. The prompt reads `CodeAgent [You] >`.
 
 ```mermaid
 stateDiagram-v2
@@ -167,13 +167,17 @@ stateDiagram-v2
 
     state SlashCommand {
         [*] --> RouteCommand
+        RouteCommand --> SearchMemory: /memory query
+        RouteCommand --> ShowWiki: /wiki topic
         RouteCommand --> ListFiles: /files
         RouteCommand --> ShowHelp: /help
         RouteCommand --> ClearScreen: /clear
         RouteCommand --> Terminate: /exit or /quit
+        SearchMemory --> AwaitingInput
+        ShowWiki --> AwaitingInput
         ListFiles --> AwaitingInput
         ShowHelp --> AwaitingInput
-        ClearScreen --> AwaitingInput
+        ClearScreen --> AwaitingInput: fresh agent session
     }
 
     state NaturalLanguageTask {
@@ -192,9 +196,9 @@ stateDiagram-v2
 
 ---
 
-## Flow 4: Hive Mind Consensus & Clean-Room Verification Lifecycle
+## Flow 5: review and clean-room verification lifecycle
 
-This lifecycle is the review, adversarial testing, and council consensus every change goes through before it merges into `main`.
+This is the review process the project used for its first release. It is a process description, not an automated pipeline. CI itself runs the unit tests and `python tests/e2e.py docker`.
 
 ```mermaid
 flowchart TD
@@ -211,7 +215,7 @@ flowchart TD
     Advisor -- Feedback / Revision --> Deliberate
     Advisor -- Approved --> SignManifest["Sign Consensus Manifest<br/>(docs/CONSENSUS_MANIFEST.md)"]
     
-    SignManifest --> CleanRoom["Phase 2: Clean-Room Verification<br/>Run docker-test-drive.sh (7 Runtime Gates)"]
+    SignManifest --> CleanRoom["Phase 2: Clean-Room Verification<br/>Run python tests/e2e.py docker<br/>(docker-test-drive.sh prints but does not assert)"]
     
     CleanRoom --> Adversarial["Pstack /interrogate Adversarial Gauntlet<br/>FTS5 injection, offline Ollama fallback, buffer stress"]
     
@@ -222,7 +226,7 @@ flowchart TD
 
 ---
 
-## 5. Summary Matrix of Flow Triggers
+## Summary of flow triggers
 
 | Action | Command / Trigger | Primary Module | Visual Architecture Ref |
 |---|---|---|---|
@@ -231,8 +235,26 @@ flowchart TD
 | **Memory-Augmented Coding** | `python code_agent.py --with-memory` | `code_agent.py` | [System Topology](diagrams/system-topology.html) |
 | **Hybrid Memory Search** | `python memory.py search "<query>"` | `memory.py` | [System Topology](diagrams/system-topology.html) |
 | **Dual-Sync AST & Memory** | `python memory.py sync` | `memory.py` | [System Topology](diagrams/system-topology.html) |
-| **Clean-Room Docker Test** | `docker run ... bash docker-test-drive.sh` | `docker-test-drive.sh` | [System Topology](diagrams/system-topology.html) |
+| **Clean-Room Docker Test** | `python tests/e2e.py docker` | `tests/e2e.py` | [System Topology](diagrams/system-topology.html) |
+| **Memory Web App** | `python run.py --serve` | `serve.py` | [System Topology](diagrams/system-topology.html) |
 | **One-Shot Task Execution** | `python code_agent.py --task "<task>"` | `code_agent.py` | [Tool Execution Sequence](diagrams/agent-tool-execution.html) |
 | **Model Pre-Flight & Pull** | Built into `run.py` | `run.py:get_installed_ollama_models()` | [Model Selection Pipeline](diagrams/model-pipeline-workflow.html) |
 | **Streaming Token Test** | `python test_local.py [model]` | `test_local.py` | [System Topology](diagrams/system-topology.html) |
 | **Autonomous Workspace Demo** | `python agent_with_workspace.py [model]`| `agent_with_workspace.py` | [Tool Execution Sequence](diagrams/agent-tool-execution.html) |
+
+---
+
+## Flow 6: memory web app (`serve.py`)
+
+`python run.py --serve` (or the Docker image) starts a small web server. It indexes the memory fabric when it starts, then answers search requests.
+
+```mermaid
+flowchart LR
+    Start(["python run.py --serve"]) --> Index["Index memory on startup<br/>(cheap when nothing changed)"]
+    Index --> Listen["Listen on a free port<br/>127.0.0.1 locally, 0.0.0.0 in Docker"]
+    Listen --> Search["GET /api/search?q=..."]
+    Listen --> Health["GET /healthz"]
+    Listen --> Diagrams["GET /diagrams/name.html"]
+```
+
+The server has no authentication. Keep it on `127.0.0.1`, or publish the Docker port with `-p 127.0.0.1::8000`. It does not need Ollama. Without it, search uses the built-in fallback vectors. The local path builds its own venv on first run.

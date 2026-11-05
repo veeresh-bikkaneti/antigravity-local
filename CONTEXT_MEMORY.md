@@ -165,14 +165,14 @@
   - **Verification**: Verified indexing (17 files, 121 chunks), hybrid retrieval speed (<50ms), and prompt context boundedness (~1.3k chars).
   - **Documentation & Remote Sync**: Updated `README.md`, `ZERO_TO_CODING.md`, and mirrored to `C:\Users\veere\antigravity-local`.
 - [x] **Step 24**: Docker Test Drive, URL Verification, and Pstack Review Suite (Nov 3, 2026):
-  - **URL & Link Verification**: Automated scanner verified all 28 internal Markdown links, repository URLs, and local Ollama REST endpoints (`http://localhost:11434/api/tags` and `http://localhost:11434/v1/models` returned 200 OK).
-  - **Docker Test Drive (`docker-test-drive.sh`)**: Executed fresh containerized test in `python:3.11-slim` via Docker Desktop. Successfully passed all 7 runtime gates including clean pip installation, SQLite FTS5 indexing, hybrid retrieval, LLMWiki reading, and bridge connection to host Ollama (`host.docker.internal:11434`).
+  - **URL & Link Verification**: A scanner run by hand (not a script in this repo) checked 28 internal Markdown links, repository URLs, and local Ollama REST endpoints (`http://localhost:11434/api/tags` and `http://localhost:11434/v1/models` returned 200 OK).
+  - **Docker Test Drive (`docker-test-drive.sh`)**: Executed fresh containerized test in `python:3.11-slim` via Docker Desktop. Ran 7 steps (the script prints but does not assert, and CI does not run it) including clean pip installation, SQLite FTS5 indexing, hybrid retrieval, LLMWiki reading, and bridge connection to host Ollama (`host.docker.internal:11434`).
   - **Pstack `/benchmark-checklist`**: Ran 5 alternating A/B empirical measurements:
     - Naive Full-Repo Ingestion: Median 1,877.4 ms (5,558,712 tokens).
     - Memory Fabric Hybrid Retrieval: Median 8.10 ms (3,245 tokens raw, <1,200 tokens clamped).
-    - Empirical speedup: 231.8x; Token reduction: 1,713.0x.
+    - Method: 5 alternating runs on one laptop, naive full-repo ingestion against memory retrieval. The ratios (231.8x, 1,713.0x) come from these medians on that machine only, so we no longer quote them as headline claims.
     - Verified all 7 benchmark questions (limiter identified, tuned, mathematical limit checks, zero errors, repeatable).
-  - **Pstack `/interrogate` Adversarial Gauntlet**: Subjected memory engine to 4 adversarial failure modes (malformed FTS5 operators/quotes, vector dimension mismatch, offline Ollama fallback, and 50k-character query overloads). 0 verified findings survived; zero unhandled exceptions.
+  - **Pstack `/interrogate` Adversarial Gauntlet**: Subjected memory engine to 4 adversarial failure modes (malformed FTS5 operators/quotes, vector dimension mismatch, offline Ollama fallback, and 50k-character query overloads). no unhandled exceptions in a manual pass. That is not a proof of security.
   - **Pstack `/architect` Review**: Verified decoupling of the Antigravity agent runtime from the local inference backend and affirmed the 3-Tier memory boundary.
   - Mirrored `CONTEXT_MEMORY.md` to `C:\Users\veere\antigravity-local\CONTEXT_MEMORY.md`.
 - [x] **Step 25**: GStack Toolchain Integration, Triple Review Pipeline & Swarm Governance (Nov 3, 2026):
@@ -295,3 +295,5 @@ pm`, reinstalled `npm install -g ./.agents/skills/archify`; `archify doctor` pas
    python agent_with_workspace.py qwen2.5:14b
    ```
 5. Inspect generated workspace artifacts in `C:\Users\veere\antigravity-local\workspace`.
+
+- [x] **Docs honesty pass**: corrected the docs to match the code. Model scores cap at 100, hardware tiers follow `run.py`, setup time is stated as a few minutes plus the model download (about 9 GB for the 14B model), and the graph counts come from `graphify-out/graph.json` (8,547 nodes, 13,383 edges). The helper scripts `verify_urls.py`, `verify_internal_links.py`, `interrogate_tests.py`, and `benchmark_run.py` named in earlier entries are not in the repo.
