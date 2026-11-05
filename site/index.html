@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local Antigravity: a coding agent that runs on your own machine</title>
+  <meta name="description" content="Local Antigravity runs the Google Antigravity SDK against a model on your own computer, served by Ollama. One command to set up, or one Docker image. Includes a step-by-step guide and the architecture diagrams.">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#e4ddcf">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Local Antigravity: a coding agent that runs on your own machine">
+  <meta property="og:description" content="Run the Google Antigravity SDK against a local model with Ollama. Step-by-step guide, Docker image, and architecture diagrams.">
+  <meta property="og:image" content="https://veeresh-bikkaneti.github.io/antigravity-local/og.png">
+  <meta property="og:image:alt" content="Local Antigravity: your coding agent, on your own machine">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23e4ddcf'/%3E%3Crect x='9' y='9' width='14' height='14' fill='%23a8281e'/%3E%3C/svg%3E">
+</head>
+<body>
+  <a class="skip" href="#guide">Skip to the guide</a>
+
+  <canvas id="stage" aria-hidden="true"></canvas>
+  <div id="labels" aria-hidden="true">
+    <span class="tag" data-anchor="ollama">Ollama</span>
+    <span class="tag" data-anchor="agent">Agent</span>
+    <span class="tag" data-anchor="workspace">Your files</span>
+    <span class="tag" data-anchor="editor">Editor</span>
+    <span class="tag tag-off" data-anchor="cloud">Cloud: not used</span>
+  </div>
+
+  <header class="bar">
+    <a class="mark" href="#top"><span class="seal" aria-hidden="true"></span>Local Antigravity</a>
+    <nav aria-label="Page sections">
+      <a href="#guide">Guide</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#limits">Limits</a>
+      <a href="#faq">Questions</a>
+      <a href="https://github.com/veeresh-bikkaneti/antigravity-local">GitHub</a>
+    </nav>
+    <button id="motion-toggle" class="motion" type="button" aria-pressed="false">Pause motion</button>
+  </header>
+
+  <main>
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <h1 id="hero-title">Your coding agent, on your own machine</h1>
+        <p class="lede">Local Antigravity runs the Google Antigravity SDK against a model on your computer, served by Ollama. Setup needs no cloud account and no API key.</p>
+        <p class="actions">
+          <a class="btn btn-primary" href="#guide">Start in ten minutes</a>
+          <a class="btn" href="https://github.com/veeresh-bikkaneti/antigravity-local">See the code on GitHub</a>
+        </p>
+        <p class="fine">Version 1.0.0. Tested on Windows 11. macOS and Linux are not tested yet.</p>
+      </div>
+    </section>
+
+    <section class="pillars" id="pillars" aria-labelledby="pillars-title">
+      <h2 id="pillars-title">Three things we care about</h2>
+      <div class="sheets">
+        <div class="sheet">
+          <h3>It stays here</h3>
+          <p>Your code and your prompts go to a model on your own computer. Setup needs no cloud account and no API key.</p>
+        </div>
+        <div class="sheet">
+          <h3>It tells you when it fails</h3>
+          <p>If a task writes no file, the tool says so instead of reporting success. The limits are on this page, with numbers.</p>
+        </div>
+        <div class="sheet">
+          <h3>It starts small</h3>
+          <p>One command sets it up, or run one Docker image. Both pick a free port, so nothing fights with what you already run.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide" id="guide" aria-labelledby="guide-title">
+      <div class="guide-head">
+        <h2 id="guide-title">From zero to your first file</h2>
+        <p>Seven steps, in order. The drawing shows where each one happens on your machine.</p>
+      </div>
+
+      <ol class="steps">
+        <li class="step" data-step="1" data-focus="ollama">
+          <h3>Install Ollama</h3>
+          <p>Ollama is the program that holds the model and answers requests. Download it from <a href="https://ollama.com/download">ollama.com/download</a>, then check it works.</p>
+          <div class="code"><pre><code>ollama --version</code></pre><button class="copy" type="button" aria-label="Copy command: ollama --version">Copy</button></div>
+          <p class="check">You should see a version number. If the command is not found, open a new terminal.</p>
+          <p class="time">About 3 minutes</p>
+        </li>
+
+        <li class="step" data-step="2" data-focus="ollama-core">
+          <h3>Choose a model (optional)</h3>
+          <p>Step 3 picks a model that fits your machine, so you can skip this. To choose one yourself, pull it by name.</p>
+          <div class="code"><pre><code>ollama pull qwen2.5:14b</code></pre><button class="copy" type="button" aria-label="Copy command: ollama pull qwen2.5:14b">Copy</button></div>
+          <p class="check">You should see the model in <code>ollama list</code>.</p>
+          <p class="time">Depends on your connection</p>
+        </li>
+
+        <li class="step" data-step="3" data-focus="machine">
+          <h3>Clone the repo and run setup</h3>
+          <p>One command builds a Python environment, installs the packages, and runs a short demo.</p>
+          <div class="code"><pre><code>git clone https://github.com/veeresh-bikkaneti/antigravity-local.git
+cd antigravity-local
+python run.py</code></pre><button class="copy" type="button" aria-label="Copy the three setup commands">Copy</button></div>
+          <p class="check">You should see four numbered stages and then a <code>You&nbsp;&gt;</code> prompt. Type <code>exit</code> for now. On macOS and Linux, use <code>python3</code>. On Windows you can also run <code>.\run.ps1</code> or <code>run.bat</code>.</p>
+          <p class="time">About 3 minutes the first time. It goes quiet in the middle while packages install, and that is normal.</p>
+        </li>
+
+        <li class="step" data-step="4" data-focus="agent">
+          <h3>Activate the virtual environment</h3>
+          <p>Do this once per terminal window, from inside the <code>antigravity-local</code> folder.</p>
+          <p class="shell">Windows PowerShell</p>
+          <div class="code"><pre><code>.\venv\Scripts\Activate.ps1</code></pre><button class="copy" type="button" aria-label="Copy the PowerShell activation command">Copy</button></div>
+          <p class="shell">macOS and Linux</p>
+          <div class="code"><pre><code>source venv/bin/activate</code></pre><button class="copy" type="button" aria-label="Copy the macOS and Linux activation command">Copy</button></div>
+          <p class="check">Your prompt now starts with <code>(venv)</code>. If PowerShell blocks the script, <a href="https://github.com/veeresh-bikkaneti/antigravity-local/blob/main/ZERO_TO_CODING.md#before-you-start-activate-the-virtual-environment">the guide has the one-line fix</a>.</p>
+          <p class="time">10 seconds</p>
+        </li>
+
+        <li class="step" data-step="5" data-focus="chat">
+          <h3>Chat with your agent</h3>
+          <p>Open the coding shell on a workspace folder. Type a request in plain English.</p>
+          <div class="code"><pre><code>python code_agent.py --workspace ./workspace</code></pre><button class="copy" type="button" aria-label="Copy command: python code_agent.py --workspace ./workspace">Copy</button></div>
+          <p class="check">A banner shows your model and workspace. Try <code>/files</code>, then <code>/wiki</code>, then <code>exit</code>.</p>
+          <p class="time">1 minute</p>
+        </li>
+
+        <li class="step" data-step="6" data-focus="task">
+          <h3>Give it one job</h3>
+          <p>Hand the agent a single task and let it finish without chatting.</p>
+          <div class="code"><pre><code>python code_agent.py --workspace ./my-project --task "Create hello.py that prints hi"</code></pre><button class="copy" type="button" aria-label="Copy the one-shot task command">Copy</button></div>
+          <p class="check">You should see <code>Task completed. Created 1, changed 0.</code> and the new file listed. If you see a warning instead, the model answered without writing a file. Run the command again.</p>
+          <p class="time">Under a minute</p>
+        </li>
+
+        <li class="step" data-step="7" data-focus="editor">
+          <h3>Use it from your editor or the browser</h3>
+          <p>Start a search page on a free port, or run the Docker image. For VS Code, the README lists four routes: our shell in the terminal, the Ollama extension, Continue, and Cline.</p>
+          <div class="code"><pre><code>python run.py --serve</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --serve">Copy</button></div>
+          <p class="check">You should see <code>Serving on http://127.0.0.1:</code> followed by a port number. Open that address.</p>
+          <p class="time">Under a minute. <a href="https://github.com/veeresh-bikkaneti/antigravity-local#use-your-local-model-from-antigravity-or-vs-code">Editor setup in the README</a></p>
+        </li>
+      </ol>
+    </section>
+
+    <section class="arch" id="architecture" aria-labelledby="arch-title">
+      <h2 id="arch-title">How it fits together</h2>
+      <p class="arch-lede">These four diagrams were generated with Archify. Open one full size to explore it.</p>
+
+      <div class="tabs" role="tablist" aria-label="Architecture diagrams">
+        <button role="tab" id="tab-topology" aria-controls="panel" aria-selected="true" data-src="diagrams/system-topology.html" data-title="System topology" data-note="Which parts run on your machine, and the one boundary nothing crosses.">System topology</button>
+        <button role="tab" id="tab-bootstrap" aria-controls="panel" aria-selected="false" tabindex="-1" data-src="diagrams/bootstrap-workflow.html" data-title="Bootstrap workflow" data-note="What the setup command does from the first line to the chat prompt.">Bootstrap workflow</button>
+        <button role="tab" id="tab-tools" aria-controls="panel" aria-selected="false" tabindex="-1" data-src="diagrams/agent-tool-execution.html" data-title="Tool-call loop" data-note="How a request becomes a file: the agent, the model, the safety policy, and your workspace.">Tool-call loop</button>
+        <button role="tab" id="tab-models" aria-controls="panel" aria-selected="false" tabindex="-1" data-src="diagrams/model-pipeline-workflow.html" data-title="Model selection" data-note="How setup finds a model you already have before it downloads anything.">Model selection</button>
+      </div>
+
+      <div id="panel" class="panel" role="tabpanel" aria-labelledby="tab-topology" tabindex="0">
+        <p class="note" id="diagram-note">Which parts run on your machine, and the one boundary nothing crosses.</p>
+        <iframe id="diagram" title="System topology diagram" loading="lazy" src="about:blank"></iframe>
+        <p class="open"><a id="diagram-open" href="diagrams/system-topology.html" target="_blank" rel="noopener">Open this diagram full size</a></p>
+      </div>
+      <noscript>
+        <p>Without JavaScript, open the diagrams directly: <a href="diagrams/system-topology.html">system topology</a>, <a href="diagrams/bootstrap-workflow.html">bootstrap workflow</a>, <a href="diagrams/agent-tool-execution.html">tool-call loop</a>, <a href="diagrams/model-pipeline-workflow.html">model selection</a>.</p>
+      </noscript>
+    </section>
+
+    <section class="limits" id="limits" aria-labelledby="limits-title">
+      <h2 id="limits-title">What it cannot do yet</h2>
+      <p>These are measured limits from our own tests, not guesses.</p>
+      <ul>
+        <li><strong>Editing an existing file does not work reliably.</strong> With the default model, <code>qwen2.5:14b</code>, none of 14 attempts to edit a file, or to read one and write a new one, gave a correct result. Creating a new file from a plain prompt mostly works. Commit first and check <code>git diff</code>. A larger model may do better, and we have not tested one.</li>
+        <li><strong>The Antigravity IDE chat panel has no documented setting for a local model.</strong> Google's local-model support covers the SDK, which this project uses. In the IDE, run our shell in its built-in terminal.</li>
+        <li><strong>Only Windows 11 was tested.</strong> Native macOS and Linux, and the VS Code extension steps, are not tested yet.</li>
+      </ul>
+      <p><a href="https://github.com/veeresh-bikkaneti/antigravity-local/releases/tag/v1.0.0">Read the v1.0.0 release notes</a></p>
+    </section>
+    <section class="faq" id="faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">Questions people ask</h2>
+      <details>
+        <summary>Do I need a GPU?</summary>
+        <p>No. Small models run on a CPU, just slowly. A GPU with 16 GB of video memory runs the default model comfortably. The README has a table that matches models to hardware.</p>
+      </details>
+      <details>
+        <summary>Does it send my code anywhere?</summary>
+        <p>Not through this setup. The agent talks to Ollama on your own machine. Google's Antigravity IDE and its chat panel are separate products, and this project does not control them.</p>
+      </details>
+      <details>
+        <summary>Why did my task create no file?</summary>
+        <p>The model answered without calling its file tool. Small local models do this now and then. The tool prints a warning instead of "Task completed". Run the same command again, or name the file in your task.</p>
+      </details>
+      <details>
+        <summary>Can I use it from VS Code?</summary>
+        <p>Yes, four ways. The README lists them: our shell in the built-in terminal, the Ollama extension, Continue, and Cline. The extension steps come from their official guides, and we have not run them in VS Code ourselves.</p>
+      </details>
+      <details>
+        <summary>Does it work on macOS or Linux?</summary>
+        <p>The Docker image runs on Linux and passes its tests in CI. The native setup was tested only on Windows 11. We expect macOS and Linux to work, and we have not checked.</p>
+      </details>
+    </section>
+  </main>
+
+  <footer>
+    <p>Local Antigravity 1.0.0, MIT license. Built on <a href="https://ollama.com">Ollama</a> and the <a href="https://github.com/google-antigravity/antigravity-sdk-python">Google Antigravity SDK</a>. Diagrams by <a href="https://github.com/tt-a1i/archify">Archify</a>. This page uses <a href="https://threejs.org">Three.js</a> and <a href="https://gsap.com">GSAP</a>.</p>
+  </footer>
+
+  <div id="status" class="sr" role="status" aria-live="polite"></div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

@@ -89,3 +89,10 @@ workspace/*
 /.mcp.json
 /CLAUDE.md
 /.agents/skills/ruflo/
+
+# Front page build output and scratch
+/site/node_modules/
+/site/dist/
+/.gstack/
+/site/.claude-flow/
+/site/.ai-context/

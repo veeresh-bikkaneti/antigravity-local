@@ -2,6 +2,8 @@
 
 > Run fully autonomous, private AI agents on your local machine using the official Google Antigravity SDK (`google-antigravity`) connected to local models (Ollama, LM Studio, vLLM) or Google's open-source Research AI Harness. No cloud lock-in, no API fees.
 >
+> Prefer a guided tour? The [project site](https://veeresh-bikkaneti.github.io/antigravity-local/) walks through each step beside a drawing of your machine, with the architecture diagrams.
+>
 > For an end-to-end developer guide with real-world project recipes and the Python SDK handbook, read [ZERO_TO_CODING.md](ZERO_TO_CODING.md).
 
 ---
@@ -314,6 +316,7 @@ antigravity-local/
 ├── serve.py                  # Web UI + JSON API on a free port (python run.py --serve)
 ├── Dockerfile                # Image for the Docker path (non-root, HEALTHCHECK)
 ├── tests/                    # Regression tests (stdlib unittest) + tests/e2e.py (local & docker)
+├── site/                     # GitHub Pages front page (Vite, Three.js, GSAP). Dev: cd site && npm install && npm run dev
 └── workspace/                # Sandboxed folder where the agent creates/edits files
     ├── .gitkeep              # Keeps directory tracked in git
     └── index.html            # Artifact generated automatically by the agent
