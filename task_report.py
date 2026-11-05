@@ -40,7 +40,7 @@ def deleted(before, after):
 def render(workspace_dir, files, created, changed, removed=()):
     """Lines to print after a task. Say 'completed' only when a file was created or changed."""
     wrote = bool(created or changed or removed)
-    head = (f"✅ Task completed. Created {len(created)}, changed {len(changed)}." if wrote
+    head = (f"✅ Task completed. Created {len(created)}, changed {len(changed)}." + (f" Deleted {len(removed)}." if removed else "") if wrote
             else "⚠️ The agent finished, but it created or changed no files.")
     lines = ["=" * 76, head, f"Workspace files ({len(files)}):"]
     if removed:

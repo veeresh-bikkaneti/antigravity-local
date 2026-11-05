@@ -9,6 +9,7 @@ Zero external dependencies: runs on pure Python standard library.
 
 import os
 import sys
+import time
 import re
 import json
 import math
@@ -576,11 +577,13 @@ class MemorySearcher:
         # No comparable vectors (backend flaked/mismatch) -> trust BM25 alone.
         kept = {}
         for cid, r in scores.items():
+            has_vec = cid in sims
             r["vector_sim"] = sims.get(cid, r["vector_sim"])
             if r["bm25_rank"] == 999:
                 ok = r["vector_sim"] >= VECTOR_SIM_FLOOR
             else:
-                ok = not sims or r["vector_sim"] >= BM25_MIN_SIM
+                # A chunk with no embedding cannot be judged semantically, so keep its BM25 hit.
+                ok = not has_vec or r["vector_sim"] >= BM25_MIN_SIM
             if ok:
                 kept[cid] = r
         ranked = sorted(kept.values(), key=lambda x: x["rrf_score"], reverse=True)
@@ -599,14 +602,18 @@ def _run_index(force: bool, embedder) -> dict:
     try:
         return MemoryIndexer(MemoryDatabase(), embedder).index_all(force=force)
     except sqlite3.DatabaseError as e:
-        if isinstance(e, sqlite3.OperationalError) and "locked" in str(e):
-            raise
-        bak = DB_PATH.with_name(DB_PATH.name + ".bak")
+        msg = str(e).lower()
+        if "malformed" not in msg and "not a database" not in msg:
+            raise  # locked, disk I/O, read-only and similar are not corruption
+        bak = DB_PATH.with_name(f"{DB_PATH.name}.{int(time.time())}.bak")
         print(f"[!] Index database is corrupt ({e}); moving it to {bak.name} and rebuilding.", file=sys.stderr)
-        for suffix in ("", "-wal", "-shm"):
-            p = DB_PATH.with_name(DB_PATH.name + suffix)
-            if p.exists():
-                os.replace(p, bak if not suffix else p.with_name(p.name + ".bak"))
+        try:
+            for suffix in ("-wal", "-shm", ""):
+                p = DB_PATH.with_name(DB_PATH.name + suffix)
+                if p.exists():
+                    os.replace(p, bak.with_name(bak.name + suffix) if suffix else bak)
+        except OSError as oe:
+            sys.exit(f"[!] Could not move the corrupt index aside ({oe}). Close other memory.py or serve.py processes and retry.")
         return MemoryIndexer(MemoryDatabase(), embedder).index_all(force=True)
 
 

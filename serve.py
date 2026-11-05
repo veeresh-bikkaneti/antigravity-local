@@ -88,7 +88,7 @@ def build_server(host, port, db_path=None, ollama_url=memory.OLLAMA_API_BASE):
                 except ValueError:
                     return self._json(400, {"error": "limit must be an integer"})
                 if limit < 1:
-                    return self._json(400, {"error": f"limit must be 1-{MAX_LIMIT}"})
+                    return self._json(400, {"error": "limit must be >= 1"})
                 limit = min(limit, MAX_LIMIT)
                 with lock:
                     results = searcher.search(q, limit=limit)

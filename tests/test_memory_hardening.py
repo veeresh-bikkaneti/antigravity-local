@@ -109,7 +109,7 @@ class CorruptAndMissingDb(Base):
         self.corrupt()
         code, _, _ = self.run_cmd(memory.cmd_index, force=False)
         self.assertEqual(code, 0)
-        self.assertTrue(memory.DB_PATH.with_name("index.sqlite.bak").exists())
+        self.assertTrue(list(memory.DB_PATH.parent.glob("index.sqlite.*.bak")))
         with contextlib.closing(sqlite3.connect(memory.DB_PATH)) as c:
             self.assertGreater(c.execute("SELECT COUNT(*) FROM documents").fetchone()[0], 0)
 
