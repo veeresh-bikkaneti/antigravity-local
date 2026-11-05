@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import os
 import sys
@@ -19,6 +20,10 @@ try:
 except ImportError:
     pass
 
+_parser = argparse.ArgumentParser(description="Local agent demo: creates index.html in the workspace.")
+_parser.add_argument("model", nargs="?", default=None, help="Model name (default: $LOCAL_LLM_MODEL or qwen2.5:14b).")
+ARGS = _parser.parse_args()  # before the SDK import so --help works without it
+
 # Verify dependencies
 try:
     from google.antigravity import Agent, LocalOpenAIAgentConfig
@@ -30,7 +35,7 @@ except ImportError:
 
 async def main():
     base_url = os.environ.get("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1")
-    model = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("LOCAL_LLM_MODEL", "qwen2.5:14b")
+    model = ARGS.model or os.environ.get("LOCAL_LLM_MODEL", "qwen2.5:14b")
     workspace_dir = os.environ.get(
         "WORKSPACE_DIR",
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "workspace"),
