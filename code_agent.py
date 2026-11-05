@@ -47,9 +47,20 @@ if sys.platform == "win32":
     except Exception:
         pass
 
-from google.antigravity import Agent, LocalOpenAIAgentConfig
-from google.antigravity.hooks import policy
-from google.antigravity.types import CapabilitiesConfig
+Agent = LocalOpenAIAgentConfig = policy = CapabilitiesConfig = None
+
+
+def _load_sdk():
+    """Import the SDK lazily so --help works without it."""
+    global Agent, LocalOpenAIAgentConfig, policy, CapabilitiesConfig
+    try:
+        from google.antigravity import Agent, LocalOpenAIAgentConfig
+        from google.antigravity.hooks import policy
+        from google.antigravity.types import CapabilitiesConfig
+    except ImportError:
+        print("\n❌ [ERROR] Missing dependency: 'google-antigravity' is not installed.")
+        print("👉 Run: pip install -r requirements.txt\n")
+        sys.exit(1)
 
 # Memory engine import
 try:
@@ -95,7 +106,7 @@ def get_memory_context(query: str, limit: int = 2) -> str:
         return ""
 
 
-async def execute_task(agent: Agent, prompt: str, workspace_dir: str, with_memory: bool = False):
+async def execute_task(agent, prompt: str, workspace_dir: str, with_memory: bool = False):
     """Execute a single coding prompt through the agent with streaming output."""
     memory_section = get_memory_context(prompt, limit=2) if with_memory else ""
 
@@ -116,6 +127,7 @@ async def execute_task(agent: Agent, prompt: str, workspace_dir: str, with_memor
 
 async def run_interactive_session(base_url: str, model: str, workspace_dir: str, with_memory: bool = False):
     """Run an interactive pair-programming session with the local agent."""
+    _load_sdk()
     os.makedirs(workspace_dir, exist_ok=True)
 
     capabilities = CapabilitiesConfig(enabled_tools=[]) if "gemma" in model.lower() else None
@@ -137,99 +149,113 @@ async def run_interactive_session(base_url: str, model: str, workspace_dir: str,
     print(f" • Memory Fabric   : {'ACTIVE (Auto-Retrieval Enabled)' if with_memory else 'AVAILABLE (/memory, /wiki)'}")
     print("=" * 76)
     print(" Type your coding request below (e.g., 'Create a calculator CLI in Python').")
-    print(" Commands: /memory <query>, /wiki [topic], /files, /help, exit/quit")
+    print(" Commands: /memory <query>, /wiki [topic], /files, /clear, /help, exit/quit")
     print("=" * 76 + "\n")
 
-    async with Agent(config) as agent:
-        while True:
-            try:
-                user_input = input("CodeAgent [You] > ").strip()
-                if not user_input:
+    while True:
+        async with Agent(config) as agent:
+            if await _chat_loop(agent, workspace_dir, with_memory):
+                print("\n🧹 Conversation cleared. Fresh session started.\n")
+                continue
+            return
+
+
+async def _chat_loop(agent, workspace_dir: str, with_memory: bool) -> bool:
+    """Run the REPL; return True if /clear was requested (caller restarts the session)."""
+    while True:
+        try:
+            user_input = input("CodeAgent [You] > ").strip()
+            if not user_input:
+                continue
+
+            if user_input.lower() in ["exit", "quit", "q"]:
+                print("\n👋 Happy coding! All files saved in workspace.\n")
+                return False
+
+            if user_input.lower() == "/clear":
+                return True
+
+            if user_input.lower() == "/files":
+                files = list_workspace_files(workspace_dir)
+                print(f"\n📂 Files currently in {workspace_dir} ({len(files)} total):")
+                if not files:
+                    print("   (Workspace is currently empty)")
+                for f in files:
+                    print(f"   - {f}")
+                print()
+                continue
+
+            if user_input.lower().startswith("/memory"):
+                query = user_input[7:].strip()
+                if not query:
+                    print("\nUsage: /memory <search query>\n")
                     continue
-
-                if user_input.lower() in ["exit", "quit", "q"]:
-                    print("\n👋 Happy coding! All files saved in workspace.\n")
-                    break
-
-                if user_input.lower() == "/files":
-                    files = list_workspace_files(workspace_dir)
-                    print(f"\n📂 Files currently in {workspace_dir} ({len(files)} total):")
-                    if not files:
-                        print("   (Workspace is currently empty)")
-                    for f in files:
-                        print(f"   - {f}")
-                    print()
+                if not HAS_MEMORY:
+                    print("\nMemory engine not available.\n")
                     continue
+                db = MemoryDatabase()
+                embedder = EmbeddingProvider()
+                searcher = MemorySearcher(db, embedder)
+                results = searcher.search(query, limit=3)
+                print("\n" + "-" * 60)
+                print(f"🔍 Memory Search: '{query}'")
+                print("-" * 60)
+                if not results:
+                    print("No relevant memory found.")
+                for i, r in enumerate(results, start=1):
+                    print(f"[{i}] [{r['category'].upper()}] {r['title']} ({r['path']}#L{r['start_line']}-L{r['end_line']})")
+                    for l in r["content"].strip().splitlines()[:4]:
+                        print(f"    | {l}")
+                print("-" * 60 + "\n")
+                continue
 
-                if user_input.lower().startswith("/memory"):
-                    query = user_input[7:].strip()
-                    if not query:
-                        print("\nUsage: /memory <search query>\n")
-                        continue
-                    if not HAS_MEMORY:
-                        print("\nMemory engine not available.\n")
-                        continue
-                    db = MemoryDatabase()
-                    embedder = EmbeddingProvider()
-                    searcher = MemorySearcher(db, embedder)
-                    results = searcher.search(query, limit=3)
-                    print("\n" + "-" * 60)
-                    print(f"🔍 Memory Search: '{query}'")
-                    print("-" * 60)
-                    if not results:
-                        print("No relevant memory found.")
-                    for i, r in enumerate(results, start=1):
-                        print(f"[{i}] [{r['category'].upper()}] {r['title']} ({r['path']}#L{r['start_line']}-L{r['end_line']})")
-                        for l in r["content"].strip().splitlines()[:4]:
-                            print(f"    | {l}")
-                    print("-" * 60 + "\n")
+            if user_input.lower().startswith("/wiki"):
+                parts = user_input.split(maxsplit=1)
+                topic = parts[1].strip() if len(parts) > 1 else None
+                if not topic:
+                    print("\n📚 Available Wiki Topics (.wiki/):")
+                    if WIKI_DIR.is_dir():
+                        for p in sorted(WIKI_DIR.glob("*.md")):
+                            print(f"   - {p.stem}")
+                    print("Usage: /wiki <topic>\n")
                     continue
+                target = WIKI_DIR / f"{topic}.md"
+                if not target.exists():
+                    matches = [p for p in WIKI_DIR.glob("*.md") if topic.lower() in p.stem.lower()]
+                    target = matches[0] if matches else None
+                if target and target.exists():
+                    print("\n" + "=" * 60)
+                    print(f"📖 Wiki: {target.stem.upper()}")
+                    print("=" * 60)
+                    print(target.read_text(encoding="utf-8"))
+                    print("=" * 60 + "\n")
+                else:
+                    print(f"\nTopic '{topic}' not found in .wiki/\n")
+                continue
 
-                if user_input.lower().startswith("/wiki"):
-                    parts = user_input.split(maxsplit=1)
-                    topic = parts[1].strip() if len(parts) > 1 else None
-                    if not topic:
-                        print("\n📚 Available Wiki Topics (.wiki/):")
-                        if WIKI_DIR.is_dir():
-                            for p in sorted(WIKI_DIR.glob("*.md")):
-                                print(f"   - {p.stem}")
-                        print("Usage: /wiki <topic>\n")
-                        continue
-                    target = WIKI_DIR / f"{topic}.md"
-                    if not target.exists():
-                        matches = [p for p in WIKI_DIR.glob("*.md") if topic.lower() in p.stem.lower()]
-                        target = matches[0] if matches else None
-                    if target and target.exists():
-                        print("\n" + "=" * 60)
-                        print(f"📖 Wiki: {target.stem.upper()}")
-                        print("=" * 60)
-                        print(target.read_text(encoding="utf-8"))
-                        print("=" * 60 + "\n")
-                    else:
-                        print(f"\nTopic '{topic}' not found in .wiki/\n")
-                    continue
+            if user_input.lower() == "/help":
+                print("\n💡 Available Commands & Tips:")
+                print("   - Type any natural language task: 'Create app.py with Flask'")
+                print("   - '/memory <query>' : Search project memory (BM25 + Vector)")
+                print("   - '/wiki [topic]'   : Read canonical domain knowledge pages")
+                print("   - '/files'          : View all files created so far in workspace")
+                print("   - '/clear'          : Reset the conversation (fresh agent session)")
+                print("   - 'exit'            : Quit the coding session\n")
+                continue
 
-                if user_input.lower() == "/help":
-                    print("\n💡 Available Commands & Tips:")
-                    print("   - Type any natural language task: 'Create app.py with Flask'")
-                    print("   - '/memory <query>' : Search project memory (BM25 + Vector)")
-                    print("   - '/wiki [topic]'   : Read canonical domain knowledge pages")
-                    print("   - '/files'          : View all files created so far in workspace")
-                    print("   - 'exit'            : Quit the coding session\n")
-                    continue
+            print("\nCodeAgent [Local LLM] > ", end="", flush=True)
+            await execute_task(agent, user_input, workspace_dir, with_memory=with_memory)
 
-                print("\nCodeAgent [Local LLM] > ", end="", flush=True)
-                await execute_task(agent, user_input, workspace_dir, with_memory=with_memory)
-
-            except (KeyboardInterrupt, EOFError):
-                print("\n\n👋 Exiting session.\n")
-                break
-            except Exception as exc:
-                print(f"\n❌ Error during task execution: {exc}\n")
+        except (KeyboardInterrupt, EOFError):
+            print("\n\n👋 Exiting session.\n")
+            return False
+        except Exception as exc:
+            print(f"\n❌ Error during task execution: {exc}\n")
 
 
 async def run_one_shot(base_url: str, model: str, workspace_dir: str, task: str, with_memory: bool = False):
     """Run a single autonomous task from CLI arguments and exit."""
+    _load_sdk()
     os.makedirs(workspace_dir, exist_ok=True)
 
     capabilities = CapabilitiesConfig(enabled_tools=[]) if "gemma" in model.lower() else None
