@@ -21,7 +21,6 @@ import subprocess
 import urllib.request
 import urllib.error
 from pathlib import Path
-from datetime import datetime
 
 # Windows console UTF-8 safety
 if sys.platform == "win32":
