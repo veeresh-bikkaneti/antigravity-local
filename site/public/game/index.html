@@ -19,6 +19,28 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--grey);font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.6;-webkit-font-smoothing:antialiased}
 .wrap{max-width:1180px;margin:0 auto;padding:34px 20px 70px}
+/* ===== slim persistent top bar: the way home, in game tokens =====
+   Council option 1: seal + name (never collapses below this), Home, Guide,
+   Game as current. ~48px, sticky, tab order: bar first, then the stage. */
+.topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:18px;height:48px;margin:-34px -20px 18px;padding:0 14px;background:#050505;border-bottom:1px solid var(--amber-dim);font-size:11px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.topbar .tb-mark{display:flex;align-items:center;gap:9px;color:var(--paper);text-decoration:none;font-family:"Press Start 2P",monospace;font-size:10px;letter-spacing:.04em}
+.topbar .tb-seal{flex:none;width:22px;height:22px;background:var(--amber);color:#140b00;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.topbar a.tb-link{color:var(--grey);text-decoration:none;padding:6px 2px}
+.topbar a.tb-link:hover{color:var(--amber-hi)}
+.topbar .tb-current{color:var(--amber);padding:6px 2px}
+.topbar .tb-current::before{content:"▸ "}
+a.cbtn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+.ghome{margin:4px 0 0;font-size:12px}
+.ghome a{color:var(--grey);text-decoration:underline;text-underline-offset:3px}
+.ghome a:hover{color:var(--amber-hi)}
+.gresume{font-size:12px;color:var(--grey);margin:2px 0}
+.gresume b{color:var(--amber-hi)}
+@media (max-width:680px){
+  .topbar{gap:12px;padding:0 10px;margin:-22px -12px 14px}
+  .topbar .tb-mark{font-size:9px}
+  .topbar .tb-seal{width:20px;height:20px}
+  .topbar a.tb-link,.topbar .tb-current{font-size:10px}
+}
 ::selection{background:var(--amber);color:#000}
 .kicker{margin:0 0 16px;font-size:12.5px;letter-spacing:.14em;color:var(--grey-dim);text-transform:uppercase}
 .pixel{font-family:"Press Start 2P",monospace;color:var(--amber);text-transform:uppercase;line-height:1.55;margin:0;font-weight:400;text-shadow:0 0 22px rgba(255,161,31,.28)}
@@ -332,6 +354,15 @@ body.motion-off .blockcursor,body.motion-off .bulb,body.motion-off .bob-anim,bod
 </head>
 <body>
 <div class="wrap">
+  <!-- slim persistent bar: the way home, in game tokens. Home/Guide leave the
+       game page for the homepage (../ and ../#guide); the run is paused and its
+       checkpoint saved first, so coming back resumes instead of losing it. -->
+  <nav class="topbar" aria-label="Site">
+    <a class="tb-mark exit-link" href="../"><span class="tb-seal" aria-hidden="true">A</span>Local Antigravity</a>
+    <a class="tb-link exit-link" href="../">Home</a>
+    <a class="tb-link exit-link" href="../#guide">Guide</a>
+    <span class="tb-current" aria-current="page">Game</span>
+  </nav>
   <div class="stage" id="stage" tabindex="0" role="application" aria-label="You are the player, over a person's shoulder at his desk. His computer is projected on the big screen in front of him, which fills the frame: a Mario-style level with a start line, nine hoops in order, and a finish flag at the Editor. The runner on the screen is Muse — a rounded cream plush character with a smooth face plate, glossy black eyes, pink blush cheeks, stubby arms and short legs with rounded feet. Each hoop shows the big symbol of the system it touches, and clearing a hoop collects that tool into the pocket under the screen. At the finish the view switches to the IDE, with all nine tools ready and the local model saying Hello, World. One Play button runs the whole level.">
     <div class="slide-text">
       <p class="kicker" id="stKicker"></p>
@@ -480,6 +511,8 @@ body.motion-off .blockcursor,body.motion-off .bulb,body.motion-off .bob-anim,bod
             <button type="button" class="cbtn primary" id="btnTitlePlay">▶ Start the run</button>
             <button type="button" class="cbtn" id="btnTitleManual">Step through manually →</button>
           </div>
+          <p class="gresume" id="resumeBox" hidden></p>
+          <p class="ghome"><a class="exit-link" href="../">← Back to the homepage</a></p>
           <div class="gset">
             <button type="button" class="set-sound">Sound <b>ON</b></button>
             <button type="button" class="set-speed">Speed <b>STORY</b></button>
@@ -493,7 +526,10 @@ body.motion-off .blockcursor,body.motion-off .bulb,body.motion-off .bob-anim,bod
             <button type="button" class="cbtn primary" id="btnResume">▶ Resume</button>
             <button type="button" class="cbtn" id="btnRestart">↻ Restart the run</button>
             <button type="button" class="cbtn" id="btnPauseClose">Back to the level</button>
+            <a class="cbtn exit-link" href="../#guide">← Back to the guide</a>
+            <a class="cbtn exit-link" href="../">Home</a>
           </div>
+          <p class="ghome">Leaving pauses the run and saves your checkpoint — come back and resume where you left off.</p>
           <div class="gset">
             <button type="button" class="set-sound">Sound <b>ON</b></button>
             <button type="button" class="set-speed">Speed <b>STORY</b></button>
@@ -524,6 +560,8 @@ body.motion-off .blockcursor,body.motion-off .bulb,body.motion-off .bob-anim,bod
             <button type="button" class="cbtn primary" id="btnEnterIDE">Open the Editor →</button>
             <button type="button" class="cbtn" id="btnAgain">↻ Run it again</button>
             <button type="button" class="cbtn" id="btnStay">Back to the level</button>
+            <a class="cbtn exit-link" href="../#guide">← Back to the guide</a>
+            <a class="cbtn exit-link" href="../">Home</a>
           </div>
         </div>
         <div class="desk-strip"></div>
@@ -923,6 +961,59 @@ var viewport=document.getElementById('viewport'), world=document.getElementById(
 wheelG=document.getElementById('startWheel');
 
 var cur=0, visited=-1, playing=false, paused=false, avatarAt=0;
+/* --- checkpoint persistence (council option 1): leaving mid-run pauses and
+   saves, so coming back resumes instead of losing the run. sessionStorage
+   only — the checkpoint dies with the tab, it is never shared or kept.
+   Key: 'ag-local-game-checkpoint-v1'. Shape: {v:1, cur, visited,
+   score, tools:[bool×9], elapsedMs, replaysUsed, savedAt}. Resume is
+   replay-the-leg: the avatar re-walks the next leg from the last cleared
+   station; nothing teleports past an unplayed station. --- */
+var CKPT_KEY='ag-local-game-checkpoint-v1';
+function saveCheckpoint(){
+  if(!booted || visited<0) return;
+  try{
+    sessionStorage.setItem(CKPT_KEY, JSON.stringify({v:1, cur:cur, visited:visited,
+      score:(visited+1)*1000,
+      /* tools from visited, not from the slot classes: collect() only marks
+         a slot 'got' after its fly animation lands, so reading the classes
+         here would save the just-collected tool as missing, one station late */
+      tools:HOPS.map(function(_,i){ return i<=visited; }),
+      elapsedMs:Date.now()-runStart, replaysUsed:replaysUsed, savedAt:Date.now()}));
+  }catch(e){}
+}
+function loadCheckpoint(){
+  try{
+    var raw=sessionStorage.getItem(CKPT_KEY); if(!raw) return null;
+    var c=JSON.parse(raw);
+    if(!c || c.v!==1 || typeof c.visited!=='number' || c.visited<0 || c.visited>8) return null;
+    if(!Array.isArray(c.tools) || c.tools.length!==9) return null;
+    return c;
+  }catch(e){ return null; }
+}
+function clearCheckpoint(){ try{ sessionStorage.removeItem(CKPT_KEY); }catch(e){} }
+/* restore the cleared stations (lit road, pocket, score) without playing
+   their encounters — the player re-walks the next leg on Resume. */
+function restoreCheckpoint(c){
+  visited=c.visited; runStart=Date.now()-(c.elapsedMs||0); replaysUsed=c.replaysUsed||0;
+  for(var i=0;i<=visited;i++){
+    hoopEls[i].classList.add('lit'); farcEls[i].classList.add('lit');
+    if(invSlots[i]) invSlots[i].classList.add('got');
+  }
+  invUpdate();
+  elScore.textContent='SCORE '+pad4((visited+1)*1000);
+  groundLit.setAttribute('width',hx(visited)+56);
+  cur=visited; avatarAt=visited;
+  mavatar.setAttribute('data-expr',EXPR[visited]);
+  setAvatarX(hx(visited)); setCam(camFor(hx(visited)),false);
+  renderText();
+}
+function resumeFromCheckpoint(){
+  var c=loadCheckpoint(); if(!c) return;
+  var target=Math.min(HOPS.length-1, c.visited+1);
+  dismissTitle(); hideResults();
+  encounterArmed=true;
+  arrive(target, c.visited);
+}
 var timers=[], typeTimer=null, cmdTimer=null, resultTimer=null, travelRAF=null;
 var camX=0;
 
@@ -981,6 +1072,7 @@ function hoopPass(i){
   elScore.textContent='SCORE '+pad4((i+1)*1000);
   groundLit.setAttribute('width',hx(i)+56);
   collect(i); /* the hoop's tool is his — it flies into the pocket and stays with him */
+  saveCheckpoint(); /* every station clear is a checkpoint: leaving now resumes here */
   if(!REDUCED&&!MOTION_OFF){
     var r=mavatar.getBoundingClientRect(), v=viewport.getBoundingClientRect();
     floatScore.style.left=(r.left-v.left+r.width/2-24)+'px';
@@ -1094,6 +1186,7 @@ function play(){
   encounterArmed=true; dismissTitle();
   if(!paused){
     clearTimers(); visited=-1; hideIDE(); hideResults(); clearInventory();
+    clearCheckpoint(); /* a fresh run starts from checkpoint 1 — the old save is gone */
     hoopEls.forEach(function(el,j){ resetStation(j); el.classList.remove('current'); });
     groundLit.setAttribute('width',170);
     elScore.textContent='SCORE 0000';
@@ -1144,6 +1237,9 @@ mt.addEventListener('click',function(){
   if(MOTION_OFF){ stopPlay(); povFrame.classList.remove('typing'); elTyped.textContent=HOPS[cur].arrow; elCmdTyped.textContent=HOPS[cur].cmd; elCmdResult.textContent=HOPS[cur].result; }
 });
 window.addEventListener('resize',function(){ setCam(camFor(hx(avatarAt)),false); });
+/* leaving the tab by any route (bar, pause exit, browser back, close) saves
+   the checkpoint first — the run is paused, never silently destroyed. */
+window.addEventListener('pagehide',function(){ try{ if(playing)stopPlay(); }catch(e){} saveCheckpoint(); });
 
 /* ================= GAME SYSTEMS: sound, particles, encounters, screens =================
    Motion law applied: one lit thing per beat — the telegraph is the only glow while it
@@ -1336,6 +1432,7 @@ function showResults(){
 function togglePauseScreen(){
   if(pauseScreen.classList.contains('open')){ closeScreens(); if(paused)play(); return; }
   if(playing)stopPlay();
+  saveCheckpoint(); /* pausing is a checkpoint too */
   document.getElementById('pauseWhere').textContent='The run is holding at checkpoint '+(cur+1)+' of 9 — '+HOPS[cur].short+'. The packet is still in Muse\u2019s hands.';
   openScreen(pauseScreen);
 }
@@ -1361,10 +1458,34 @@ document.getElementById('btnEnterIDE').addEventListener('click',function(){ hide
 document.getElementById('btnAgain').addEventListener('click',function(){ hideResults(); stopPlay(); paused=false; play(); });
 document.getElementById('btnStay').addEventListener('click',function(){ hideResults(); });
 
-/* init: checkpoint 1 — he types run.bat, the wheel spins, the character is at the start line */
+/* --- two-way exits: every link home pauses the run and saves the checkpoint
+   first, then navigates. The bar is not the only way home — pause, results,
+   and title exits do the same. --- */
+document.querySelectorAll('a.exit-link').forEach(function(a){
+  a.addEventListener('click',function(){ try{ if(playing)stopPlay(); }catch(e){} saveCheckpoint(); });
+});
+
+/* init: a saved checkpoint restores the cleared road and offers Resume
+   (re-walk the next leg); otherwise checkpoint 1 — he types run.bat, the
+   wheel spins, the character is at the start line. */
+var savedCp=loadCheckpoint();
 setCam(0,false);
-arrive(0,0);
-booted=true; refreshSetLabels();
+if(savedCp){
+  booted=true;
+  restoreCheckpoint(savedCp);
+  var rb=document.getElementById('resumeBox');
+  rb.innerHTML='Saved checkpoint: <b>station '+(savedCp.visited+1)+' of 9 — '+esc(HOPS[savedCp.visited].short)+' cleared</b> · score '+pad4(savedCp.score||0)+'. ';
+  var rbBtn=document.createElement('button'); rbBtn.type='button'; rbBtn.className='cbtn primary'; rbBtn.id='btnResumeRun'; rbBtn.textContent='▶ Resume at checkpoint '+(savedCp.visited+1);
+  rbBtn.addEventListener('click',function(){ resumeFromCheckpoint(); });
+  var fbBtn=document.createElement('button'); fbBtn.type='button'; fbBtn.className='cbtn'; fbBtn.id='btnFreshRun'; fbBtn.textContent='Start fresh';
+  fbBtn.addEventListener('click',function(){ clearCheckpoint(); closeScreens(); stopPlay(); paused=false; play(); });
+  rb.appendChild(rbBtn); rb.appendChild(document.createTextNode(' ')); rb.appendChild(fbBtn);
+  rb.hidden=false;
+  refreshSetLabels();
+} else {
+  arrive(0,0);
+  booted=true; refreshSetLabels();
+}
 })();
 </script>
 </body>
