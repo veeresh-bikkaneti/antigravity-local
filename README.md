@@ -4,7 +4,7 @@
 >
 > Prefer a guided tour? The [project site](https://veeresh-bikkaneti.github.io/antigravity-local/) walks through each step beside a drawing of your machine, with the architecture diagrams.
 >
-> Prefer to play it? [Play the zero-to-coding game](https://veeresh-bikkaneti.github.io/antigravity-local/game/) — a side-scroller that walks the same nine setup steps, from `run.bat` to Hello World in the editor. It is a walkthrough, not a substitute for running the setup yourself.
+> Prefer to play it? [Play the zero-to-coding game](https://veeresh-bikkaneti.github.io/antigravity-local/game/) - a side-scroller that walks the same nine setup steps, from `run.bat` to Hello World in the editor. It is a walkthrough, not a substitute for running the setup yourself.
 >
 > For an end-to-end developer guide with real-world project recipes and the Python SDK handbook, read [ZERO_TO_CODING.md](ZERO_TO_CODING.md).
 
@@ -56,11 +56,11 @@ The demo in step 5 checks whether the file was actually written. If the agent an
 6. Start the Agent
 7. Watch the Agent call Ollama and get a `tool_call` back
 8. Write a file in the workspace, through the Policy Gate
-9. Memory + Editor — it ends with the local model saying Hello World in the IDE
+9. Memory + Editor: it ends with the local model saying Hello World in the IDE
 
 Each station is guarded by the system it sets up, and clearing it drops that system's tool into a pocket that fills up to POCKET FULL. The game is a documentation walkthrough: it shows the real commands and the real flow, but it does not run Ollama, pull a model, or write a file for you. To actually set up, run the one command above.
 
-The game page lives in the repo at `site/public/game/index.html`. The site build (Vite) copies everything in `site/public/` into the published site, so the game is served at `/game/` — a plain `site/game/` file would not be published, and that is how the page 404'd when it was first added.
+The game page lives in the repo at `site/public/game/index.html`. The site build (Vite) copies everything in `site/public/` into the published site, so the game is served at `/game/`. A plain `site/game/` file would not be published, and that is how the page 404'd when it was first added.
 
 ---
 
