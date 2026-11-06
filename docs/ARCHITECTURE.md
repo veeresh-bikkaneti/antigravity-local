@@ -95,6 +95,9 @@ graph TB
    - An interactive terminal shell where you pair-program with the local agent in real time.
    - Runs one-shot tasks (`--task "Build a REST API in FastAPI"`) or a continuous interactive conversation.
    - Has built-in commands (`/memory`, `/wiki`, `/files`, `/clear`, `/help`).
+4. Project site (`site/`, Vite + Three.js + GSAP, published by GitHub Pages from `site/dist`):
+   - The front page walks through the seven setup steps beside a drawing of your machine, with the Archify diagrams.
+   - The zero-to-coding game lives at `site/public/game/index.html` and is served at `/game/`. It is a side-scroller through the same nine setup steps (launcher, Ollama, model pull, serve, endpoint, Agent, Agent calls Ollama, workspace write, Memory + Editor). It is documentation, not a setup path: it runs no Ollama and writes no files. Files under `site/public/` are copied verbatim into `site/dist` by the build; a file placed directly under `site/` is not published.
 
 ### 2.2. Google Antigravity SDK layer
 1. Agent runtime (`google.antigravity.Agent`):
@@ -166,11 +169,13 @@ Antigravity Local checks open-source models at runtime instead of defaulting to 
 
 ## 6. Governance, specifications, and Docker checks
 
-1. Refined product specification:
+1. Project site and game:
+   - The site is built with Vite (`cd site && npm run build`) and published from `site/dist`. The game is a static page at `site/public/game/index.html`, served at `/game/`, and linked from the homepage hero, nav, a short game section, and the footer.
+2. Refined product specification:
    - See [`docs/PRODUCT_SPEC.md`](PRODUCT_SPEC.md) for the full technical specification of the Runtime Engine, Hardware Scheduler, 3-Tier Memory Fabric, Harness Safety Policies, and Developer REPL.
-2. Council consensus manifest:
+3. Council consensus manifest:
    - See [`docs/CONSENSUS_MANIFEST.md`](CONSENSUS_MANIFEST.md) for the formal voting and deliberation record signed by the Council of Experts (Architect, QA Lead, Systems Engineer, UX Designer, Security Officer) under P-Stack swarm governance, after Advisor approval.
-3. Three-tier memory fabric:
+4. Three-tier memory fabric:
    - See [`docs/MEMORY_SPEC.md`](MEMORY_SPEC.md) for the mathematical formulation of Reciprocal Rank Fusion, SQLite FTS5 schema, and token benchmark reduction analysis.
-4. Docker clean-room checks:
+5. Docker clean-room checks:
    - Run `python tests/e2e.py docker` (or see the [README Docker section](../README.md#1-command-docker-clean-room-test-drive) for the shell-specific `docker run` form) to run the checks in a clean-room Linux container. The older `docker-test-drive.sh` script prints its results but does not assert, and CI does not run it.

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Local Antigravity: a coding agent that runs on your own machine</title>
-  <meta name="description" content="Local Antigravity runs the Google Antigravity SDK against a model on your own computer, served by Ollama. One command to set up, or one Docker image. Includes a step-by-step guide and the architecture diagrams.">
+  <meta name="description" content="Local Antigravity runs the Google Antigravity SDK against a model on your own computer, served by Ollama. One command to set up, or one Docker image. Includes a step-by-step guide, the architecture diagrams, and a side-scrolling game that plays the same setup from zero to coding.">
   <meta name="color-scheme" content="dark light">
   <meta name="theme-color" content="#e4ddcf">
   <meta property="og:type" content="website">
@@ -30,6 +30,7 @@
   <header class="bar">
     <a class="mark" href="#top"><span class="seal" aria-hidden="true"></span>Local Antigravity</a>
     <nav aria-label="Page sections">
+      <a href="game/">Game</a>
       <a href="#guide">Guide</a>
       <a href="#architecture">Architecture</a>
       <a href="#limits">Limits</a>
@@ -46,7 +47,7 @@
         <p class="lede">Local Antigravity runs the Google Antigravity SDK against a model on your computer, served by Ollama. Setup needs no cloud account and no API key.</p>
         <p class="actions">
           <a class="btn btn-primary" href="#guide">Start the guide</a>
-          <a class="btn" href="game/">Play the zero-to-coding game →</a>
+          <a class="btn btn-game" href="game/">▶ Play the zero-to-coding game</a>
           <a class="btn" href="https://github.com/veeresh-bikkaneti/antigravity-local">See the code on GitHub</a>
         </p>
         <p class="fine">Version 1.0.0. Tested on Windows 11. macOS and Linux are not tested yet.</p>
@@ -60,6 +61,12 @@
           </ul>
         </div>
       </div>
+    </section>
+
+    <section class="game" id="game" aria-labelledby="game-title">
+      <h2 id="game-title">Play the setup as a game</h2>
+      <p>Prefer to watch it happen? The zero-to-coding game walks the same nine steps as the guide as a side-scroller: run the launcher, pull Ollama, pull the model, serve it, wire the endpoint, start the agent, watch it call the model, write a file, and land in the editor. You collect each tool into a pocket as you clear its station, and it ends with the local model saying Hello World in the IDE.</p>
+      <p><a class="btn btn-game" href="game/">▶ Play the zero-to-coding game</a></p>
     </section>
 
     <section class="pillars" id="pillars" aria-labelledby="pillars-title">
@@ -208,7 +215,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
   </main>
 
   <footer>
-    <p>Local Antigravity 1.0.0, MIT license. Built on <a href="https://ollama.com">Ollama</a> and the <a href="https://github.com/google-antigravity/antigravity-sdk-python">Google Antigravity SDK</a>. Diagrams by <a href="https://github.com/tt-a1i/archify">Archify</a>. This page uses <a href="https://threejs.org">Three.js</a> and <a href="https://gsap.com">GSAP</a>.</p>
+    <p>Local Antigravity 1.0.0, MIT license. Built on <a href="https://ollama.com">Ollama</a> and the <a href="https://github.com/google-antigravity/antigravity-sdk-python">Google Antigravity SDK</a>. Diagrams by <a href="https://github.com/tt-a1i/archify">Archify</a>. This page uses <a href="https://threejs.org">Three.js</a> and <a href="https://gsap.com">GSAP</a>. <a href="game/">Play the zero-to-coding game</a>.</p>
   </footer>
 
   <div id="status" class="sr" role="status" aria-live="polite"></div>
