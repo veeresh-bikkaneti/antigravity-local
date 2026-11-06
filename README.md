@@ -4,6 +4,8 @@
 >
 > Prefer a guided tour? The [project site](https://veeresh-bikkaneti.github.io/antigravity-local/) walks through each step beside a drawing of your machine, with the architecture diagrams.
 >
+> Prefer to play it? [Play the zero-to-coding game](https://veeresh-bikkaneti.github.io/antigravity-local/game/) - a side-scroller that walks the same nine setup steps, from `run.bat` to Hello World in the editor. It is a walkthrough, not a substitute for running the setup yourself.
+>
 > For an end-to-end developer guide with real-world project recipes and the Python SDK handbook, read [ZERO_TO_CODING.md](ZERO_TO_CODING.md).
 
 ---
@@ -38,6 +40,28 @@ chmod +x run.sh && ./run.sh
 5. Autonomous Verification: Asks the local agent to create `workspace/index.html` with its built-in tool calling.
 6. Interactive Shell: Drops you into an interactive terminal where you can ask your local agent to write code or inspect files.
 
+The demo in step 5 checks whether the file was actually written. If the agent answers without writing anything, it prints a warning instead of claiming success. The same check runs for one-shot tasks in `code_agent.py`.
+
+---
+
+## Play the setup as a game
+
+[Play the zero-to-coding game](https://veeresh-bikkaneti.github.io/antigravity-local/game/) on the project site. It is a side-scrolling walkthrough of the same setup, in nine stations in order:
+
+1. Run the launcher (`run.bat`, `run.sh`, or `run.ps1`)
+2. Pull Ollama
+3. Pull the model (`qwen2.5-coder:14b`, about 9 GB)
+4. Serve it on `:11434`
+5. Wire the endpoint for the Antigravity Harness
+6. Start the Agent
+7. Watch the Agent call Ollama and get a `tool_call` back
+8. Write a file in the workspace, through the Policy Gate
+9. Memory + Editor: it ends with the local model saying Hello World in the IDE
+
+Each station is guarded by the system it sets up, and clearing it drops that system's tool into a pocket that fills up to POCKET FULL. The game is a documentation walkthrough: it shows the real commands and the real flow, but it does not run Ollama, pull a model, or write a file for you. To actually set up, run the one command above.
+
+The game page lives in the repo at `site/public/game/index.html`. The site build (Vite) copies everything in `site/public/` into the published site, so the game is served at `/game/`. A plain `site/game/` file would not be published, and that is how the page 404'd when it was first added.
+
 ---
 
 ## Serve it: search UI + API on a free port (local or Docker)
@@ -53,7 +77,7 @@ First run builds its own virtualenv and installs dependencies, so grab a coffee.
 
 **Path B: run the Docker image (nothing installed on your machine):**
 ```bash
-docker build -t antigravity-local .      # works today, takes about a minute
+docker build -t antigravity-local .      # works today
 docker run -d --rm -p 127.0.0.1::8000 --name ag antigravity-local
 docker port ag 8000            # shows the random host port, e.g. 127.0.0.1:54921
 ```
@@ -78,8 +102,8 @@ Everything you start has an off switch, and everything it leaves behind is safe 
 
 | What you started | How to stop it | What it leaves behind | Remove that with |
 | :--- | :--- | :--- | :--- |
-| Local server (`run.py --serve`) | `Ctrl+C` in its terminal | `venv/` (about 250 MB) and `.memory/` (search index, about 1 MB). Both rebuild themselves next run. | PowerShell: `Remove-Item -Recurse -Force venv, .memory`. macOS/Linux/Git Bash: `rm -rf venv .memory` |
-| Docker container | `docker stop ag` (it was started with `--rm`, so it deletes itself) | The image (about 480 MB) | `docker rmi antigravity-local` |
+| Local server (`run.py --serve`) | `Ctrl+C` in its terminal | `venv/` and `.memory/` (search index, about 1 MB). Both rebuild themselves next run. | PowerShell: `Remove-Item -Recurse -Force venv, .memory`. macOS/Linux/Git Bash: `rm -rf venv .memory` |
+| Docker container | `docker stop ag` (it was started with `--rm`, so it deletes itself) | The image | `docker rmi antigravity-local` |
 | `tests/e2e.py local` / `docker` | Nothing, they clean up after themselves | Nothing. Their servers, containers, images and temp folders are removed | n/a |
 | Archify global install | n/a | A global `archify` command | `npm uninstall -g archify` |
 
@@ -126,6 +150,7 @@ Good to know:
 
 ## Table of contents
 0. [Serve it: search UI + API on a free port](#serve-it-search-ui--api-on-a-free-port-local-or-docker)
+0. [Play the setup as a game](#play-the-setup-as-a-game)
 1. [Use your local model from Antigravity or VS Code](#use-your-local-model-from-antigravity-or-vs-code)
 2. [Run it with one command](#run-it-with-one-command)
 3. [What is Antigravity Local?](#what-is-this)
@@ -317,6 +342,8 @@ antigravity-local/
 ├── Dockerfile                # Image for the Docker path (non-root, HEALTHCHECK)
 ├── tests/                    # Regression tests (stdlib unittest) + tests/e2e.py (local & docker)
 ├── site/                     # GitHub Pages front page (Vite, Three.js, GSAP). Dev: cd site && npm install && npm run dev
+│   ├── public/game/index.html # Zero-to-coding side-scroller game, served at /game/
+│   └── src/                   # Front-page drawing (scene.js) and styles
 └── workspace/                # Sandboxed folder where the agent creates/edits files
     ├── .gitkeep              # Keeps directory tracked in git
     └── index.html            # Artifact generated automatically by the agent

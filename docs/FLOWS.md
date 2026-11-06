@@ -238,6 +238,7 @@ flowchart TD
 | **Clean-Room Docker Test** | `python tests/e2e.py docker` | `tests/e2e.py` | [System Topology](diagrams/system-topology.html) |
 | **Memory Web App** | `python run.py --serve` | `serve.py` | [System Topology](diagrams/system-topology.html) |
 | **One-Shot Task Execution** | `python code_agent.py --task "<task>"` | `code_agent.py` | [Tool Execution Sequence](diagrams/agent-tool-execution.html) |
+| **Play the setup as a game** | Open `/game/` on the project site | `site/public/game/index.html` | [System Topology](diagrams/system-topology.html) |
 | **Model Pre-Flight & Pull** | Built into `run.py` | `run.py:get_installed_ollama_models()` | [Model Selection Pipeline](diagrams/model-pipeline-workflow.html) |
 | **Streaming Token Test** | `python test_local.py [model]` | `test_local.py` | [System Topology](diagrams/system-topology.html) |
 | **Autonomous Workspace Demo** | `python agent_with_workspace.py [model]`| `agent_with_workspace.py` | [Tool Execution Sequence](diagrams/agent-tool-execution.html) |
@@ -258,3 +259,13 @@ flowchart LR
 ```
 
 The server has no authentication. Keep it on `127.0.0.1`, or publish the Docker port with `-p 127.0.0.1::8000`. It does not need Ollama. Without it, search uses the built-in fallback vectors. The local path builds its own venv on first run.
+
+---
+
+## Flow 7: the project site and the zero-to-coding game
+
+The GitHub Pages site (`site/`, Vite) is documentation, not a runtime path. It is built with `npm run build` and published from `site/dist`. The game is a static page at `site/public/game/index.html`, served at `/game/` and linked from the homepage hero, nav, game section, and footer.
+
+The game walks the same nine steps as Flow 1, as a side-scroller: run the launcher, pull Ollama, pull `qwen2.5-coder:14b`, serve on `:11434`, wire the endpoint for the Antigravity Harness, start the Agent, watch the Agent call Ollama and receive a `tool_call`, write a file through the Policy Gate, and land in Memory + Editor with a Hello World in the IDE. Each station is guarded by the system it sets up, and clearing it collects that system's tool into a pocket that fills to POCKET FULL. The game runs no Ollama, pulls no model, and writes no files. To actually set up, follow Flow 1.
+
+One publishing rule to remember: Vite copies `site/public/` verbatim into `site/dist`. A page placed directly under `site/` is not published. That is why the game 404'd when it was first added at `site/game/index.html`, and why it lives in `site/public/game/` now.

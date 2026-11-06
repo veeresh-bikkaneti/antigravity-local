@@ -64,6 +64,11 @@ Google Antigravity Local pulls the official `google-antigravity` SDK off Google 
 - It has no authentication. Locally it binds to `127.0.0.1` on a free port. The Docker image sets `HOST=0.0.0.0`, so publish its port to `127.0.0.1` only (`-p 127.0.0.1::8000`) unless you want other machines to reach it.
 - It indexes the repository's memory when it starts, so the first start takes longer than later ones.
 
+### Module 7: project site and zero-to-coding game (`site/`)
+- The GitHub Pages site is built with Vite and published from `site/dist`. The front page walks the seven setup steps beside a Three.js drawing of the machine, with the Archify diagrams.
+- The game is a static page at `site/public/game/index.html`, served at `/game/`. It plays the nine setup steps as a side-scroller (launcher, Ollama pull, model pull, serve, endpoint, Agent, Agent calls Ollama, workspace write, Memory + Editor), collecting each system's tool into a pocket, and ends with Hello World in the IDE. It is documentation: it runs no Ollama and writes no files.
+- Publishing rule: Vite copies `site/public/` verbatim into `site/dist`. A page placed directly under `site/` is not published.
+
 ---
 
 ## 3. Engineering and design review notes
@@ -85,6 +90,7 @@ Google Antigravity Local pulls the official `google-antigravity` SDK off Google 
 ---
 
 ## 4. Quality notes and known limits
+- Tests: `python3 -m unittest discover -s tests` runs 96 tests, 3 skipped (verified 2026-11-06 on main). The demo and one-shot tasks verify the workspace write with `task_report` and warn instead of claiming success when the agent writes nothing.
 - Docker: `docker-test-drive.sh` prints results but does not assert on them, and CI does not run it. CI runs `python tests/e2e.py docker` instead. Earlier records of "7 gates passed" came from a manual run and are not a CI guarantee.
 - Memory benchmark: one manual run on a single laptop compared naive full-repo ingestion with memory retrieval over 5 alternating runs. The median was 1,877.4 ms against 8.10 ms. See `CONTEXT_MEMORY.md` for the raw figures. We do not claim a general speedup beyond that machine.
 - Adversarial testing: a manual pass probed malformed FTS5 queries, vector dimension mismatches, and 50,000-character queries, and found no unhandled exceptions. That is not a proof of security.

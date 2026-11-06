@@ -105,9 +105,25 @@ const slide = (ox) => {
 for (const step of steps) {
   ScrollTrigger.create({ trigger: step, start: "top 62%", end: "bottom 38%", onToggle: (self) => { if (self.isActive) activate(step); } });
 }
+/* ---- section zoom: as each block comes into view, the camera zooms to the part
+   of the machine it is about. The guide steps above still win inside the guide.
+   Each trigger fires once when the section top crosses the line, so two sections
+   never fight over the camera. With motion paused (or reduced motion), focus()
+   jumps instead of gliding, so the text stays readable with no animation at all. ---- */
+const sectionFocus = [
+  ["#game", "person", 0],
+  [".pillars", "machine", 0],
+  ["#limits", "agent", 0],
+  ["#faq", "chat", 0],
+  ["footer", "overview", -0.24],
+];
+for (const [sel, focusName, ox] of sectionFocus) {
+  const zoom = () => { $$(".step.is-active").forEach((s) => s.classList.remove("is-active")); scene?.focus(focusName); slide(ox); };
+  ScrollTrigger.create({ trigger: sel, start: "top 55%", onEnter: zoom, onEnterBack: zoom });
+}
 ScrollTrigger.create({ trigger: ".hero", start: "top top", end: "bottom 55%", onToggle: (self) => { if (self.isActive) { activate(null); slide(-0.24); } } });
 ScrollTrigger.create({ trigger: ".guide", start: "top 70%", end: "bottom 30%", onToggle: (self) => { if (self.isActive) slide(0.2); } });
-ScrollTrigger.create({ trigger: "#architecture", start: "top 85%", endTrigger: "footer", end: "bottom bottom", onToggle: (self) => { document.body.classList.toggle("dim-stage", self.isActive); if (self.isActive) { activate(null); slide(0); } } });
+ScrollTrigger.create({ trigger: "#architecture", start: "top 85%", end: "bottom 30%", onToggle: (self) => { document.body.classList.toggle("dim-stage", self.isActive); if (self.isActive) { activate(null); slide(0); } } });
 
 /* ---- the 3D drawing loads after the page has painted ---- */
 async function boot() {
