@@ -22,7 +22,11 @@
   <div id="labels" aria-hidden="true">
     <span class="tag" data-anchor="person">You, at the keyboard</span>
     <span class="tag" data-anchor="ollama">Ollama</span>
+    <span class="tag" data-anchor="model">Qwen model</span>
+    <span class="tag" data-anchor="repo">Repo · run.bat</span>
+    <span class="tag" data-anchor="venv">.venv terminal</span>
     <span class="tag" data-anchor="agent">Agent</span>
+    <span class="tag" data-anchor="job">One job · Gate</span>
     <span class="tag" data-anchor="workspace">Your files</span>
     <span class="tag" data-anchor="editor">Editor</span>
     <span class="tag tag-off" data-anchor="cloud">Cloud: not used</span>
@@ -62,6 +66,28 @@
             <li>Time: a few minutes of setup plus the model download, which is roughly 9 GB for the 14B model.</li>
           </ul>
         </div>
+        <div class="hero-controls" role="group" aria-label="Hologram controls">
+          <button id="hero-prev" class="btn btn-hero" type="button" disabled>← Prev step</button>
+          <button id="hero-next" class="btn btn-hero" type="button">Next step →</button>
+          <button id="hero-play" class="btn btn-hero" type="button">▶ Play the assembly</button>
+          <button id="hero-replay" class="btn btn-hero" type="button" disabled>↺ Replay step</button>
+          <button id="hero-pause" class="btn btn-hero" type="button" aria-pressed="false">❚❚ Pause motion</button>
+          <button id="hero-reset" class="btn btn-hero" type="button">Reset</button>
+        </div>
+        <section class="stack-readout" aria-label="Stack readout — what the assembly is made of so far">
+          <div class="stack-head"><b>THE STACK</b><span id="stack-count">0 / 7</span></div>
+          <p class="stack-just" id="stack-just">Nothing stacked yet — layer 1 is the base.</p>
+          <ol class="stack-list" id="stack-list">
+            <li class="stack-item" data-layer="7"><span class="lnum">7</span><span class="lname">Editor</span><span class="lstate"></span></li>
+            <li class="stack-item" data-layer="6"><span class="lnum">6</span><span class="lname">One job · Gate</span><span class="lstate"></span></li>
+            <li class="stack-item" data-layer="5"><span class="lnum">5</span><span class="lname">Agent</span><span class="lstate"></span></li>
+            <li class="stack-item" data-layer="4"><span class="lnum">4</span><span class="lname">.venv terminal</span><span class="lstate"></span></li>
+            <li class="stack-item" data-layer="3"><span class="lnum">3</span><span class="lname">Repo · run.bat</span><span class="lstate"></span></li>
+            <li class="stack-item" data-layer="2"><span class="lnum">2</span><span class="lname">Qwen model</span><span class="lstate"></span></li>
+            <li class="stack-item" data-layer="1"><span class="lnum">1</span><span class="lname">Ollama</span><span class="lstate"></span></li>
+          </ol>
+          <p class="stack-note">Drag the drawing to orbit · Ctrl + scroll to zoom · Scrolling the guide builds the stack too. The cloud stays out of it — it is never connected.</p>
+        </section>
       </div>
     </section>
 
@@ -125,7 +151,7 @@
           <p class="time">About 3 minutes</p>
         </li>
 
-        <li class="step" data-step="2" data-focus="ollama-core">
+        <li class="step" data-step="2" data-focus="model">
           <h3>Choose a model (optional)</h3>
           <p>Step 3 picks a model that fits your machine, so you can skip this. To choose one yourself, pull the model <code>run.py</code> would pick: <code>qwen2.5-coder:14b</code> with 15 GB or more of VRAM, <code>qwen2.5-coder:7b</code> with 8 GB of VRAM or 16 GB of RAM, and <code>llama3.2:3b</code> otherwise.</p>
           <div class="code"><pre><code>ollama pull qwen2.5-coder:7b</code></pre><button class="copy" type="button" aria-label="Copy command: ollama pull qwen2.5-coder:7b">Copy</button></div>
@@ -133,7 +159,7 @@
           <p class="time">Depends on your connection</p>
         </li>
 
-        <li class="step" data-step="3" data-focus="machine">
+        <li class="step" data-step="3" data-focus="repo">
           <h3>Clone the repo and run setup</h3>
           <p>One command builds a Python environment, installs the packages, and runs a short demo.</p>
           <div class="code"><pre><code>git clone https://github.com/veeresh-bikkaneti/antigravity-local.git
@@ -144,7 +170,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
           <p class="check">Two common errors. <code>No module named 'google'</code> means you are outside the virtual environment, so activate it (step 4). <code>Connection refused</code> on <code>:11434</code> means Ollama is not running, so start the app or run <code>ollama serve</code>.</p>
         </li>
 
-        <li class="step" data-step="4" data-focus="agent">
+        <li class="step" data-step="4" data-focus="venv">
           <h3>Activate the virtual environment</h3>
           <p>Do this once per terminal window, from inside the <code>antigravity-local</code> folder.</p>
           <p class="shell">Windows PowerShell</p>
@@ -155,7 +181,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
           <p class="time">10 seconds</p>
         </li>
 
-        <li class="step" data-step="5" data-focus="chat">
+        <li class="step" data-step="5" data-focus="agent">
           <h3>Chat with your agent</h3>
           <p>Open the coding shell on a workspace folder. Type a request in plain English. Creating a new file works most of the time. Editing an existing file does not, so read <a href="#limits">the limits below</a> before you point it at real code.</p>
           <div class="code"><pre><code>python code_agent.py --workspace ./workspace</code></pre><button class="copy" type="button" aria-label="Copy command: python code_agent.py --workspace ./workspace">Copy</button></div>
@@ -163,7 +189,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
           <p class="time">1 minute</p>
         </li>
 
-        <li class="step" data-step="6" data-focus="task">
+        <li class="step" data-step="6" data-focus="job">
           <h3>Give it one job</h3>
           <p>Hand the agent a single task and let it finish without chatting.</p>
           <div class="code"><pre><code>python code_agent.py --workspace ./my-project --task "Create hello.py that prints hi"</code></pre><button class="copy" type="button" aria-label="Copy the one-shot task command">Copy</button></div>
