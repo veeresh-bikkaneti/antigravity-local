@@ -1,5 +1,6 @@
-// The drawing behind the page: your machine as a wireframe box, with Ollama, the agent, your files
-// and an editor inside it. The cloud sits outside and never connects. Each guide step lights one part.
+// The drawing behind the page: your machine as a wireframe box, with you at the keyboard
+// in front of it, Ollama, the agent, your files and an editor inside it. The cloud sits
+// outside and never connects. Each guide step lights one part.
 import * as THREE from "three";
 import { gsap } from "gsap";
 
@@ -11,11 +12,13 @@ const POS = {
   workspace: new THREE.Vector3(-1.7, -0.75, -0.5),
   editor: new THREE.Vector3(-1.5, 0.95, 1.0),
   cloud: new THREE.Vector3(0.6, 2.75, -1.4),
+  person: new THREE.Vector3(0.2, -0.75, 1.25),
 };
 
 // camera position, look-at target, and which parts glow, per guide focus
 const FOCUS = {
   overview: { cam: [7.6, 4.0, 8.9], look: [0, 0, 0], on: [], pulses: ["agent-ollama", "agent-workspace"] },
+  person: { cam: [3.2, 0.8, 6.6], look: [0.2, -0.7, 1.2], on: ["person"], pulses: [] },
   ollama: { cam: [5.2, 1.7, 4.8], look: [1.5, 0.1, -0.2], on: ["ollama"], pulses: [] },
   "ollama-core": { cam: [3.9, 1.1, 3.3], look: [1.5, 0.1, -0.2], on: ["ollama"], core: true, pulses: [] },
   machine: { cam: [7.6, 4.3, 8.6], look: [0, 0, 0], on: ["box"], pulses: [] },
@@ -63,13 +66,12 @@ export function start({ canvas, tags, isPaused }) {
   const parts = {};
   const mkPart = (name, objects, mats) => { parts[name] = { name, objects, mats, v: 0, g: new THREE.Group() }; objects.forEach((o) => parts[name].g.add(o)); parts[name].g.position.copy(POS[name]); group.add(parts[name].g); };
   const wire = (geo, opacity = 0.9) => new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ transparent: true, opacity }));
-  const lineMats = (...objs) => objs.map((o) => o.material);
 
+  // Ollama: a still crystal, not a spinning globe. It only moves when its focus
+  // pulses the core (see coreBoost in applyAll).
   const ollamaShell = wire(new THREE.IcosahedronGeometry(0.62, 1));
   const ollamaCore = new THREE.Mesh(new THREE.SphereGeometry(0.2, 20, 14), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.85 }));
-  const ring = wire(new THREE.TorusGeometry(0.9, 0.012, 6, 56), 0.6);
-  ring.rotation.x = Math.PI / 2.4;
-  mkPart("ollama", [ollamaShell, ollamaCore, ring], [...lineMats(ollamaShell, ring), ollamaCore.material]);
+  mkPart("ollama", [ollamaShell, ollamaCore], [ollamaShell.material, ollamaCore.material]);
   parts.ollama.coreBoost = 0; // gsap can only tween a property that already exists
 
   const agentShell = wire(new THREE.OctahedronGeometry(0.5, 0));
@@ -87,6 +89,48 @@ export function start({ canvas, tags, isPaused }) {
   bar.position.y = 0.305;
   win.rotation.y = 0.35; bar.rotation.y = 0.35;
   mkPart("editor", [win, bar], [win.material, bar.material]);
+
+  // --- you, at the keyboard: a seated person at a desk with a monitor, typing.
+  // Same wireframe linework as the rest of the machine. The person faces away
+  // from the camera, toward the monitor, so the screen is what they watch.
+  // Positions are relative to POS.person (the chair), y up, -z toward the monitor.
+  const limb = (a, b, r = 0.045) => {
+    const dir = b.clone().sub(a);
+    const len = dir.length();
+    const geo = new THREE.CylinderGeometry(r, r, len, 6);
+    const mesh = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ transparent: true, opacity: 0.9 }));
+    mesh.position.copy(a).addScaledVector(dir, 0.5);
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+    return mesh;
+  };
+  const at = (geo, x, y, z, opacity = 0.9) => { const o = wire(geo, opacity); o.position.set(x, y, z); return o; };
+  const desk = at(new THREE.BoxGeometry(1.7, 0.07, 0.8), 0, -0.28, -0.15);
+  const deskLegL = at(new THREE.BoxGeometry(0.06, 0.46, 0.06), -0.75, -0.53, -0.15);
+  const deskLegR = at(new THREE.BoxGeometry(0.06, 0.46, 0.06), 0.75, -0.53, -0.15);
+  const screen = at(new THREE.PlaneGeometry(0.95, 0.6), 0, 0.12, -0.5);
+  const screenLine1 = at(new THREE.PlaneGeometry(0.7, 0.035), -0.05, 0.28, -0.49, 0.7);
+  const screenLine2 = at(new THREE.PlaneGeometry(0.55, 0.035), -0.12, 0.18, -0.49, 0.7);
+  const screenLine3 = at(new THREE.PlaneGeometry(0.62, 0.035), -0.09, 0.08, -0.49, 0.7);
+  const stand = at(new THREE.BoxGeometry(0.08, 0.22, 0.08), 0, -0.2, -0.5);
+  const standBase = at(new THREE.BoxGeometry(0.3, 0.04, 0.2), 0, -0.28, -0.5);
+  const keyboard = at(new THREE.BoxGeometry(0.7, 0.04, 0.28), 0, -0.23, 0.05);
+  const mug = at(new THREE.CylinderGeometry(0.07, 0.06, 0.12, 8), 0.68, -0.2, -0.3);
+  const chairSeat = at(new THREE.BoxGeometry(0.55, 0.07, 0.5), 0, -0.45, 0.45);
+  const chairBack = at(new THREE.BoxGeometry(0.55, 0.65, 0.07), 0, -0.12, 0.68);
+  const chairLeg = at(new THREE.BoxGeometry(0.07, 0.32, 0.07), 0, -0.63, 0.45);
+  const torso = at(new THREE.CylinderGeometry(0.17, 0.23, 0.55, 8), 0, 0.0, 0.3);
+  const head = at(new THREE.IcosahedronGeometry(0.21, 0), 0, 0.42, 0.3);
+  const armL = limb(new THREE.Vector3(-0.2, 0.15, 0.3), new THREE.Vector3(-0.14, -0.2, 0.05));
+  const armR = limb(new THREE.Vector3(0.2, 0.15, 0.3), new THREE.Vector3(0.14, -0.2, 0.05));
+  // hands: their own group, so the frame loop can bob them while typing
+  const hands = new THREE.Group();
+  const handL = wire(new THREE.SphereGeometry(0.06, 8, 6)); handL.position.set(-0.14, -0.2, 0.05);
+  const handR = wire(new THREE.SphereGeometry(0.06, 8, 6)); handR.position.set(0.14, -0.2, 0.05);
+  hands.add(handL, handR);
+  const personObjs = [desk, deskLegL, deskLegR, screen, screenLine1, screenLine2, screenLine3, stand, standBase, keyboard, mug, chairSeat, chairBack, chairLeg, torso, head, armL, armR, hands];
+  mkPart("person", personObjs, [...personObjs.filter((o) => o.material).map((o) => o.material), handL.material, handR.material]);
+  const personHead = head;
+  const personHands = hands;
 
   // the cloud: dashed and disconnected on purpose
   const cloudRing = new THREE.Line(new THREE.BufferGeometry().setFromPoints(new THREE.EllipseCurve(0, 0, 0.7, 0.45, 0, Math.PI * 2).getPoints(48).map((p) => new THREE.Vector3(p.x, p.y, 0))), new THREE.LineDashedMaterial({ dashSize: 0.1, gapSize: 0.09, transparent: true, opacity: 0.8 }));
@@ -172,7 +216,10 @@ export function start({ canvas, tags, isPaused }) {
       const key = t.dataset.anchor;
       const base = key === "cloud" ? POS.cloud : POS[key];
       if (!base) continue;
-      v3.copy(base).add(group.position); v3.y += key === "cloud" ? -0.65 : 0.95;
+      v3.copy(base).add(group.position);
+      // the person tag sits just above the head, which is up and in front of the chair
+      if (key === "person") { v3.y += 0.75; v3.z += 0.3; }
+      else v3.y += key === "cloud" ? -0.65 : 0.95;
       v3.applyMatrix4(group.matrixWorld).project(camera);
       const x = (v3.x * 0.5 + 0.5) * width, y = (-v3.y * 0.5 + 0.5) * height;
       t.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, ${key === "cloud" ? "0" : "-100%"})`;
@@ -194,9 +241,10 @@ export function start({ canvas, tags, isPaused }) {
     if (live) {
       elapsed += dt;
       group.rotation.y += dt * (current === "overview" ? 0.05 : 0.008);
-      parts.ollama.g.rotation.y += dt * (0.22 + 0.6 * (parts.ollama.coreBoost || 0));
-      parts.agent.g.rotation.y -= dt * 0.3;
-      ring.rotation.z += dt * 0.4;
+      parts.agent.g.rotation.y -= dt * 0.15;
+      // typing: the hands bob on the keyboard and the head nods a little
+      personHands.position.y = Math.sin(elapsed * 6) * 0.02;
+      personHead.rotation.x = Math.sin(elapsed * 1.4) * 0.06;
       links.forEach((l) => {
         const arr = l.pts.geometry.attributes.position;
         for (let i = 0; i < 3; i++) { const t = ((elapsed * l.speed + i / 3) % 1); l.curve.getPoint(t, v3); arr.setXYZ(i, v3.x, v3.y, v3.z); }

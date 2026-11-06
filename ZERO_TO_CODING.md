@@ -141,7 +141,7 @@ The bootstrap takes about 3 minutes the first time, not counting any model downl
      ```bash
      chmod +x run.sh && ./run.sh
      ```
-5. Wait. The middle of the run is quiet, because the packages install silently. It looks stuck, but it isn't. On Windows the first run took 157 to 189 seconds, so go make a coffee.
+5. Wait. The middle of the run is quiet, because the packages install silently. It looks stuck, but it isn't. On Windows the first run took a few minutes, so go make a coffee.
 
 The bootstrap creates your Python virtual environment, installs dependencies, configures `.env`, checks that Ollama answers, and runs a short demo that writes `workspace/index.html`. You should see four numbered stages, `[1/4]` to `[4/4]`, and `System Online: Autonomous Agent Ready!` near the end. A lot of HTML scrolls past while the model writes the demo page, and that is normal. You then land at a `You >` chat prompt. Type `exit` for now. Section 4 shows how to use it properly.
 
@@ -295,7 +295,7 @@ python code_agent.py --workspace "./my_codebase" --task "Refactor fetcher.py to 
 
 ## 7. The developer SDK handbook (writing your own agents in Python)
 
-You aren't stuck with the pre-made scripts. The Google Antigravity SDK lets you build your own agents in under 30 lines of Python.
+You aren't stuck with the pre-made scripts. The Google Antigravity SDK lets you build your own agents in about 30 lines of Python.
 
 ### Minimal custom agent script (`my_custom_agent.py`):
 
@@ -337,9 +337,8 @@ if __name__ == "__main__":
     asyncio.run(build_software())
 ```
 
-### Safety policies: autonomous vs. review mode
-- Autonomous Mode (`policy.allow_all()`): The agent can inspect and create files without asking for confirmation each time. Good for quick prototyping and automated tasks.
-- Review Mode (`policy.ask_review()`): The agent prompts you for confirmation before executing file writes or terminal commands.
+### Safety policies: autonomous mode
+- Autonomous Mode (`policy.allow_all()`): The agent can inspect and create files without asking for confirmation each time. Good for quick prototyping and automated tasks. This is the policy every script in this repo uses.
 
 ---
 
