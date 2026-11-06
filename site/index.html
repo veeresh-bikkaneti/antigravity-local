@@ -32,6 +32,7 @@
     <a class="mark" href="#top"><span class="seal" aria-hidden="true"></span>Local Antigravity</a>
     <nav aria-label="Page sections">
       <a href="game/">Game</a>
+      <a href="#watch">Watch</a>
       <a href="#guide">Guide</a>
       <a href="#architecture">Architecture</a>
       <a href="#limits">Limits</a>
@@ -68,6 +69,27 @@
       <h2 id="game-title">Play the setup as a game</h2>
       <p>Prefer to watch it happen? The zero-to-coding game walks the same nine steps as the guide as a side-scroller: run the launcher, pull Ollama, pull the model, serve it, wire the endpoint, start the agent, watch it call the model, write a file, and land in the editor. You collect each tool into a pocket as you clear its station, and it ends with the local model saying Hello World in the IDE.</p>
       <p><a class="btn btn-game" href="game/">▶ Play the zero-to-coding game</a></p>
+    </section>
+
+    <section class="watch" id="watch" aria-labelledby="watch-title">
+      <h2 id="watch-title">Watch it in one minute</h2>
+      <p>The whole setup in under a minute, narrated: clone, run one command, and land in a coding agent that runs on your own machine.</p>
+      <video controls preload="metadata" poster="media/brag.jpg" aria-describedby="watch-transcript">
+        <source src="media/brag.mp4" type="video/mp4">
+        Your browser cannot play this video. <a href="media/brag.mp4">Download the MP4</a> or read the transcript below.
+      </video>
+      <details id="watch-transcript">
+        <summary>Read the transcript</summary>
+        <p>Want a coding agent that runs on your own machine, with no API fees?</p>
+        <p>Clone the repo and run <code>run.bat</code>.</p>
+        <p>It checks your hardware, then picks a model that fits. Already have one? It reuses it, with no second download.</p>
+        <p>If Ollama isn't already running, it starts it for you, and sets up a virtual environment, so your Python stays tidy.</p>
+        <p>Then the agent proves itself. It writes a <code>workspace/index.html</code> file with its own tool calling. Small models sometimes skip the write. If so, run it again.</p>
+        <p>Finally, you land at a chat prompt. Ask for code, or ask it to read your files.</p>
+        <p>Prefer a browser? Run <code>python run.py --serve</code>. You get a search page and an API, on a free port.</p>
+        <p>Your code and prompts go only to a model on your own hardware. Install Ollama first if you don't have it. Then setup downloads the Python packages, and a model if you need one. Give it a few minutes.</p>
+      </details>
+      <p class="credit">Music: "Happy Beats / Business Moves Vol. 1" by Sascha Ende (<a href="https://ende.app/en">ende.app</a>), CC BY 4.0.</p>
     </section>
 
     <section class="pillars" id="pillars" aria-labelledby="pillars-title">

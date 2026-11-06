@@ -6,6 +6,8 @@
 >
 > Prefer to play it? [Play the zero-to-coding game](https://veeresh-bikkaneti.github.io/antigravity-local/game/) - a side-scroller that walks the same nine setup steps, from `run.bat` to Hello World in the editor. It is a walkthrough, not a substitute for running the setup yourself.
 >
+> Prefer to watch? [Watch the one-minute demo](https://veeresh-bikkaneti.github.io/antigravity-local/#watch) - narrated, from `git clone` to a coding agent on your own machine.
+>
 > For an end-to-end developer guide with real-world project recipes and the Python SDK handbook, read [ZERO_TO_CODING.md](ZERO_TO_CODING.md).
 
 ---
