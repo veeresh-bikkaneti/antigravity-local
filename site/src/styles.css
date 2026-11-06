@@ -136,7 +136,7 @@ main, footer { position: relative; z-index: 2; }
 .preflight-title { font-size: 1.05rem; margin: 0 0 0.5rem; }
 .preflight ul { margin: 0; padding-left: 1.2rem; }
 
-/* Hero hologram controls + stack readout: in the page flow, below the copy —
+/* Hero hologram controls + stack readout: in the page flow, below the copy -
    never a panel floating over the drawing. */
 .hero-controls { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.5rem; }
 .btn-hero { min-height: 44px; padding: 0.55rem 0.9rem; font-size: 0.9rem; }

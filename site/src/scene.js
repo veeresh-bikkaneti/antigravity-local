@@ -1,5 +1,5 @@
-// The drawing behind the page: a hologram workbench. You stand at your desk —
-// monitor with code, keyboard, mug, PC tower — and pull each part of the setup
+// The drawing behind the page: a hologram workbench. You stand at your desk -
+// monitor with code, keyboard, mug, PC tower - and pull each part of the setup
 // out of that workspace, blown up into a big vertical stack that grows upward
 // as the guide scrolls: Ollama, the model, the repo launcher, the terminal,
 // the agent, the gated job, the editor. The cloud sits outside, dashed,
@@ -27,13 +27,13 @@ const slot = (i) => new THREE.Vector3(CORE.x, CORE.y + i * LAYER_H, CORE.z);
 const HAND = new THREE.Vector3(-0.85, -0.05, 0.8); // his presenting hand: the flight path bends through it
 // Where each piece is pulled from in his workspace.
 const SOURCES = [
-  new THREE.Vector3(-2.5, 0.15, -0.7),   // monitor — Ollama
-  new THREE.Vector3(-2.5, 0.3, -0.6),    // monitor download — the model
-  new THREE.Vector3(-1.6, -0.3, -0.55),  // files folder on the desk — the repo
-  new THREE.Vector3(-2.0, -0.3, 0.1),    // keyboard — the terminal
-  new THREE.Vector3(-2.5, 0.2, -0.6),    // monitor — the agent
-  new THREE.Vector3(-1.05, -0.2, 0.7),   // through his hand — the job
-  new THREE.Vector3(-2.5, 0.25, -0.65),  // monitor code — the editor
+  new THREE.Vector3(-2.5, 0.15, -0.7),   // monitor - Ollama
+  new THREE.Vector3(-2.5, 0.3, -0.6),    // monitor download - the model
+  new THREE.Vector3(-1.6, -0.3, -0.55),  // files folder on the desk - the repo
+  new THREE.Vector3(-2.0, -0.3, 0.1),    // keyboard - the terminal
+  new THREE.Vector3(-2.5, 0.2, -0.6),    // monitor - the agent
+  new THREE.Vector3(-1.05, -0.2, 0.7),   // through his hand - the job
+  new THREE.Vector3(-2.5, 0.25, -0.65),  // monitor code - the editor
 ];
 const PERSON_POS = new THREE.Vector3(-1.35, FLOOR, 0.95);
 const CLOUD_POS = new THREE.Vector3(2.7, 2.9, -1.7);
@@ -216,7 +216,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
   // --- the man from the photo: short brown hair, big eyes, warm smile, blue
   // polo with a small white chest badge, blue jeans, blue sneakers. One hand
   // presents the stack; the other rests on his hip. Flat colours, like the
-  // rest of the drawing — the polo blue is the one object colour, so he reads
+  // rest of the drawing - the polo blue is the one object colour, so he reads
   // as the man, not as another wireframe.
   const matSkin = new THREE.MeshBasicMaterial({ color: 0xe8b48c });
   const matHair = new THREE.MeshBasicMaterial({ color: 0x6e452a });
@@ -320,7 +320,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
   part(foreL, new THREE.SphereGeometry(0.072, 12, 10), matSkin, 0, -0.36, 0).scale.set(1, 0.8, 1.15);
 
   // --- the seven pieces: one vertical column. Every layer shares the same
-  // x/z — each new piece lands directly on top of the previous one.
+  // x/z - each new piece lands directly on top of the previous one.
   const PIECE_SCALE = 1;
   const pieces = [];
   const holo = (p, geo, x = 0, y = 0, z = 0, op = 0.3, kind = "line") => {
@@ -339,7 +339,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
   const buildPiece = (i) => {
     const g = new THREE.Group();
     const p = { g, mats: [], v: 0, landed: 0 };
-    if (i === 0) { // OLLAMA — the llama mark in 3D: head, ears, snout, neck
+    if (i === 0) { // OLLAMA - the llama mark in 3D: head, ears, snout, neck
       holo(p, new THREE.CylinderGeometry(0.13, 0.17, 0.36, 12), 0, -0.3, 0, 0.35);
       const hd = holo(p, new THREE.SphereGeometry(0.27, 12, 10), 0, 0.1, 0, 0.35);
       hd.scale.set(0.85, 1, 0.9);
@@ -356,7 +356,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
       tuft.scale.set(1.2, 0.6, 1);
       const portD = holo(p, new THREE.CylinderGeometry(0.3, 0.3, 0.07, 20), 0, -0.55, 0.1);
       portD.rotation.x = 0.5;
-    } else if (i === 1) { // MODEL — a processor chip, pins all round
+    } else if (i === 1) { // MODEL - a processor chip, pins all round
       holo(p, new THREE.BoxGeometry(0.54, 0.54, 0.16), 0, 0, 0, 0.28);
       holo(p, new THREE.BoxGeometry(0.34, 0.34, 0.2), 0, 0, 0, 0.35);
       for (let k = 0; k < 4; k++) {
@@ -366,7 +366,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
         holo(p, new THREE.BoxGeometry(0.14, 0.05, 0.05), 0.34, off, 0);
         holo(p, new THREE.BoxGeometry(0.14, 0.05, 0.05), -0.34, off, 0);
       }
-    } else if (i === 2) { // REPO — a folder of workspace files with run.bat's play launcher
+    } else if (i === 2) { // REPO - a folder of workspace files with run.bat's play launcher
       holo(p, new THREE.BoxGeometry(0.64, 0.48, 0.04), 0, 0.02, -0.07);
       holo(p, new THREE.BoxGeometry(0.24, 0.09, 0.045), -0.18, 0.29, -0.07);
       holo(p, new THREE.BoxGeometry(0.52, 0.4, 0.02), 0, 0.08, 0, 0.35);
@@ -379,13 +379,13 @@ export function start({ canvas, tags, isPaused, onStack }) {
       tri.position.set(0, -0.05, 0.14);
       g.add(tri);
       p.mats.push(tri.material);
-    } else if (i === 3) { // VENV — a terminal window with a typed prompt
+    } else if (i === 3) { // VENV - a terminal window with a typed prompt
       holo(p, new THREE.BoxGeometry(0.7, 0.52, 0.05), 0, 0, 0, 0.28);
       const ts = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.36), new THREE.MeshBasicMaterial({ map: codeTexture([4, 2, 5, 3, 6, 2, 4]) }));
       ts.position.set(0, -0.05, 0.032);
       g.add(ts);
       holo(p, new THREE.BoxGeometry(0.7, 0.09, 0.055), 0, 0.235, 0, 0.45);
-    } else if (i === 4) { // AGENT — the "A", four brand dots, harness lead
+    } else if (i === 4) { // AGENT - the "A", four brand dots, harness lead
       const legL = holo(p, new THREE.BoxGeometry(0.12, 0.62, 0.12), -0.15, 0, 0, 0.35);
       legL.rotation.z = 0.38;
       const legR = holo(p, new THREE.BoxGeometry(0.12, 0.62, 0.12), 0.15, 0, 0, 0.35);
@@ -404,7 +404,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
       lead.rotation.z = Math.PI;
       g.add(lead);
       p.mats.push(lead.material);
-    } else if (i === 5) { // ONE JOB — harness plug + the job file, through the Policy Gate
+    } else if (i === 5) { // ONE JOB - harness plug + the job file, through the Policy Gate
       const sheet = holo(p, new THREE.BoxGeometry(0.36, 0.46, 0.03), -0.1, 0.05, -0.1, 0.35);
       sheet.rotation.z = 0.08;
       holo(p, new THREE.BoxGeometry(0.3, 0.24, 0.24), 0.08, -0.05, 0.1, 0.35);
@@ -421,7 +421,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
       p.mats.push(cable.material);
       const gate = holo(p, new THREE.TorusGeometry(0.44, 0.025, 8, 40), 0, 0, 0, 0.7, "signal");
       gate.rotation.x = 0.3;
-    } else { // EDITOR — a code editor window, sidebar + code
+    } else { // EDITOR - a code editor window, sidebar + code
       holo(p, new THREE.BoxGeometry(0.76, 0.56, 0.05), 0, 0, 0, 0.25);
       const es = new THREE.Mesh(new THREE.PlaneGeometry(0.52, 0.44), new THREE.MeshBasicMaterial({ map: codeTexture([5, 3, 6, 2, 4, 5, 3, 6, 4, 2, 5]) }));
       es.position.set(0.09, -0.03, 0.032);
@@ -626,7 +626,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
   }
 
   // --- focus + controls: page scroll and the hero buttons share goTo(),
-  // so the hologram always matches the count — whoever asked last
+  // so the hologram always matches the count - whoever asked last
   function setActiveTags(on) {
     for (const t of tags) t.classList.toggle("is-active", on.includes(t.dataset.anchor));
   }
@@ -672,7 +672,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
   }
 
   // --- free orbit + zoom, composing on top of the scripted camera.
-  // Plain wheel must scroll the page — scroll is what drives the pieces,
+  // Plain wheel must scroll the page - scroll is what drives the pieces,
   // so the stage never traps it. Zoom is Ctrl/Cmd + wheel.
   const orbit = { theta: 0, phi: 0, tx: 0, tp: 0, drag: false, lx: 0, ly: 0 };
   const userZoom = { cur: 1, tgt: 1 };
@@ -759,7 +759,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
         g.visible = !pieces[i].placed && !pieces[i].flying;
         g.material.opacity = (i === nextSlot) ? 0.55 + Math.sin(elapsed * 3.2) * 0.2 : 0.2;
       });
-      // The stack bobs as one column — layers never drift apart once settled.
+      // The stack bobs as one column - layers never drift apart once settled.
       const stackBob = Math.sin(elapsed * 1.3) * 0.02;
       const top = assembledCount - 1;
       pieces.forEach((p, i) => {

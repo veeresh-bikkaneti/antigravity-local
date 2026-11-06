@@ -134,7 +134,7 @@ ScrollTrigger.create({ trigger: ".guide", start: "top 70%", end: "bottom 30%", o
 ScrollTrigger.create({ trigger: "#architecture", start: "top 85%", end: "bottom 30%", onToggle: (self) => { document.body.classList.toggle("dim-stage", self.isActive); if (self.isActive) { $$(".step.is-active").forEach((s) => s.classList.remove("is-active")); scene?.focus("assembly"); slide(0); } } });
 
 /* ---- hero hologram controls + stack readout: the buttons drive the scene
-   directly, in place — they never scroll the page. Page scroll still syncs
+   directly, in place - they never scroll the page. Page scroll still syncs
    the hologram through the triggers above; the two share the scene's goTo. ---- */
 const LAYER_SHORT = ["Ollama", "Qwen model", "Repo · run.bat", ".venv terminal", "Agent", "One job · Gate", "Editor"];
 const LAYER_NAMES = ["Install Ollama", "Choose a model", "Clone the repo and run setup", "Activate the virtual environment", "Chat with your agent", "Give it one job", "Use it from your editor or the browser"];
@@ -146,7 +146,7 @@ function updateStack({ count, top, landing, playing, event }) {
   stackCount.textContent = `${count} / 7`;
   if (landing >= 0) stackJust.innerHTML = `Now adding <b>layer ${landing + 1} · ${LAYER_SHORT[landing]}</b>…`;
   else if (top >= 0) stackJust.innerHTML = `Just added: <b>layer ${top + 1} · ${LAYER_SHORT[top]}</b>`;
-  else stackJust.textContent = "Nothing stacked yet — layer 1 is the base.";
+  else stackJust.textContent = "Nothing stacked yet - layer 1 is the base.";
   for (const li of $$(".stack-item", stackList)) {
     const layer = Number(li.dataset.layer) - 1;
     const st = $(".lstate", li);
@@ -159,7 +159,7 @@ function updateStack({ count, top, landing, playing, event }) {
   $("#hero-prev").disabled = count === 0;
   $("#hero-next").disabled = count >= 7;
   $("#hero-replay").disabled = count === 0;
-  $("#hero-play").textContent = playing ? "⏸ Playing — tap to stop" : "▶ Play the assembly";
+  $("#hero-play").textContent = playing ? "⏸ Playing - tap to stop" : "▶ Play the assembly";
   if (event === "landed" && top >= 0) say(`Layer ${top + 1} of 7 landed: ${LAYER_NAMES[top]}. ${count} layers stacked so far.`);
 }
 function wireHeroControls() {
