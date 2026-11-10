@@ -476,7 +476,7 @@ async def run_agent(model, base_url="http://localhost:11434/v1"):
     print("▶ Running quick autonomous demonstration (Agent creating 'workspace/index.html')...")
     demo_prompt = (
         f"Create an index.html file with a modern dark-mode toggle at path {target_demo}. "
-        "Call write_file or create_file with Path, Content, and Overwrite=True."
+        "Call the write_to_file tool with TargetFile, CodeContent, and Overwrite=true."
     )
     
     before = task_report.snapshot(workspace_dir)

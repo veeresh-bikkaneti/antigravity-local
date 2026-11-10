@@ -300,7 +300,7 @@ python test_local.py
 ```
 
 #### Test 2: autonomous workspace agent (`agent_with_workspace.py`)
-Watch the local Antigravity agent inspect its workspace, invoke its built-in `create_file` tool, and write a dark-mode `index.html` to disk:
+Watch the local Antigravity agent inspect its workspace, invoke its built-in `write_to_file` tool, and write a dark-mode `index.html` to disk:
 ```bash
 python agent_with_workspace.py
 ```

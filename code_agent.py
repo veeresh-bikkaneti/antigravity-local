@@ -115,9 +115,12 @@ async def execute_task(agent, prompt: str, workspace_dir: str, with_memory: bool
         f"{prompt}\n\n"
         f"Workspace Directory: {os.path.abspath(workspace_dir)}\n"
         "Important Instructions:\n"
-        "1. To create or modify files, call the `create_file` tool with parameters: "
-        "`Path` (absolute path inside the workspace), `Content` (the complete file code), and `Overwrite=True`.\n"
-        "2. Keep explanations concise and always execute the file creation tool directly."
+        "1. To create or modify files, call the `write_to_file` tool with parameters: "
+        "`TargetFile` (absolute path inside the workspace), `CodeContent` (the complete file code), "
+        "and `Overwrite=true`.\n"
+        "2. To change an existing file, read it first with `view_file`, then write the whole "
+        "updated file back with `write_to_file` and `Overwrite=true`.\n"
+        "3. Keep explanations concise and always execute the file tool directly."
     )
     response = await agent.chat(full_prompt)
     async for chunk in response:

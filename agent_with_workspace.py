@@ -61,7 +61,7 @@ async def main():
     target_file = os.path.join(workspace_dir, "index.html")
     prompt = (
         f"Create an index.html file with a modern dark-mode toggle at path {target_file}. "
-        "Call write_file or create_file with Path, Content, and Overwrite=True."
+        "Call the write_to_file tool with TargetFile, CodeContent, and Overwrite=true."
     )
     
     before = task_report.snapshot(workspace_dir)
