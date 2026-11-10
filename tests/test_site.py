@@ -126,6 +126,31 @@ class SitePage(unittest.TestCase):
         self.assertIn("What it cannot do yet", HTML)
         self.assertIn("none of 14 attempts", HTML)
 
+    def test_hero_has_a_flat_drawing_that_works_without_webgl(self):
+        self.assertIn('class="hero-art" aria-hidden="true"', HTML)
+        self.assertIn("<svg", HTML[HTML.index('class="hero-art"'):])
+        main = (SITE / "src" / "main.js").read_text(encoding="utf-8")
+        self.assertIn('classList.add("has-3d")', main)
+        self.assertIn('classList.add("no-3d")', main)
+        css = (SITE / "src" / "styles.css").read_text(encoding="utf-8")
+        self.assertIn("html.no-3d .hero-controls", css)  # no dead buttons when the 3D scene cannot start
+
+    def test_request_flow_lists_five_labelled_steps(self):
+        flow = HTML[HTML.index('<ol class="flow"'):HTML.index("</ol>", HTML.index('<ol class="flow"'))]
+        self.assertIn("aria-label=", flow.split(">", 1)[0])
+        self.assertEqual(flow.count('class="flow-node'), 5)
+
+    def test_new_motion_stops_for_reduced_motion_and_the_pause_button(self):
+        css = (SITE / "src" / "styles.css").read_text(encoding="utf-8")
+        for sel in (".ha-layer", ".flow-node::after", "[data-reveal]"):
+            self.assertIn("html.motion-off", css[css.index("Visual polish"):])
+            self.assertIn(sel, css[css.rindex("prefers-reduced-motion"):], sel)
+
+    def test_stack_items_are_not_dimmed_with_opacity(self):
+        css = (SITE / "src" / "styles.css").read_text(encoding="utf-8")
+        rule = css[css.index(".stack-item {"):css.index("}", css.index(".stack-item {"))]
+        self.assertNotIn("opacity: 0.45", rule)  # 0.45 opacity text fell below 4.5:1 contrast
+
 
 if __name__ == "__main__":
     unittest.main()

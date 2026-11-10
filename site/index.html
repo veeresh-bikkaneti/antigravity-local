@@ -6,7 +6,8 @@
   <title>Local Antigravity: a coding agent that runs on your own machine</title>
   <meta name="description" content="Local Antigravity runs the Google Antigravity SDK against a model on your own computer, served by Ollama. One command to set up, or one Docker image. Includes a step-by-step guide, the architecture diagrams, and a side-scrolling game that plays the same setup from zero to coding.">
   <meta name="color-scheme" content="dark light">
-  <meta name="theme-color" content="#e4ddcf">
+  <meta name="theme-color" content="#e4ddcf" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1d1d20" media="(prefers-color-scheme: dark)">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Local Antigravity: a coding agent that runs on your own machine">
   <meta property="og:description" content="Run the Google Antigravity SDK against a local model with Ollama. Step-by-step guide, Docker image, and architecture diagrams.">
@@ -17,6 +18,7 @@
 </head>
 <body>
   <a class="skip" href="#guide">Skip to the guide</a>
+  <div class="progress" aria-hidden="true"></div>
 
   <canvas id="stage" aria-hidden="true"></canvas>
   <div id="labels" aria-hidden="true">
@@ -49,6 +51,11 @@
   <main>
     <section class="hero" id="top" aria-labelledby="hero-title">
       <div class="hero-copy">
+        <ul class="chips" aria-label="At a glance">
+          <li>Local model</li>
+          <li>No API key</li>
+          <li>MIT license</li>
+        </ul>
         <h1 id="hero-title">Your coding agent, on your own machine</h1>
         <p class="lede">Local Antigravity runs the Google Antigravity SDK against a model on your computer, served by Ollama. Setup needs no cloud account and no API key.</p>
         <p class="actions">
@@ -89,6 +96,62 @@
           <p class="stack-note">Drag the drawing to orbit · Ctrl + scroll to zoom · Scrolling the guide builds the stack too. The cloud stays out of it - it is never connected.</p>
         </section>
       </div>
+      <figure class="hero-art" aria-hidden="true">
+        <svg class="hero-art-svg" viewBox="0 0 520 560" xmlns="http://www.w3.org/2000/svg" focusable="false">
+        <ellipse class="ha-shadow" cx="200" cy="510" rx="160" ry="25"/>
+        <text class="ha-caption" x="200" y="570" text-anchor="middle">your machine</text>
+        <g class="ha-layer" style="--i:0">
+        <polygon class="ha-left" points="80,470 200,516 200,530 80,484"/><polygon class="ha-right" points="200,516 320,470 320,484 200,530"/><polygon class="ha-face" points="80,470 200,424 320,470 200,516"/>
+        <text class="ha-num" x="200" y="475" text-anchor="middle">1</text>
+        <path class="ha-lead" d="M314 477 H340"/>
+        <text class="ha-label" x="348" y="482">Ollama</text>
+        </g>
+        <g class="ha-layer" style="--i:1">
+        <polygon class="ha-left" points="80,424 200,470 200,484 80,438"/><polygon class="ha-right" points="200,470 320,424 320,438 200,484"/><polygon class="ha-face" points="80,424 200,378 320,424 200,470"/>
+        <text class="ha-num" x="200" y="429" text-anchor="middle">2</text>
+        <path class="ha-lead" d="M314 431 H340"/>
+        <text class="ha-label" x="348" y="436">Qwen model</text>
+        </g>
+        <g class="ha-layer" style="--i:2">
+        <polygon class="ha-left" points="80,378 200,424 200,438 80,392"/><polygon class="ha-right" points="200,424 320,378 320,392 200,438"/><polygon class="ha-face" points="80,378 200,332 320,378 200,424"/>
+        <text class="ha-num" x="200" y="383" text-anchor="middle">3</text>
+        <path class="ha-lead" d="M314 385 H340"/>
+        <text class="ha-label" x="348" y="390">Repo · run.bat</text>
+        </g>
+        <g class="ha-layer" style="--i:3">
+        <polygon class="ha-left" points="80,332 200,378 200,392 80,346"/><polygon class="ha-right" points="200,378 320,332 320,346 200,392"/><polygon class="ha-face" points="80,332 200,286 320,332 200,378"/>
+        <text class="ha-num" x="200" y="337" text-anchor="middle">4</text>
+        <path class="ha-lead" d="M314 339 H340"/>
+        <text class="ha-label" x="348" y="344">.venv terminal</text>
+        </g>
+        <g class="ha-layer" style="--i:4">
+        <polygon class="ha-left" points="80,286 200,332 200,346 80,300"/><polygon class="ha-right" points="200,332 320,286 320,300 200,346"/><polygon class="ha-face" points="80,286 200,240 320,286 200,332"/>
+        <text class="ha-num" x="200" y="291" text-anchor="middle">5</text>
+        <path class="ha-lead" d="M314 293 H340"/>
+        <text class="ha-label" x="348" y="298">Agent</text>
+        </g>
+        <g class="ha-layer" style="--i:5">
+        <polygon class="ha-left" points="80,240 200,286 200,300 80,254"/><polygon class="ha-right" points="200,286 320,240 320,254 200,300"/><polygon class="ha-face" points="80,240 200,194 320,240 200,286"/>
+        <text class="ha-num" x="200" y="245" text-anchor="middle">6</text>
+        <path class="ha-lead" d="M314 247 H340"/>
+        <text class="ha-label" x="348" y="252">One job · Gate</text>
+        </g>
+        <g class="ha-layer is-top" style="--i:6">
+        <polygon class="ha-left" points="80,194 200,240 200,254 80,208"/><polygon class="ha-right" points="200,240 320,194 320,208 200,254"/><polygon class="ha-face" points="80,194 200,148 320,194 200,240"/>
+        <text class="ha-num" x="200" y="199" text-anchor="middle">7</text>
+        <path class="ha-lead" d="M314 201 H340"/>
+        <text class="ha-label" x="348" y="206">Editor</text>
+        </g>
+        <g class="ha-cloud">
+        <path d="M402 92c-4-22 18-38 38-30 8-18 36-20 46 0 20-2 30 18 22 32 10 10 2 28-14 28h-86c-20 0-26-24-6-30z"/>
+        <path class="ha-cut" d="M392 140 L506 52"/>
+        <text class="ha-cloud-label" x="452" y="158" text-anchor="middle">cloud: not used</text>
+        </g>
+        <path class="ha-signal" d="M62 200 V478"/>
+        <circle class="ha-dot" cx="62" cy="200" r="5"/>
+        <text class="ha-side" x="50" y="332" text-anchor="middle" transform="rotate(-90 50 332)">localhost:11434</text>
+        </svg>
+      </figure>
     </section>
 
     <section class="game" id="game" aria-labelledby="game-title">
@@ -122,14 +185,17 @@
       <h2 id="pillars-title">Three things we care about</h2>
       <div class="sheets">
         <div class="sheet">
+          <svg class="sheet-icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M8 22 24 9l16 13v17H8z"/><rect x="19" y="27" width="10" height="12"/><circle cx="24" cy="20" r="2.5" class="dot"/></svg>
           <h3>It stays here</h3>
           <p>Your code and your prompts go to a model on your own computer. Setup needs no cloud account and no API key.</p>
         </div>
         <div class="sheet">
+          <svg class="sheet-icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M24 7 43 40H5z"/><path d="M24 19v10"/><circle cx="24" cy="34" r="1.8" class="dot"/></svg>
           <h3>It tells you when it fails</h3>
           <p>If a task writes no file, the tool says so instead of reporting success. The limits are on this page, with numbers.</p>
         </div>
         <div class="sheet">
+          <svg class="sheet-icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><rect x="6" y="10" width="36" height="28" rx="2"/><path d="m13 20 6 5-6 5M23 31h11"/></svg>
           <h3>It starts small</h3>
           <p>One command sets it up, or run one Docker image. Both pick a free port, so nothing fights with what you already run.</p>
         </div>
@@ -210,6 +276,17 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
     <section class="arch" id="architecture" aria-labelledby="arch-title">
       <h2 id="arch-title">How it fits together</h2>
       <p class="arch-lede">These four diagrams were generated with Archify. Open one full size to explore it.</p>
+
+      <figure class="flow-figure">
+        <ol class="flow" aria-label="One request, from your prompt to a file on disk">
+          <li class="flow-node"><span class="flow-num" aria-hidden="true">1</span><b>You</b><span>type a request in plain English</span></li>
+          <li class="flow-node"><span class="flow-num" aria-hidden="true">2</span><b>Agent</b><span>the Antigravity SDK adds the tool list and sends it on</span></li>
+          <li class="flow-node is-local"><span class="flow-num" aria-hidden="true">3</span><b>Ollama</b><span>the model on <code>localhost:11434</code> answers with a tool call</span></li>
+          <li class="flow-node"><span class="flow-num" aria-hidden="true">4</span><b>Policy gate</b><span>checks the call before anything runs</span></li>
+          <li class="flow-node is-end"><span class="flow-num" aria-hidden="true">5</span><b>Your files</b><span>the file lands in your workspace</span></li>
+        </ol>
+        <figcaption>One request, start to finish. The result goes back to the model until it is done. <span class="flow-off">Cloud: not used</span></figcaption>
+      </figure>
 
       <div class="tabs" role="tablist" aria-label="Architecture diagrams">
         <button role="tab" id="tab-topology" aria-controls="panel" aria-selected="true" data-src="diagrams/system-topology.html" data-title="System topology" data-note="Which parts run on your machine, and the one boundary nothing crosses.">System topology</button>
