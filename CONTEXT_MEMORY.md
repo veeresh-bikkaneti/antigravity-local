@@ -255,7 +255,7 @@ pm`, reinstalled `npm install -g ./.agents/skills/archify`; `archify doctor` pas
    - `gemma2:27b` in Ollama does NOT support native OpenAI tool calling schema (`registry.ollama.ai/library/gemma2:27b does not support tools`). For pure chat/streaming with Gemma, tools must be disabled via `capabilities=CapabilitiesConfig(enabled_tools=[])`.
    - `qwen2.5:14b` in Ollama natively supports OpenAI function calling and fits 100% into the 16 GB VRAM. It successfully executes Antigravity workspace tools (`create_file`, etc.).
 2. **Antigravity `create_file` Tool Schema**:
-   - The Antigravity local harness requires `Path`, `Content`, and `Overwrite: bool` arguments when invoking file-creation tools.
+   - Corrected Nov 10: SDK 0.1.23's file tool is `write_to_file(TargetFile, CodeContent, Overwrite)`; prompts now say so.
 3. **Windows Encoding**:
    - Python on Windows defaults to `cp1252` encoding in PowerShell sessions. Scripts must configure `sys.stdout.reconfigure(encoding='utf-8')` to prevent UnicodeEncodeError during token streaming.
 4. **Windows `os.execv` Space-in-Path Quirk**:
@@ -297,4 +297,4 @@ pm`, reinstalled `npm install -g ./.agents/skills/archify`; `archify doctor` pas
 5. Inspect generated workspace artifacts in `C:\Users\veere\antigravity-local\workspace`.
 
 - [x] **Docs honesty pass**: corrected the docs to match the code. Model scores cap at 100, hardware tiers follow `run.py`, setup time is stated as a few minutes plus the model download (about 9 GB for the 14B model), and the graph counts come from `graphify-out/graph.json` (8,547 nodes, 13,383 edges). The helper scripts `verify_urls.py`, `verify_internal_links.py`, `interrogate_tests.py`, and `benchmark_run.py` named in earlier entries are not in the repo.
-- [x] **Site graphics polish (feat/site-graphics-polish, Nov 10)**: flat SVG hero stack shown without WebGL and on phones, request-flow strip, pillar icons, guide rail, scroll progress, reveal-on-scroll, stack-chip contrast fix. Quirk found: SDK 0.1.23 file tool is `write_to_file(TargetFile, CodeContent, Overwrite)`, but run.py, code_agent.py and agent_with_workspace.py prompts name `create_file(Path, Content)` (not fixed yet).
+- [x] **Site graphics polish (feat/site-graphics-polish, Nov 10)**: flat SVG hero stack shown without WebGL and on phones, request-flow strip, pillar icons, guide rail, scroll progress, reveal-on-scroll, stack-chip contrast fix. Quirk found: SDK 0.1.23 file tool is `write_to_file(TargetFile, CodeContent, Overwrite)`, but run.py, code_agent.py and agent_with_workspace.py prompts named `create_file(Path, Content)` (fixed on feat/fix-file-tool-name).

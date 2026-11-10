@@ -46,7 +46,7 @@ Google Antigravity Local pulls the official `google-antigravity` SDK off Google 
   Embeddings come from Ollama (`nomic-embed-text`) when it is available, and from a pure-Python TF-IDF vectorizer otherwise.
 
 ### Module 4: tool execution and security policy
-- Tool calling schema: OpenAI function-calling format with capitalized arguments (`Path`, `Content`, `Overwrite=True`).
+- Tool calling schema: OpenAI function-calling format with capitalized arguments (`write_to_file`: `TargetFile`, `CodeContent`, `Overwrite=true`).
 - Policy: `policy.allow_all()` allows headless file operations inside `./workspace` and rejects path traversal outside it.
 
 ### Module 5: coding agent shell (`code_agent.py`)

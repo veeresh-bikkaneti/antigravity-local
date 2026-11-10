@@ -63,3 +63,17 @@ print('SESSIONS', A.n)
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestPromptsNameRealFileTool(unittest.TestCase):
+    """SDK 0.1.23 has write_to_file(TargetFile, CodeContent, Overwrite), not create_file."""
+
+    def test_prompts_use_write_to_file(self):
+        for script in ("run.py", "agent_with_workspace.py", "code_agent.py"):
+            with self.subTest(script=script):
+                with open(os.path.join(ROOT, script), encoding="utf-8") as f:
+                    src = f.read()
+                self.assertIn("write_to_file", src)
+                self.assertIn("TargetFile", src)
+                self.assertIn("CodeContent", src)
+                self.assertNotIn("create_file", src)
