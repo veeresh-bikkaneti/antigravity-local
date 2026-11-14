@@ -1,0 +1,20 @@
+#!/bin/sh
+# commit-msg hook: refuse AI co-author trailers and "Generated with <AI tool>" lines.
+# Patterns come from ai-vendor-patterns.txt, the same file scripts/check_commit_trailers.py reads (CI is the real gate;
+# this hook just tells you sooner). Turn it on once per clone: git config core.hooksPath .githooks
+LC_ALL=C   # byte-wise matching: the names are ASCII, and Git for Windows' grep chokes on 4-byte emoji in a UTF-8 locale
+export LC_ALL
+dir=$(dirname "$0")
+vendors=$(tr -d '\r' < "$dir/ai-vendor-patterns.txt" | grep -v '^[[:space:]]*\(#\|$\)' | paste -sd'|' -)
+[ -n "$vendors" ] || exit 0
+# Whole words only ("Raider" is not "aider"; no \b, it is not portable to BSD grep), and "generated with" only at the
+# start of a line (after optional non-letters, so the robot-emoji form still matches). Keep in step with
+# scripts/check_commit_trailers.py.
+word="(^|[^[:alnum:]_])($vendors)([^[:alnum:]_]|\$)"
+bad=$(tr -d '\r' < "$1" | grep -v '^[[:space:]]*#' | grep -iE "^[[:space:]]*co-authored-by:.*$word|^[^[:alnum:]]*generated with[^[:alnum:]](.*[^[:alnum:]_])?($vendors)([^[:alnum:]_]|\$)" | head -n 1)
+if [ -n "$bad" ]; then
+    echo "commit-msg: not allowed (AI tool named in a trailer): $bad" >&2
+    echo "commit-msg: remove that line and commit again. Patterns: .githooks/ai-vendor-patterns.txt" >&2
+    exit 1
+fi
+exit 0

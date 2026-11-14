@@ -1,0 +1,14 @@
+# One owner for "which names count as an AI tool or vendor in a commit message".
+# Read by .githooks/commit-msg (sh) and scripts/check_commit_trailers.py (CI + tests).
+# One extended regex per line, matched case-insensitively. Blank lines and lines starting with # are ignored.
+claude
+anthropic
+copilot
+openai
+gpt
+chatgpt
+gemini
+cursor
+aider
+codex
+noreply@anthropic\.com

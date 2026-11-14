@@ -38,6 +38,16 @@ if not exist ".env" (
     echo [3/3] Existing .env file found.
 )
 
+REM Turn on the commit-msg hook that blocks AI co-author trailers (only inside a git checkout)
+git rev-parse --git-dir >nul 2>&1 && (
+    REM Only when nothing is set yet, so a hooks folder you already use keeps working
+    for /f "delims=" %%H in ('git config core.hooksPath 2^>nul') do set "HAVE_HOOKS=%%H"
+    if not defined HAVE_HOOKS (
+        git config core.hooksPath .githooks
+        echo Commit hook on: AI co-author trailers are blocked [.githooks/commit-msg].
+    )
+)
+
 echo.
 echo ===================================================
 echo  Setup Complete!
