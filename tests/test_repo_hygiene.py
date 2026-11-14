@@ -34,10 +34,6 @@ class GeneratedTooling(unittest.TestCase):
             self.assertEqual(git("check-ignore", path).returncode, 1, path)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class CiRunsEveryTest(unittest.TestCase):
     """CI lists test modules by hand. A new tests/test_*.py that is not listed never runs there (PR 26's
     test_run and test_model_wizard were missed this way, and so were four older files)."""
@@ -53,3 +49,9 @@ class CiRunsEveryTest(unittest.TestCase):
         missing = sorted(on_disk - listed)
         self.assertEqual(missing, [], "add these to the `python -m unittest` line in "
                          ".github/workflows/docker.yml: " + ", ".join("tests." + m for m in missing))
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+
