@@ -143,7 +143,7 @@ Antigravity Local checks open-source models at runtime instead of defaulting to 
 
 | Model Family | Key Variants | Function Calling Support | Antigravity Mode | Architecture Notes & PC Build Fit |
 |---|---|---|---|---|
-| **Nanbeige** | `nanbeige2:16b`, `nanbeige4.3:16b`, `nanbeige4.1:3b` | Native (Top Agentic Rank) | `policy.allow_all()` | Runs sequential multi-step tool calls. A good fit for 16 GB of VRAM or more. |
+| **Nanbeige** | `nanbeige2:16b`, `nanbeige4.3:16b` | Native (Top Agentic Rank) | `policy.allow_all()` | Runs sequential multi-step tool calls. A good fit for 16 GB of VRAM or more. |
 | **DeepSeek Coder / R1** | `deepseek-coder-v2:16b`, `deepseek-r1:14b`, `deepseek-r1:32b` | Native (Top Code Synthesis) | `policy.allow_all()` | Strong coding accuracy, fill-in-the-middle support, and good competitive programming benchmark results. |
 | **Qwen 2.5 Coder** | `qwen2.5-coder:14b`, `qwen2.5-coder:32b`, `qwen2.5:14b` | Native (Flagship Tool Fit) | `policy.allow_all()` | The 14B model fits in 16 GB of VRAM; native OpenAI tool-calling schema. |
 | **Command R / R+** | `command-r:35b` | Native (Enterprise Tool Calling) | `policy.allow_all()` | Cohere's model built for multi-step tool use and citations. Offloads layers to system RAM. |
