@@ -15,6 +15,12 @@ sys.path.insert(0, str(ROOT))
 import run  # noqa: E402
 
 
+class _Tty(io.StringIO):
+    """A StringIO that says it is a terminal, so run.main's isatty() checks have something real to read."""
+    def isatty(self):
+        return True
+
+
 class Cli(unittest.TestCase):
     def run_py(self, *args):
         return subprocess.run([sys.executable, str(ROOT / "run.py"), *args], cwd=ROOT,
@@ -90,9 +96,17 @@ class ModelWizardInRun(unittest.TestCase):
     """The menu only appears on a real terminal; every other path must behave exactly as before."""
     HW = {"ram_gb": 128.0, "vram_gb": 16.0, "gpu_name": "RTX"}
 
-    def sel(self, installed, answers=(), interactive=True, requested=None, env=None, registry=True, hw=None):
+    def sel(self, installed, answers=(), interactive=True, requested=None, env=None, registry=True, hw=None,
+            env_text=None, pull_error=None):
+        """Returns (model, pull commands, final .env text). The printed menu is left in self.printed."""
         feed = iter(answers)
         pulls = []
+
+        def fake_pull(cmd):
+            if pull_error:
+                raise pull_error
+            pulls.append(cmd)
+        out = io.StringIO()
 
         def no_input(_=""):
             raise AssertionError("the menu must not ask on this path")
@@ -103,20 +117,23 @@ class ModelWizardInRun(unittest.TestCase):
                 mock.patch.object(run, "get_hardware_profile", return_value=hw or self.HW), \
                 mock.patch.object(run, "get_installed_ollama_models", return_value=set(installed)), \
                 mock.patch.object(run.model_wizard, "tag_exists", return_value=registry), \
-                mock.patch.object(run.subprocess, "check_call", side_effect=lambda c: pulls.append(c)), \
+                mock.patch.object(run.subprocess, "check_call", side_effect=fake_pull), \
                 mock.patch("builtins.input", side_effect=ask), \
-                contextlib.redirect_stdout(io.StringIO()):
+                contextlib.redirect_stdout(out):
+            if env_text is not None:
+                Path(d, ".env").write_text(env_text, encoding="utf-8")
             if not env:
                 run.os.environ.pop("LOCAL_LLM_MODEL", None)
             got = run.select_and_pull_model(requested_model=requested, interactive=interactive)
             envfile = Path(d, ".env")
             wrote = envfile.read_text(encoding="utf-8") if envfile.exists() else ""
+        self.printed = out.getvalue()
         return got, pulls, wrote
 
     INSTALLED = {"gemma2:27b", "qwen2.5:14b"}
 
-    def row(self, tag):
-        menu = run.model_wizard.build_menu(self.INSTALLED, 16.0, 128.0)
+    def row(self, tag, installed=None):
+        menu = run.model_wizard.build_menu(installed or self.INSTALLED, 16.0, 128.0)
         return str([m["tag"] for m in menu].index(tag) + 1)
 
     def test_not_interactive_is_the_old_automatic_pick_and_never_asks(self):
@@ -139,6 +156,26 @@ class ModelWizardInRun(unittest.TestCase):
         got, pulls, _ = self.sel(self.INSTALLED, [self.row("devstral-small-2:24b")])
         self.assertEqual(got, "devstral-small-2:24b")
         self.assertEqual(pulls, [["ollama", "pull", "devstral-small-2:24b"]])
+
+    def test_a_newly_downloaded_pick_is_saved_to_env(self):
+        got, pulls, wrote = self.sel({"qwen2.5:14b"}, [self.row("devstral-small-2:24b", {"qwen2.5:14b"})],
+                                     env_text="LOCAL_LLM_MODEL=qwen2.5:14b\n")
+        self.assertEqual((got, len(pulls)), ("devstral-small-2:24b", 1))
+        self.assertIn("LOCAL_LLM_MODEL=devstral-small-2:24b", wrote)
+        self.assertNotIn("LOCAL_LLM_MODEL=qwen2.5:14b", wrote)
+
+    def test_a_failed_download_leaves_env_alone(self):
+        text = "LOCAL_LLM_MODEL=qwen2.5:14b\n"
+        got, _, wrote = self.sel({"qwen2.5:14b"}, [self.row("devstral-small-2:24b", {"qwen2.5:14b"})], env_text=text,
+                                 pull_error=OSError("boom"))
+        self.assertIsNone(got)
+        self.assertEqual(wrote, text)
+
+    def test_cli_model_that_needs_a_download_is_saved_to_env_too(self):
+        got, pulls, wrote = self.sel({"qwen2.5:14b"}, interactive=False, requested="devstral-small-2:24b",
+                                     env_text="LOCAL_LLM_MODEL=qwen2.5:14b\n")
+        self.assertEqual((got, len(pulls)), ("devstral-small-2:24b", 1))
+        self.assertIn("LOCAL_LLM_MODEL=devstral-small-2:24b", wrote)
 
     def test_typed_tag_missing_from_registry_falls_back_without_pulling(self):
         got, pulls, _ = self.sel(self.INSTALLED, ["nanbeige4.1:3b"], registry=False)
@@ -174,6 +211,18 @@ class ModelWizardInRun(unittest.TestCase):
         self.assertIn("recommended for this PC", text)
         self.assertIn("size unknown", text)
 
+    def test_empty_machine_menu_printed_by_run_marks_the_tier_pick(self):
+        """Goes through run.select_and_pull_model, so dropping recommended= in run.py fails this."""
+        hw = {"ram_gb": 32.0, "vram_gb": 0.0, "gpu_name": "x"}
+        self.sel(set(), [""], hw=hw)
+        lines = self.printed.splitlines()
+        rows = [ln for ln in lines if "qwen2.5-coder:7b" in ln]
+        self.assertTrue(rows, self.printed)
+        self.assertIn("recommended for this PC", rows[0])
+        self.assertIn("size unknown", rows[0])
+        self.assertIn("*", rows[0])
+        self.assertRegex(rows[0].strip(), r"^\* 1\. qwen2\.5-coder:7b")  # row 1, and it carries the default mark
+
     def test_hardware_tier_helper_matches_the_old_inline_thresholds(self):
         edge = [(15.0, 0.0, "qwen2.5-coder:14b"), (8.0, 31.9, "qwen2.5-coder:7b"),
                 (0.0, 16.0, "qwen2.5-coder:7b"), (0.0, 0.0, "llama3.2:3b")]
@@ -191,6 +240,13 @@ class ModelWizardInRun(unittest.TestCase):
         for name in above + below + [base]:
             self.assertLessEqual(run.get_model_capability_score(name), 100.0, name)
 
+    def test_embedding_and_reranker_models_never_outrank_a_chat_model(self):
+        chat = run.capability_rank_key("qwen2.5-coder:7b")
+        for name in ("qwen3-embedding:8b", "qwen3-reranker:4b", "nomic-embed-text:latest", "bge-m3:latest"):
+            self.assertLess(run.capability_rank_key(name), chat, name)
+        got, pulls, _ = self.sel({"qwen3-embedding:8b", "qwen2.5-coder:7b"}, interactive=False)
+        self.assertEqual((got, pulls), ("qwen2.5-coder:7b", []))
+
     def test_automatic_pick_prefers_a_new_family_over_qwen25_coder(self):
         got, pulls, _ = self.sel({"qwen2.5-coder:14b", "qwen3.6:27b"}, interactive=False)
         self.assertEqual((got, pulls), ("qwen3.6:27b", []))
@@ -205,21 +261,50 @@ class ModelWizardInRun(unittest.TestCase):
         got, pulls, _ = self.sel(self.INSTALLED, requested="gemma2:27b", interactive=False)
         self.assertEqual(got, "gemma2:27b")
 
+    def interactive_seen(self, argv, stdin, stdout):
+        """What run.main hands select_and_pull_model as interactive=, given these stdin/stdout."""
+        seen = {}
+        with mock.patch.object(run, "is_in_venv", return_value=True), \
+                mock.patch.object(run, "check_ollama_service", return_value=True), \
+                mock.patch.object(run.sys, "stdin", stdin), \
+                mock.patch.object(run.sys, "stdout", stdout), \
+                mock.patch.object(run, "select_and_pull_model", side_effect=lambda *a, **k: seen.update(k) or None):
+            with self.assertRaises(SystemExit):
+                run.main(argv)
+        return seen["interactive"]
+
+    def test_two_terminals_and_no_flag_is_interactive(self):
+        self.assertIs(self.interactive_seen([], _Tty(), _Tty()), True)
+
     def test_yes_flag_parses_and_main_passes_non_interactive(self):
         self.assertTrue(run.parse_args(["--yes"]).yes)
         self.assertTrue(run.parse_args(["-y"]).yes)
-        seen = {}
-        with mock.patch.object(run, "is_in_venv", return_value=True),                 mock.patch.object(run, "check_ollama_service", return_value=True),                 mock.patch.object(run, "select_and_pull_model", side_effect=lambda *a, **k: seen.update(k) or None),                 contextlib.redirect_stdout(io.StringIO()):
-            with self.assertRaises(SystemExit):
-                run.main(["--yes"])
-        self.assertIs(seen["interactive"], False)
+        self.assertIs(self.interactive_seen(["--yes"], _Tty(), _Tty()), False)
 
     def test_piped_stdin_is_never_interactive(self):
-        seen = {}
-        with mock.patch.object(run, "is_in_venv", return_value=True),                 mock.patch.object(run, "check_ollama_service", return_value=True),                 mock.patch.object(run.sys, "stdin", io.StringIO("")),                 mock.patch.object(run, "select_and_pull_model", side_effect=lambda *a, **k: seen.update(k) or None),                 contextlib.redirect_stdout(io.StringIO()):
-            with self.assertRaises(SystemExit):
+        self.assertIs(self.interactive_seen([], io.StringIO(""), _Tty()), False)
+
+    def test_ctrl_c_at_the_menu_cancels_with_130_and_downloads_nothing(self):
+        def ctrl_c(_=""):
+            raise KeyboardInterrupt
+        pulls = []
+        out = _Tty()
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.object(run, "PROJECT_DIR", d), \
+                mock.patch.object(run, "is_in_venv", return_value=True), \
+                mock.patch.object(run, "check_ollama_service", return_value=True), \
+                mock.patch.object(run, "get_hardware_profile", return_value={"ram_gb": 32.0, "vram_gb": 0.0, "gpu_name": "x"}), \
+                mock.patch.object(run, "get_installed_ollama_models", return_value=set()), \
+                mock.patch.object(run.model_wizard, "tag_exists", return_value=True), \
+                mock.patch.object(run.subprocess, "check_call", side_effect=lambda c: pulls.append(c)), \
+                mock.patch.object(run.sys, "stdin", _Tty()), \
+                mock.patch.object(run.sys, "stdout", out), \
+                mock.patch("builtins.input", side_effect=ctrl_c):
+            with self.assertRaises(SystemExit) as cm:
                 run.main([])
-        self.assertIs(seen["interactive"], False)
+        self.assertEqual(cm.exception.code, 130)
+        self.assertEqual(pulls, [])
+        self.assertIn("Cancelled", out.getvalue())
 
     def test_ranking_prefers_newer_families_but_leaves_the_old_order_alone(self):
         score = run.get_model_capability_score
