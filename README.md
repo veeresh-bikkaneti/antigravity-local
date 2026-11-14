@@ -450,7 +450,7 @@ python code_agent.py --workspace ./workspace
 python code_agent.py --workspace ./workspace --task "Create a Python CLI calculator with unit tests"
 
 # 3. Use a specific model (e.g., Nanbeige or Qwen):
-python code_agent.py --model nanbeige4.1:3b
+python code_agent.py --model qwen2.5-coder:7b
 ```
 
 ---

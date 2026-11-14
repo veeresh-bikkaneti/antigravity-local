@@ -679,6 +679,24 @@ class ClaudeDoctor(Home):
         self.assertIn("settings.local.json", text)
         self.assertNotIn("http://x", text)
 
+    def test_machine_scope_variables_are_reported_with_the_admin_hint(self):
+        n, text = self.doctor(registry=lambda s: ["CLAUDE_CODE_OAUTH_TOKEN", "PATH"] if s == "Machine" else [],
+                              platform="win32")
+        self.assertEqual(n, 1)  # PATH is not ours
+        self.assertIn("Windows Machine environment variables", text)
+        self.assertIn("'Machine'", text)
+        self.assertIn("admin PowerShell", text)
+
+    def test_user_scope_findings_do_not_get_the_admin_hint(self):
+        n, text = self.doctor(registry=lambda s: ["ANTHROPIC_BASE_URL"] if s == "User" else [], platform="win32")
+        self.assertEqual(n, 1)
+        self.assertNotIn("admin PowerShell", text)
+
+    def test_registry_is_not_read_off_windows(self):
+        asked = []
+        n, _ = self.doctor(registry=lambda s: asked.append(s) or ["ANTHROPIC_API_KEY"], platform="linux")
+        self.assertEqual((n, asked), (0, []))
+
     def test_the_current_folder_is_still_checked_outside_a_repo(self):
         self.write("plain/.claude/settings.json", json.dumps({"apiKeyHelper": "h"}))
         (self.home / "plain").mkdir(exist_ok=True)
@@ -694,6 +712,57 @@ class ClaudeDoctor(Home):
         before = snapshot(self.home)
         self.doctor(environ={"ANTHROPIC_BASE_URL": "http://y"})
         self.assertEqual(snapshot(self.home), before)
+
+
+
+class RegistryEnvReads(unittest.TestCase):
+    """_registry_env with a pretend winreg: right hive per scope, names only, and a quiet [] when anything fails."""
+
+    def fake_winreg(self, values, opened):
+        class FakeKey:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        def open_key(hive, sub):
+            opened.append((hive, sub))
+            return FakeKey()
+
+        def enum_value(key, i):
+            if i >= len(values):
+                raise OSError("no more")
+            return (values[i], "SECRET-VALUE", 1)
+        return types.SimpleNamespace(HKEY_CURRENT_USER="HKCU", HKEY_LOCAL_MACHINE="HKLM",
+                                     OpenKey=open_key, EnumValue=enum_value)
+
+    def read(self, scope, values, platform="win32"):
+        opened = []
+        with mock.patch.object(ags.sys, "platform", platform), \
+                mock.patch.dict(sys.modules, {"winreg": self.fake_winreg(values, opened)}):
+            return ags._registry_env(scope), opened
+
+    def test_machine_scope_opens_hklm_session_manager_key_and_returns_names_only(self):
+        names, opened = self.read("Machine", ["ANTHROPIC_API_KEY", "Path"])
+        self.assertEqual(names, ["ANTHROPIC_API_KEY", "Path"])
+        self.assertEqual(opened, [("HKLM", ags.MACHINE_ENV_KEY)])
+
+    def test_user_scope_opens_hkcu_environment(self):
+        names, opened = self.read("User", ["ANTHROPIC_BASE_URL"])
+        self.assertEqual((names, opened), (["ANTHROPIC_BASE_URL"], [("HKCU", "Environment")]))
+
+    def test_a_missing_key_or_access_error_gives_an_empty_list(self):
+        def boom(hive, sub):
+            raise PermissionError("denied")
+        fake = self.fake_winreg([], [])
+        fake.OpenKey = boom
+        with mock.patch.object(ags.sys, "platform", "win32"), mock.patch.dict(sys.modules, {"winreg": fake}):
+            self.assertEqual(ags._registry_env("Machine"), [])
+
+    def test_off_windows_it_never_touches_winreg(self):
+        names, opened = self.read("Machine", ["ANTHROPIC_API_KEY"], platform="linux")
+        self.assertEqual((names, opened), ([], []))
 
 
 class ClaudeFlags(unittest.TestCase):
