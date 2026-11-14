@@ -146,11 +146,6 @@ def _pi_models(data, model, base_url, path):
         models.append({"id": model, "contextWindow": CONTEXT_WINDOW})
 
 
-def _pi_settings(data, model, base_url, path):
-    data["defaultProvider"] = "ollama"
-    data["defaultModel"] = model
-
-
 def _opencode(data, model, base_url, path):
     data.setdefault("$schema", OPENCODE_SCHEMA)
     prov = _obj(_obj(data, "provider", path), "ollama", path)
@@ -164,7 +159,7 @@ def _targets(name, home):
     """(path, merge function) per file we own a block in. Codex has none."""
     if name == "pi":
         agent = home / ".pi" / "agent"
-        return [(agent / "models.json", _pi_models), (agent / "settings.json", _pi_settings)]
+        return [(agent / "models.json", _pi_models)]  # never settings.json: pi's own default is the user's
     if name == "opencode":
         return [(home / ".config" / "opencode" / "opencode.json", _opencode)]
     return []
@@ -189,6 +184,14 @@ def _atomic_write(path, payload):
         raise
 
 
+def agent_command(name, model, exe=None):
+    """The one argv for each agent, used by the printed hint, write_config's result and launch."""
+    exe = exe or name
+    return {"pi": [exe, "--provider", "ollama", "--model", model],
+            "opencode": [exe, "--model", f"ollama/{model}"],
+            "codex": [exe, "--oss", "-m", model]}[name]
+
+
 def write_config(name, model, base_url, home=None):
     """Merge our Ollama block into the agent's config. Plans every file first, so a broken file stops us
     before anything is written. A file whose parsed content would not change is left exactly as it is."""
@@ -199,7 +202,7 @@ def write_config(name, model, base_url, home=None):
         notes = []
         if "11434" not in base_url:
             notes.append(f"codex --oss talks to Ollama on its default port (11434); {base_url} is not used by it.")
-        return Result(command=["codex", "--oss", "-m", model], notes=notes)
+        return Result(command=agent_command("codex", model), notes=notes)
 
     plans = []
     for path, merge in _targets(name, home):
@@ -217,8 +220,7 @@ def write_config(name, model, base_url, home=None):
             shutil.copy2(path, backup)
         _atomic_write(path, _render(data))
         changed = True
-    command = ["pi"] if name == "pi" else ["opencode", "--model", f"ollama/{model}"]
-    return Result(command=command, files=[p for p, *_ in plans], changed=changed)
+    return Result(command=agent_command(name, model), files=[p for p, *_ in plans], changed=changed)
 
 
 def context_hint():
@@ -236,10 +238,7 @@ def launch(name, model, workspace, call=None, which=None):
     call = call or subprocess.call
     which = which or shutil.which
     exe = which(name) or name
-    argv = {"pi": [exe],
-            "opencode": [exe, "--model", f"ollama/{model}"],
-            "codex": [exe, "--oss", "-m", model]}[name]
-    return call(argv, cwd=workspace)
+    return call(agent_command(name, model, exe), cwd=workspace)
 
 
 def run(name, model, base_url, workspace, config_only=False, home=None, which=None, input_fn=None, call=None,

@@ -52,14 +52,16 @@ class Pi(Home):
             "baseUrl": URL, "api": "openai-completions", "apiKey": "ollama",
             "compat": {"supportsDeveloperRole": False, "supportsReasoningEffort": False},
             "models": [{"id": MODEL, "contextWindow": 65536}]}}})
-        self.assertEqual(self.read(self.SETTINGS), {"defaultProvider": "ollama", "defaultModel": MODEL})
+        # pi's own default provider and model belong to the user. We launch with flags instead (see Launch).
+        self.assertFalse((self.home / self.SETTINGS).exists())
 
     def test_other_providers_models_and_settings_are_kept(self):
         self.write(self.MODELS, json.dumps({"providers": {
             "mine": {"baseUrl": "http://x", "models": [{"id": "m1"}]},
             "ollama": {"baseUrl": "http://old", "models": [{"id": "llama3.1:8b", "contextWindow": 8192}],
                        "compat": {"custom": True}}}}))
-        self.write(self.SETTINGS, json.dumps({"theme": "dark", "defaultModel": "old"}))
+        settings = self.write(self.SETTINGS, json.dumps({"theme": "dark", "defaultProvider": "anthropic"}, indent=4))
+        settings_before = settings.read_bytes()
         ags.write_config("pi", MODEL, URL, home=self.home)
         data = self.read(self.MODELS)["providers"]
         self.assertEqual(data["mine"], {"baseUrl": "http://x", "models": [{"id": "m1"}]})
@@ -68,7 +70,8 @@ class Pi(Home):
         self.assertEqual(data["ollama"]["models"][0]["contextWindow"], 8192)  # user tuning untouched
         self.assertTrue(data["ollama"]["compat"]["custom"])
         self.assertFalse(data["ollama"]["compat"]["supportsDeveloperRole"])
-        self.assertEqual(self.read(self.SETTINGS), {"theme": "dark", "defaultProvider": "ollama", "defaultModel": MODEL})
+        self.assertEqual(settings.read_bytes(), settings_before)  # the user's own pi default is left exactly alone
+        self.assertFalse(Path(str(settings) + ".bak-antigravity-local").exists())
 
     def test_second_run_changes_nothing_and_backup_is_made_once(self):
         self.write(self.MODELS, json.dumps({"providers": {"mine": {"models": []}}}))
@@ -76,9 +79,9 @@ class Pi(Home):
         ags.write_config("pi", MODEL, URL, home=self.home)
         bak = self.home / (self.MODELS + ".bak-antigravity-local")
         self.assertEqual(bak.read_bytes(), original)
-        after_first = {p: (self.home / p).read_bytes() for p in (self.MODELS, self.SETTINGS)}
+        after_first = (self.home / self.MODELS).read_bytes()
         result = ags.write_config("pi", MODEL, URL, home=self.home)
-        self.assertEqual(after_first, {p: (self.home / p).read_bytes() for p in (self.MODELS, self.SETTINGS)})
+        self.assertEqual(after_first, (self.home / self.MODELS).read_bytes())
         self.assertFalse(result.changed)
         self.assertEqual(bak.read_bytes(), original)  # not overwritten by the second run
 
@@ -93,7 +96,6 @@ class Pi(Home):
         ags.write_config("pi", "gpt-oss:20b", URL, home=self.home)
         ids = [m["id"] for m in self.read(self.MODELS)["providers"]["ollama"]["models"]]
         self.assertEqual(ids, [MODEL, "gpt-oss:20b"])
-        self.assertEqual(self.read(self.SETTINGS)["defaultModel"], "gpt-oss:20b")
 
     def test_custom_endpoint_comes_from_the_base_url_argument(self):
         ags.write_config("pi", MODEL, "http://localhost:1234/v1", home=self.home)
@@ -108,7 +110,7 @@ class Pi(Home):
     def test_no_temp_files_are_left_behind(self):
         ags.write_config("pi", MODEL, URL, home=self.home)
         names = sorted(p.name for p in (self.home / ".pi/agent").iterdir())
-        self.assertEqual(names, ["models.json", "settings.json"])
+        self.assertEqual(names, ["models.json"])
 
 
 class OpenCode(Home):
@@ -166,11 +168,12 @@ class InvalidConfig(Home):
                 ags.write_config(name, MODEL, URL, home=self.home)
             self.assertEqual(p.read_text(encoding="utf-8"), text)
 
-    def test_broken_settings_does_not_leave_models_changed(self):
-        self.write(".pi/agent/settings.json", "oops")
-        with self.assertRaises(ags.AgentSetupError):
-            ags.write_config("pi", MODEL, URL, home=self.home)
-        self.assertFalse((self.home / ".pi/agent/models.json").exists())
+    def test_a_broken_pi_settings_json_is_neither_read_nor_touched(self):
+        # We no longer write settings.json, so a broken one is not our business and must not block setup.
+        settings = self.write(".pi/agent/settings.json", "oops")
+        ags.write_config("pi", MODEL, URL, home=self.home)
+        self.assertEqual(settings.read_text(encoding="utf-8"), "oops")
+        self.assertTrue((self.home / ".pi/agent/models.json").exists())
 
 
 class Codex(Home):
@@ -301,7 +304,8 @@ class Launch(Home):
                        which=lambda c: "/bin/" + c)
         self.assertEqual(argvs["opencode"][1:], ["--model", "ollama/" + MODEL])
         self.assertEqual(argvs["codex"][1:], ["--oss", "-m", MODEL])
-        self.assertEqual(argvs["pi"], ["/bin/pi"])  # pi reads defaultProvider/defaultModel from settings.json
+        # pi takes the provider and model as flags, so we never rewrite the user's own pi default
+        self.assertEqual(argvs["pi"], ["/bin/pi", "--provider", "ollama", "--model", MODEL])
 
 
 class Run(Home):
@@ -320,6 +324,16 @@ class Run(Home):
         self.assertTrue((self.home / ".pi/agent/models.json").exists())
         self.assertIn("pi", text)
         self.assertIn("cd ", text)  # the command to run, in the right folder
+
+    def test_pi_printed_command_matches_what_launch_runs(self):
+        # The printed line, write_config's command and launch's argv must all say the same thing.
+        result = ags.write_config("pi", MODEL, URL, home=self.home)
+        self.assertEqual(result.command, ["pi", "--provider", "ollama", "--model", MODEL])
+        _, _, text = self.go("pi", config_only=True)
+        self.assertIn(f"pi --provider ollama --model {MODEL}", text)
+        launched = []
+        ags.launch("pi", MODEL, str(self.home), call=lambda a, **k: launched.append(a) or 0, which=lambda c: c)
+        self.assertEqual(launched[0], result.command)
 
     def test_banner_names_agent_model_endpoint_file_and_that_settings_were_kept(self):
         _, _, text = self.go("opencode", config_only=True)
