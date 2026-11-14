@@ -165,12 +165,12 @@ In the banner you will see the one-line promise: this session uses your local mo
 
 **Check it yourself.** Inside the session, run `/status`. It should name your local endpoint and model. Open a normal terminal, run plain `claude`, and `/status` should show your subscription. Seeing both is the proof that nothing leaked.
 
-**Prefer not to run `run.py`?** These wrappers set exactly the same variables for one `claude` call and put your old values back afterwards. Replace `MODEL` with your tag (`ollama list` shows it). Paste into your profile if you like: the function holds no secret and changes nothing until you call it.
+**Prefer not to run `run.py`?** These wrappers set exactly the same variables for one `claude` call and put your old values back afterwards. Replace `YOUR_MODEL_TAG` with your model's name (`ollama list` shows it), or pass it as the first argument, for example `claude-local qwen2.5:14b`. Paste into your profile if you like: the function holds no secret and changes nothing until you call it.
 
 ```powershell
 # PowerShell
 function claude-local {
-  param([string]$Model = "MODEL")
+  param([string]$Model = "YOUR_MODEL_TAG")
   $names = "CLAUDE_CONFIG_DIR","CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST","ANTHROPIC_BASE_URL","ANTHROPIC_AUTH_TOKEN","ANTHROPIC_API_KEY",
            "CLAUDE_CODE_USE_BEDROCK","CLAUDE_CODE_USE_VERTEX","CLAUDE_CODE_USE_FOUNDRY","ANTHROPIC_DEFAULT_OPUS_MODEL",
            "ANTHROPIC_DEFAULT_SONNET_MODEL","ANTHROPIC_DEFAULT_HAIKU_MODEL","CLAUDE_CODE_SUBAGENT_MODEL",
@@ -198,7 +198,7 @@ function claude-local {
 ```bash
 # bash / zsh
 claude-local() {
-  local model="${1:-MODEL}"; [ $# -gt 0 ] && shift
+  local model="${1:-YOUR_MODEL_TAG}"; [ $# -gt 0 ] && shift
   ( # a subshell: every export below dies with it, so nothing needs restoring
     export CLAUDE_CONFIG_DIR="$HOME/.claude-local"; mkdir -p "$CLAUDE_CONFIG_DIR"
     export CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST=1
