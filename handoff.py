@@ -9,6 +9,7 @@ Collaborators (stdin, input, git runner, home, cwd) are passed in and looked up 
 the real machine.
 """
 import argparse
+import copy
 import datetime
 import difflib
 import json
@@ -18,6 +19,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 from pathlib import Path
 
 BACKUP_SUFFIX = ".bak-antigravity-local"
@@ -58,7 +60,11 @@ def _blocks(rec):
     content = msg.get("content") if isinstance(msg, dict) else None
     if isinstance(content, str):
         return [{"type": "text", "text": content}]
-    return [b for b in content if isinstance(b, dict)] if isinstance(content, list) else []
+    if not isinstance(content, list):
+        return []
+    # the format is not a contract: a block whose text is not a string (or whose name is not) is kept but harmless
+    return [{**b, "text": b["text"] if isinstance(b.get("text"), str) else ""} for b in content
+            if isinstance(b, dict)]
 
 
 def summarize(records):
@@ -78,6 +84,8 @@ def summarize(records):
                 if b.get("type") != "tool_use" or not isinstance(b.get("input"), dict):
                     continue
                 name, data = b.get("name"), b["input"]
+                if not isinstance(name, str):
+                    continue
                 if name == "TodoWrite" and isinstance(data.get("todos"), list):
                     todos = data["todos"]
                 elif name in EDIT_TOOLS:
@@ -206,15 +214,37 @@ def render(info, transcript, repo, now=None, git_run=None):
     return "\n".join(out)
 
 
-def read_hook_stdin(stdin):
-    """transcript_path and cwd from a hook's JSON on stdin. Nothing if stdin is a terminal or not JSON."""
+STDIN_WAIT = 3.0
+STDIN_MAX = 1_000_000
+
+
+def read_hook_stdin(stdin, wait=None):
+    """transcript_path and cwd from a hook's JSON on stdin. Nothing if stdin is a terminal, not JSON, or does not
+    deliver (and close) within `wait` seconds: a hook always sends its JSON and closes, so a pipe that stays open
+    is somebody's pipeline, and we must not hang on it."""
     try:
         if stdin is None or stdin.isatty():
             return {}
-        data = json.loads(stdin.read() or "{}")
-        return data if isinstance(data, dict) else {}
     except (ValueError, OSError):
         return {}
+    box = {}
+
+    def pull():
+        try:
+            box["text"] = stdin.read(STDIN_MAX)
+        except (ValueError, OSError):
+            box["text"] = ""
+
+    t = threading.Thread(target=pull, daemon=True)
+    t.start()
+    t.join(STDIN_WAIT if wait is None else wait)
+    if t.is_alive():
+        return {}
+    try:
+        data = json.loads(box.get("text") or "{}")
+    except ValueError:
+        return {}
+    return data if isinstance(data, dict) else {}
 
 
 MARKER = "<!-- written by antigravity-local handoff -->"
@@ -326,8 +356,9 @@ def install_hook(repo, input_fn=None, out=print):
         raise HandoffError(f"{path} is not valid JSON ({e}). We did not change it. Fix it and run again.")
     if not isinstance(settings, dict):
         raise HandoffError(f"{path} should hold a JSON object. We did not change it.")
-    after_text = json.dumps(merge_hooks(settings), indent=2, ensure_ascii=False) + "\n"
-    if after_text == before_text:
+    merged = merge_hooks(copy.deepcopy(settings))
+    after_text = json.dumps(merged, indent=2, ensure_ascii=False) + "\n"
+    if merged == settings:  # compare what the file means, not how it is indented
         out(f"The hand-off hooks are already in {path}. Nothing to do.")
         return False
     out(f"This changes only {path} (never your user settings):\n")

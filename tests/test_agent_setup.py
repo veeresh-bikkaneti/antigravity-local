@@ -661,6 +661,34 @@ class ClaudeDoctor(Home):
             self.write(".claude/settings.json", json.dumps({"model": model}))
             self.assertEqual(self.doctor()[0], 0, model)
 
+    def test_settings_at_the_git_root_are_found_when_run_from_a_subfolder(self):
+        import shutil
+        import subprocess
+        if not shutil.which("git"):
+            self.skipTest("needs git")
+        repo = self.home / "proj"
+        sub = repo / "pkg" / "deep"
+        sub.mkdir(parents=True)
+        subprocess.run(["git", "init", "-q"], cwd=repo, check=True, capture_output=True)
+        self.write("proj/.claude/settings.local.json", json.dumps({"env": {"ANTHROPIC_BASE_URL": "http://x"}}))
+        lines = []
+        n = ags.claude_doctor(home=self.home, environ={}, registry=lambda s: [], platform="linux",
+                              cwd=sub, out=lines.append)
+        text = "\n".join(lines)
+        self.assertEqual(n, 1)
+        self.assertIn("settings.local.json", text)
+        self.assertNotIn("http://x", text)
+
+    def test_the_current_folder_is_still_checked_outside_a_repo(self):
+        self.write("plain/.claude/settings.json", json.dumps({"apiKeyHelper": "h"}))
+        (self.home / "plain").mkdir(exist_ok=True)
+
+        def no_git(*a, **k):
+            raise FileNotFoundError("git")
+        n = ags.claude_doctor(home=self.home, environ={}, registry=lambda s: [], platform="linux",
+                              cwd=self.home / "plain", git_run=no_git, out=lambda *_: None)
+        self.assertEqual(n, 1)
+
     def test_writes_nothing(self):
         self.write(".claude/settings.json", json.dumps({"env": {"ANTHROPIC_BASE_URL": "http://x"}}))
         before = snapshot(self.home)

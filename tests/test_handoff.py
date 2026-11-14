@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from pathlib import Path
@@ -306,6 +307,75 @@ class TrackedHandoff(Base):
         code = handoff.main([], stdin=stdin, cwd=self.repo, out=lambda *_: None)
         self.assertEqual(code, 1)
         self.assertEqual((self.repo / "HANDOFF.md").read_text(encoding="utf-8"), "x\n")
+
+
+class Hardening(Base):
+    """The four low-severity review items."""
+
+    def test_blocks_with_non_string_text_or_names_do_not_crash_and_good_records_still_count(self):
+        recs = [rec("user", [{"type": "text", "text": 5}, {"type": "text", "text": {"a": 1}}]),
+                rec("user", "the real ask"),
+                rec("assistant", [{"type": "text", "text": ["not", "a", "string"]},
+                                  {"type": "tool_use", "name": ["Bash"], "input": {"command": "x"}},
+                                  {"type": "tool_use", "name": 7, "input": {"file_path": "/p"}},
+                                  {"type": "tool_use", "name": "Bash", "input": {"command": "echo ok"}},
+                                  {"type": "text", "text": "fine"}])]
+        info = handoff.summarize(recs)
+        self.assertEqual(info["users"], ["the real ask"])
+        self.assertEqual(info["commands"], ["echo ok"])
+        self.assertEqual(info["files"], [])
+        self.assertEqual(info["last_text"], "fine")
+
+    def test_a_stdin_pipe_that_never_closes_does_not_hang_us(self):
+        release = threading.Event()
+        self.addCleanup(release.set)
+
+        class Stuck:
+            def isatty(self):
+                return False
+
+            def read(self, n=-1):
+                release.wait(30)
+                return ""
+        start = time.monotonic()
+        self.assertEqual(handoff.read_hook_stdin(Stuck(), wait=0.2), {})
+        self.assertLess(time.monotonic() - start, 5)
+
+    def test_main_with_a_stuck_stdin_falls_back_to_the_newest_transcript(self):
+        release = threading.Event()
+        self.addCleanup(release.set)
+        t = self.transcript(where=self.home / ".claude" / "projects" / handoff.project_dir_name(self.repo))
+
+        class Stuck:
+            def isatty(self):
+                return False
+
+            def read(self, n=-1):
+                release.wait(30)
+                return ""
+        lines = []
+        with mock.patch.object(handoff, "STDIN_WAIT", 0.2):
+            code = handoff.main([], stdin=Stuck(), home=self.home, environ={}, cwd=self.repo,
+                                git_run=fake_git(), out=lines.append)
+        self.assertEqual(code, 0)
+        self.assertIn(str(t), "\n".join(lines))
+
+    def test_a_normal_hook_payload_still_reads(self):
+        self.assertEqual(handoff.read_hook_stdin(io.StringIO('{"transcript_path": "x"}')), {"transcript_path": "x"})
+        self.assertEqual(handoff.read_hook_stdin(io.StringIO("not json")), {})
+
+    def test_hooks_that_are_already_there_are_recognised_whatever_the_indentation(self):
+        path = self.repo / ".claude" / "settings.local.json"
+        handoff.install_hook(self.repo, input_fn=lambda _="": "y", out=lambda *_: None)
+        path.write_text(json.dumps(json.loads(path.read_text(encoding="utf-8")), indent=4), encoding="utf-8")
+        before = path.read_bytes()
+
+        def never(_=""):
+            raise AssertionError("must not ask: nothing to change")
+        lines = []
+        self.assertFalse(handoff.install_hook(self.repo, input_fn=never, out=lines.append))
+        self.assertIn("already in", "\n".join(lines))
+        self.assertEqual(path.read_bytes(), before)
 
 
 class InstallHook(Base):

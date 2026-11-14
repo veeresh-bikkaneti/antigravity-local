@@ -459,13 +459,32 @@ def _settings_findings(path):
     return hits
 
 
-def claude_doctor(home=None, environ=None, project=None, registry=None, platform=None, out=None):
+def project_roots(cwd=None, git_run=None):
+    """The folders whose .claude/settings*.json apply here: the current folder and, when it is inside a git
+    repository, the repository root. Claude Code reads the project settings from the root even when you start it
+    in a subfolder, so a doctor that only looked at the current folder would miss them."""
+    run = git_run or subprocess.run
+    here = Path(cwd) if cwd else Path.cwd()
+    roots = [here]
+    try:
+        r = run(["git", "rev-parse", "--show-toplevel"], cwd=str(here), capture_output=True, text=True, timeout=30)
+        top = (r.stdout or "").strip()
+        if r.returncode == 0 and top and not _same_folder(top, here):
+            roots.append(Path(top))
+    except Exception:
+        pass
+    return roots
+
+
+def claude_doctor(home=None, environ=None, project=None, registry=None, platform=None, out=None, cwd=None,
+                  git_run=None):
     """Read-only. Finds what would send normal Claude Code sessions to a local model. Returns the number of
-    findings. Prints variable names and file paths, never values."""
+    findings. Prints variable names and file paths, never values. `project` pins one folder (tests); otherwise
+    it looks at the current folder and its git root."""
     out = out or print
     home = Path(home) if home else Path.home()
     environ = os.environ if environ is None else environ
-    project = Path(project) if project else Path.cwd()
+    projects = [Path(project)] if project else project_roots(cwd, git_run)
     registry = registry or _registry_env
     platform = platform or sys.platform
     findings = []
@@ -485,8 +504,10 @@ def claude_doctor(home=None, environ=None, project=None, registry=None, platform
                     hit(f"Windows {scope} environment variables", name,
                         f"[Environment]::SetEnvironmentVariable('{name}', $null, '{scope}')  "
                         f"(then open a new terminal{note})")
-    for path in (home / ".claude" / "settings.json", project / ".claude" / "settings.json",
-                 project / ".claude" / "settings.local.json"):
+    candidates = [home / ".claude" / "settings.json"]
+    for project in projects:
+        candidates += [project / ".claude" / "settings.json", project / ".claude" / "settings.local.json"]
+    for path in candidates:
         if path.exists():
             for what, key in _settings_findings(path):
                 hit(str(path), what, f"delete {key} from that file")
