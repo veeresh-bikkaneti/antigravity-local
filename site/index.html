@@ -265,7 +265,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
 
         <li class="step" data-step="7" data-focus="editor">
           <h3>Use it from your editor or the browser</h3>
-          <p>Start a search page on a free port, or run the Docker image. For VS Code, the README lists four routes: our shell in the terminal, the Ollama extension, Continue, and Cline.</p>
+          <p>Start a search page on a free port, or run the Docker image. For VS Code, the README lists four routes: our shell in the terminal, the Ollama extension, Continue, and Cline. Want a sturdier terminal agent? <code>python run.py --agent pi</code> (or <code>opencode</code>, or <code>codex</code>) sets one up for your local model and asks before it installs anything.</p>
           <div class="code"><pre><code>python run.py --serve</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --serve">Copy</button></div>
           <p class="check">You should see <code>Serving on http://127.0.0.1:</code> followed by a port number. Open that address. The first run builds its own virtual environment and installs packages, so it takes a few minutes. The page has no login, so keep it on your machine.</p>
           <p class="time">Under a minute. <a href="https://github.com/veeresh-bikkaneti/antigravity-local#use-your-local-model-from-antigravity-or-vs-code">Editor setup in the README</a></p>
@@ -310,7 +310,8 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
       <p>These are measured limits from our own tests, not guesses.</p>
       <ul>
         <li>Editing an existing file does not work reliably. With the default model, <code>qwen2.5:14b</code>, none of 14 attempts to edit a file, or to read one and write a new one, gave a correct result. Creating a new file from a plain prompt mostly works. Commit first and check <code>git diff</code>. A larger model may do better, and we have not tested one.</li>
-        <li>The Antigravity IDE chat panel has no documented setting for a local model. Google's local-model support covers the SDK, which this project uses. In the IDE, run our shell in its built-in terminal.</li>
+        <li>The Antigravity app and its IDE chat panel have no setting for a local model, and Google's plans page says bring-your-own-endpoint is not supported. Google's local-model support covers the SDK, which this project uses. In the IDE's built-in terminal, run <code>python run.py --agent pi</code> or our shell. The Antigravity and Gemini command-line tools can reach a local model only through a translating proxy. That route is experimental and we have not tested it.</li>
+        <li>The extra coding agents (pi, OpenCode, Codex) are set up and tested offline. We have not yet measured how well they edit an existing file with your model, and all three want a context window of 64k tokens or more, which is larger than Ollama's default on most PCs.</li>
         <li>Only Windows 11 was tested. Native macOS and Linux, and the VS Code extension steps, are not tested yet.</li>
       </ul>
       <p><a href="https://github.com/veeresh-bikkaneti/antigravity-local/releases/tag/v1.0.0">Read the v1.0.0 release notes</a></p>
@@ -332,6 +333,14 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
       <details>
         <summary>Can I use it from VS Code?</summary>
         <p>Yes, four ways. The README lists them: our shell in the built-in terminal, the Ollama extension, Continue, and Cline. The extension steps come from their official guides, and we have not run them in VS Code ourselves.</p>
+      </details>
+      <details>
+        <summary>Can I use a better coding agent than the built-in shell?</summary>
+        <p>Yes. Run <code>python run.py --agent pi</code>, <code>--agent opencode</code> or <code>--agent codex</code>. It adds an Ollama entry to that agent's own config, keeps everything else in the file, makes a one-time backup, and starts the agent in your current folder. It installs the agent only if you type <code>y</code>. Raise Ollama's context length to 64k first, for example with <code>OLLAMA_CONTEXT_LENGTH=65536</code>.</p>
+      </details>
+      <details>
+        <summary>Can I use Claude Code with my local model?</summary>
+        <p>Ollama documents a way: it speaks a subset of the Anthropic API, so Claude Code can point at <code>http://localhost:11434</code> (no <code>/v1</code>). We have not built or tested that route. If you also have a Claude subscription, set the variables for one terminal only and never in your profile or <code>~/.claude/settings.json</code>, or every session will go to the local model. The README has the details and the gotchas.</p>
       </details>
       <details>
         <summary>Does it work on macOS or Linux?</summary>
