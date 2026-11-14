@@ -42,11 +42,19 @@ def fit_label(size_gb, vram_gb, ram_gb):
 FIT_TEXT = {"gpu": "fits your GPU", "split": "runs, part on CPU (slower)", "too big": "too big for this PC"}
 
 
-def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG):
-    """Installed models first (no download), then catalog models that are not installed and can run here."""
+def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None):
+    """Installed models first (no download), then the hardware pick if given, then catalog models that can run here.
+
+    `recommended` is the tier pick for this PC (run.hardware_tier_model). Its size is not known without a
+    registry call, so the row says so instead of guessing.
+    """
     have = {_norm(m) for m in installed}
     menu = [{"tag": m, "installed": True, "size_gb": None, "fit": None, "note": "already on this machine"}
             for m in sorted(installed)]
+    if recommended and _norm(recommended) not in have:
+        menu.append({"tag": recommended, "installed": False, "size_gb": None, "fit": None,
+                     "note": "recommended for this PC"})
+        have.add(_norm(recommended))
     for tag, size, note in catalog:
         if _norm(tag) in have:
             continue
@@ -64,9 +72,11 @@ def render(menu, default_tag):
         if m["installed"]:
             detail = "installed, no download"
         else:
-            detail = f"{m['size_gb']:.1f} GB download, {FIT_TEXT[m['fit']]}"
+            size = f"{m['size_gb']:.1f} GB download" if m["size_gb"] is not None else "size unknown"
+            detail = size + (f", {FIT_TEXT[m['fit']]}" if m["fit"] else "")
         lines.append(f"       {star}{i:>2}. {m['tag']}  [{detail}]  {m['note']}")
-    keep = f"Enter keeps {default_tag}" if default_tag else "Enter picks 1"
+    keep = (f"Enter keeps {default_tag}" if default_tag
+            else "Enter picks 1" if menu else "Enter continues with the automatic pick")
     lines.append(f"       Type a number, or any other Ollama tag. {keep}. (* = current)")
     return lines
 
@@ -91,7 +101,7 @@ def choose(menu, default_tag, input_fn=None, out=print):
             out(f"       Pick 1 to {len(menu)}, or type a tag.")
             continue
         if TAG_RE.match(raw.lower()):
-            return raw
+            return raw.lower()
         out("       That is not a tag. Use a number, or something like qwen3.6:27b.")
     return fallback
 
@@ -99,6 +109,8 @@ def choose(menu, default_tag, input_fn=None, out=print):
 def tag_exists(tag, timeout=4):
     """True/False from the public Ollama registry, None when we cannot tell (offline). Sends only the tag."""
     name, _, version = _norm(tag).rpartition(":")
+    if "/" in name and "." in name.split("/")[0]:
+        return None  # another registry (hf.co/..., host.example/...): ours cannot vouch for it, so do not refuse it
     if "/" not in name:
         name = "library/" + name
     req = urllib.request.Request(

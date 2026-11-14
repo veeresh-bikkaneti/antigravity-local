@@ -90,14 +90,22 @@ class ModelWizardInRun(unittest.TestCase):
     """The menu only appears on a real terminal; every other path must behave exactly as before."""
     HW = {"ram_gb": 128.0, "vram_gb": 16.0, "gpu_name": "RTX"}
 
-    def sel(self, installed, answers=(), interactive=True, requested=None, env=None, registry=True):
+    def sel(self, installed, answers=(), interactive=True, requested=None, env=None, registry=True, hw=None):
         feed = iter(answers)
         pulls = []
 
         def no_input(_=""):
             raise AssertionError("the menu must not ask on this path")
         ask = (lambda _="": next(feed)) if interactive else no_input
-        with tempfile.TemporaryDirectory() as d,                 mock.patch.object(run, "PROJECT_DIR", d),                 mock.patch.dict(run.os.environ, {"LOCAL_LLM_MODEL": env} if env else {}, clear=False),                 mock.patch.object(run, "get_hardware_profile", return_value=self.HW),                 mock.patch.object(run, "get_installed_ollama_models", return_value=set(installed)),                 mock.patch.object(run.model_wizard, "tag_exists", return_value=registry),                 mock.patch.object(run.subprocess, "check_call", side_effect=lambda c: pulls.append(c)),                 mock.patch("builtins.input", side_effect=ask),                 contextlib.redirect_stdout(io.StringIO()):
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.object(run, "PROJECT_DIR", d), \
+                mock.patch.dict(run.os.environ, {"LOCAL_LLM_MODEL": env} if env else {}, clear=False), \
+                mock.patch.object(run, "get_hardware_profile", return_value=hw or self.HW), \
+                mock.patch.object(run, "get_installed_ollama_models", return_value=set(installed)), \
+                mock.patch.object(run.model_wizard, "tag_exists", return_value=registry), \
+                mock.patch.object(run.subprocess, "check_call", side_effect=lambda c: pulls.append(c)), \
+                mock.patch("builtins.input", side_effect=ask), \
+                contextlib.redirect_stdout(io.StringIO()):
             if not env:
                 run.os.environ.pop("LOCAL_LLM_MODEL", None)
             got = run.select_and_pull_model(requested_model=requested, interactive=interactive)
@@ -140,10 +148,56 @@ class ModelWizardInRun(unittest.TestCase):
         got, pulls, _ = self.sel(self.INSTALLED, ["some-new:9b"], registry=None)
         self.assertEqual((got, pulls), ("some-new:9b", [["ollama", "pull", "some-new:9b"]]))
 
-    def test_empty_machine_enter_pulls_a_model_that_fits_the_gpu(self):
-        got, pulls, _ = self.sel(set(), [""])
-        self.assertEqual(got, "gpt-oss:20b")
-        self.assertEqual(pulls, [["ollama", "pull", "gpt-oss:20b"]])
+    # R13: this replaces test_empty_machine_enter_pulls_a_model_that_fits_the_gpu (16 GB / 128 GB, expected
+    # gpt-oss:20b). That test locked in a menu default that differs from the automatic path and, on smaller
+    # PCs, picked a model that does not fit. Enter on an empty machine must equal the automatic hardware pick.
+    TIERS = [(16.0, 128.0, "qwen2.5-coder:14b"), (8.0, 32.0, "qwen2.5-coder:14b"),
+             (0.0, 32.0, "qwen2.5-coder:7b"), (0.0, 8.0, "llama3.2:3b")]
+
+    def test_empty_machine_enter_pulls_the_hardware_tier_pick_same_as_automatic(self):
+        for vram, ram, want in self.TIERS:
+            hw = {"ram_gb": ram, "vram_gb": vram, "gpu_name": "x"}
+            with self.subTest(vram=vram, ram=ram):
+                got, pulls, _ = self.sel(set(), [""], hw=hw)
+                auto, auto_pulls, _ = self.sel(set(), interactive=False, hw=hw)
+                self.assertEqual((got, pulls), (want, [["ollama", "pull", want]]))
+                self.assertEqual((got, pulls), (auto, auto_pulls))
+
+    def test_empty_machine_menu_shows_the_tier_pick_as_recommended_and_default(self):
+        tier = run.hardware_tier_model(0.0, 32.0)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            menu = run.model_wizard.build_menu(set(), 0.0, 32.0, recommended=tier)
+            run.model_wizard.choose(menu, tier, input_fn=lambda _="": "")
+        text = out.getvalue()
+        self.assertIn("qwen2.5-coder:7b", text)
+        self.assertIn("recommended for this PC", text)
+        self.assertIn("size unknown", text)
+
+    def test_hardware_tier_helper_matches_the_old_inline_thresholds(self):
+        edge = [(15.0, 0.0, "qwen2.5-coder:14b"), (8.0, 31.9, "qwen2.5-coder:7b"),
+                (0.0, 16.0, "qwen2.5-coder:7b"), (0.0, 0.0, "llama3.2:3b")]
+        for vram, ram, want in self.TIERS + edge:
+            self.assertEqual(run.hardware_tier_model(vram, ram), want, (vram, ram))
+
+    def test_ranking_puts_new_families_above_qwen25_coder_and_small_ones_below(self):
+        base = "qwen2.5-coder:14b"
+        above = ["qwen3.6:27b", "qwen3.8:27b", "gpt-oss:20b", "devstral-small-2:24b",
+                 "qwen3-coder:30b", "laguna-xs.2:latest"]
+        below = ["qwen3:8b", "qwen3:4b", "qwen3:0.6b"]
+        ranked = sorted([base] + above + below, key=run.capability_rank_key, reverse=True)
+        self.assertEqual(set(ranked[:len(above)]), set(above))
+        self.assertEqual(ranked[len(above)], base)
+        for name in above + below + [base]:
+            self.assertLessEqual(run.get_model_capability_score(name), 100.0, name)
+
+    def test_automatic_pick_prefers_a_new_family_over_qwen25_coder(self):
+        got, pulls, _ = self.sel({"qwen2.5-coder:14b", "qwen3.6:27b"}, interactive=False)
+        self.assertEqual((got, pulls), ("qwen3.6:27b", []))
+
+    def test_menu_default_is_the_new_family_when_both_are_installed(self):
+        got, pulls, _ = self.sel({"qwen2.5-coder:14b", "qwen3.6:27b"}, [""])
+        self.assertEqual((got, pulls), ("qwen3.6:27b", []))
 
     def test_explicit_cli_model_skips_the_menu(self):
         got, pulls, _ = self.sel(self.INSTALLED, interactive=False, requested="gemma2:27b")

@@ -67,7 +67,49 @@ class Choose(unittest.TestCase):
         self.assertIn("GB download", text)
 
 
+class Recommended(unittest.TestCase):
+    def test_recommended_row_comes_first_and_is_not_repeated(self):
+        menu = mw.build_menu([], 0, 32, recommended="gpt-oss:20b")
+        self.assertEqual(menu[0]["tag"], "gpt-oss:20b")
+        self.assertEqual([m["tag"] for m in menu].count("gpt-oss:20b"), 1)
+        self.assertIn("recommended for this PC", menu[0]["note"])
+        self.assertIsNone(menu[0]["size_gb"])
+
+    def test_row_without_a_size_renders_as_size_unknown_not_a_crash(self):
+        menu = mw.build_menu([], 0, 32, recommended="llama3.2:3b")
+        self.assertIn("size unknown", "\n".join(mw.render(menu, "llama3.2:3b")))
+
+    def test_recommended_that_is_already_installed_is_not_added_again(self):
+        menu = mw.build_menu(["llama3.2:3b"], 0, 32, recommended="llama3.2:3b")
+        self.assertEqual([m["tag"] for m in menu].count("llama3.2:3b"), 1)
+
+
+class SmallFixes(unittest.TestCase):
+    def test_empty_menu_without_default_does_not_promise_row_one(self):
+        text = "\n".join(mw.render([], None))
+        self.assertIn("automatic pick", text)
+        self.assertNotIn("picks 1", text)
+
+    def test_typed_tag_is_lowercased(self):
+        menu = mw.build_menu([], 16, 128)
+        got = mw.choose(menu, "a:1", input_fn=lambda _="": "Qwen3:8B", out=lambda *_: None)
+        self.assertEqual(got, "qwen3:8b")
+
+
 class TagExists(unittest.TestCase):
+    def test_other_registry_is_unknown_and_never_asks_ollama(self):
+        # tag_exists swallows exceptions, so a raising mock would pass vacuously; assert on calls instead.
+        with mock.patch("urllib.request.urlopen") as opened:
+            self.assertIsNone(mw.tag_exists("hf.co/a/b:q4"))
+            self.assertIsNone(mw.tag_exists("registry.example.com/team/model:1"))
+        opened.assert_not_called()
+
+    def test_plain_and_namespaced_ollama_tags_still_hit_the_registry(self):
+        with mock.patch("urllib.request.urlopen") as opened:
+            self.assertTrue(mw.tag_exists("qwen3.6:27b"))
+            self.assertTrue(mw.tag_exists("someuser/mymodel:1"))
+        self.assertEqual(opened.call_count, 2)
+
     def test_offline_is_unknown_not_false(self):
         with mock.patch("urllib.request.urlopen", side_effect=OSError("offline")):
             self.assertIsNone(mw.tag_exists("qwen3.6:27b"))

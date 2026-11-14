@@ -254,7 +254,7 @@ def get_installed_ollama_models(base_url="http://localhost:11434"):
 
     return models
 
-def get_model_capability_score(model_name: str) -> float:
+def _raw_capability_score(model_name: str) -> float:
     """
     Computes an agentic capability score to automatically select the MOST CAPABLE model:
     - Nanbeige: Top-tier multi-step agentic reasoning and sequential tool calling (Nanbeige 4.1/4.2/4.3, Nanbeige 2-16B)
@@ -273,7 +273,7 @@ def get_model_capability_score(model_name: str) -> float:
 
     # 1. Family weighting for agentic / tool-calling / reasoning capabilities
     if "qwen3" in name or "devstral-small-2" in name or "gpt-oss" in name or "laguna" in name:
-        score += 94.0   # 2026 agentic families (see model_wizard.CATALOG); outrank qwen2.5
+        score += 97.0   # 2026 agentic families (see model_wizard.CATALOG); must out-score qwen2.5-coder:14b (raw 100.2)
     elif "nanbeige" in name:
         score += 92.0   # Nanbeige (4.1/4.2/4.3, 2-16B) - top agentic tool caller & deep search
     elif "deepseek" in name:
@@ -315,7 +315,26 @@ def get_model_capability_score(model_name: str) -> float:
     if "instruct" in name or "chat" in name:
         score += 4.0
 
-    return min(score, 100.0)
+    return score
+
+
+def get_model_capability_score(model_name: str) -> float:
+    """Score for display, capped at 100. Never rank with this: ties at the cap break alphabetically."""
+    return min(_raw_capability_score(model_name), 100.0)
+
+
+def capability_rank_key(model_name: str) -> float:
+    """The one key every ranking uses (menu default and automatic pick), uncapped so capable models never tie."""
+    return _raw_capability_score(model_name)
+
+
+def hardware_tier_model(vram_gb: float, ram_gb: float) -> str:
+    """The model to download on a machine with none, by hardware. One owner: the menu and the automatic path both use it."""
+    if vram_gb >= 15.0 or (vram_gb >= 8.0 and ram_gb >= 32.0):
+        return "qwen2.5-coder:14b"
+    if vram_gb >= 8.0 or ram_gb >= 16.0:
+        return "qwen2.5-coder:7b"
+    return "llama3.2:3b"
 
 def _with_tag(name):
     """'qwen2.5-coder' -> 'qwen2.5-coder:latest' (Ollama's implicit tag). '' stays ''."""
@@ -352,12 +371,13 @@ def _ask_which_model(display_names, installed_models, vram_gb, ram_gb):
     if configured and is_model_installed(configured, installed_models):
         default = configured
     elif display_names:
-        default = max(display_names, key=get_model_capability_score)
+        default = max(display_names, key=capability_rank_key)
     else:
         default = None
-    menu = model_wizard.build_menu(display_names, vram_gb, ram_gb)
+    tier = hardware_tier_model(vram_gb, ram_gb)
+    menu = model_wizard.build_menu(display_names, vram_gb, ram_gb, recommended=None if display_names else tier)
     if not default:
-        default = next((m["tag"] for m in menu if m["fit"] == "gpu"), menu[0]["tag"] if menu else None)
+        default = tier  # empty machine: Enter means exactly what the automatic path would download
     chosen = model_wizard.choose(menu, default)
     if not chosen or model_wizard._norm(chosen) == model_wizard._norm(default or ""):
         # Kept the default: for an installed model the automatic path handles it; otherwise pull it.
@@ -429,7 +449,7 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
             return configured_env_model
 
         # Rank all installed models by capability score
-        ranked_models = sorted(display_names, key=get_model_capability_score, reverse=True)
+        ranked_models = sorted(display_names, key=capability_rank_key, reverse=True)
         top_model = ranked_models[0]
         top_score = get_model_capability_score(top_model)
         
@@ -442,21 +462,16 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
     else:
         print("       Zero models found on machine. Evaluating hardware build for optimal cutting-edge model...")
         
-        # Workstation / Enthusiast PC (>= 15 GB VRAM or >= 32 GB RAM)
-        if vram_gb >= 15.0 or (vram_gb >= 8.0 and ram_gb >= 32.0):
-            target_to_pull = "qwen2.5-coder:14b"
+        target_to_pull = hardware_tier_model(vram_gb, ram_gb)
+        if target_to_pull == "qwen2.5-coder:14b":  # Workstation / Enthusiast PC
             print(f"       PC Build: High-performance workstation ({vram_gb:.1f}GB VRAM, {ram_gb:.1f}GB RAM)")
             print(f"       Selected cutting-edge agent model: '{target_to_pull}' (100% VRAM tool fit, flagship coding)")
             print(f"       (Note: You can also try 'nanbeige2:16b', 'deepseek-coder-v2:16b', 'command-r:35b', or 'codestral:22b')")
-        # Mid-Tier PC (8-14 GB VRAM or 16-32 GB RAM)
-        elif vram_gb >= 8.0 or ram_gb >= 16.0:
-            target_to_pull = "qwen2.5-coder:7b"
+        elif target_to_pull == "qwen2.5-coder:7b":  # Mid-tier PC
             print(f"       PC Build: Mid-tier hardware ({vram_gb:.1f}GB VRAM, {ram_gb:.1f}GB RAM)")
             print(f"       Selected cutting-edge agent model: '{target_to_pull}'")
             print(f"       (Note: You can also try 'nanbeige4.1:3b', 'deepseek-coder:6.7b', or 'glm4:9b')")
-        # Entry-Level / CPU (< 16 GB RAM)
-        else:
-            target_to_pull = "llama3.2:3b"
+        else:  # Entry-level / CPU
             print(f"       PC Build: Compact / CPU hardware ({ram_gb:.1f}GB RAM)")
             print(f"       Selected compact agent model: '{target_to_pull}'")
 
