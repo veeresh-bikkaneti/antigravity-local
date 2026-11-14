@@ -43,9 +43,12 @@ flowchart TD
     DaemonRunning -- Yes --> ModelInventory["Phase 4: Defensive Model Pre-Check<br/>Query /api/tags & 'ollama list'"]
     SpawnOllama --> ModelInventory
 
-    ModelInventory --> ModelFound{"Capable model installed?<br/>(Nanbeige / Qwen / Gemma)"}
-    ModelFound -- Yes --> ReUseModel["Zero-Download Fast Path:<br/>Select highest-scoring local model"]
-    ModelFound -- No --> PullModel["Auto-pull the model for your hardware<br/>(e.g., qwen2.5-coder:14b)"]
+    ModelInventory --> TermCheck{"Real terminal and no --yes?"}
+    TermCheck -- Yes --> ModelMenu["Show model menu<br/>(Enter keeps the pick; Ctrl+C cancels, exit 130)"]
+    TermCheck -- No --> ModelFound
+    ModelMenu --> ModelFound{"Capable model installed?<br/>(or picked)"}
+    ModelFound -- Yes --> ReUseModel["Zero-Download Fast Path:<br/>Select highest-ranked local model"]
+    ModelFound -- No --> PullModel["Auto-pull the pick or the model for your hardware<br/>(e.g., qwen2.5-coder:14b)<br/>A new download is saved to .env"]
     PullModel --> ReUseModel
 
     ReUseModel --> WorkspaceDemo["Phase 5: Autonomous Verification Test<br/>Execute agent_with_workspace.py<br/>Generates workspace/index.html"]
@@ -58,8 +61,8 @@ flowchart TD
     classDef start fill:#111827,stroke:#9ca3af,stroke-width:1px,color:#f3f4f6;
 
     class Start,Ready start;
-    class Audit,CreateVenv,PipCheck,PipInstall,DaemonCheck,SpawnOllama,ModelInventory,PullModel,ReUseModel,WorkspaceDemo,LaunchShell proc;
-    class VenvCheck,DepsInstalled,DaemonRunning,ModelFound branch;
+    class Audit,CreateVenv,PipCheck,PipInstall,DaemonCheck,SpawnOllama,ModelInventory,ModelMenu,PullModel,ReUseModel,WorkspaceDemo,LaunchShell proc;
+    class VenvCheck,DepsInstalled,DaemonRunning,TermCheck,ModelFound branch;
 ```
 
 ### What you can count on
@@ -71,7 +74,7 @@ flowchart TD
 
 ## Flow 2: model inventory pre-check
 
-To avoid downloading multi-gigabyte models you already have, the system checks the local inventory in two tiers before it pulls anything. Ranking uses `get_model_capability_score`, which caps at 100, so several large coder models tie at the top. Example scores: `nanbeige4.1:3b` 92.9, `qwen2.5:14b` 92.2, `qwen2.5-coder:7b` 98.1, `llama3.1:8b` 76.4. The family base is not the whole score, so Nanbeige does not always rank first.
+To avoid downloading multi-gigabyte models you already have, the system checks the local inventory in two tiers before it pulls anything. Ranking uses `capability_rank_key`, the uncapped raw score, so large models never tie at 100. `get_model_capability_score` caps at 100 for display only. Example (rank score, uncapped): `qwen3.6:27b` 105.1, `qwen2.5-coder:14b` 100.2, `qwen2.5-coder:7b` 98.1, `nanbeige4.1:3b` 92.9, `qwen2.5:14b` 92.2, `llama3.1:8b` 76.4. Embedding and reranker tags such as `qwen3-embedding:8b` (7.4) rank last. The family base is not the whole score, so Nanbeige does not always rank first.
 
 ```mermaid
 flowchart LR
@@ -83,7 +86,7 @@ flowchart LR
     CLIFallback --> ParseTags
 
     ParseTags --> Normalize["Normalize Model Tags<br/>Strip ':latest' suffixes & case differences"]
-    Normalize --> CandidateScoring["Score local candidates:<br/>family base (Nanbeige 92, DeepSeek 90, Qwen 2.5 88, ... LLaMA 3.x 74)<br/>+ 0.3 per billion parameters (cap 72B)<br/>+ keyword bonuses, total capped at 100"]
+    Normalize --> CandidateScoring["Score local candidates:<br/>family base (2026 families 97, Nanbeige 92, DeepSeek 90, Qwen 2.5 88, ... LLaMA 3.x 74; embed and rerank tags 5)<br/>+ 0.3 per billion parameters (cap 72B)<br/>+ keyword bonuses, ranked uncapped"]
 
     CandidateScoring --> BestCandidate{"Models exist in local inventory?"}
     BestCandidate -- Yes --> FastPath["Zero-Download Fast Path<br/>Reuse highest-scoring local model<br/>(0s delay, 0 GB downloaded)"]

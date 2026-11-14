@@ -31,12 +31,14 @@ Google Antigravity Local pulls the official `google-antigravity` SDK off Google 
   - Workstation: VRAM of 15 GB or more, or VRAM of 8 GB or more with 32 GB RAM or more. Pulls `qwen2.5-coder:14b`.
   - Mid-tier: VRAM of 8 GB or more, or RAM of 16 GB or more. Pulls `qwen2.5-coder:7b`.
   - Compact: anything smaller. Pulls `llama3.2:3b`.
-- Inventory scoring, used when models are already installed. `get_model_capability_score` adds a family base score, a size bonus, and keyword bonuses, then caps the total at 100:
-  - Family base: Nanbeige 92, DeepSeek 90, Qwen 2.5 88, Command R 86, Codestral 84, GLM-4 82, Mistral Large or Devstral 80, Gemma 2 76, LLaMA 3.x 74, Phi 68, other Mistral 65, anything else 45.
+- Interactive path: when stdin and stdout are both terminals and `--yes` is not set, `run.py` shows a short menu of the installed models plus the candidates in `model_wizard.CATALOG`, each with its size and GPU fit. Enter keeps the current pick. On a machine with no models, Enter takes the hardware pick above, listed first as "recommended for this PC" with its size marked unknown. A typed tag is checked against the Ollama registry before anything downloads. Ctrl+C cancels (exit 130, nothing is pulled). A newly downloaded pick, from the menu or from `--model <new tag>`, is saved to `LOCAL_LLM_MODEL` in `.env`.
+- Automatic path: `--yes`, piped input and CI skip the menu. They rank the installed models and reuse the best one, or pull the hardware pick when none is installed.
+- Inventory ranking, used by both paths when models are already installed. `capability_rank_key` returns the raw score: a family base score, plus a size bonus, plus keyword bonuses. It is not capped, so big models do not tie. `get_model_capability_score` caps the same number at 100 for display only.
+  - Family base: embed or rerank names 5 (checked first, so an embedding model never ranks as a chat model); qwen3, devstral-small-2, gpt-oss and laguna 97; Nanbeige 92, DeepSeek 90, Qwen 2.5 88, Command R 86, Codestral 84, GLM-4 82, Mistral Large or Devstral 80, Gemma 2 76, LLaMA 3.x 74, Phi 68, other Mistral 65, anything else 45.
   - Size bonus: parameter count in billions (capped at 72) times 0.3. No size in the name adds 4.
   - Keyword bonus: +8 for `coder` or `code`, +8 for `agent`, `tool`, or `search`, +4 for `instruct` or `chat`.
-  - Computed examples: `nanbeige4.1:3b` 92.9, `qwen2.5:14b` 92.2, `qwen2.5:3b` 88.9, `llama3.3:70b` 95.0, `codestral:22b` 98.6, `qwen2.5-coder:7b` 98.1, `gemma2:9b` 78.7, `llama3.1:8b` 76.4. `qwen2.5-coder:14b`, `qwen2.5-coder:32b`, and `deepseek-coder-v2:16b` all hit the 100 cap.
-  - The family base alone does not decide the winner. Size and keyword bonuses move the ranking, and the cap produces ties at the top.
+  - Computed examples (rank score): `qwen3.6:27b` 105.1, `qwen2.5-coder:32b` 105.6, `qwen2.5-coder:14b` 100.2, `codestral:22b` 98.6, `qwen2.5-coder:7b` 98.1, `llama3.3:70b` 95.0, `nanbeige4.1:3b` 92.9, `qwen2.5:14b` 92.2, `qwen2.5:3b` 88.9, `gemma2:9b` 78.7, `llama3.1:8b` 76.4, `qwen3-embedding:8b` 7.4.
+  - The family base alone does not decide the winner. Size and keyword bonuses move the ranking, and because nothing is capped the top of the list stays in a clear order.
 
 ### Module 3: three-tier memory (`memory.py`, `.wiki/`, `graphify-out/`)
 - Tier 1, Graphify AST: code structure, call hierarchies, and community clusters in `graphify-out/graph.json`. The committed graph has 8,547 nodes, 13,383 edges, and 591 communities. Graphify is not wired into the runtime agent path. Only `python memory.py sync` calls `graphify update .`, and only when the `graphify` command is installed.
