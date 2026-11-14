@@ -12,7 +12,7 @@
 | [`architecture.md`](architecture.md) | Decoupled local runtime, OpenAI-compatible proxy, WebSocket harness. | ~850 tokens |
 | [`hardware-matrix.md`](hardware-matrix.md) | VRAM/RAM hardware offload, GPU detection, RTX 5000 Ada profile. | ~920 tokens |
 | [`model-hierarchy.md`](model-hierarchy.md) | Nanbeige, Qwen 2.5, DeepSeek scoring hierarchy, zero-download pre-flight logic. | ~1,100 tokens |
-| [`tool-execution.md`](tool-execution.md) | Antigravity tool calling schema (`create_file`), safety policies, workspace boundaries. | ~800 tokens |
+| [`tool-execution.md`](tool-execution.md) | Antigravity tool calling schema (`write_to_file`), safety policies, workspace boundaries. | ~800 tokens |
 | [`token-optimization.md`](token-optimization.md) | 3-Tier Memory Fabric, Graphify AST benchmarks (31x–128x), RRF retrieval formula. | ~950 tokens |
 | [`memory-integrity.md`](memory-integrity.md) | Index invariants (stable vectors, per-doc backend, purge, closed connections). | ~250 tokens |
 | [`consensus-governance.md`](consensus-governance.md) | Frozen Core invariants, Council deliberation pass rule, Advisor loop. | ~750 tokens |
