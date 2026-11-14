@@ -481,6 +481,7 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
     try:
         subprocess.check_call(["ollama", "pull", target_to_pull])
         print(f"✅ Model '{target_to_pull}' successfully pulled!\n")
+        update_env_model(target_to_pull)  # so the next run's menu default and --yes start from this pick
         return target_to_pull
     except Exception as exc:
         print(f"\n❌ Failed to pull model: {exc}")
