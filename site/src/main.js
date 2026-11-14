@@ -183,12 +183,28 @@ async function boot() {
     scene.refresh();
     scene.focus($(".step.is-active")?.dataset.focus ?? "overview");
     ScrollTrigger.refresh();
+    root.classList.add("has-3d"); // the flat hero drawing steps aside on wide screens
   } catch (err) {
     console.warn("The 3D drawing is unavailable; the page still works without it.", err);
     canvas.remove();
     $("#labels")?.remove();
+    root.classList.add("no-3d"); // keep the flat hero drawing; hide controls that would do nothing
     $$(".hero-controls .btn").forEach((b) => { b.disabled = true; });
   }
 }
 if ("requestIdleCallback" in window) requestIdleCallback(boot, { timeout: 1500 });
 else setTimeout(boot, 300);
+
+/* ---- reveal: sections ease in the first time they reach the screen.
+   Skipped entirely for reduced motion, so nothing ever starts hidden. ---- */
+if (!reduce.matches && "IntersectionObserver" in window) {
+  const items = $$(".sheet, .flow-node, .game, .watch, .limits li, .faq details");
+  items.forEach((el) => el.setAttribute("data-reveal", ""));
+  root.classList.add("reveal");
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add("is-revealed"); io.unobserve(e.target); }
+    }
+  }, { rootMargin: "0px 0px -8% 0px" });
+  items.forEach((el) => io.observe(el));
+}

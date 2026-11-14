@@ -117,12 +117,144 @@ Forgot the container name? `docker ps` lists running ones, then `docker stop <id
 
 Ollama holds the model. Every tool below just knocks on its door at `http://localhost:11434` (the OpenAI-style address is `http://localhost:11434/v1`). So the order is always the same: start Ollama, run `ollama list`, and copy the model name exactly as it prints, for example `qwen2.5:14b`. Then pick your editor.
 
-*Checked on Nov. 4, 2026. Editor extensions rename their settings often. If a label differs from what you see, follow the linked guide.*
+*Agent facts checked on Nov. 14, 2026, editor extension routes on Nov. 4, 2026. These tools rename their settings often. If a label differs from what you see, follow the linked guide.*
+
+### Pick a coding agent
+
+Want something sturdier than the built-in shell? One command sets up a terminal coding agent that already knows about your local model. It installs the agent only if you say yes, adds an Ollama entry to the agent's own config without touching anything else in it, and starts it in your project. Run it from inside your project and the agent works in that folder. Run it from inside antigravity-local, or through `run.sh` or `run.bat` (they always start there), and it works in this repo's `workspace/` folder instead, so a new agent never starts out editing our own files. Aim it anywhere with `--workspace`. Every run prints one line that names the folder the agent will use.
+
+```bash
+python run.py --agent pi          # or opencode, or codex (Claude Code has its own section below)
+python run.py --agent pi --agent-config-only   # write the config, print the start command, stop
+python run.py --agent pi --workspace ~/code/my-project   # work in your project, wherever you ran it from
+```
+
+| Agent | What it is | Install (we offer to run it) | One command | License | Best for |
+|-------|-----------|------------------------------|-------------|---------|----------|
+| `shell` (default) | This repo's Antigravity SDK shell | Nothing | `python run.py` | MIT | Creating new files, zero extra installs |
+| `pi` | A minimal agent with four tools (read, write, edit, bash) and a short system prompt | `npm install -g @earendil-works/pi-coding-agent` (needs Node 22.19+) | `python run.py --agent pi` | MIT | Small local models: less prompt to get lost in |
+| `opencode` | A fuller agent with MCP, LSP and sub-agents | `npm install -g opencode-ai` | `python run.py --agent opencode` | MIT | More features, and bigger models |
+| `codex` | OpenAI's terminal agent, pointed at Ollama with `--oss` | `npm install -g @openai/codex` | `python run.py --agent codex` | Apache-2.0 | Zero config files to manage |
+
+Three things worth knowing before you press Enter:
+
+- **Give it room to think.** All three agents want a context window of 64k tokens or more, and Ollama's default is smaller on most PCs (4k below 24 GB of VRAM, per [Ollama's context-length page](https://docs.ollama.com/context-length)). Raise it in the Ollama app's settings, or start the server with `OLLAMA_CONTEXT_LENGTH=65536` ([Ollama's FAQ](https://docs.ollama.com/faq)). We print this reminder but never change your Ollama settings.
+- **Your config is safe.** We merge into `~/.pi/agent/` or `~/.config/opencode/opencode.json`, keep every other provider and setting, and save a one-time backup next to a changed file (ending `.bak-antigravity-local`). If a config file is not valid JSON, we stop and tell you which file, rather than guess. Run it twice and the second run changes nothing. `codex` needs no file at all, and it only talks to Ollama on its default port. pi gets its provider and model as launch flags, so we never rewrite your own pi default. If an earlier version of this setup changed your pi default, the `.bak-antigravity-local` file next to `~/.pi/agent/settings.json` holds your old one.
+- **We tested the setup, not the magic.** The config writing, the install prompt and the hand-off are covered by offline tests. We have not yet measured how well each agent edits an existing file with your model, which is the weak spot noted below. If you try one, tell us how it went.
+
+Ollama has its own helper too: `ollama launch pi` or `ollama launch opencode` installs and configures them for you ([Ollama's pi guide](https://docs.ollama.com/integrations/pi), [OpenCode guide](https://docs.ollama.com/integrations/opencode)). Our command does the same job but keeps the model you picked in the menu and writes only what it needs to.
+
+### Claude Code with your local model
+
+Ollama speaks a subset of the Anthropic Messages API, so Claude Code can talk to your local model ([Ollama's Claude Code guide](https://docs.ollama.com/integrations/claude-code), [Anthropic compatibility](https://docs.ollama.com/api/anthropic-compatibility)). If you also pay for a Claude subscription, the scary part is not getting it to work. It is getting it to work *everywhere*, so that your normal sessions quietly start talking to a 14B model. Our command is built so that cannot happen.
+
+```bash
+python run.py --agent claude                      # start Claude Code on your local model
+python run.py --agent claude --copy-user-settings # first run only: copy (never link) your CLAUDE.md, skills, agents, commands
+python run.py --agent claude --doctor             # read-only: find anything that reroutes your normal sessions
+```
+
+What it does, and just as important what it refuses to do:
+
+- **Everything lives in one child process.** The endpoint, the placeholder token and the model names go into a copy of the environment that only that one `claude` process sees. We never write `~/.claude/`, `~/.claude.json`, VS Code settings, Claude Desktop's config, a shell profile or a Windows user variable, and we never run `setx`.
+- **It gets its own config folder.** `CLAUDE_CONFIG_DIR` points at `~/.claude-local`, so `/login`, `/model` and `/config` inside the local session cannot touch your subscription setup. To remove everything this feature ever made, delete `~/.claude-local`.
+- **Settings files cannot override it.** We set `CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST=1`, so an `env` block in some settings file cannot swap the endpoint or the login underneath us ([Ollama issue 17990](https://github.com/ollama/ollama/issues/17990) is what that looks like). We also blank `ANTHROPIC_API_KEY` and the Bedrock, Vertex and Foundry switches for that session.
+- **It warns before it launches.** If `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN` or `ANTHROPIC_API_KEY` is already set in your terminal or in the `env` block of `~/.claude/settings.json`, we say where (never the value) and that it reroutes or bills every normal Claude Code session, VS Code extension included. We do not edit anything.
+- **It plans for the context Ollama really has.** Claude Code assumes 200k tokens for a model it does not know, and would compact far too late. We pass `CLAUDE_CODE_MAX_CONTEXT_TOKENS` from your `OLLAMA_CONTEXT_LENGTH` (65536 if unset) and warn when that variable is unset or smaller, because Ollama's own default is 4096 and the server has to be started with the same number. We tried this live and it matters a lot: on a server left at 4096, Claude Code's prompt and tools got cut off and `qwen2.5:14b` rambled instead of using its tools. Started with `OLLAMA_CONTEXT_LENGTH=65536`, the same model created a file correctly. Two more things to know: `ollama ps` shows the context a model really loaded with (that model's own limit capped our 65536 request at 32768), and we cannot read it for you, so check it once.
+- **No bare `claude` command is ever printed.** `--agent-config-only` has nothing to write for Claude Code, so it tells you so instead of printing a command that would use your subscription.
+
+In the banner you will see the one-line promise: this session uses your local model; plain `claude`, VS Code and Claude Desktop still use your subscription.
+
+**Check it yourself.** Inside the session, run `/status`. It should name your local endpoint and model. Open a normal terminal, run plain `claude`, and `/status` should show your subscription. Seeing both is the proof that nothing leaked.
+
+**Prefer not to run `run.py`?** These wrappers set exactly the same variables for one `claude` call and put your old values back afterwards. Replace `YOUR_MODEL_TAG` with your model's name (`ollama list` shows it), or pass it as the first argument, for example `claude-local qwen2.5:14b`. Paste into your profile if you like: the function holds no secret and changes nothing until you call it.
+
+```powershell
+# PowerShell
+function claude-local {
+  param([string]$Model = "YOUR_MODEL_TAG")
+  $names = "CLAUDE_CONFIG_DIR","CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST","ANTHROPIC_BASE_URL","ANTHROPIC_AUTH_TOKEN","ANTHROPIC_API_KEY",
+           "CLAUDE_CODE_USE_BEDROCK","CLAUDE_CODE_USE_VERTEX","CLAUDE_CODE_USE_FOUNDRY","ANTHROPIC_DEFAULT_OPUS_MODEL",
+           "ANTHROPIC_DEFAULT_SONNET_MODEL","ANTHROPIC_DEFAULT_HAIKU_MODEL","CLAUDE_CODE_SUBAGENT_MODEL",
+           "CLAUDE_CODE_MAX_CONTEXT_TOKENS","CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
+  $old = @{}; foreach ($n in $names) { $old[$n] = [Environment]::GetEnvironmentVariable($n, "Process") }
+  $ctx = if ($env:OLLAMA_CONTEXT_LENGTH) { $env:OLLAMA_CONTEXT_LENGTH } else { "65536" }
+  try {
+    $dir = Join-Path $HOME ".claude-local"; New-Item -ItemType Directory -Force $dir | Out-Null
+    $env:CLAUDE_CONFIG_DIR = $dir
+    $env:CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST = "1"
+    $env:ANTHROPIC_BASE_URL = "http://localhost:11434"
+    $env:ANTHROPIC_AUTH_TOKEN = "ollama"
+    $env:ANTHROPIC_API_KEY = ""; $env:CLAUDE_CODE_USE_BEDROCK = ""; $env:CLAUDE_CODE_USE_VERTEX = ""; $env:CLAUDE_CODE_USE_FOUNDRY = ""
+    $env:ANTHROPIC_DEFAULT_OPUS_MODEL = $Model; $env:ANTHROPIC_DEFAULT_SONNET_MODEL = $Model
+    $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = $Model; $env:CLAUDE_CODE_SUBAGENT_MODEL = $Model
+    $env:CLAUDE_CODE_MAX_CONTEXT_TOKENS = $ctx
+    $env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1"
+    claude --model $Model @args
+  } finally {
+    foreach ($n in $names) { [Environment]::SetEnvironmentVariable($n, $old[$n], "Process") }
+  }
+}
+```
+
+```bash
+# bash / zsh
+claude-local() {
+  local model="${1:-YOUR_MODEL_TAG}"; [ $# -gt 0 ] && shift
+  ( # a subshell: every export below dies with it, so nothing needs restoring
+    export CLAUDE_CONFIG_DIR="$HOME/.claude-local"; mkdir -p "$CLAUDE_CONFIG_DIR"
+    export CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST=1
+    export ANTHROPIC_BASE_URL="http://localhost:11434" ANTHROPIC_AUTH_TOKEN=ollama
+    export ANTHROPIC_API_KEY="" CLAUDE_CODE_USE_BEDROCK="" CLAUDE_CODE_USE_VERTEX="" CLAUDE_CODE_USE_FOUNDRY=""
+    export ANTHROPIC_DEFAULT_OPUS_MODEL="$model" ANTHROPIC_DEFAULT_SONNET_MODEL="$model"
+    export ANTHROPIC_DEFAULT_HAIKU_MODEL="$model" CLAUDE_CODE_SUBAGENT_MODEL="$model"
+    export CLAUDE_CODE_MAX_CONTEXT_TOKENS="${OLLAMA_CONTEXT_LENGTH:-65536}"
+    export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+    claude --model "$model" "$@"
+  )
+}
+```
+
+**Known gaps, so nobody is surprised.** Ollama does not support `tool_choice`, prompt caching, token counting or Anthropic's hosted web search, and token counts are approximate. Small local models also fail Claude Code's tool use more often than you would like: it sends a big system prompt and many tool definitions, and our own tests found existing-file edits unreliable with `qwen2.5:14b`. So think of this route as a good fit for private, offline or cheap work, and keep the subscription for the hard jobs. We tested the environment building, the warnings and `--doctor` offline. We have not yet had a long live session with it, so tell us how yours goes.
+
+**Ollama's own helper** is `ollama launch claude`. It also sets variables for the child only, but it does not move the config folder, and it remembers your last model in `~/.ollama/config.json`. `ollama launch claude-desktop` flips the whole Claude Desktop app into third-party mode until you run it again with `--restore`, and in Ollama's current code that launch works only on macOS. We never touch Desktop or VS Code. Run our launcher in VS Code's built-in terminal instead.
+
+**If it already broke.** Your normal Claude Code is talking to a local model, or complaining about a login? No reinstall needed. Almost always some setting from an earlier experiment is still hanging around. Do this on Windows, in order:
+
+1. Run `python run.py --agent claude --doctor`. It lists every spot below that is affected, with the exact line to remove, and changes nothing.
+2. User and machine environment variables: remove any `ANTHROPIC_*`, `CLAUDE_CODE_USE_*`, `CLAUDE_CODE_OAUTH_TOKEN` or `CLAUDE_CONFIG_DIR` you did not mean to keep. PowerShell: `[Environment]::SetEnvironmentVariable('ANTHROPIC_BASE_URL', $null, 'User')`. Machine scope needs an admin window.
+3. `~/.claude/settings.json`, plus `.claude/settings.json` and `.claude/settings.local.json` in your project: delete those keys from the `env` block, and any `apiKeyHelper` or odd `model` line.
+4. VS Code user settings: delete `claudeCode.environmentVariables` and `claudeCode.disableLoginPrompt`.
+5. `C:\Program Files\ClaudeCode\managed-settings.json`: if the doctor flags it, that is a machine-wide policy file, so ask whoever manages the PC.
+6. Claude Desktop stuck in third-party mode? Run `ollama launch claude-desktop --restore`.
+7. Open a **new** terminal (old ones keep old variables), run plain `claude`, then `/status`. If it shows your subscription, you are done.
+
+**Hit your limit mid-task.** When the subscription runs out halfway through a job, you do not have to start over. Claude Code keeps a transcript of the session. This writes the useful parts into a `HANDOFF.md` (your first ask, the last few messages, the last to-do list, files touched, the last 10 shell commands, the last assistant message, `git status` and `git diff --stat`) without calling any model:
+
+```bash
+python run.py handoff                    # newest transcript for this project
+python run.py handoff --session <id>     # or a specific session (or --transcript <file.jsonl>)
+python run.py handoff --install-hook     # opt in: write it automatically when a rate limit hits or before a compaction
+python run.py --agent pi --continue-local   # start a local agent on the task (pi, opencode, codex or claude)
+```
+
+`--install-hook` shows you the exact change, asks `[y/N]`, and edits only this project's `.claude/settings.local.json` (with a one-time backup). It never touches your user settings. `--continue-local` starts the agent with the prompt "Read HANDOFF.md and AGENTS.md, then continue the task. Check git state before editing. Update HANDOFF.md before you stop." `HANDOFF.md` can contain command output and secrets from the transcript, so after writing it we check that git ignores it in your project and, if not, add it to `.git/info/exclude` (a local file that is never committed) and tell you. We also never overwrite a `HANDOFF.md` we did not write: the old one is saved next to it first. And if your project already *tracks* a `HANDOFF.md` in git, we stop with exit 1 and write nothing, because the notes would be committed. The transcript format is not a public contract, so the reader skips anything it does not recognise. One more thing, flagged experimental: `python run.py --agent claude --resume-from latest` forks an old session into the local model. Whether that works across config folders, and how Ollama treats the old thinking blocks, is unverified, and [Claude Code issue 109452](https://github.com/anthropics/claude-code/issues/109452) reports the model changing after a resume, so check `/status`. Going back to the subscription goes through `HANDOFF.md`, not through that fork.
 
 ### Antigravity
 - **The Antigravity SDK works with your local model.** Google added local-model support on Sept. 23, 2026. `LocalOpenAIAgentConfig` connects to any OpenAI-compatible server, including Ollama ([Google's announcement](https://developers.googleblog.com/introducing-support-for-local-ai-models-in-the-antigravity-sdk/)). This repo already uses it. `python run.py` and `python code_agent.py` talk to `LOCAL_LLM_BASE_URL` (default `http://localhost:11434/v1`) and `LOCAL_LLM_MODEL` (default `qwen2.5:14b`). To change either, set the variable in `.env` or pass `--base-url` and `--model`.
-- **The Antigravity IDE chat panel has no setting for Ollama, as far as we found.** Google's announcement covers the SDK and does not mention the IDE or its CLI. We found no official setting that points the IDE chat at a local server. If Google adds a setting, this page is the place to update.
-- **What works today inside the IDE:** open your project, open the built-in terminal, activate the venv (see [the guide](ZERO_TO_CODING.md#before-you-start-activate-the-virtual-environment)), and run `python code_agent.py --workspace .`. The agent writes into the folder you have open, so new files show up in the editor as they appear.
+- **The Antigravity app and its IDE agent panel have no local-model setting.** Google's [plans page](https://antigravity.google/docs/plans) says bring-your-own-key and bring-your-own-endpoint are not supported. If Google changes that, this page is the place to update.
+- **The Antigravity CLI (`agy`) and Gemini CLI can reach a local model only through a translator, and that route is experimental.** Both read `GOOGLE_GEMINI_BASE_URL`, but it must point at a Gemini-format endpoint, and Ollama does not speak Gemini. A proxy such as LiteLLM can translate, as long as it has an alias for every Gemini model name the CLI sends (Gemini CLI also needs `--sandbox=false`). Small local models often fail tool calls this way. It is documented for Gemini CLI ([LiteLLM's tutorial](https://docs.litellm.ai/docs/tutorials/litellm_gemini_cli), [one walkthrough](https://dev.to/polar3130/using-gemini-cli-with-a-local-llm-5f5l)). We found nothing that confirms it for `agy`. Here is a sketch, which we have not run:
+  ```yaml
+  # litellm config.yaml: one entry per Gemini model name your CLI asks for
+  model_list:
+    - model_name: gemini-2.5-pro
+      litellm_params:
+        model: ollama_chat/qwen2.5:14b
+        api_base: http://localhost:11434
+  ```
+  Then `litellm --config config.yaml --port 4000` and `export GOOGLE_GEMINI_BASE_URL=http://localhost:4000`. Treat it as a science project, not a setup.
+- **Skip the patches that inject other models into the desktop app.** They edit the app's own files, they break on every update, and we have seen reports of Google cutting off accounts that connected third-party agents to its backend. We do not ship or recommend them.
+- **What works today inside Antigravity (or any VS Code-style editor):** open your project, open the built-in terminal, and run `python <path-to>/antigravity-local/run.py --agent pi` (or `opencode`), using the full path to wherever you cloned this repo. `run.py` lives in antigravity-local, not in your project, so a bare `python run.py` would not be found there. The launcher route works too: `./run.sh --agent pi --workspace <your project>` on macOS and Linux, or `run.bat --agent pi --workspace C:\path\to\project` on Windows. No venv activation is needed, because `run.py` sets itself up. The agent edits the files in the folder the terminal is in, so new files show up in the editor as they appear. Prefer the SDK shell? `python code_agent.py --workspace .` still works.
 
 ### VS Code
 Four ways, easiest first. All of them use the same Ollama on `http://localhost:11434`.
@@ -343,6 +475,7 @@ antigravity-local/
 ├── code_agent.py             # Script 3: Interactive developer coding shell & pair-programmer
 ├── memory.py                 # Tier 3 memory engine: SQLite FTS5 + vector search
 ├── model_wizard.py           # The pick-your-model menu used by run.py (installed + newer candidates)
+├── agent_setup.py            # One-step setup for pi / OpenCode / Codex (python run.py --agent pi)
 ├── serve.py                  # Web UI + JSON API on a free port (python run.py --serve)
 ├── Dockerfile                # Image for the Docker path (non-root, HEALTHCHECK)
 ├── tests/                    # Regression tests (stdlib unittest) + tests/e2e.py (local & docker)

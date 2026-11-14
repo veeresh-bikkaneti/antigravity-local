@@ -599,11 +599,47 @@ def parse_args(argv=None):
     ap.add_argument("--port", type=int, help="with --serve: port (default: a free one)")
     ap.add_argument("-y", "--yes", action="store_true", help="skip the model menu and auto-pick (same as a piped run)")
     ap.add_argument("--sync-memory", action="store_true", help="re-index the memory fabric and exit")
-    return ap.parse_args(argv)
+    ap.add_argument("--agent", choices=["shell", "pi", "opencode", "codex", "claude"], default="shell",
+                    help="coding agent to land in: shell (default, Antigravity SDK), or pi / opencode / codex / "
+                         "claude pre-configured for your local model")
+    ap.add_argument("--agent-config-only", action="store_true",
+                    help="with --agent: write the agent's config, print how to start it, and exit")
+    ap.add_argument("--workspace", metavar="PATH",
+                    help="with --agent: the project folder the agent works in (default: the folder you ran this "
+                         "from, or this repo's workspace/ folder when you run it from here)")
+    ap.add_argument("--continue-local", action="store_true",
+                    help="with --agent: start with the prompt that makes the agent read HANDOFF.md and carry on")
+    ap.add_argument("--doctor", action="store_true",
+                    help="with --agent claude: read-only check for settings that send normal Claude Code sessions "
+                         "to a local model")
+    ap.add_argument("--copy-user-settings", action="store_true",
+                    help="with --agent claude: copy (once) a safe slice of ~/.claude into ~/.claude-local")
+    ap.add_argument("--resume-from", metavar="ID|latest",
+                    help="with --agent claude: EXPERIMENTAL, fork a Claude Code session into the local model")
+    args = ap.parse_args(argv)
+    for flag, on in (("--workspace", args.workspace), ("--agent-config-only", args.agent_config_only),
+                     ("--continue-local", args.continue_local)):
+        if on and args.agent == "shell":
+            ap.error(f"{flag} needs --agent pi, opencode, codex or claude")
+    for flag, on in (("--doctor", args.doctor), ("--copy-user-settings", args.copy_user_settings),
+                     ("--resume-from", args.resume_from)):
+        if on and args.agent != "claude":
+            ap.error(f"{flag} needs --agent claude")
+    if args.resume_from and args.continue_local:
+        ap.error("--resume-from and --continue-local do different things; pick one")
+    return args
 
 
 def main(argv=None):
+    raw = sys.argv[1:] if argv is None else list(argv)
+    if raw and raw[0] == "handoff":  # `python run.py handoff ...`: stdlib only, no venv, no Ollama
+        import handoff
+        sys.exit(handoff.main(raw[1:]))
     args = parse_args(argv)  # before bootstrap_venv: --help / bad flags must not touch pip
+    if args.doctor:  # read-only and stdlib: needs neither the venv nor Ollama
+        import agent_setup
+        agent_setup.claude_doctor()
+        return
     print_header()
 
     if args.sync_memory:
@@ -642,6 +678,27 @@ def main(argv=None):
                                   interactive=sys.stdin.isatty() and sys.stdout.isatty() and not args.yes)
     if not model:
         sys.exit(1)
+
+    # Step 3.2: --agent pi/opencode/codex/claude: configure that agent for this model and hand over (SDK shell stays default)
+    if args.agent != "shell":
+        import agent_setup
+        try:
+            workspace = agent_setup.resolve_workspace(args.workspace, os.getcwd(), PROJECT_DIR)
+        except agent_setup.AgentSetupError as e:
+            print(f"\n[agent setup] {e}")
+            sys.exit(e.code)
+        finder = None
+        if args.resume_from:
+            import handoff
+
+            def finder(ident):
+                try:
+                    return handoff.find_transcript(ident, handoff.repo_root(workspace))
+                except handoff.HandoffError as e:
+                    raise agent_setup.AgentSetupError(str(e))
+        sys.exit(agent_setup.run(args.agent, model, base_api, workspace, config_only=args.agent_config_only,
+                                 continue_local=args.continue_local, resume_from=args.resume_from,
+                                 copy_settings=args.copy_user_settings, find_transcript=finder))
 
     # Step 3.5: Auto-index memory fabric
     check_or_update_memory()

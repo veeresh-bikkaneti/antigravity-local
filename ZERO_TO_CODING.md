@@ -245,6 +245,25 @@ If the workspace folder doesn't exist yet, it is created for you. You may also s
 
 ---
 
+### Use a better coding agent
+
+The built-in shell is a solid first friend, but sometimes you want a sturdier sidekick. One command wires a terminal agent to the model you already have:
+
+```bash
+python run.py --agent pi          # tiny and focused, great with small local models
+python run.py --agent opencode    # more features: MCP, LSP, sub-agents
+python run.py --agent codex       # no config file at all
+python run.py --agent claude      # Claude Code on your local model, with its own config folder
+```
+
+It asks before it installs anything (`[y/N]`, and the default is no), merges a provider entry into the agent's own config while keeping everything else you had, and starts the agent in the folder you ran it from. One catch: `run.py` lives in antigravity-local, and `run.sh` and `run.bat` always start there. Run from inside antigravity-local and the agent works in the `workspace/` folder, so it cannot wander into this repo's own files. To work on your own project, add `--workspace <path to your project>` (Windows: `run.bat --agent pi --workspace C:\path\to\project`), or run `python <path-to>/antigravity-local/run.py --agent pi` from inside your project. Every run prints the folder it picked. Just want the config? Add `--agent-config-only` and it prints the start command instead of launching.
+
+One gotcha that trips almost everyone, so you are in good company: these agents want a **64k-token context window**, and Ollama starts smaller than that on most PCs. Raise it in the Ollama app's settings, or start the server with `OLLAMA_CONTEXT_LENGTH=65536`. Without it the agent can seem forgetful, because it is. The full table of agents, licenses and the Antigravity-specific caveats lives in [the README](README.md#pick-a-coding-agent).
+
+Got a Claude subscription and want to try Claude Code on your local model? `--agent claude` keeps everything in a separate `~/.claude-local` folder and one child process, so your normal sessions stay on your subscription. If you ever wonder whether something rerouted them, `python run.py --agent claude --doctor` checks without changing anything. The [README section](README.md#claude-code-with-your-local-model) covers the details, plus what to do when your limit hits mid-task (`python run.py handoff`).
+
+---
+
 ## 6. 3 end-to-end real world coding recipes
 
 Here are three copy-paste workflows you can run right now:

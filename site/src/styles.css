@@ -17,6 +17,7 @@
   --solid: rgba(236, 230, 216, 0.975);
   --code-bg: rgba(38, 38, 42, 0.07);
   --depth: 0 1px 0 rgba(38, 38, 42, 0.12), 0 18px 28px -20px rgba(38, 38, 42, 0.45);
+  --dot: rgba(38, 38, 42, 0.07);       /* paper texture */
 
   --font-display: "Shippori Mincho", "Atkinson Hyperlegible Next", Georgia, serif;
   --font-body: "Atkinson Hyperlegible Next", system-ui, sans-serif;
@@ -43,6 +44,7 @@
     --solid: rgba(29, 29, 32, 0.975);
     --code-bg: rgba(0, 0, 0, 0.32);
     --depth: 0 1px 0 rgba(228, 221, 207, 0.08), 0 20px 30px -20px rgba(0, 0, 0, 0.7);
+    --dot: rgba(228, 221, 207, 0.05);
   }
 }
 
@@ -51,7 +53,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 4.5rem; }
 
 body {
   margin: 0;
-  background: var(--ink);
+  background: var(--ink) radial-gradient(var(--dot) 1px, transparent 1.4px) 0 0 / 22px 22px;
   color: var(--text);
   font: 400 clamp(1rem, 0.96rem + 0.25vw, 1.125rem) / 1.7 var(--font-body);
   -webkit-font-smoothing: antialiased;
@@ -148,11 +150,13 @@ main, footer { position: relative; z-index: 2; }
 .stack-just { margin: 0.4rem 0 0.7rem; font-size: 0.95rem; }
 .stack-just b { color: var(--signal); }
 .stack-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.stack-item { display: flex; gap: 0.4rem; align-items: center; border: 1px solid var(--rule); border-radius: 0.4rem; padding: 0.3rem 0.55rem; min-height: 1.9rem; opacity: 0.45; transition: opacity var(--t-med), border-color var(--t-med), background var(--t-med), box-shadow var(--t-med); white-space: nowrap; }
+.stack-item { display: flex; gap: 0.4rem; align-items: center; border: 1px solid var(--rule); border-radius: 0.4rem; padding: 0.3rem 0.55rem; min-height: 1.9rem; border-style: dashed; transition: opacity var(--t-med), border-color var(--t-med), background var(--t-med), box-shadow var(--t-med); white-space: nowrap; }
 .stack-item .lnum { flex: none; display: grid; place-items: center; width: 1.15rem; height: 1.15rem; border-radius: 50%; border: 1.5px solid var(--soft); font-size: 0.68rem; font-weight: 700; color: var(--soft); }
-.stack-item .lname { font-size: 0.85rem; font-weight: 700; color: var(--chalk); }
+.stack-item .lname { font-size: 0.85rem; font-weight: 700; color: var(--soft); }
+.stack-item.is-in, .stack-item.is-top, .stack-item.is-landing { border-style: solid; }
+.stack-item.is-in .lname, .stack-item.is-top .lname, .stack-item.is-landing .lname { color: var(--chalk); }
 .stack-item .lstate { display: none; flex: none; font-size: 0.68rem; letter-spacing: 0.02em; color: var(--soft); }
-.stack-item.is-in { opacity: 0.92; }
+.stack-item.is-in { opacity: 1; }
 .stack-item.is-top { opacity: 1; border-color: var(--signal); background: var(--panel); box-shadow: 0 0 0 1.5px var(--signal); }
 .stack-item.is-top .lnum { border-color: var(--signal); background: var(--signal); color: var(--on-signal); }
 .stack-item.is-top .lstate { display: inline; color: var(--signal); font-weight: 700; }
@@ -275,3 +279,142 @@ html.motion-off .tag, html.motion-off .btn, html.motion-off .step, html.motion-o
   #stage, #labels, .bar, .copy { display: none; }
   body { background: #fff; color: #000; }
 }
+
+/* ---------- Visual polish (feat/site-graphics-polish) ----------
+   Everything below is decoration on top of the page above. Each piece works
+   without JavaScript, and every moving part stops for reduced motion or the
+   Pause motion button. */
+
+/* Reading progress: a thin maple line under the top edge, driven by scroll
+   alone (no script). Browsers without scroll timelines simply skip it. */
+.progress { display: none; }
+@supports (animation-timeline: scroll()) {
+  .progress {
+    display: block; position: fixed; inset: 0 0 auto 0; height: 3px; z-index: 20;
+    background: var(--signal); transform-origin: 0 50%; transform: scaleX(0);
+    animation: grow-x linear both; animation-timeline: scroll(root);
+  }
+}
+@keyframes grow-x { to { transform: scaleX(1); } }
+
+/* At-a-glance chips above the title. */
+.chips { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0; margin: 0 0 1.4rem; }
+.chips li {
+  display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.45rem 0.75rem;
+  font: 700 0.76rem / 1 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--chalk); background: var(--sheet); border: 1px solid var(--rule);
+}
+.chips li::before { content: ""; width: 0.45rem; height: 0.45rem; background: var(--signal); }
+
+/* Buttons and sheets lift a hair on hover. */
+.btn { transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast); }
+.btn:hover { transform: translateY(-1px); box-shadow: var(--depth); }
+.btn:disabled:hover { transform: none; box-shadow: none; }
+.sheet { transition: transform var(--t-med), box-shadow var(--t-med); }
+.sheet:hover { transform: translateY(-3px); }
+.sheet-icon {
+  display: block; width: 2.6rem; height: 2.6rem; margin-bottom: 0.9rem;
+  fill: none; stroke: var(--signal); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
+}
+.sheet-icon .dot { fill: var(--signal); stroke: none; }
+
+/* Hero drawing: a flat line drawing of the same seven-layer stack. It is the
+   picture without WebGL or JavaScript, and on phones, where the 3D scene is
+   only a faint backdrop. On wide screens it steps aside once the 3D starts. */
+.hero-art { margin: 0; display: flex; justify-content: center; align-items: center; transition: opacity var(--t-med), visibility var(--t-med); }
+.hero-art-svg { width: 100%; max-width: 520px; height: auto; overflow: visible; }
+.ha-face { fill: var(--sheet); stroke: var(--line); stroke-width: 1.5; stroke-linejoin: round; }
+.ha-left { fill: color-mix(in srgb, var(--line) 24%, var(--sheet)); stroke: var(--line); stroke-width: 1.5; stroke-linejoin: round; }
+.ha-right { fill: color-mix(in srgb, var(--line) 10%, var(--sheet)); stroke: var(--line); stroke-width: 1.5; stroke-linejoin: round; }
+.ha-layer.is-top .ha-face { fill: var(--signal); }
+.ha-layer.is-top .ha-num { fill: var(--on-signal); }
+.ha-num, .ha-label { font: 700 15px var(--font-body); fill: var(--chalk); }
+.ha-lead { stroke: var(--soft); stroke-width: 1; stroke-dasharray: 2 4; }
+.ha-shadow { fill: var(--line); opacity: 0.08; }
+.ha-caption, .ha-side, .ha-cloud-label { font: 700 13px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; fill: var(--soft); }
+.ha-cloud path { fill: none; stroke: var(--flag); stroke-width: 1.5; stroke-dasharray: 5 5; }
+.ha-cloud .ha-cut { stroke-width: 2.5; stroke-dasharray: none; }
+.ha-cloud-label { fill: var(--flag); }
+.ha-signal { fill: none; stroke: var(--signal); stroke-width: 2; stroke-dasharray: 4 6; animation: ha-dash 1.1s linear infinite; }
+.ha-dot { fill: var(--signal); animation: ha-run 3.2s ease-in-out infinite; }
+.ha-layer { animation: ha-drop 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: calc(var(--i) * 110ms); }
+@keyframes ha-drop { from { transform: translateY(-28px); opacity: 0; } }
+@keyframes ha-dash { to { stroke-dashoffset: -20; } }
+@keyframes ha-run { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(276px); } }
+html.no-3d .hero-controls, html.no-3d .stack-note { display: none; }
+
+@media (min-width: 62em) {
+  .hero { grid-template-columns: minmax(0, 38rem) minmax(0, 1fr); gap: 3rem; }
+  html.has-3d .hero-art { opacity: 0; visibility: hidden; }
+}
+@media (max-width: 61.99em) {
+  .hero-art { order: -1; margin-bottom: 0.5rem; }
+  .hero-art-svg { max-width: 340px; }
+  #stage { opacity: 0.14; }
+}
+
+/* The guide rail: a dashed line joins the step numbers, and a maple line
+   fills it as you read (scroll timelines only; otherwise it stays dashed). */
+.steps { position: relative; }
+.step { z-index: 1; }
+.steps::before, .steps::after { content: ""; position: absolute; left: 1.83rem; top: 1rem; bottom: 1rem; width: 2px; z-index: 0; }
+.steps::before { background: repeating-linear-gradient(var(--soft) 0 6px, transparent 6px 12px); opacity: 0.5; }
+.steps::after { display: none; }
+@supports (animation-timeline: view()) {
+  .steps::after {
+    display: block; background: var(--signal); transform-origin: 50% 0; transform: scaleY(0);
+    animation: grow-y linear both; animation-timeline: view(); animation-range: cover 15% cover 85%;
+  }
+}
+@keyframes grow-y { to { transform: scaleY(1); } }
+@media (max-width: 61.99em) { .steps::before, .steps::after { left: 1.68rem; } }
+
+/* One request, start to finish: five cards joined by a moving dashed line. */
+.flow-figure { margin: 2rem 0 2.5rem; }
+.flow { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1.5rem; }
+.flow-node {
+  position: relative; display: flex; flex-direction: column; gap: 0.3rem;
+  background: var(--sheet); border: 1px solid var(--rule); box-shadow: var(--depth); padding: 1rem 1rem 1.1rem;
+}
+.flow-node b { color: var(--chalk); font-size: 1.05rem; }
+.flow-node span:last-child { font-size: 0.92rem; line-height: 1.5; color: var(--text); }
+.flow-num {
+  display: grid; place-items: center; width: 1.6rem; height: 1.6rem; margin-bottom: 0.25rem;
+  font: 700 0.85rem / 1 var(--font-body); color: var(--soft); border: 1.5px solid var(--soft);
+}
+.flow-node.is-local { border-color: var(--signal); box-shadow: 0 0 0 1.5px var(--signal), var(--depth); }
+.flow-node.is-local .flow-num, .flow-node.is-end .flow-num { background: var(--signal); border-color: var(--signal); color: var(--on-signal); }
+.flow-node:not(:last-child)::after {
+  content: ""; position: absolute; top: 50%; right: -1.5rem; width: 1.5rem; height: 2px;
+  background: linear-gradient(90deg, var(--signal) 50%, transparent 0) 0 0 / 8px 2px repeat-x;
+  animation: flow-x 0.9s linear infinite;
+}
+@keyframes flow-x { to { background-position: 8px 0; } }
+@keyframes flow-y { to { background-position: 0 8px; } }
+.flow-figure figcaption { margin-top: 1rem; font-size: 0.95rem; color: var(--soft); display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+.flow-off { color: var(--flag); border: 1.5px dashed var(--flag); padding: 0.2rem 0.6rem; font-weight: 700; text-decoration: line-through; }
+@media (max-width: 61.99em) {
+  .flow { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; max-width: 34rem; }
+  .flow-node { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 0.75rem; }
+  .flow-node span:last-child { flex-basis: 100%; }
+  .flow-node:not(:last-child)::after {
+    top: auto; right: auto; left: 1.75rem; bottom: -1.25rem; width: 2px; height: 1.25rem;
+    background: linear-gradient(180deg, var(--signal) 50%, transparent 0) 0 0 / 2px 8px repeat-y;
+    animation-name: flow-y;
+  }
+}
+
+/* Sections ease up into place the first time they come on screen. Only when
+   script marked the page (so nothing hides without JS) and motion is allowed. */
+html.reveal [data-reveal] { opacity: 0; transform: translateY(18px); transition: opacity 0.7s ease, transform 0.7s ease; }
+html.reveal [data-reveal].is-revealed { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ha-layer, .ha-dot, .ha-signal, .flow-node::after { animation: none; }
+  .btn:hover, .sheet:hover { transform: none; }
+  html.reveal [data-reveal] { opacity: 1; transform: none; transition: none; }
+}
+html.motion-off .ha-layer, html.motion-off .ha-dot, html.motion-off .ha-signal, html.motion-off .flow-node::after { animation: none; }
+html.motion-off .btn:hover, html.motion-off .sheet:hover { transform: none; }
+html.motion-off.reveal [data-reveal] { opacity: 1; transform: none; transition: none; }
+@media print { .progress, .hero-art { display: none; } }

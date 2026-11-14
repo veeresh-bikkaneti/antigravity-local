@@ -96,3 +96,6 @@ workspace/*
 /.gstack/
 /site/.claude-flow/
 /site/.ai-context/
+
+# Hand-off notes can hold command output and secrets from a transcript
+/HANDOFF.md*
