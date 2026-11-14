@@ -552,7 +552,20 @@ def parse_args(argv=None):
     ap.add_argument("--host", help="with --serve: bind address")
     ap.add_argument("--port", type=int, help="with --serve: port (default: a free one)")
     ap.add_argument("--sync-memory", action="store_true", help="re-index the memory fabric and exit")
-    return ap.parse_args(argv)
+    ap.add_argument("--agent", choices=["shell", "pi", "opencode", "codex"], default="shell",
+                    help="coding agent to land in: shell (default, Antigravity SDK), or pi / opencode / codex "
+                         "pre-configured for your local model")
+    ap.add_argument("--agent-config-only", action="store_true",
+                    help="with --agent: write the agent's config, print how to start it, and exit")
+    ap.add_argument("--workspace", metavar="PATH",
+                    help="with --agent: the project folder the agent works in (default: the folder you ran this "
+                         "from, or this repo's workspace/ folder when you run it from here)")
+    args = ap.parse_args(argv)
+    if args.workspace and args.agent == "shell":
+        ap.error("--workspace needs --agent pi, opencode or codex")
+    if args.agent_config_only and args.agent == "shell":
+        ap.error("--agent-config-only needs --agent pi, opencode or codex")
+    return args
 
 
 def main(argv=None):
@@ -594,6 +607,16 @@ def main(argv=None):
     model = select_and_pull_model(ollama_host, args.model)
     if not model:
         sys.exit(1)
+
+    # Step 3.2: --agent pi/opencode/codex: configure that agent for this model and hand over (SDK shell stays default)
+    if args.agent != "shell":
+        import agent_setup
+        try:
+            workspace = agent_setup.resolve_workspace(args.workspace, os.getcwd(), PROJECT_DIR)
+        except agent_setup.AgentSetupError as e:
+            print(f"\n[agent setup] {e}")
+            sys.exit(e.code)
+        sys.exit(agent_setup.run(args.agent, model, base_api, workspace, config_only=args.agent_config_only))
 
     # Step 3.5: Auto-index memory fabric
     check_or_update_memory()

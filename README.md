@@ -115,12 +115,68 @@ Forgot the container name? `docker ps` lists running ones, then `docker stop <id
 
 Ollama holds the model. Every tool below just knocks on its door at `http://localhost:11434` (the OpenAI-style address is `http://localhost:11434/v1`). So the order is always the same: start Ollama, run `ollama list`, and copy the model name exactly as it prints, for example `qwen2.5:14b`. Then pick your editor.
 
-*Checked on Nov. 4, 2026. Editor extensions rename their settings often. If a label differs from what you see, follow the linked guide.*
+*Agent facts checked on Nov. 14, 2026, editor extension routes on Nov. 4, 2026. These tools rename their settings often. If a label differs from what you see, follow the linked guide.*
+
+### Pick a coding agent
+
+Want something sturdier than the built-in shell? One command sets up a terminal coding agent that already knows about your local model. It installs the agent only if you say yes, adds an Ollama entry to the agent's own config without touching anything else in it, and starts it in your project. Run it from inside your project and the agent works in that folder. Run it from inside antigravity-local, or through `run.sh` or `run.bat` (they always start there), and it works in this repo's `workspace/` folder instead, so a new agent never starts out editing our own files. Aim it anywhere with `--workspace`. Every run prints one line that names the folder the agent will use.
+
+```bash
+python run.py --agent pi          # or opencode, or codex
+python run.py --agent pi --agent-config-only   # write the config, print the start command, stop
+python run.py --agent pi --workspace ~/code/my-project   # work in your project, wherever you ran it from
+```
+
+| Agent | What it is | Install (we offer to run it) | One command | License | Best for |
+|-------|-----------|------------------------------|-------------|---------|----------|
+| `shell` (default) | This repo's Antigravity SDK shell | Nothing | `python run.py` | MIT | Creating new files, zero extra installs |
+| `pi` | A minimal agent with four tools (read, write, edit, bash) and a short system prompt | `npm install -g @earendil-works/pi-coding-agent` (needs Node 22.19+) | `python run.py --agent pi` | MIT | Small local models: less prompt to get lost in |
+| `opencode` | A fuller agent with MCP, LSP and sub-agents | `npm install -g opencode-ai` | `python run.py --agent opencode` | MIT | More features, and bigger models |
+| `codex` | OpenAI's terminal agent, pointed at Ollama with `--oss` | `npm install -g @openai/codex` | `python run.py --agent codex` | Apache-2.0 | Zero config files to manage |
+
+Three things worth knowing before you press Enter:
+
+- **Give it room to think.** All three agents want a context window of 64k tokens or more, and Ollama's default is smaller on most PCs (4k below 24 GB of VRAM, per [Ollama's context-length page](https://docs.ollama.com/context-length)). Raise it in the Ollama app's settings, or start the server with `OLLAMA_CONTEXT_LENGTH=65536` ([Ollama's FAQ](https://docs.ollama.com/faq)). We print this reminder but never change your Ollama settings.
+- **Your config is safe.** We merge into `~/.pi/agent/` or `~/.config/opencode/opencode.json`, keep every other provider and setting, and save a one-time backup next to a changed file (ending `.bak-antigravity-local`). If a config file is not valid JSON, we stop and tell you which file, rather than guess. Run it twice and the second run changes nothing. `codex` needs no file at all, and it only talks to Ollama on its default port. pi gets its provider and model as launch flags, so we never rewrite your own pi default. If an earlier version of this setup changed your pi default, the `.bak-antigravity-local` file next to `~/.pi/agent/settings.json` holds your old one.
+- **We tested the setup, not the magic.** The config writing, the install prompt and the hand-off are covered by offline tests. We have not yet measured how well each agent edits an existing file with your model, which is the weak spot noted below. If you try one, tell us how it went.
+
+Ollama has its own helper too: `ollama launch pi` or `ollama launch opencode` installs and configures them for you ([Ollama's pi guide](https://docs.ollama.com/integrations/pi), [OpenCode guide](https://docs.ollama.com/integrations/opencode)). Our command does the same job but keeps the model you picked in the menu and writes only what it needs to.
+
+### Claude Code with a local model (manual, and mind your subscription)
+
+Ollama speaks a subset of the Anthropic Messages API, so Claude Code can talk to your local model ([Ollama's Claude Code guide](https://docs.ollama.com/integrations/claude-code), [Anthropic compatibility](https://docs.ollama.com/api/anthropic-compatibility)). We have not built a `--agent claude` option and we have not tested this route ourselves. If you try it, here is what bites people:
+
+- **Do not let it touch your subscription.** If you sign in to Claude Code with a Claude subscription, setting a base URL in your shell profile or in `~/.claude/settings.json` sends every session to the local model instead. Ollama's guide also warns that Claude settings can override shell variables. Set the variables for one terminal only, then run `/status` inside Claude Code to see where it is really connected:
+  ```bash
+  # macOS / Linux / Git Bash, one command, nothing saved
+  ANTHROPIC_BASE_URL=http://localhost:11434 ANTHROPIC_AUTH_TOKEN=ollama ANTHROPIC_API_KEY="" claude --model <your model tag>
+  ```
+  ```powershell
+  # PowerShell: these last only for this window
+  $env:ANTHROPIC_BASE_URL = "http://localhost:11434"; $env:ANTHROPIC_AUTH_TOKEN = "ollama"; $env:ANTHROPIC_API_KEY = ""; claude --model <your model tag>
+  ```
+  Ollama does not check the token, so `ollama` is just a placeholder. A separate config folder (the `CLAUDE_CONFIG_DIR` variable) should keep this setup away from your subscription login. That is our understanding of Claude Code, and we have not tested it with Ollama.
+- **No `/v1` on this one.** Anthropic clients add the path themselves, so the base URL is plain `http://localhost:11434`. The `/v1` address our other agents use would end up as `/v1/v1/messages`.
+- **Claude Code asks for Anthropic model names** for some background jobs, and Ollama has no model by that name. Ollama's workaround is to copy a local model under the name it wants, for example `ollama cp <your model tag> claude-3-5-sonnet`.
+- **Some Anthropic features are missing:** `tool_choice`, prompt caching, token counting, citations and PDF input. Extended-thinking budgets are accepted but not enforced, and hosted web search is not fully supported.
+- **The model is the real limit.** Claude Code sends a big system prompt and many tool definitions, so give Ollama a 64k+ context. A local 14B model will not match the Claude model your subscription gives you, and our own tests found existing-file edits unreliable with `qwen2.5:14b`. Use the local route for private or offline work, and keep your subscription for the hard jobs.
+- **Ollama's own helper** is `ollama launch claude`. We have not checked which files it changes, so if you use it, run `/status` afterwards.
 
 ### Antigravity
 - **The Antigravity SDK works with your local model.** Google added local-model support on Sept. 23, 2026. `LocalOpenAIAgentConfig` connects to any OpenAI-compatible server, including Ollama ([Google's announcement](https://developers.googleblog.com/introducing-support-for-local-ai-models-in-the-antigravity-sdk/)). This repo already uses it. `python run.py` and `python code_agent.py` talk to `LOCAL_LLM_BASE_URL` (default `http://localhost:11434/v1`) and `LOCAL_LLM_MODEL` (default `qwen2.5:14b`). To change either, set the variable in `.env` or pass `--base-url` and `--model`.
-- **The Antigravity IDE chat panel has no setting for Ollama, as far as we found.** Google's announcement covers the SDK and does not mention the IDE or its CLI. We found no official setting that points the IDE chat at a local server. If Google adds a setting, this page is the place to update.
-- **What works today inside the IDE:** open your project, open the built-in terminal, activate the venv (see [the guide](ZERO_TO_CODING.md#before-you-start-activate-the-virtual-environment)), and run `python code_agent.py --workspace .`. The agent writes into the folder you have open, so new files show up in the editor as they appear.
+- **The Antigravity app and its IDE agent panel have no local-model setting.** Google's [plans page](https://antigravity.google/docs/plans) says bring-your-own-key and bring-your-own-endpoint are not supported. If Google changes that, this page is the place to update.
+- **The Antigravity CLI (`agy`) and Gemini CLI can reach a local model only through a translator, and that route is experimental.** Both read `GOOGLE_GEMINI_BASE_URL`, but it must point at a Gemini-format endpoint, and Ollama does not speak Gemini. A proxy such as LiteLLM can translate, as long as it has an alias for every Gemini model name the CLI sends (Gemini CLI also needs `--sandbox=false`). Small local models often fail tool calls this way. It is documented for Gemini CLI ([LiteLLM's tutorial](https://docs.litellm.ai/docs/tutorials/litellm_gemini_cli), [one walkthrough](https://dev.to/polar3130/using-gemini-cli-with-a-local-llm-5f5l)). We found nothing that confirms it for `agy`. Here is a sketch, which we have not run:
+  ```yaml
+  # litellm config.yaml: one entry per Gemini model name your CLI asks for
+  model_list:
+    - model_name: gemini-2.5-pro
+      litellm_params:
+        model: ollama_chat/qwen2.5:14b
+        api_base: http://localhost:11434
+  ```
+  Then `litellm --config config.yaml --port 4000` and `export GOOGLE_GEMINI_BASE_URL=http://localhost:4000`. Treat it as a science project, not a setup.
+- **Skip the patches that inject other models into the desktop app.** They edit the app's own files, they break on every update, and we have seen reports of Google cutting off accounts that connected third-party agents to its backend. We do not ship or recommend them.
+- **What works today inside Antigravity (or any VS Code-style editor):** open your project, open the built-in terminal, and run `python <path-to>/antigravity-local/run.py --agent pi` (or `opencode`), using the full path to wherever you cloned this repo. `run.py` lives in antigravity-local, not in your project, so a bare `python run.py` would not be found there. The launcher route works too: `./run.sh --agent pi --workspace <your project>` on macOS and Linux, or `run.bat --agent pi --workspace C:\path\to\project` on Windows. No venv activation is needed, because `run.py` sets itself up. The agent edits the files in the folder the terminal is in, so new files show up in the editor as they appear. Prefer the SDK shell? `python code_agent.py --workspace .` still works.
 
 ### VS Code
 Four ways, easiest first. All of them use the same Ollama on `http://localhost:11434`.
@@ -340,6 +396,7 @@ antigravity-local/
 ├── agent_with_workspace.py   # Script 2: Autonomous agent with file creation tools
 ├── code_agent.py             # Script 3: Interactive developer coding shell & pair-programmer
 ├── memory.py                 # Tier 3 memory engine: SQLite FTS5 + vector search
+├── agent_setup.py            # One-step setup for pi / OpenCode / Codex (python run.py --agent pi)
 ├── serve.py                  # Web UI + JSON API on a free port (python run.py --serve)
 ├── Dockerfile                # Image for the Docker path (non-root, HEALTHCHECK)
 ├── tests/                    # Regression tests (stdlib unittest) + tests/e2e.py (local & docker)
