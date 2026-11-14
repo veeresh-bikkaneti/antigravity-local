@@ -15,6 +15,12 @@ sys.path.insert(0, str(ROOT))
 import run  # noqa: E402
 
 
+class _Tty(io.StringIO):
+    """A StringIO that says it is a terminal, so run.main's isatty() checks have something real to read."""
+    def isatty(self):
+        return True
+
+
 class Cli(unittest.TestCase):
     def run_py(self, *args):
         return subprocess.run([sys.executable, str(ROOT / "run.py"), *args], cwd=ROOT,
@@ -86,6 +92,227 @@ class Hardware(unittest.TestCase):
         self.assertLessEqual(run.get_model_capability_score("nanbeige-72b-coder-agent-instruct"), 100.0)
 
 
+class ModelWizardInRun(unittest.TestCase):
+    """The menu only appears on a real terminal; every other path must behave exactly as before."""
+    HW = {"ram_gb": 128.0, "vram_gb": 16.0, "gpu_name": "RTX"}
+
+    def sel(self, installed, answers=(), interactive=True, requested=None, env=None, registry=True, hw=None,
+            env_text=None, pull_error=None):
+        """Returns (model, pull commands, final .env text). The printed menu is left in self.printed."""
+        feed = iter(answers)
+        pulls = []
+
+        def fake_pull(cmd):
+            if pull_error:
+                raise pull_error
+            pulls.append(cmd)
+        out = io.StringIO()
+
+        def no_input(_=""):
+            raise AssertionError("the menu must not ask on this path")
+        ask = (lambda _="": next(feed)) if interactive else no_input
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.object(run, "PROJECT_DIR", d), \
+                mock.patch.dict(run.os.environ, {"LOCAL_LLM_MODEL": env} if env else {}, clear=False), \
+                mock.patch.object(run, "get_hardware_profile", return_value=hw or self.HW), \
+                mock.patch.object(run, "get_installed_ollama_models", return_value=set(installed)), \
+                mock.patch.object(run.model_wizard, "tag_exists", return_value=registry), \
+                mock.patch.object(run.subprocess, "check_call", side_effect=fake_pull), \
+                mock.patch("builtins.input", side_effect=ask), \
+                contextlib.redirect_stdout(out):
+            if env_text is not None:
+                Path(d, ".env").write_text(env_text, encoding="utf-8")
+            if not env:
+                run.os.environ.pop("LOCAL_LLM_MODEL", None)
+            got = run.select_and_pull_model(requested_model=requested, interactive=interactive)
+            envfile = Path(d, ".env")
+            wrote = envfile.read_text(encoding="utf-8") if envfile.exists() else ""
+        self.printed = out.getvalue()
+        return got, pulls, wrote
+
+    INSTALLED = {"gemma2:27b", "qwen2.5:14b"}
+
+    def row(self, tag, installed=None):
+        menu = run.model_wizard.build_menu(installed or self.INSTALLED, 16.0, 128.0)
+        return str([m["tag"] for m in menu].index(tag) + 1)
+
+    def test_not_interactive_is_the_old_automatic_pick_and_never_asks(self):
+        got, pulls, _ = self.sel(self.INSTALLED, interactive=False)
+        self.assertEqual((got, pulls), ("qwen2.5:14b", []))
+
+    def test_enter_keeps_the_configured_model_without_a_download(self):
+        got, pulls, _ = self.sel(self.INSTALLED, [""], env="qwen2.5:14b")
+        self.assertEqual((got, pulls), ("qwen2.5:14b", []))
+
+    def test_enter_with_nothing_configured_keeps_the_top_ranked_installed(self):
+        got, pulls, _ = self.sel(self.INSTALLED, [""])
+        self.assertEqual((got, pulls), ("qwen2.5:14b", []))
+
+    def test_picking_another_installed_model_switches_without_download_and_updates_env(self):
+        got, pulls, _ = self.sel(self.INSTALLED, [self.row("gemma2:27b")], env="qwen2.5:14b")
+        self.assertEqual((got, pulls), ("gemma2:27b", []))
+
+    def test_picking_a_new_model_pulls_exactly_that_tag(self):
+        got, pulls, _ = self.sel(self.INSTALLED, [self.row("devstral-small-2:24b")])
+        self.assertEqual(got, "devstral-small-2:24b")
+        self.assertEqual(pulls, [["ollama", "pull", "devstral-small-2:24b"]])
+
+    def test_a_newly_downloaded_pick_is_saved_to_env(self):
+        got, pulls, wrote = self.sel({"qwen2.5:14b"}, [self.row("devstral-small-2:24b", {"qwen2.5:14b"})],
+                                     env_text="LOCAL_LLM_MODEL=qwen2.5:14b\n")
+        self.assertEqual((got, len(pulls)), ("devstral-small-2:24b", 1))
+        self.assertIn("LOCAL_LLM_MODEL=devstral-small-2:24b", wrote)
+        self.assertNotIn("LOCAL_LLM_MODEL=qwen2.5:14b", wrote)
+
+    def test_a_failed_download_leaves_env_alone(self):
+        text = "LOCAL_LLM_MODEL=qwen2.5:14b\n"
+        got, _, wrote = self.sel({"qwen2.5:14b"}, [self.row("devstral-small-2:24b", {"qwen2.5:14b"})], env_text=text,
+                                 pull_error=OSError("boom"))
+        self.assertIsNone(got)
+        self.assertEqual(wrote, text)
+
+    def test_cli_model_that_needs_a_download_is_saved_to_env_too(self):
+        got, pulls, wrote = self.sel({"qwen2.5:14b"}, interactive=False, requested="devstral-small-2:24b",
+                                     env_text="LOCAL_LLM_MODEL=qwen2.5:14b\n")
+        self.assertEqual((got, len(pulls)), ("devstral-small-2:24b", 1))
+        self.assertIn("LOCAL_LLM_MODEL=devstral-small-2:24b", wrote)
+
+    def test_typed_tag_missing_from_registry_falls_back_without_pulling(self):
+        got, pulls, _ = self.sel(self.INSTALLED, ["nanbeige4.1:3b"], registry=False)
+        self.assertEqual((got, pulls), ("qwen2.5:14b", []))
+
+    def test_offline_registry_check_does_not_block_a_typed_tag(self):
+        got, pulls, _ = self.sel(self.INSTALLED, ["some-new:9b"], registry=None)
+        self.assertEqual((got, pulls), ("some-new:9b", [["ollama", "pull", "some-new:9b"]]))
+
+    # R13: this replaces test_empty_machine_enter_pulls_a_model_that_fits_the_gpu (16 GB / 128 GB, expected
+    # gpt-oss:20b). That test locked in a menu default that differs from the automatic path and, on smaller
+    # PCs, picked a model that does not fit. Enter on an empty machine must equal the automatic hardware pick.
+    TIERS = [(16.0, 128.0, "qwen2.5-coder:14b"), (8.0, 32.0, "qwen2.5-coder:14b"),
+             (0.0, 32.0, "qwen2.5-coder:7b"), (0.0, 8.0, "llama3.2:3b")]
+
+    def test_empty_machine_enter_pulls_the_hardware_tier_pick_same_as_automatic(self):
+        for vram, ram, want in self.TIERS:
+            hw = {"ram_gb": ram, "vram_gb": vram, "gpu_name": "x"}
+            with self.subTest(vram=vram, ram=ram):
+                got, pulls, _ = self.sel(set(), [""], hw=hw)
+                auto, auto_pulls, _ = self.sel(set(), interactive=False, hw=hw)
+                self.assertEqual((got, pulls), (want, [["ollama", "pull", want]]))
+                self.assertEqual((got, pulls), (auto, auto_pulls))
+
+    def test_empty_machine_menu_shows_the_tier_pick_as_recommended_and_default(self):
+        tier = run.hardware_tier_model(0.0, 32.0)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            menu = run.model_wizard.build_menu(set(), 0.0, 32.0, recommended=tier)
+            run.model_wizard.choose(menu, tier, input_fn=lambda _="": "")
+        text = out.getvalue()
+        self.assertIn("qwen2.5-coder:7b", text)
+        self.assertIn("recommended for this PC", text)
+        self.assertIn("size unknown", text)
+
+    def test_empty_machine_menu_printed_by_run_marks_the_tier_pick(self):
+        """Goes through run.select_and_pull_model, so dropping recommended= in run.py fails this."""
+        hw = {"ram_gb": 32.0, "vram_gb": 0.0, "gpu_name": "x"}
+        self.sel(set(), [""], hw=hw)
+        lines = self.printed.splitlines()
+        rows = [ln for ln in lines if "qwen2.5-coder:7b" in ln]
+        self.assertTrue(rows, self.printed)
+        self.assertIn("recommended for this PC", rows[0])
+        self.assertIn("size unknown", rows[0])
+        self.assertIn("*", rows[0])
+        self.assertRegex(rows[0].strip(), r"^\* 1\. qwen2\.5-coder:7b")  # row 1, and it carries the default mark
+
+    def test_hardware_tier_helper_matches_the_old_inline_thresholds(self):
+        edge = [(15.0, 0.0, "qwen2.5-coder:14b"), (8.0, 31.9, "qwen2.5-coder:7b"),
+                (0.0, 16.0, "qwen2.5-coder:7b"), (0.0, 0.0, "llama3.2:3b")]
+        for vram, ram, want in self.TIERS + edge:
+            self.assertEqual(run.hardware_tier_model(vram, ram), want, (vram, ram))
+
+    def test_ranking_puts_new_families_above_qwen25_coder_and_small_ones_below(self):
+        base = "qwen2.5-coder:14b"
+        above = ["qwen3.6:27b", "qwen3.8:27b", "gpt-oss:20b", "devstral-small-2:24b",
+                 "qwen3-coder:30b", "laguna-xs.2:latest"]
+        below = ["qwen3:8b", "qwen3:4b", "qwen3:0.6b"]
+        ranked = sorted([base] + above + below, key=run.capability_rank_key, reverse=True)
+        self.assertEqual(set(ranked[:len(above)]), set(above))
+        self.assertEqual(ranked[len(above)], base)
+        for name in above + below + [base]:
+            self.assertLessEqual(run.get_model_capability_score(name), 100.0, name)
+
+    def test_embedding_and_reranker_models_never_outrank_a_chat_model(self):
+        chat = run.capability_rank_key("qwen2.5-coder:7b")
+        for name in ("qwen3-embedding:8b", "qwen3-reranker:4b", "nomic-embed-text:latest", "bge-m3:latest"):
+            self.assertLess(run.capability_rank_key(name), chat, name)
+        got, pulls, _ = self.sel({"qwen3-embedding:8b", "qwen2.5-coder:7b"}, interactive=False)
+        self.assertEqual((got, pulls), ("qwen2.5-coder:7b", []))
+
+    def test_automatic_pick_prefers_a_new_family_over_qwen25_coder(self):
+        got, pulls, _ = self.sel({"qwen2.5-coder:14b", "qwen3.6:27b"}, interactive=False)
+        self.assertEqual((got, pulls), ("qwen3.6:27b", []))
+
+    def test_menu_default_is_the_new_family_when_both_are_installed(self):
+        got, pulls, _ = self.sel({"qwen2.5-coder:14b", "qwen3.6:27b"}, [""])
+        self.assertEqual((got, pulls), ("qwen3.6:27b", []))
+
+    def test_explicit_cli_model_skips_the_menu(self):
+        got, pulls, _ = self.sel(self.INSTALLED, interactive=False, requested="gemma2:27b")
+        self.assertEqual((got, pulls), ("gemma2:27b", []))
+        got, pulls, _ = self.sel(self.INSTALLED, requested="gemma2:27b", interactive=False)
+        self.assertEqual(got, "gemma2:27b")
+
+    def interactive_seen(self, argv, stdin, stdout):
+        """What run.main hands select_and_pull_model as interactive=, given these stdin/stdout."""
+        seen = {}
+        with mock.patch.object(run, "is_in_venv", return_value=True), \
+                mock.patch.object(run, "check_ollama_service", return_value=True), \
+                mock.patch.object(run.sys, "stdin", stdin), \
+                mock.patch.object(run.sys, "stdout", stdout), \
+                mock.patch.object(run, "select_and_pull_model", side_effect=lambda *a, **k: seen.update(k) or None):
+            with self.assertRaises(SystemExit):
+                run.main(argv)
+        return seen["interactive"]
+
+    def test_two_terminals_and_no_flag_is_interactive(self):
+        self.assertIs(self.interactive_seen([], _Tty(), _Tty()), True)
+
+    def test_yes_flag_parses_and_main_passes_non_interactive(self):
+        self.assertTrue(run.parse_args(["--yes"]).yes)
+        self.assertTrue(run.parse_args(["-y"]).yes)
+        self.assertIs(self.interactive_seen(["--yes"], _Tty(), _Tty()), False)
+
+    def test_piped_stdin_is_never_interactive(self):
+        self.assertIs(self.interactive_seen([], io.StringIO(""), _Tty()), False)
+
+    def test_ctrl_c_at_the_menu_cancels_with_130_and_downloads_nothing(self):
+        def ctrl_c(_=""):
+            raise KeyboardInterrupt
+        pulls = []
+        out = _Tty()
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.object(run, "PROJECT_DIR", d), \
+                mock.patch.object(run, "is_in_venv", return_value=True), \
+                mock.patch.object(run, "check_ollama_service", return_value=True), \
+                mock.patch.object(run, "get_hardware_profile", return_value={"ram_gb": 32.0, "vram_gb": 0.0, "gpu_name": "x"}), \
+                mock.patch.object(run, "get_installed_ollama_models", return_value=set()), \
+                mock.patch.object(run.model_wizard, "tag_exists", return_value=True), \
+                mock.patch.object(run.subprocess, "check_call", side_effect=lambda c: pulls.append(c)), \
+                mock.patch.object(run.sys, "stdin", _Tty()), \
+                mock.patch.object(run.sys, "stdout", out), \
+                mock.patch("builtins.input", side_effect=ctrl_c):
+            with self.assertRaises(SystemExit) as cm:
+                run.main([])
+        self.assertEqual(cm.exception.code, 130)
+        self.assertEqual(pulls, [])
+        self.assertIn("Cancelled", out.getvalue())
+
+    def test_ranking_prefers_newer_families_but_leaves_the_old_order_alone(self):
+        score = run.get_model_capability_score
+        self.assertGreater(score("qwen3.6:27b"), score("qwen2.5:14b"))
+        self.assertGreater(score("qwen2.5:14b"), score("gemma2:27b"))
+        self.assertLessEqual(score("qwen3-coder:30b"), 100.0)
+
+
 class PullFailure(unittest.TestCase):
     def test_failed_pull_returns_none_and_main_exits_nonzero(self):
         with mock.patch.object(run, "get_hardware_profile", return_value={"ram_gb": 32.0, "vram_gb": 0.0, "gpu_name": "x"}), \
@@ -102,7 +329,10 @@ class PullFailure(unittest.TestCase):
         self.assertEqual(cm.exception.code, 1)
 
 
-def fake_sdk(writes_file, chat_raises=False):
+DARK_PAGE = "<html><body><button id='t'>dark mode</button><script>classList.toggle('dark-mode')</script></body></html>"
+
+
+def fake_sdk(writes_file, chat_raises=False, content=DARK_PAGE):
     class FakeAgent:
         n = 0
 
@@ -120,7 +350,7 @@ def fake_sdk(writes_file, chat_raises=False):
             if chat_raises and FakeAgent.n > 1:  # call 1 is the demo
                 raise RuntimeError("backend down")
             if writes_file:
-                Path(self.workspace, "index.html").write_text("<html></html>", encoding="utf-8")
+                Path(self.workspace, "index.html").write_text(content, encoding="utf-8")
 
             async def gen():
                 yield "ok"
@@ -140,8 +370,8 @@ def fake_sdk(writes_file, chat_raises=False):
 
 
 class RunAgent(unittest.TestCase):
-    def go(self, writes_file, chat_raises=False, inputs=("exit",)):
-        mods, agent_cls = fake_sdk(writes_file, chat_raises)
+    def go(self, writes_file, chat_raises=False, inputs=("exit",), content=DARK_PAGE):
+        mods, agent_cls = fake_sdk(writes_file, chat_raises, content)
         feed = iter(inputs)
         with tempfile.TemporaryDirectory() as d, mock.patch.dict(sys.modules, mods), \
                 mock.patch.object(run, "PROJECT_DIR", d), \
@@ -154,11 +384,30 @@ class RunAgent(unittest.TestCase):
     def test_demo_without_a_file_warns_instead_of_claiming_success(self):
         out, _ = self.go(writes_file=False)
         self.assertNotIn("Demonstration complete", out)
-        self.assertIn("did not create or change", out)
+        self.assertIn("did not write a dark-mode page", out)
 
     def test_demo_with_a_file_reports_success(self):
         out, _ = self.go(writes_file=True)
         self.assertIn("Demonstration complete", out)
+
+    def test_demo_with_unrelated_html_does_not_claim_success(self):
+        # A file that changed but has no dark-mode toggle is not what the demo asked for.
+        out, _ = self.go(writes_file=True, content="<html><body>Antigravity Lab</body></html>")
+        self.assertNotIn("Demonstration complete", out)
+
+    def test_demo_sets_a_stale_index_aside_so_create_can_succeed(self):
+        # The SDK refuses to create over an existing file; a leftover from the last run caused that.
+        mods, _ = fake_sdk(writes_file=False)
+        with tempfile.TemporaryDirectory() as d, mock.patch.dict(sys.modules, mods), \
+                mock.patch.object(run, "PROJECT_DIR", d), \
+                mock.patch("builtins.input", side_effect=lambda _="": "exit"):
+            ws = Path(d, "workspace")
+            ws.mkdir(exist_ok=True)
+            (ws / "index.html").write_text("old run", encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()):
+                asyncio.run(run.run_agent("m"))
+            self.assertFalse((ws / "index.html").exists())
+            self.assertEqual((ws / "index.html.prev").read_text(encoding="utf-8"), "old run")
 
     def test_shell_stops_after_three_consecutive_errors(self):
         # 10 inputs available; the loop must give up long before using them all.
