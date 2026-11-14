@@ -141,6 +141,26 @@ Three things worth knowing before you press Enter:
 
 Ollama has its own helper too: `ollama launch pi` or `ollama launch opencode` installs and configures them for you ([Ollama's pi guide](https://docs.ollama.com/integrations/pi), [OpenCode guide](https://docs.ollama.com/integrations/opencode)). Our command does the same job but keeps the model you picked in the menu and writes only what it needs to.
 
+### Claude Code with a local model (manual, and mind your subscription)
+
+Ollama speaks a subset of the Anthropic Messages API, so Claude Code can talk to your local model ([Ollama's Claude Code guide](https://docs.ollama.com/integrations/claude-code), [Anthropic compatibility](https://docs.ollama.com/api/anthropic-compatibility)). We have not built a `--agent claude` option and we have not tested this route ourselves. If you try it, here is what bites people:
+
+- **Do not let it touch your subscription.** If you sign in to Claude Code with a Claude subscription, setting a base URL in your shell profile or in `~/.claude/settings.json` sends every session to the local model instead. Ollama's guide also warns that Claude settings can override shell variables. Set the variables for one terminal only, then run `/status` inside Claude Code to see where it is really connected:
+  ```bash
+  # macOS / Linux / Git Bash, one command, nothing saved
+  ANTHROPIC_BASE_URL=http://localhost:11434 ANTHROPIC_AUTH_TOKEN=ollama ANTHROPIC_API_KEY="" claude --model <your model tag>
+  ```
+  ```powershell
+  # PowerShell: these last only for this window
+  $env:ANTHROPIC_BASE_URL = "http://localhost:11434"; $env:ANTHROPIC_AUTH_TOKEN = "ollama"; $env:ANTHROPIC_API_KEY = ""; claude --model <your model tag>
+  ```
+  Ollama does not check the token, so `ollama` is just a placeholder. A separate config folder (the `CLAUDE_CONFIG_DIR` variable) should keep this setup away from your subscription login. That is our understanding of Claude Code, and we have not tested it with Ollama.
+- **No `/v1` on this one.** Anthropic clients add the path themselves, so the base URL is plain `http://localhost:11434`. The `/v1` address our other agents use would end up as `/v1/v1/messages`.
+- **Claude Code asks for Anthropic model names** for some background jobs, and Ollama has no model by that name. Ollama's workaround is to copy a local model under the name it wants, for example `ollama cp <your model tag> claude-3-5-sonnet`.
+- **Some Anthropic features are missing:** `tool_choice`, prompt caching, token counting, citations and PDF input. Extended-thinking budgets are accepted but not enforced, and hosted web search is not fully supported.
+- **The model is the real limit.** Claude Code sends a big system prompt and many tool definitions, so give Ollama a 64k+ context. A local 14B model will not match the Claude model your subscription gives you, and our own tests found existing-file edits unreliable with `qwen2.5:14b`. Use the local route for private or offline work, and keep your subscription for the hard jobs.
+- **Ollama's own helper** is `ollama launch claude`. We have not checked which files it changes, so if you use it, run `/status` afterwards.
+
 ### Antigravity
 - **The Antigravity SDK works with your local model.** Google added local-model support on Sept. 23, 2026. `LocalOpenAIAgentConfig` connects to any OpenAI-compatible server, including Ollama ([Google's announcement](https://developers.googleblog.com/introducing-support-for-local-ai-models-in-the-antigravity-sdk/)). This repo already uses it. `python run.py` and `python code_agent.py` talk to `LOCAL_LLM_BASE_URL` (default `http://localhost:11434/v1`) and `LOCAL_LLM_MODEL` (default `qwen2.5:14b`). To change either, set the variable in `.env` or pass `--base-url` and `--model`.
 - **The Antigravity app and its IDE agent panel have no local-model setting.** Google's [plans page](https://antigravity.google/docs/plans) says bring-your-own-key and bring-your-own-endpoint are not supported. If Google changes that, this page is the place to update.
