@@ -32,6 +32,21 @@ def summarize(before, after):
     return created, changed
 
 
+def set_aside(path):
+    """Move a leftover demo file to <path>.prev so the SDK can create it fresh (it refuses to create over a file)."""
+    if os.path.isfile(path):
+        os.replace(path, path + ".prev")
+
+
+def demo_page_ok(path):
+    """True when the demo file exists and really holds a dark-mode toggle, not just 'some change'."""
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            return "dark" in f.read().lower()
+    except OSError:
+        return False
+
+
 def deleted(before, after):
     """Relative paths present before and gone after, sorted."""
     return sorted(f for f in before if f not in after)

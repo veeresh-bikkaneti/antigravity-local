@@ -23,7 +23,7 @@
     { "id": "req_start", "lane": "request", "col": 0, "type": "external", "label": "Model Request", "sublabel": "cli argument or default", "width": 140 },
     { "id": "inv_scan", "lane": "inventory", "col": 1, "type": "database", "label": "Ollama /api/tags", "sublabel": "inspect local weights", "tag": "zero re-download", "width": 140 },
     { "id": "hw_check", "lane": "request", "col": 2, "type": "security", "label": "Hardware Profile", "sublabel": "read VRAM and RAM", "tag": "OOM prevention", "width": 140 },
-    { "id": "score_matrix", "lane": "evaluator", "col": 3, "type": "backend", "label": "Capability Ranker", "sublabel": "score, capped at 100", "tag": "agentic priority", "width": 140 },
+    { "id": "score_matrix", "lane": "evaluator", "col": 3, "type": "backend", "label": "Capability Ranker", "sublabel": "uncapped rank score", "tag": "agentic priority", "width": 140 },
     { "id": "pull_guard", "lane": "inventory", "col": 4, "type": "cloud", "label": "Defensive Pull", "sublabel": "pull only if uninstalled", "width": 140 },
     { "id": "runtime_bind", "lane": "execution", "col": 5, "type": "frontend", "label": "Antigravity Agent", "sublabel": "LocalOpenAI initialized", "tag": "tool-ready", "width": 140 }
   ],
@@ -41,17 +41,18 @@
       "items": [
         "Inspects /api/tags and 'ollama list' before touching the network",
         "Reuses existing weights on the machine with zero download delay",
-        "Prevents redundant multi-gigabyte downloads and eliminates wait time"
+        "Prevents redundant multi-gigabyte downloads and eliminates wait time",
+        "On a real terminal a short menu comes first: Enter keeps the pick, Ctrl+C cancels, --yes skips it"
       ]
     },
     {
       "dot": "cyan",
-      "title": "Family base scores (before size and keyword bonuses, capped at 100)",
+      "title": "Family base scores (before size and keyword bonuses, ranked uncapped)",
       "items": [
-        "1. Nanbeige (92 pts): Top agentic search and sequential multi-step tool calling",
-        "2. DeepSeek Coder / R1 (90 pts): State-of-the-art coding and algorithmic synthesis",
-        "3. Qwen 2.5 Coder (88 pts): Open-weights coding family with native tool calling",
-        "4. Command R / Codestral / GLM-4 (82-86 pts): Dedicated tool calling & 32k context"
+        "1. 2026 families (97 pts): qwen3, devstral-small-2, gpt-oss, laguna",
+        "2. Nanbeige (92 pts), DeepSeek Coder / R1 (90 pts), Qwen 2.5 Coder (88 pts)",
+        "3. Command R / Codestral / GLM-4 (82-86 pts): Dedicated tool calling & 32k context",
+        "4. Embedding and reranker tags (5 pts): never ranked as chat models"
       ]
     },
     {

@@ -64,6 +64,7 @@ async def main():
         "Call write_file or create_file with Path, Content, and Overwrite=True."
     )
     
+    task_report.set_aside(target_file)
     before = task_report.snapshot(workspace_dir)
     try:
         async with Agent(config) as agent:
@@ -71,11 +72,11 @@ async def main():
             async for chunk in response:
                 print(chunk, end="", flush=True)
             created, changed = task_report.summarize(before, task_report.snapshot(workspace_dir))
-            if "index.html" in created + changed:
+            if "index.html" in created + changed and task_report.demo_page_ok(target_file):
                 print("\n\n✅ Agent task completed successfully.")
                 print(f"📁 Output file generated: {target_file}")
             else:
-                print("\n\n⚠️ The agent finished, but it did not create or change index.html.")
+                print("\n\n⚠️ The agent finished, but it did not write a dark-mode page to index.html.")
                 print("Small local models sometimes answer without writing anything. Run the same command again.")
     except Exception as exc:
         print(f"\n❌ [ERROR] Agent execution failure: {exc}")

@@ -34,9 +34,11 @@ chmod +x run.sh && ./run.sh
 
 **What to expect:** setup takes a few minutes plus the model download, which is roughly 9 GB for the 14B model if you have no model yet. The run goes quiet in the middle while packages install. That is normal, so grab a coffee. Setup ends at a `You >` chat prompt. Type `exit` to leave, or carry on with [the guide](ZERO_TO_CODING.md#4-start-coding-interactive-pair-programmer-shell).
 
+**Pick your model (takes one keypress):** models move fast, so on a normal terminal the bootstrap shows a short menu before it settles. You see what is already installed (no download), plus a few newer candidates with their download size and whether they fit your GPU. Press Enter to keep the current pick, type a number to switch, or type any Ollama tag you like. On a machine with no models at all, Enter downloads the pick for your hardware (the same one the hands-off run would choose), shown at the top as "recommended for this PC" with its size marked unknown, because we only list sizes we checked. A typed tag is checked against the public Ollama registry first, so a typo cannot start a 20 GB download of nothing. The candidate list in `model_wizard.py` carries its check date and says plainly that nobody has run those models through this project's agent loop yet. Treat it as a menu, not a leaderboard. Want the old hands-off behavior (CI, scripts, piped input)? Add `--yes`. Piped runs skip the menu on their own. Ctrl+C at the menu cancels and downloads nothing, and a model you download becomes the saved pick for the next run.
+
 #### What the 1-command bootstrap does automatically:
 1. Hardware & Inventory Inspection: Probes dedicated GPU VRAM (via `nvidia-smi` / Apple Silicon) and System RAM. Checks local Ollama inventory first to reuse existing weights with **zero downloads**.
-2. Model Matching: Compares your PC build against a list of agentic models (Nanbeige, DeepSeek, Qwen 2.5 Coder, Command-R, Codestral, GLM-4) and picks the most capable one your hardware can run.
+2. Model Matching: Shows a short menu of installed and newer candidate models (see "Pick your model" above), or with `--yes` ranks your installed models (Qwen3, Devstral, gpt-oss, Nanbeige, DeepSeek, Qwen 2.5 Coder, Command-R, Codestral, GLM-4 and friends) and picks the most capable one your hardware can run.
 3. Virtual Environment Setup: Creates isolated `venv`, installs `requirements.txt`, and generates `.env` if missing.
 4. Ollama auto-start: Pings `http://localhost:11434`. If down, launches `ollama serve` in the background.
 5. Autonomous Verification: Asks the local agent to create `workspace/index.html` with its built-in tool calling.
@@ -348,7 +350,7 @@ If you prefer to configure each component step-by-step rather than using the 1-c
    ```
 2. **If you already have a capable model installed, skip the download. You are ready to code.**  
    The bootstrap script scans your local inventory and picks the highest-scoring model:
-   - **`nanbeige`** (e.g., `nanbeige2:16b`, `nanbeige4.3:16b`, `nanbeige4.1:3b`): Multi-step agentic search and sequential tool calling.
+   - **`nanbeige`** (e.g., `nanbeige2:16b`, `nanbeige4.3:16b`): Multi-step agentic search and sequential tool calling.
    - **`deepseek-coder-v2` / `deepseek-r1`** (e.g., `deepseek-coder-v2:16b`, `deepseek-r1:14b`): Code generation, fill-in-the-middle, and algorithmic problem solving.
    - **`qwen2.5-coder` / `qwen2.5`** (e.g., `qwen2.5-coder:14b`, `qwen2.5:14b`, `qwen2.5-coder:32b`): Open-weights coding model with native OpenAI function calling.
    - **`command-r`** (e.g., `command-r:35b`): Cohere's model built for multi-step tool execution and structured outputs.
@@ -362,8 +364,8 @@ If you prefer to configure each component step-by-step rather than using the 1-c
 | PC Build Tier | Hardware Specs | Recommended models | Pull Command |
 | :--- | :--- | :--- | :--- |
 | **High-End Workstation** | 15 GB or more VRAM, or 8 GB VRAM with 32 GB RAM | **`qwen2.5-coder:14b`** *(Fits 100% in 16GB VRAM)*<br/>**`nanbeige2:16b`** *(scores high in `run.py`, but coder models score higher)*<br/>**`deepseek-coder-v2:16b`** *(Deep code synthesis)*<br/>**`command-r:35b`** *(Layer offload to RAM)* | `ollama pull qwen2.5-coder:14b`<br/>*(or `ollama pull nanbeige2:16b`)* |
-| **Mid-Tier PC** | 8 GB or more VRAM, or 16 GB or more RAM | **`qwen2.5-coder:7b`**<br/>**`nanbeige4.1:3b`**<br/>**`deepseek-coder:6.7b`**<br/>**`glm4:9b`** | `ollama pull qwen2.5-coder:7b` |
-| **Entry / CPU Only** | Anything smaller | **`llama3.2:3b`**<br/>**`qwen2.5:3b`**<br/>**`nanbeige4.1:3b`** | `ollama pull llama3.2:3b` |
+| **Mid-Tier PC** | 8 GB or more VRAM, or 16 GB or more RAM | **`qwen2.5-coder:7b`**<br/>**`deepseek-coder:6.7b`**<br/>**`glm4:9b`** | `ollama pull qwen2.5-coder:7b` |
+| **Entry / CPU Only** | Anything smaller | **`llama3.2:3b`**<br/>**`qwen2.5:3b`** | `ollama pull llama3.2:3b` |
 
 ### Step 3: clone the repository & 1-command setup
 
@@ -472,6 +474,7 @@ antigravity-local/
 ├── agent_with_workspace.py   # Script 2: Autonomous agent with file creation tools
 ├── code_agent.py             # Script 3: Interactive developer coding shell & pair-programmer
 ├── memory.py                 # Tier 3 memory engine: SQLite FTS5 + vector search
+├── model_wizard.py           # The pick-your-model menu used by run.py (installed + newer candidates)
 ├── agent_setup.py            # One-step setup for pi / OpenCode / Codex (python run.py --agent pi)
 ├── serve.py                  # Web UI + JSON API on a free port (python run.py --serve)
 ├── Dockerfile                # Image for the Docker path (non-root, HEALTHCHECK)
@@ -610,7 +613,7 @@ flowchart LR
     
     ScanInventory --> AnyInstalled{"Models exist on machine?"}
     
-    AnyInstalled -- Yes --> ScoreInstalled["Score local models:<br/>family base (Nanbeige 92 ... LLaMA 3.x 74)<br/>+ 0.3 per billion parameters<br/>+ coder and tool keywords<br/>capped at 100"]
+    AnyInstalled -- Yes --> ScoreInstalled["Score local models:<br/>family base (Nanbeige 92 ... LLaMA 3.x 74)<br/>+ 0.3 per billion parameters<br/>+ coder and tool keywords<br/>ranked uncapped"]
     
     ScoreInstalled --> ZeroDownload["🏆 Zero-Download Fast Path<br/>Adopt highest-capability local model<br/>(0s delay, 0 GB downloaded)"]
     

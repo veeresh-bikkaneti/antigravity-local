@@ -5333,15 +5333,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <text data-detail="context" x="598" y="258" class="t-muted" font-size="8" text-anchor="middle">pull only if uninstalled</text>
         </g>
 
-        <g id="node-score_matrix" data-node-id="score_matrix" data-node-label="Capability Ranker" tabindex="0" role="button" aria-label="Focus Capability Ranker, score, capped at 100, Capability Scoring Matrix › Phase 2: Capability Evaluation" aria-pressed="false" data-node-kind="backend" data-node-sublabel="score, capped at 100" data-node-tag="agentic priority" data-node-context="Capability Scoring Matrix › Phase 2: Capability Evaluation">
-          <title>Capability Ranker · score, capped at 100 · Capability Scoring Matrix › Phase 2: Capability Evaluation · agentic priority</title>
+        <g id="node-score_matrix" data-node-id="score_matrix" data-node-label="Capability Ranker" tabindex="0" role="button" aria-label="Focus Capability Ranker, uncapped rank score, Capability Scoring Matrix › Phase 2: Capability Evaluation" aria-pressed="false" data-node-kind="backend" data-node-sublabel="uncapped rank score" data-node-tag="agentic priority" data-node-context="Capability Scoring Matrix › Phase 2: Capability Evaluation">
+          <title>Capability Ranker · uncapped rank score · Capability Scoring Matrix › Phase 2: Capability Evaluation · agentic priority</title>
           <rect x="408" y="338" width="140" height="68" rx="8" class="c-mask"/>
           <rect x="408" y="338" width="140" height="68" rx="8" class="c-backend" data-animate="node" style="--step:4" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(414 344) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
           <text data-node-label="" data-detail-anchor="" x="483.1" y="359" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Capability Ranker</text>
-          <text data-detail="context" x="478" y="376" class="t-muted" font-size="8" text-anchor="middle">score, capped at 100</text>
+          <text data-detail="context" x="478" y="376" class="t-muted" font-size="8" text-anchor="middle">uncapped rank score</text>
         <text data-detail="fine" x="478" y="394" class="t-backend" font-size="7" text-anchor="middle">agentic priority</text>
         </g>
 
@@ -5596,19 +5596,20 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <li>Inspects /api/tags and &#39;ollama list&#39; before touching the network</li>
           <li>Reuses existing weights on the machine with zero download delay</li>
           <li>Prevents redundant multi-gigabyte downloads and eliminates wait time</li>
+          <li>On a real terminal a short menu comes first: Enter keeps the pick, Ctrl+C cancels, --yes skips it</li>
         </ul>
       </div>
 
       <div class="card">
         <div class="card-header">
           <div class="card-dot cyan"></div>
-          <h3>Family base scores (before size and keyword bonuses, capped at 100)</h3>
+          <h3>Family base scores (before size and keyword bonuses, ranked uncapped)</h3>
         </div>
         <ul>
-          <li>1. Nanbeige (92 pts): Top agentic search and sequential multi-step tool calling</li>
-          <li>2. DeepSeek Coder / R1 (90 pts): State-of-the-art coding and algorithmic synthesis</li>
-          <li>3. Qwen 2.5 Coder (88 pts): Open-weights coding family with native tool calling</li>
-          <li>4. Command R / Codestral / GLM-4 (82-86 pts): Dedicated tool calling &amp; 32k context</li>
+          <li>1. 2026 families (97 pts): qwen3, devstral-small-2, gpt-oss, laguna</li>
+          <li>2. Nanbeige (92 pts), DeepSeek Coder / R1 (90 pts), Qwen 2.5 Coder (88 pts)</li>
+          <li>3. Command R / Codestral / GLM-4 (82-86 pts): Dedicated tool calling &amp; 32k context</li>
+          <li>4. Embedding and reranker tags (5 pts): never ranked as chat models</li>
         </ul>
       </div>
 
