@@ -5,6 +5,8 @@ git is replaced by a fake runner, so these tests never look at the real reposito
 import contextlib
 import io
 import json
+import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -21,7 +23,7 @@ import handoff  # noqa: E402
 def fake_git(args_out=None):
     def runner(cmd, **kw):
         text = {"status": " M a.py", "diff": " a.py | 2 +-", "rev-parse": ""}.get(cmd[1], "")
-        code = 1 if cmd[1] == "rev-parse" else 0
+        code = 1 if cmd[1] in ("rev-parse", "ls-files") else 0  # ls-files: not tracked
         return SimpleNamespace(stdout=text, returncode=code)
     return runner
 
@@ -253,6 +255,57 @@ class Safety(Base):
         first = Path(str(mine) + handoff.BACKUP_SUFFIX)
         self.assertEqual(first.read_text(encoding="utf-8"), "first\n")
         self.assertEqual(Path(str(first) + ".2").read_text(encoding="utf-8"), "second\n")
+
+
+@unittest.skipUnless(shutil.which("git"), "needs git")
+class TrackedHandoff(Base):
+    """A real temp repo, a real git: the check is `git ls-files --error-unmatch`, so test the real thing."""
+
+    def git(self, *args):
+        subprocess.run(["git", *args], cwd=self.repo, check=True, capture_output=True, text=True)
+
+    def setUp(self):
+        super().setUp()
+        self.git("init", "-q")
+        self.git("config", "user.email", "t@example.invalid")
+        self.git("config", "user.name", "t")
+
+    def test_a_project_that_tracks_handoff_md_is_refused_and_nothing_is_written(self):
+        tracked = self.repo / "HANDOFF.md"
+        tracked.write_text("committed notes\n", encoding="utf-8")
+        self.git("add", "HANDOFF.md")
+        self.git("commit", "-q", "-m", "track it")
+        lines = []
+        code = handoff.main(["--transcript", str(self.transcript())], cwd=self.repo, out=lines.append)
+        text = "\n".join(lines)
+        self.assertEqual(code, 1)
+        self.assertIn("already tracks HANDOFF.md", text)
+        self.assertIn("would be committed", text)
+        self.assertEqual(tracked.read_text(encoding="utf-8"), "committed notes\n")       # untouched
+        self.assertFalse(Path(str(tracked) + handoff.BACKUP_SUFFIX).exists())           # not even a backup
+        self.assertNotIn("Wrote", text)
+
+    def test_a_merely_staged_file_counts_as_tracked(self):
+        (self.repo / "HANDOFF.md").write_text("x\n", encoding="utf-8")
+        self.git("add", "HANDOFF.md")
+        self.assertTrue(handoff.is_tracked(self.repo))
+
+    def test_an_untracked_file_and_a_missing_file_are_not_tracked_and_the_write_goes_ahead(self):
+        self.assertFalse(handoff.is_tracked(self.repo))
+        (self.repo / "HANDOFF.md").write_text("mine\n", encoding="utf-8")                # exists, never added
+        self.assertFalse(handoff.is_tracked(self.repo))
+        lines = []
+        code = handoff.main(["--transcript", str(self.transcript())], cwd=self.repo, out=lines.append)
+        self.assertEqual(code, 0, "\n".join(lines))
+        self.assertIn(handoff.MARKER, (self.repo / "HANDOFF.md").read_text(encoding="utf-8"))
+
+    def test_the_hook_path_is_refused_too(self):
+        (self.repo / "HANDOFF.md").write_text("x\n", encoding="utf-8")
+        self.git("add", "HANDOFF.md")
+        stdin = io.StringIO(json.dumps({"transcript_path": str(self.transcript())}))
+        code = handoff.main([], stdin=stdin, cwd=self.repo, out=lambda *_: None)
+        self.assertEqual(code, 1)
+        self.assertEqual((self.repo / "HANDOFF.md").read_text(encoding="utf-8"), "x\n")
 
 
 class InstallHook(Base):

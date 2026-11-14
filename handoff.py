@@ -256,8 +256,24 @@ def ensure_ignored(repo, git_run=None, out=print):
         return None
 
 
+def is_tracked(repo, git_run=None):
+    """True when git already tracks HANDOFF.md in this project (`git ls-files --error-unmatch` succeeds).
+    If git cannot be run we cannot tell, so say no and let ensure_ignored warn."""
+    run = git_run or subprocess.run
+    try:
+        return run(["git", "ls-files", "--error-unmatch", "HANDOFF.md"], cwd=str(repo), capture_output=True,
+                   text=True, timeout=30).returncode == 0
+    except Exception:
+        return False
+
+
 def write_handoff(transcript, repo, now=None, git_run=None, out=print):
-    """Write HANDOFF.md. A file we did not write is backed up first, never overwritten."""
+    """Write HANDOFF.md. Refuses when the project tracks it. A file we did not write is backed up, never overwritten."""
+    if is_tracked(repo, git_run):
+        raise HandoffError("This project already tracks HANDOFF.md in git, so hand-off notes written there would be "
+                           "committed with their command output and any secrets in it. Nothing was written. Run "
+                           "`git rm --cached HANDOFF.md` (keeps your file) and add it to .gitignore, or move your "
+                           "tracked file elsewhere, then run this again.")
     info = summarize(read_records(transcript))
     target = Path(repo) / "HANDOFF.md"
     if target.exists() and MARKER not in target.read_text(encoding="utf-8", errors="replace"):
