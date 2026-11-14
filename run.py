@@ -674,8 +674,12 @@ def main(argv=None):
         sys.exit(1)
 
     # Step 3: Check local inventory & auto-select most capable model
-    model = select_and_pull_model(ollama_host, args.model,
-                                  interactive=sys.stdin.isatty() and sys.stdout.isatty() and not args.yes)
+    try:
+        model = select_and_pull_model(ollama_host, args.model,
+                                      interactive=sys.stdin.isatty() and sys.stdout.isatty() and not args.yes)
+    except KeyboardInterrupt:
+        print("\nCancelled. Nothing was saved.")
+        sys.exit(130)
     if not model:
         sys.exit(1)
 

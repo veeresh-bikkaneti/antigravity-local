@@ -61,6 +61,13 @@ class Choose(unittest.TestCase):
             raise EOFError
         self.assertEqual(mw.choose(self.MENU, "qwen2.5:14b", input_fn=boom, out=lambda *_: None), "qwen2.5:14b")
 
+    def test_ctrl_c_is_not_an_answer(self):
+        """Ctrl+C means stop. It must reach the caller instead of quietly picking the default."""
+        def ctrl_c(_=""):
+            raise KeyboardInterrupt
+        with self.assertRaises(KeyboardInterrupt):
+            mw.choose(self.MENU, "qwen2.5:14b", input_fn=ctrl_c, out=lambda *_: None)
+
     def test_menu_text_says_it_is_untested_and_shows_sizes(self):
         text = "\n".join(mw.render(self.MENU, "qwen2.5:14b"))
         self.assertIn("not yet run through this project", text)

@@ -90,7 +90,7 @@ def choose(menu, default_tag, input_fn=None, out=print):
     for _ in range(3):
         try:
             raw = input_fn("       > ").strip()
-        except (EOFError, KeyboardInterrupt):
+        except EOFError:  # input closed (piped, CI): same as Enter. Ctrl+C is NOT caught: the caller must stop.
             return fallback
         if not raw:
             return fallback
