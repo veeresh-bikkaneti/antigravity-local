@@ -119,11 +119,12 @@ Ollama holds the model. Every tool below just knocks on its door at `http://loca
 
 ### Pick a coding agent
 
-Want something sturdier than the built-in shell? One command sets up a terminal coding agent that already knows about your local model. It installs the agent only if you say yes, adds an Ollama entry to the agent's own config without touching anything else in it, and starts it in the folder you are standing in.
+Want something sturdier than the built-in shell? One command sets up a terminal coding agent that already knows about your local model. It installs the agent only if you say yes, adds an Ollama entry to the agent's own config without touching anything else in it, and starts it in your project. Run it from inside your project and the agent works in that folder. Run it from inside antigravity-local, or through `run.sh` or `run.bat` (they always start there), and it works in this repo's `workspace/` folder instead, so a new agent never starts out editing our own files. Aim it anywhere with `--workspace`. Every run prints one line that names the folder the agent will use.
 
 ```bash
 python run.py --agent pi          # or opencode, or codex
 python run.py --agent pi --agent-config-only   # write the config, print the start command, stop
+python run.py --agent pi --workspace ~/code/my-project   # work in your project, wherever you ran it from
 ```
 
 | Agent | What it is | Install (we offer to run it) | One command | License | Best for |
@@ -175,7 +176,7 @@ Ollama speaks a subset of the Anthropic Messages API, so Claude Code can talk to
   ```
   Then `litellm --config config.yaml --port 4000` and `export GOOGLE_GEMINI_BASE_URL=http://localhost:4000`. Treat it as a science project, not a setup.
 - **Skip the patches that inject other models into the desktop app.** They edit the app's own files, they break on every update, and we have seen reports of Google cutting off accounts that connected third-party agents to its backend. We do not ship or recommend them.
-- **What works today inside Antigravity (or any VS Code-style editor):** open your project, open the built-in terminal, and run `python run.py --agent pi` (or `opencode`). No venv activation is needed, because `run.py` sets itself up. The agent edits the files in the folder you have open, so new files show up in the editor as they appear. Prefer the SDK shell? `python code_agent.py --workspace .` still works.
+- **What works today inside Antigravity (or any VS Code-style editor):** open your project, open the built-in terminal, and run `python <path-to>/antigravity-local/run.py --agent pi` (or `opencode`), using the full path to wherever you cloned this repo. `run.py` lives in antigravity-local, not in your project, so a bare `python run.py` would not be found there. The launcher route works too: `./run.sh --agent pi --workspace <your project>` on macOS and Linux, or `run.bat --agent pi --workspace C:\path\to\project` on Windows. No venv activation is needed, because `run.py` sets itself up. The agent edits the files in the folder the terminal is in, so new files show up in the editor as they appear. Prefer the SDK shell? `python code_agent.py --workspace .` still works.
 
 ### VS Code
 Four ways, easiest first. All of them use the same Ollama on `http://localhost:11434`.

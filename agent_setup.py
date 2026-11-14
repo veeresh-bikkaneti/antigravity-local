@@ -233,6 +233,41 @@ def _cmdline(argv):
     return subprocess.list2cmdline(argv) if sys.platform == "win32" else shlex.join(argv)
 
 
+def _same_folder(a, b):
+    """True when two paths are the same folder: resolved, and case-insensitive where the OS is (Windows)."""
+    return os.path.normcase(os.path.realpath(a)) == os.path.normcase(os.path.realpath(b))
+
+
+def resolve_workspace(arg, cwd, project_dir, out=None):
+    """The folder the agent works in, and one printed line that says which.
+
+    --workspace wins. With no flag it is the folder the command was run from, except inside this repo's own
+    folder (run.sh and run.bat always cd there first): then it is <repo>/workspace, the same folder the SDK shell
+    uses, so a new agent cannot start out editing antigravity-local itself.
+    """
+    out = out or print
+    if arg:
+        path = Path(arg).expanduser()
+        path = (path if path.is_absolute() else Path(cwd) / path).resolve()
+        if not path.exists():
+            raise AgentSetupError(f"The --workspace folder was not found: {path}. We never create your project "
+                                  "folder for you. Check the path, or create it first.")
+        if not path.is_dir():
+            raise AgentSetupError(f"The --workspace path is a file, not a folder: {path}")
+        out(f"       Folder   : {path} (from --workspace)")
+        return str(path)
+    here = Path(cwd).resolve()
+    if _same_folder(here, project_dir):
+        path = Path(project_dir).resolve() / "workspace"
+        path.mkdir(exist_ok=True)
+        out(f"       Folder   : {path} (you ran this inside antigravity-local, so the agent works in its "
+            "workspace/ folder and not on this repo's own files. To use your own project, add "
+            "--workspace <path to your project>)")
+        return str(path)
+    out(f"       Folder   : {here} (the folder you ran this from)")
+    return str(here)
+
+
 def launch(name, model, workspace, call=None, which=None):
     """Start the agent as a child process in `workspace` and return its exit code."""
     call = call or subprocess.call

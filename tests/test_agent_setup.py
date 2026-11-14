@@ -358,6 +358,85 @@ class Run(Home):
         self.assertEqual(len(launched), 1)
 
 
+class Workspace(Home):
+    """Where the agent works. run.sh and run.bat cd into the repo first, so 'the current folder' is often
+    antigravity-local itself, and an agent started there would edit this repo's own files."""
+
+    def setUp(self):
+        super().setUp()
+        self.project = self.home / "antigravity-local"      # stands in for the repo folder
+        self.mine = self.home / "my-project"                 # the user's own project
+        self.project.mkdir()
+        self.mine.mkdir()
+
+    def resolve(self, arg, cwd):
+        lines = []
+        got = ags.resolve_workspace(arg, str(cwd), str(self.project), out=lines.append)
+        return got, "\n".join(lines)
+
+    def test_no_flag_uses_the_folder_you_ran_it_from(self):
+        got, text = self.resolve(None, self.mine)
+        self.assertEqual(got, str(self.mine.resolve()))
+        self.assertIn(str(self.mine.resolve()), text)
+        self.assertEqual(len(text.splitlines()), 1)  # one line, as promised
+
+    def test_inside_the_repo_folder_the_agent_gets_workspace_and_is_told_why(self):
+        got, text = self.resolve(None, self.project)
+        want = self.project.resolve() / "workspace"
+        self.assertEqual(got, str(want))
+        self.assertTrue(want.is_dir())  # created, same folder the SDK shell uses
+        self.assertIn("--workspace", text)  # shows how to aim it at their own project
+        self.assertIn(str(want), text)
+
+    def test_existing_workspace_folder_is_reused_not_wiped(self):
+        keep = self.project / "workspace" / "keep.txt"
+        keep.parent.mkdir()
+        keep.write_text("mine", encoding="utf-8")
+        self.resolve(None, self.project)
+        self.assertEqual(keep.read_text(encoding="utf-8"), "mine")
+
+    def test_comparison_sees_through_a_dotdot_path(self):
+        (self.project / "docs").mkdir()
+        got, _ = self.resolve(None, self.project / "docs" / "..")
+        self.assertEqual(got, str(self.project.resolve() / "workspace"))
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows paths ignore case")
+    def test_windows_comparison_is_case_insensitive(self):
+        got, _ = self.resolve(None, str(self.project).upper())
+        self.assertEqual(Path(got).name, "workspace")
+
+    def test_flag_wins_even_inside_the_repo_folder(self):
+        got, text = self.resolve(str(self.mine), self.project)
+        self.assertEqual(got, str(self.mine.resolve()))
+        self.assertIn(str(self.mine.resolve()), text)
+        self.assertFalse((self.project / "workspace").exists())  # no stray folder when told where to go
+
+    def test_a_relative_flag_is_relative_to_where_you_ran_it(self):
+        got, _ = self.resolve("my-project", self.home)
+        self.assertEqual(got, str(self.mine.resolve()))
+
+    def test_flag_may_point_at_the_repo_folder_on_purpose(self):
+        got, _ = self.resolve(str(self.project), self.mine)
+        self.assertEqual(got, str(self.project.resolve()))
+
+    def test_missing_folder_is_an_error_with_exit_1_and_names_the_path(self):
+        gone = self.home / "nope"
+        with self.assertRaises(ags.AgentSetupError) as cm:
+            self.resolve(str(gone), self.mine)
+        self.assertEqual(cm.exception.code, 1)
+        self.assertIn(str(gone), str(cm.exception))
+        self.assertIn("not found", str(cm.exception))  # says what is wrong, not "is a file"
+        self.assertFalse(gone.exists())  # we never create the user's folder for them
+
+    def test_a_file_is_not_a_workspace(self):
+        f = self.write("notes.txt", "x")
+        with self.assertRaises(ags.AgentSetupError) as cm:
+            self.resolve(str(f), self.mine)
+        self.assertEqual(cm.exception.code, 1)
+        self.assertIn("a file", str(cm.exception))
+        self.assertNotIn("not found", str(cm.exception))
+
+
 class RunPyHooks(unittest.TestCase):
     def test_flag_parses_and_defaults_to_shell(self):
         self.assertEqual(run.parse_args([]).agent, "shell")
@@ -374,17 +453,33 @@ class RunPyHooks(unittest.TestCase):
             run.parse_args(["--agent-config-only"])
         self.assertEqual(cm.exception.code, 2)
 
-    def main_with(self, argv):
+    def test_workspace_flag_parses_with_an_agent(self):
+        self.assertEqual(run.parse_args(["--agent", "pi", "--workspace", "x"]).workspace, "x")
+        self.assertIsNone(run.parse_args(["--agent", "pi"]).workspace)
+
+    def test_workspace_without_an_agent_or_with_shell_is_a_usage_error(self):
+        for argv in (["--workspace", "x"], ["--agent", "shell", "--workspace", "x"]):
+            with self.subTest(argv=argv), contextlib.redirect_stderr(io.StringIO()), \
+                    self.assertRaises(SystemExit) as cm:
+                run.parse_args(argv)
+            self.assertEqual(cm.exception.code, 2)
+
+    def main_with(self, argv, cwd=None, project=None):
         shell, agent = mock.Mock(), mock.Mock(return_value=0)
+        cwd = str(cwd or ROOT.parent)
 
         async def fake_run_agent(model, base):
             shell(model, base)
-        fake = types.SimpleNamespace(run=agent)
+        # the real resolver and error type, so the wiring through run.py is tested, not assumed
+        fake = types.SimpleNamespace(run=agent, resolve_workspace=ags.resolve_workspace,
+                                     AgentSetupError=ags.AgentSetupError)
         with mock.patch.object(run, "is_in_venv", return_value=True), \
                 mock.patch.object(run, "check_ollama_service", return_value=True), \
                 mock.patch.object(run, "select_and_pull_model", return_value="m:1"), \
                 mock.patch.object(run, "check_or_update_memory"), \
                 mock.patch.object(run, "run_agent", fake_run_agent), \
+                mock.patch.object(run.os, "getcwd", return_value=cwd), \
+                mock.patch.object(run, "PROJECT_DIR", str(project or ROOT)), \
                 mock.patch.dict(sys.modules, {"agent_setup": fake}), quiet():
             try:
                 run.main(argv)
@@ -404,18 +499,38 @@ class RunPyHooks(unittest.TestCase):
         agent.assert_not_called()
 
     def test_pi_hands_off_to_agent_setup_and_skips_the_shell(self):
-        shell, agent, code = self.main_with(["--agent", "pi", "--agent-config-only"])
-        shell.assert_not_called()
-        agent.assert_called_once()
-        args, kwargs = agent.call_args
-        self.assertEqual(args[0], "pi")
-        self.assertEqual(args[1], "m:1")
-        self.assertTrue(kwargs["config_only"])
-        self.assertEqual(code, 0)
+        with tempfile.TemporaryDirectory() as d:
+            shell, agent, code = self.main_with(["--agent", "pi", "--agent-config-only"], cwd=d)
+            shell.assert_not_called()
+            agent.assert_called_once()
+            args, kwargs = agent.call_args
+            self.assertEqual(args[0], "pi")
+            self.assertEqual(args[1], "m:1")
+            self.assertEqual(args[3], str(Path(d).resolve()))  # the resolved workspace, not just getcwd()
+            self.assertTrue(kwargs["config_only"])
+            self.assertEqual(code, 0)
+
+    def test_run_from_the_repo_folder_hands_over_its_workspace_subfolder(self):
+        with tempfile.TemporaryDirectory() as d:
+            _, agent, _ = self.main_with(["--agent", "pi"], cwd=d, project=d)
+            self.assertEqual(agent.call_args[0][3], str(Path(d).resolve() / "workspace"))
+
+    def test_workspace_flag_reaches_the_agent(self):
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as mine:
+            _, agent, _ = self.main_with(["--agent", "pi", "--workspace", mine], cwd=d, project=d)
+            self.assertEqual(agent.call_args[0][3], str(Path(mine).resolve()))
+
+    def test_a_bad_workspace_stops_everything_with_exit_1_and_starts_nothing(self):
+        with tempfile.TemporaryDirectory() as d:
+            shell, agent, code = self.main_with(["--agent", "pi", "--workspace", str(Path(d) / "gone")], cwd=d)
+            self.assertEqual(code, 1)
+            agent.assert_not_called()
+            shell.assert_not_called()
 
     def test_failing_agent_propagates_its_exit_code(self):
         agent = mock.Mock(return_value=3)
-        fake = types.SimpleNamespace(run=agent)
+        fake = types.SimpleNamespace(run=agent, resolve_workspace=ags.resolve_workspace,
+                                     AgentSetupError=ags.AgentSetupError)
 
         async def noop(*a):
             return None

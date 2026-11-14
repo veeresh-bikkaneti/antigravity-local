@@ -310,7 +310,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
       <p>These are measured limits from our own tests, not guesses.</p>
       <ul>
         <li>Editing an existing file does not work reliably. With the default model, <code>qwen2.5:14b</code>, none of 14 attempts to edit a file, or to read one and write a new one, gave a correct result. Creating a new file from a plain prompt mostly works. Commit first and check <code>git diff</code>. A larger model may do better, and we have not tested one.</li>
-        <li>The Antigravity app and its IDE chat panel have no setting for a local model, and Google's plans page says bring-your-own-endpoint is not supported. Google's local-model support covers the SDK, which this project uses. In the IDE's built-in terminal, run <code>python run.py --agent pi</code> or our shell. The Antigravity and Gemini command-line tools can reach a local model only through a translating proxy. That route is experimental and we have not tested it.</li>
+        <li>The Antigravity app and its IDE chat panel have no setting for a local model, and Google's plans page says bring-your-own-endpoint is not supported. Google's local-model support covers the SDK, which this project uses. In the IDE's built-in terminal, run <code>python &lt;path-to&gt;/antigravity-local/run.py --agent pi</code> from your project, or use our shell. The Antigravity and Gemini command-line tools can reach a local model only through a translating proxy. That route is experimental and we have not tested it.</li>
         <li>The extra coding agents (pi, OpenCode, Codex) are set up and tested offline. We have not yet measured how well they edit an existing file with your model, and all three want a context window of 64k tokens or more, which is larger than Ollama's default on most PCs.</li>
         <li>Only Windows 11 was tested. Native macOS and Linux, and the VS Code extension steps, are not tested yet.</li>
       </ul>
@@ -336,7 +336,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
       </details>
       <details>
         <summary>Can I use a better coding agent than the built-in shell?</summary>
-        <p>Yes. Run <code>python run.py --agent pi</code>, <code>--agent opencode</code> or <code>--agent codex</code>. It adds an Ollama entry to that agent's own config, keeps everything else in the file, makes a one-time backup, and starts the agent in your current folder. It installs the agent only if you type <code>y</code>. Raise Ollama's context length to 64k first, for example with <code>OLLAMA_CONTEXT_LENGTH=65536</code>.</p>
+        <p>Yes. Run <code>python run.py --agent pi</code>, <code>--agent opencode</code> or <code>--agent codex</code>. It adds an Ollama entry to that agent's own config, keeps everything else in the file, makes a one-time backup, and starts the agent in your project folder: the folder you ran it from, or whatever you pass to <code>--workspace</code>. Run it from inside antigravity-local and it uses this repo's <code>workspace/</code> folder instead, so it never edits our own files by accident. It installs the agent only if you type <code>y</code>. Raise Ollama's context length to 64k first, for example with <code>OLLAMA_CONTEXT_LENGTH=65536</code>.</p>
       </details>
       <details>
         <summary>Can I use Claude Code with my local model?</summary>
