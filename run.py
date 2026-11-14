@@ -272,7 +272,9 @@ def _raw_capability_score(model_name: str) -> float:
     score = 0.0
 
     # 1. Family weighting for agentic / tool-calling / reasoning capabilities
-    if "qwen3" in name or "devstral-small-2" in name or "gpt-oss" in name or "laguna" in name:
+    if "embed" in name or "rerank" in name:
+        score += 5.0    # embedding / reranker tags cannot chat or call tools; checked first so "qwen3-embedding" is not a qwen3
+    elif "qwen3" in name or "devstral-small-2" in name or "gpt-oss" in name or "laguna" in name:
         score += 97.0   # 2026 agentic families (see model_wizard.CATALOG); must out-score qwen2.5-coder:14b (raw 100.2)
     elif "nanbeige" in name:
         score += 92.0   # Nanbeige (4.1/4.2/4.3, 2-16B) - top agentic tool caller & deep search
