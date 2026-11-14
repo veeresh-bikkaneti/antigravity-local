@@ -102,7 +102,7 @@ class Write(Base):
         self.assertEqual(target, self.repo / "HANDOFF.md")
         heads = [l for l in text.splitlines() if l.startswith("## ")]
         self.assertEqual(heads, ["## Original ask", "## Last 3 user messages", "## Last to-do list",
-                                 "## Files edited or created", "## Last 10 Bash commands",
+                                 "## Files edited or created", "## Last 10 shell commands",
                                  "## Last assistant message", "## git status --short", "## git diff --stat",
                                  "## Source"])
         for needle in ("Add a --verbose flag to the CLI", "- [x] read cli.py", "- [~] add flag", "- [ ] write tests",
@@ -307,6 +307,36 @@ class TrackedHandoff(Base):
         code = handoff.main([], stdin=stdin, cwd=self.repo, out=lambda *_: None)
         self.assertEqual(code, 1)
         self.assertEqual((self.repo / "HANDOFF.md").read_text(encoding="utf-8"), "x\n")
+
+
+class RealWorldShapes(Base):
+    """Shapes seen in real transcripts on this machine: Task tools instead of TodoWrite, and a PowerShell tool."""
+
+    def test_task_create_and_update_build_the_list_with_creation_order_ids(self):
+        def use(name, **inp):
+            return rec("assistant", [{"type": "tool_use", "name": name, "input": inp}])
+        recs = [use("TaskCreate", subject="write tests", description="d", activeForm="Writing tests"),
+                use("TaskCreate", subject="add flag"), use("TaskCreate", subject="drop me"),
+                use("TaskUpdate", taskId="1", status="completed"), use("TaskUpdate", taskId="2", status="in_progress"),
+                use("TaskUpdate", taskId=3, status="deleted"), use("TaskUpdate", taskId="99", status="completed")]
+        self.assertEqual(handoff.summarize(recs)["todos"],
+                         [{"content": "write tests", "status": "completed"},
+                          {"content": "add flag", "status": "in_progress"}])
+
+    def test_task_tools_show_up_in_the_rendered_list(self):
+        recs = [rec("assistant", [{"type": "tool_use", "name": "TaskCreate", "input": {"subject": "ship it"}}])]
+        text = handoff.render(handoff.summarize(recs), "t.jsonl", self.repo, git_run=fake_git())
+        self.assertIn("- [ ] ship it", text)
+
+    def test_a_later_todowrite_replaces_task_state_and_powershell_commands_are_listed(self):
+        recs = [rec("assistant", [{"type": "tool_use", "name": "TaskCreate", "input": {"subject": "old"}},
+                                  {"type": "tool_use", "name": "TodoWrite",
+                                   "input": {"todos": [{"content": "new", "status": "pending"}]}},
+                                  {"type": "tool_use", "name": "PowerShell", "input": {"command": "Get-ChildItem"}},
+                                  {"type": "tool_use", "name": "Bash", "input": {"command": "ls"}}])]
+        info = handoff.summarize(recs)
+        self.assertEqual([t["content"] for t in info["todos"]], ["new"])
+        self.assertEqual(info["commands"], ["Get-ChildItem", "ls"])
 
 
 class Hardening(Base):

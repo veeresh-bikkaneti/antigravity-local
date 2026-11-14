@@ -24,6 +24,7 @@ from pathlib import Path
 
 BACKUP_SUFFIX = ".bak-antigravity-local"
 EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
+SHELL_TOOLS = {"Bash", "PowerShell"}   # on Windows most commands run through the PowerShell tool
 MAX_TEXT = 2000
 SKIP_PREFIXES = ("<system-reminder>", "<local-command", "<command-name>", "<command-message>", "Caveat:")
 RUN_PY = Path(__file__).resolve().parent / "run.py"
@@ -70,6 +71,7 @@ def _blocks(rec):
 def summarize(records):
     """The facts HANDOFF.md needs, from whatever records we recognise."""
     users, todos, files, commands, last_text = [], None, [], [], ""
+    tasks = {}   # TaskCreate / TaskUpdate (current Claude Code): ids are 1, 2, 3 ... in creation order
     for rec in records:
         kind = rec.get("type")
         if kind == "user" and not rec.get("isMeta"):
@@ -86,13 +88,25 @@ def summarize(records):
                 name, data = b.get("name"), b["input"]
                 if not isinstance(name, str):
                     continue
-                if name == "TodoWrite" and isinstance(data.get("todos"), list):
-                    todos = data["todos"]
+                if name == "TodoWrite" and isinstance(data.get("todos"), list):  # legacy tool
+                    todos, tasks = data["todos"], {}
+                elif name == "TaskCreate" and isinstance(data.get("subject"), str):
+                    tasks[str(len(tasks) + 1)] = {"content": data["subject"], "status": "pending"}
+                    todos = list(tasks.values())
+                elif name == "TaskUpdate" and str(data.get("taskId")) in tasks:
+                    task = tasks[str(data["taskId"])]
+                    if isinstance(data.get("subject"), str):
+                        task["content"] = data["subject"]
+                    if data.get("status") == "deleted":
+                        task["status"] = "deleted"
+                    elif isinstance(data.get("status"), str):
+                        task["status"] = data["status"]
+                    todos = [t for t in tasks.values() if t["status"] != "deleted"]
                 elif name in EDIT_TOOLS:
                     path = data.get("file_path") or data.get("notebook_path")
                     if isinstance(path, str) and path not in files:
                         files.append(path)
-                elif name == "Bash" and isinstance(data.get("command"), str):
+                elif name in SHELL_TOOLS and isinstance(data.get("command"), str):
                     commands.append(data["command"])
     return {"users": users, "todos": todos, "files": files, "commands": commands[-10:], "last_text": last_text}
 
@@ -205,7 +219,7 @@ def render(info, transcript, repo, now=None, git_run=None):
         out.append("(no to-do list was written)")
     out += ["", "## Files edited or created", ""]
     out += [f"- `{p}`" for p in info["files"]] or ["(none)"]
-    out += ["", "## Last 10 Bash commands", ""]
+    out += ["", "## Last 10 shell commands", ""]
     out += [f"- `{_clip(c, 300)}`" for c in info["commands"]] or ["(none)"]
     out += ["", "## Last assistant message", "", _clip(info["last_text"]) or "(none)", ""]
     out += ["## git status --short", "", "```", _git(["status", "--short"], repo, git_run), "```", "",
