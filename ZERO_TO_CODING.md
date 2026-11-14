@@ -245,6 +245,22 @@ If the workspace folder doesn't exist yet, it is created for you. You may also s
 
 ---
 
+### Use a better coding agent
+
+The built-in shell is a solid first friend, but sometimes you want a sturdier sidekick. One command wires a terminal agent to the model you already have:
+
+```bash
+python run.py --agent pi          # tiny and focused, great with small local models
+python run.py --agent opencode    # more features: MCP, LSP, sub-agents
+python run.py --agent codex       # no config file at all
+```
+
+It asks before it installs anything (`[y/N]`, and the default is no), merges a provider entry into the agent's own config while keeping everything else you had, and starts the agent in the folder you ran it from. Just want the config? Add `--agent-config-only` and it prints the start command instead of launching.
+
+One gotcha that trips almost everyone, so you are in good company: these agents want a **64k-token context window**, and Ollama starts smaller than that on most PCs. Raise it in the Ollama app's settings, or start the server with `OLLAMA_CONTEXT_LENGTH=65536`. Without it the agent can seem forgetful, because it is. The full table of agents, licenses and the Antigravity-specific caveats lives in [the README](README.md#pick-a-coding-agent).
+
+---
+
 ## 6. 3 end-to-end real world coding recipes
 
 Here are three copy-paste workflows you can run right now:
