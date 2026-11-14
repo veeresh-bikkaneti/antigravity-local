@@ -187,13 +187,17 @@ class Codex(Home):
 
 class ModelTag(Home):
     def test_bad_tags_are_rejected_before_anything_is_written(self):
-        for bad in ("--oss", "-x", "two words", "tab\tx", "", "  "):
+        # The shell characters matter on Windows: pi.cmd and opencode.cmd run through cmd.exe, where & | ; < > ^ %
+        # are special.
+        for bad in ("--oss", "-x", "two words", "tab\tx", "", "  ",
+                    "x&calc", "x|y", "q;rm", "a>b", "a<b", "%PATH%", "m^x", "x$(id)", "a\"b", "a'b", "x:"):
             with self.subTest(bad=bad), self.assertRaises(ags.AgentSetupError):
                 ags.write_config("pi", bad, URL, home=self.home)
         self.assertEqual(list(self.home.rglob("*")), [])
 
     def test_normal_tags_pass(self):
-        for good in ("qwen3.6:27b", "hf.co/user/repo:Q4_K_M", "llama3.2:3b", "gpt-oss:20b"):
+        for good in ("qwen3.6:27b", "hf.co/user/repo:Q4_K_M", "llama3.2:3b", "gpt-oss:20b", "Qwen2.5:14B",
+                     "qwen2.5-coder:14b", "library/llama3", "a"):
             ags.validate_model_tag(good)
 
 

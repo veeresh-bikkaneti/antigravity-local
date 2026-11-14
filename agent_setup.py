@@ -26,6 +26,9 @@ PI_NODE_MIN = (22, 19)
 BACKUP_SUFFIX = ".bak-antigravity-local"
 CONTEXT_WINDOW = 65536
 OPENCODE_SCHEMA = "https://opencode.ai/config.json"
+# Letters, digits and . _ / - only, plus an optional :tag. Real tags such as hf.co/user/repo:Q4_K_M pass. Shell
+# characters (& | ; < > ^ % quotes $) do not: on Windows the agents are .cmd files that run through cmd.exe.
+MODEL_TAG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*(:[A-Za-z0-9._-]+)?$")
 
 
 class AgentSetupError(Exception):
@@ -45,11 +48,12 @@ class Result:
 
 
 def validate_model_tag(model):
-    """Reject what could be read as a flag or split into two arguments. Real tags like hf.co/u/r:Q4 pass."""
+    """Reject anything that could be read as a flag, split into arguments, or run by a shell."""
     if not isinstance(model, str) or not model.strip():
         raise AgentSetupError("No model name to configure.")
-    if model.startswith("-") or re.search(r"\s", model):
-        raise AgentSetupError(f"'{model}' is not a model tag (no leading '-', no spaces). Example: qwen3.6:27b")
+    if not MODEL_TAG_RE.match(model):
+        raise AgentSetupError(f"'{model}' is not a model tag. Use letters, digits and . _ / - with an optional "
+                              ":tag, and no leading '-'. Example: qwen3.6:27b")
 
 
 def node_ok(version):
