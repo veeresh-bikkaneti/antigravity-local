@@ -1,0 +1,14 @@
+#!/bin/sh
+# commit-msg hook: refuse AI co-author trailers and "Generated with <AI tool>" lines.
+# Patterns come from ai-vendor-patterns.txt, the same file scripts/check_commit_trailers.py reads (CI is the real gate;
+# this hook just tells you sooner). Turn it on once per clone: git config core.hooksPath .githooks
+dir=$(dirname "$0")
+vendors=$(tr -d '\r' < "$dir/ai-vendor-patterns.txt" | grep -v '^[[:space:]]*\(#\|$\)' | paste -sd'|' -)
+[ -n "$vendors" ] || exit 0
+bad=$(tr -d '\r' < "$1" | grep -v '^[[:space:]]*#' | grep -iE "^[[:space:]]*co-authored-by:.*($vendors)|generated with.*($vendors)" | head -n 1)
+if [ -n "$bad" ]; then
+    echo "commit-msg: not allowed (AI tool named in a trailer): $bad" >&2
+    echo "commit-msg: remove that line and commit again. Patterns: .githooks/ai-vendor-patterns.txt" >&2
+    exit 1
+fi
+exit 0

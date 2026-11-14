@@ -902,3 +902,5 @@ For contributors who want the engineering records behind the project:
 This project is licensed under the [MIT License](LICENSE) - free to use, modify, and distribute for personal and commercial projects.
 
 Contributions are welcome. Open an issue or pull request with suggestions, optimizations, or new tool integrations.
+
+One small house rule: commits must not carry AI co-author lines (a `Co-Authored-By` naming an AI tool, or a "Generated with" line). `setup.sh` and `setup.bat` switch on the guard for you (`git config core.hooksPath .githooks`), and CI checks every PR's commits too, so skipping the hook only delays the bad news.

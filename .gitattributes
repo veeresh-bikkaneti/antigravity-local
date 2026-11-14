@@ -2,3 +2,4 @@
 Dockerfile text eol=lf
 .dockerignore text eol=lf
 *.bat text eol=crlf
+.githooks/* text eol=lf

@@ -38,6 +38,9 @@ if not exist ".env" (
     echo [3/3] Existing .env file found.
 )
 
+REM Turn on the commit-msg hook that blocks AI co-author trailers (only inside a git checkout)
+git rev-parse --git-dir >nul 2>&1 && git config core.hooksPath .githooks
+
 echo.
 echo ===================================================
 echo  Setup Complete!

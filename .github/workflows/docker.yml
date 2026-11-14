@@ -14,9 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # the commit-trailer check walks the PR's commits
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: No AI co-author trailers in this PR's commits (the local commit-msg hook can be skipped; this cannot)
+        if: github.event_name == 'pull_request'
+        run: python scripts/check_commit_trailers.py "origin/${{ github.base_ref }}..HEAD"
       - name: AGENTS.md rules (line caps, ASCII, referenced files exist)
         run: python scripts/check_agents_md.py
       - name: Docs checks (anchors, em dashes, emoji headings)
