@@ -235,7 +235,7 @@ Want to hand the agent one job and let it finish without chatting? Use the same 
 python code_agent.py --workspace "./my-project" --task "Build a CLI tool in cli.py using argparse that converts JSON files to CSV."
 ```
 
-The agent writes the code, saves `cli.py` to your workspace with its `create_file` tool, prints its reply, and exits. You should see `Task completed. Created 1, changed 0.` and the new file listed.
+The agent writes the code, saves `cli.py` to your workspace with its `write_to_file` tool, prints its reply, and exits. You should see `Task completed. Created 1, changed 0.` and the new file listed.
 
 See a warning that no files were created instead? The model answered without writing anything, which small local models do now and then. Run the same command again, or name the file in the task, for example "Create hello.py that prints hi".
 
