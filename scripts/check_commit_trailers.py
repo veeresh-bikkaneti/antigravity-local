@@ -21,8 +21,10 @@ def bad_lines(message, patterns=None):
     patterns = vendor_patterns() if patterns is None else patterns
     if not patterns:
         return []
-    names = "|".join(patterns)
-    rule = re.compile(rf"^\s*co-authored-by:.*({names})|generated with.*({names})", re.IGNORECASE)
+    # Whole words only ("Raider" is not "aider"), and "generated with" only at the start of a line
+    # (after optional non-letters, so the robot-emoji form still matches). Keep in step with .githooks/commit-msg.
+    word = rf"(?<![A-Za-z0-9_])({'|'.join(patterns)})(?![A-Za-z0-9_])"
+    rule = re.compile(rf"^\s*co-authored-by:.*{word}|^\W*generated with\W.*{word}", re.IGNORECASE)
     return [ln for ln in message.splitlines() if not ln.lstrip().startswith("#") and rule.search(ln)]
 
 

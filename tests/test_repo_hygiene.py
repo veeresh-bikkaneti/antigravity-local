@@ -100,6 +100,21 @@ class CommitTrailers(unittest.TestCase):
         self.check("feat: x\n\nGenerated with [Claude Code](https://claude.com/claude-code)\n", True)
         self.check("feat: x\n\nGenerated with the project script\n", False)
 
+    def test_ordinary_messages_that_only_contain_a_vendor_substring_pass(self):
+        self.check("feat: x\n\nCo-authored-by: Jo Raider <jo@example.com>\n", False)  # "aider" inside "Raider"
+        self.check("feat: x\n\nThe HTML is generated with archify; the cursor-follow effect stays.\n", False)
+        self.check("feat: x\n\nOutput generated with gpt-oss:20b on the local box.\n", False)
+        self.check("feat: x\n\nConfig generated with --agent codex.\n", False)
+
+    def test_real_ai_trailers_still_fail(self):
+        self.check("feat: x\n\nCo-Authored-By: Claude Opus <noreply@anthropic.com>\n", True)
+        self.check("feat: x\n\n\U0001F916 Generated with [Claude Code](https://claude.com/claude-code)\n", True)
+        self.check("feat: x\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>\n", True)
+        self.check("feat: x\n\nCo-authored-by: ChatGPT <x@example.com>\n", True)
+
+    def test_a_subject_that_mentions_a_tool_is_allowed(self):
+        self.check("feat(agents): set up Claude Code with --agent claude\n", False)
+
     def test_the_pattern_list_is_not_empty(self):
         names = self.script.vendor_patterns()
         for want in ("claude", "anthropic", "copilot", "openai", "gpt", "gemini", "cursor", "aider", "codex"):

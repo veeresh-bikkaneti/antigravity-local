@@ -38,7 +38,11 @@ fi
 
 # Turn on the commit-msg hook that blocks AI co-author trailers (only inside a git checkout)
 if git rev-parse --git-dir >/dev/null 2>&1; then
-    git config core.hooksPath .githooks
+    # Only when nothing is set yet, so a hooks folder you already use keeps working
+    if [ -z "$(git config core.hooksPath)" ]; then
+        git config core.hooksPath .githooks
+        echo "Commit hook on: AI co-author trailers are blocked (.githooks/commit-msg)."
+    fi
 fi
 
 echo ""

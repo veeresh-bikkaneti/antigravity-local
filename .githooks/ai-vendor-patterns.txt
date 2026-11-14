@@ -6,6 +6,7 @@ anthropic
 copilot
 openai
 gpt
+chatgpt
 gemini
 cursor
 aider
