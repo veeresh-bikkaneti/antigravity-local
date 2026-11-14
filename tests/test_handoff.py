@@ -331,6 +331,14 @@ class RealWorldShapes(Base):
                 use("TaskUpdate", taskId="1", status="completed")]
         self.assertEqual([t["content"] for t in handoff.summarize(recs)["todos"]], ["b", "c"])
 
+    def test_a_create_after_a_delete_does_not_bring_the_deleted_task_back(self):
+        """The list ends on a TaskCreate (no update after it), so only the create path can drop the deleted task."""
+        def use(name, **inp):
+            return rec("assistant", [{"type": "tool_use", "name": name, "input": inp}])
+        recs = [use("TaskCreate", subject="a"), use("TaskCreate", subject="b"),
+                use("TaskUpdate", taskId="1", status="deleted"), use("TaskCreate", subject="c")]
+        self.assertEqual([t["content"] for t in handoff.summarize(recs)["todos"]], ["b", "c"])
+
     def test_an_odd_todo_status_does_not_crash_the_render(self):
         recs = [rec("assistant", [{"type": "tool_use", "name": "TodoWrite",
                                    "input": {"todos": [{"content": "x", "status": ["odd"]}]}}])]
