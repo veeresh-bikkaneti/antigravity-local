@@ -323,6 +323,20 @@ class RealWorldShapes(Base):
                          [{"content": "write tests", "status": "completed"},
                           {"content": "add flag", "status": "in_progress"}])
 
+    def test_a_deleted_task_stays_gone_after_a_later_create_or_update(self):
+        def use(name, **inp):
+            return rec("assistant", [{"type": "tool_use", "name": name, "input": inp}])
+        recs = [use("TaskCreate", subject="a"), use("TaskCreate", subject="b"),
+                use("TaskUpdate", taskId="1", status="deleted"), use("TaskCreate", subject="c"),
+                use("TaskUpdate", taskId="1", status="completed")]
+        self.assertEqual([t["content"] for t in handoff.summarize(recs)["todos"]], ["b", "c"])
+
+    def test_an_odd_todo_status_does_not_crash_the_render(self):
+        recs = [rec("assistant", [{"type": "tool_use", "name": "TodoWrite",
+                                   "input": {"todos": [{"content": "x", "status": ["odd"]}]}}])]
+        text = handoff.render(handoff.summarize(recs), "t.jsonl", self.repo, git_run=fake_git())
+        self.assertIn("- [ ] x", text)
+
     def test_task_tools_show_up_in_the_rendered_list(self):
         recs = [rec("assistant", [{"type": "tool_use", "name": "TaskCreate", "input": {"subject": "ship it"}}])]
         text = handoff.render(handoff.summarize(recs), "t.jsonl", self.repo, git_run=fake_git())

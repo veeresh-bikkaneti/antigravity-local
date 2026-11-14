@@ -92,13 +92,13 @@ def summarize(records):
                     todos, tasks = data["todos"], {}
                 elif name == "TaskCreate" and isinstance(data.get("subject"), str):
                     tasks[str(len(tasks) + 1)] = {"content": data["subject"], "status": "pending"}
-                    todos = list(tasks.values())
+                    todos = [t for t in tasks.values() if t["status"] != "deleted"]
                 elif name == "TaskUpdate" and str(data.get("taskId")) in tasks:
                     task = tasks[str(data["taskId"])]
                     if isinstance(data.get("subject"), str):
                         task["content"] = data["subject"]
-                    if data.get("status") == "deleted":
-                        task["status"] = "deleted"
+                    if task["status"] == "deleted":
+                        pass   # deleted stays deleted: a late update must not bring it back
                     elif isinstance(data.get("status"), str):
                         task["status"] = data["status"]
                     todos = [t for t in tasks.values() if t["status"] != "deleted"]
@@ -213,7 +213,8 @@ def render(info, transcript, repo, now=None, git_run=None):
     if todos:
         for t in todos:
             if isinstance(t, dict):
-                mark = {"completed": "x", "in_progress": "~"}.get(t.get("status"), " ")
+                status = t.get("status")
+                mark = {"completed": "x", "in_progress": "~"}.get(status if isinstance(status, str) else "", " ")
                 out.append(f"- [{mark}] {t.get('content') or t.get('subject') or ''}")
     else:
         out.append("(no to-do list was written)")
