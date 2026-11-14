@@ -1,0 +1,248 @@
+"""handoff: Claude Code transcript to HANDOFF.md, and the opt-in hook installer. Offline, temp dirs only.
+
+git is replaced by a fake runner, so these tests never look at the real repository.
+"""
+import contextlib
+import io
+import json
+import sys
+import tempfile
+import time
+import unittest
+from pathlib import Path
+from types import SimpleNamespace
+from unittest import mock
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+import handoff  # noqa: E402
+
+
+def fake_git(args_out=None):
+    def runner(cmd, **kw):
+        text = {"status": " M a.py", "diff": " a.py | 2 +-", "rev-parse": ""}.get(cmd[1], "")
+        code = 1 if cmd[1] == "rev-parse" else 0
+        return SimpleNamespace(stdout=text, returncode=code)
+    return runner
+
+
+def rec(kind, content, **extra):
+    return {"type": kind, "message": {"role": kind, "content": content}, **extra}
+
+
+def fixture():
+    return [
+        rec("user", "Add a --verbose flag to the CLI", cwd="/proj"),
+        {"type": "future-record-type", "payload": {"x": 1}},                      # unknown: must be skipped
+        rec("assistant", [{"type": "text", "text": "Sure, looking at cli.py."},
+                          {"type": "tool_use", "name": "TodoWrite", "input": {"todos": [
+                              {"content": "read cli.py", "status": "completed"},
+                              {"content": "add flag", "status": "in_progress"},
+                              {"content": "write tests", "status": "pending"}]}},
+                          {"type": "tool_use", "name": "Edit", "input": {"file_path": "/proj/cli.py"}},
+                          {"type": "tool_use", "name": "Write", "input": {"file_path": "/proj/new.py"}},
+                          {"type": "tool_use", "name": "Bash", "input": {"command": "pytest -q"}}]),
+        rec("user", [{"type": "tool_result", "tool_use_id": "t", "content": "ok"}]),   # not a user message
+        rec("user", "<system-reminder>ignore me</system-reminder>"),
+        rec("user", "also keep the old behaviour by default"),
+        rec("assistant", [{"type": "text", "text": "Done with the flag. Tests next."}]),
+    ]
+
+
+class Base(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.root = Path(self._tmp.name)
+        self.repo = self.root / "repo"
+        self.repo.mkdir()
+        self.home = self.root / "home"
+        self.home.mkdir()
+
+    def transcript(self, name="s1.jsonl", records=None, where=None):
+        path = (where or self.root) / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        lines = [json.dumps(r) for r in (records if records is not None else fixture())]
+        lines.insert(1, "{ this line is not json")  # a broken line must not stop the read
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return path
+
+
+class Summary(Base):
+    def test_the_fixture_gives_every_section_and_skips_what_it_does_not_know(self):
+        info = handoff.summarize(handoff.read_records(self.transcript()))
+        self.assertEqual(info["users"], ["Add a --verbose flag to the CLI", "also keep the old behaviour by default"])
+        self.assertEqual([t["content"] for t in info["todos"]], ["read cli.py", "add flag", "write tests"])
+        self.assertEqual(info["files"], ["/proj/cli.py", "/proj/new.py"])
+        self.assertEqual(info["commands"], ["pytest -q"])
+        self.assertEqual(info["last_text"], "Done with the flag. Tests next.")
+
+    def test_only_the_last_ten_commands_are_kept(self):
+        recs = [rec("assistant", [{"type": "tool_use", "name": "Bash", "input": {"command": f"echo {i}"}}])
+                for i in range(15)]
+        self.assertEqual(handoff.summarize(recs)["commands"], [f"echo {i}" for i in range(5, 15)])
+
+    def test_records_in_a_shape_we_have_never_seen_do_not_crash(self):
+        weird = [{"type": "user", "message": None}, {"type": "assistant", "message": {"content": 5}},
+                 {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Bash", "input": "x"}]}},
+                 {"nothing": True}]
+        info = handoff.summarize(weird)
+        self.assertEqual(info["users"], [])
+        self.assertEqual(info["commands"], [])
+
+
+class Write(Base):
+    def test_handoff_md_has_every_section_in_order(self):
+        t = self.transcript()
+        target = handoff.write_handoff(t, self.repo, git_run=fake_git())
+        text = target.read_text(encoding="utf-8")
+        self.assertEqual(target, self.repo / "HANDOFF.md")
+        heads = [l for l in text.splitlines() if l.startswith("## ")]
+        self.assertEqual(heads, ["## Original ask", "## Last 3 user messages", "## Last to-do list",
+                                 "## Files edited or created", "## Last 10 Bash commands",
+                                 "## Last assistant message", "## git status --short", "## git diff --stat",
+                                 "## Source"])
+        for needle in ("Add a --verbose flag to the CLI", "- [x] read cli.py", "- [~] add flag", "- [ ] write tests",
+                       "`/proj/cli.py`", "`pytest -q`", "Done with the flag", " M a.py", "a.py | 2 +-", str(t)):
+            self.assertIn(needle, text)
+        self.assertNotIn("ignore me", text)
+
+    def test_git_being_absent_is_reported_not_fatal(self):
+        def boom(*a, **k):
+            raise FileNotFoundError("git")
+        target = handoff.write_handoff(self.transcript(), self.repo, git_run=boom)
+        self.assertIn("git unavailable", target.read_text(encoding="utf-8"))
+
+
+class Finding(Base):
+    def project(self, base, repo, name="s1.jsonl"):
+        return base / "projects" / handoff.project_dir_name(repo) / name
+
+    def test_project_folder_name_replaces_every_non_alphanumeric(self):
+        self.assertEqual(handoff.project_dir_name("C:\\Users\\v\\my repo"), "C--Users-v-my-repo")
+        self.assertEqual(handoff.project_dir_name("/home/v/a.b"), "-home-v-a-b")
+
+    def test_latest_picks_the_newest_across_the_subscription_and_local_folders(self):
+        old = self.transcript(where=(self.home / ".claude" / "projects" / handoff.project_dir_name(self.repo)))
+        time.sleep(0.05)
+        new = self.transcript("s2.jsonl", where=(self.home / ".claude-local" / "projects"
+                                                 / handoff.project_dir_name(self.repo)))
+        self.assertEqual(handoff.find_transcript("latest", self.repo, home=self.home, environ={}), new)
+        self.assertEqual(handoff.find_transcript("s1", self.repo, home=self.home, environ={}), old)
+
+    def test_falls_back_to_the_cwd_field_when_the_folder_name_differs(self):
+        recs = fixture()
+        recs[0]["cwd"] = str(self.repo)
+        t = self.transcript(records=recs, where=self.home / ".claude" / "projects" / "some-other-name")
+        self.assertEqual(handoff.find_transcript("latest", self.repo, home=self.home, environ={}), t)
+
+    def test_another_projects_transcript_is_not_picked(self):
+        recs = fixture()
+        recs[0]["cwd"] = str(self.root / "elsewhere")
+        self.transcript(records=recs, where=self.home / ".claude" / "projects" / "x")
+        with self.assertRaises(handoff.HandoffError):
+            handoff.find_transcript("latest", self.repo, home=self.home, environ={})
+
+    def test_config_dir_variable_is_searched_first(self):
+        cfg = self.root / "cfg"
+        t = self.transcript(where=cfg / "projects" / handoff.project_dir_name(self.repo))
+        self.assertEqual(handoff.find_transcript("latest", self.repo, home=self.home,
+                                                 environ={"CLAUDE_CONFIG_DIR": str(cfg)}), t)
+
+
+class Main(Base):
+    def go(self, argv, stdin=None, **kw):
+        lines = []
+        code = handoff.main(argv, stdin=stdin, home=self.home, environ={}, cwd=self.repo, git_run=fake_git(),
+                            out=lines.append, **kw)
+        return code, "\n".join(lines)
+
+    def test_transcript_flag_writes_handoff_at_the_repo_root(self):
+        code, text = self.go(["--transcript", str(self.transcript())])
+        self.assertEqual(code, 0)
+        self.assertTrue((self.repo / "HANDOFF.md").is_file())
+        self.assertIn("gitignored", text)
+
+    def test_hook_stdin_transcript_path_is_honoured(self):
+        t = self.transcript()
+        stdin = io.StringIO(json.dumps({"transcript_path": str(t), "hook_event_name": "StopFailure"}))
+        code, _ = self.go([], stdin=stdin)
+        self.assertEqual(code, 0)
+        self.assertIn("Add a --verbose flag", (self.repo / "HANDOFF.md").read_text(encoding="utf-8"))
+
+    def test_missing_transcript_is_a_clear_error_and_writes_nothing(self):
+        code, text = self.go(["--transcript", str(self.root / "gone.jsonl")])
+        self.assertEqual(code, 1)
+        self.assertIn("not found", text)
+        self.assertFalse((self.repo / "HANDOFF.md").exists())
+
+    def test_no_stdin_json_and_no_transcript_falls_back_to_the_newest_one(self):
+        t = self.transcript(where=self.home / ".claude" / "projects" / handoff.project_dir_name(self.repo))
+        code, text = self.go([], stdin=io.StringIO(""))
+        self.assertEqual(code, 0)
+        self.assertIn(str(t), text)
+
+
+class InstallHook(Base):
+    def settings(self):
+        return self.repo / ".claude" / "settings.local.json"
+
+    def install(self, answer):
+        lines = []
+        changed = handoff.install_hook(self.repo, input_fn=lambda _="": answer, out=lines.append)
+        return changed, "\n".join(lines)
+
+    def test_no_or_empty_answer_writes_nothing_but_shows_the_diff(self):
+        for answer in ("n", ""):
+            with self.subTest(answer=answer):
+                changed, text = self.install(answer)
+                self.assertFalse(changed)
+                self.assertFalse(self.settings().exists())
+                self.assertIn("StopFailure", text)
+
+    def test_yes_merges_keeps_other_keys_and_backs_up_once(self):
+        self.settings().parent.mkdir(parents=True)
+        original = {"permissions": {"allow": ["Bash(ls)"]},
+                    "hooks": {"PreCompact": [{"hooks": [{"type": "command", "command": "echo mine"}]}]}}
+        self.settings().write_text(json.dumps(original), encoding="utf-8")
+        self.assertTrue(self.install("y")[0])
+        data = json.loads(self.settings().read_text(encoding="utf-8"))
+        self.assertEqual(data["permissions"], original["permissions"])
+        pre = data["hooks"]["PreCompact"]
+        self.assertEqual(pre[0], original["hooks"]["PreCompact"][0])                  # theirs untouched
+        self.assertIn("handoff", pre[1]["hooks"][0]["command"])
+        stop, = data["hooks"]["StopFailure"]
+        self.assertEqual(stop["matcher"], "rate_limit")
+        self.assertIn("handoff", stop["hooks"][0]["command"])
+        backup = Path(str(self.settings()) + handoff.BACKUP_SUFFIX)
+        self.assertEqual(json.loads(backup.read_text(encoding="utf-8")), original)
+        # running again changes nothing and does not touch the backup
+        self.assertFalse(self.install("y")[0])
+        self.assertEqual(json.loads(backup.read_text(encoding="utf-8")), original)
+
+    def test_a_fresh_project_gets_the_file_and_user_settings_are_never_touched(self):
+        user = self.home / ".claude" / "settings.json"
+        user.parent.mkdir(parents=True)
+        user.write_text("{}", encoding="utf-8")
+        stamp = user.stat().st_mtime_ns
+        self.assertTrue(self.install("y")[0])
+        self.assertTrue(self.settings().is_file())
+        self.assertEqual(user.stat().st_mtime_ns, stamp)
+
+    def test_broken_json_is_refused_and_left_alone(self):
+        self.settings().parent.mkdir(parents=True)
+        self.settings().write_text("{ nope", encoding="utf-8")
+        with self.assertRaises(handoff.HandoffError):
+            self.install("y")
+        self.assertEqual(self.settings().read_text(encoding="utf-8"), "{ nope")
+
+    def test_main_routes_install_hook(self):
+        lines = []
+        code = handoff.main(["--install-hook"], input_fn=lambda _="": "n", cwd=self.repo, git_run=fake_git(),
+                            out=lines.append)
+        self.assertEqual(code, 0)
+        self.assertFalse(self.settings().exists())
+
+
+if __name__ == "__main__":
+    unittest.main()

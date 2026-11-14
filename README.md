@@ -122,7 +122,7 @@ Ollama holds the model. Every tool below just knocks on its door at `http://loca
 Want something sturdier than the built-in shell? One command sets up a terminal coding agent that already knows about your local model. It installs the agent only if you say yes, adds an Ollama entry to the agent's own config without touching anything else in it, and starts it in your project. Run it from inside your project and the agent works in that folder. Run it from inside antigravity-local, or through `run.sh` or `run.bat` (they always start there), and it works in this repo's `workspace/` folder instead, so a new agent never starts out editing our own files. Aim it anywhere with `--workspace`. Every run prints one line that names the folder the agent will use.
 
 ```bash
-python run.py --agent pi          # or opencode, or codex
+python run.py --agent pi          # or opencode, or codex (Claude Code has its own section below)
 python run.py --agent pi --agent-config-only   # write the config, print the start command, stop
 python run.py --agent pi --workspace ~/code/my-project   # work in your project, wherever you ran it from
 ```
@@ -142,25 +142,101 @@ Three things worth knowing before you press Enter:
 
 Ollama has its own helper too: `ollama launch pi` or `ollama launch opencode` installs and configures them for you ([Ollama's pi guide](https://docs.ollama.com/integrations/pi), [OpenCode guide](https://docs.ollama.com/integrations/opencode)). Our command does the same job but keeps the model you picked in the menu and writes only what it needs to.
 
-### Claude Code with a local model (manual, and mind your subscription)
+### Claude Code with your local model
 
-Ollama speaks a subset of the Anthropic Messages API, so Claude Code can talk to your local model ([Ollama's Claude Code guide](https://docs.ollama.com/integrations/claude-code), [Anthropic compatibility](https://docs.ollama.com/api/anthropic-compatibility)). We have not built a `--agent claude` option and we have not tested this route ourselves. If you try it, here is what bites people:
+Ollama speaks a subset of the Anthropic Messages API, so Claude Code can talk to your local model ([Ollama's Claude Code guide](https://docs.ollama.com/integrations/claude-code), [Anthropic compatibility](https://docs.ollama.com/api/anthropic-compatibility)). If you also pay for a Claude subscription, the scary part is not getting it to work. It is getting it to work *everywhere*, so that your normal sessions quietly start talking to a 14B model. Our command is built so that cannot happen.
 
-- **Do not let it touch your subscription.** If you sign in to Claude Code with a Claude subscription, setting a base URL in your shell profile or in `~/.claude/settings.json` sends every session to the local model instead. Ollama's guide also warns that Claude settings can override shell variables. Set the variables for one terminal only, then run `/status` inside Claude Code to see where it is really connected:
-  ```bash
-  # macOS / Linux / Git Bash, one command, nothing saved
-  ANTHROPIC_BASE_URL=http://localhost:11434 ANTHROPIC_AUTH_TOKEN=ollama ANTHROPIC_API_KEY="" claude --model <your model tag>
-  ```
-  ```powershell
-  # PowerShell: these last only for this window
-  $env:ANTHROPIC_BASE_URL = "http://localhost:11434"; $env:ANTHROPIC_AUTH_TOKEN = "ollama"; $env:ANTHROPIC_API_KEY = ""; claude --model <your model tag>
-  ```
-  Ollama does not check the token, so `ollama` is just a placeholder. A separate config folder (the `CLAUDE_CONFIG_DIR` variable) should keep this setup away from your subscription login. That is our understanding of Claude Code, and we have not tested it with Ollama.
-- **No `/v1` on this one.** Anthropic clients add the path themselves, so the base URL is plain `http://localhost:11434`. The `/v1` address our other agents use would end up as `/v1/v1/messages`.
-- **Claude Code asks for Anthropic model names** for some background jobs, and Ollama has no model by that name. Ollama's workaround is to copy a local model under the name it wants, for example `ollama cp <your model tag> claude-3-5-sonnet`.
-- **Some Anthropic features are missing:** `tool_choice`, prompt caching, token counting, citations and PDF input. Extended-thinking budgets are accepted but not enforced, and hosted web search is not fully supported.
-- **The model is the real limit.** Claude Code sends a big system prompt and many tool definitions, so give Ollama a 64k+ context. A local 14B model will not match the Claude model your subscription gives you, and our own tests found existing-file edits unreliable with `qwen2.5:14b`. Use the local route for private or offline work, and keep your subscription for the hard jobs.
-- **Ollama's own helper** is `ollama launch claude`. We have not checked which files it changes, so if you use it, run `/status` afterwards.
+```bash
+python run.py --agent claude                      # start Claude Code on your local model
+python run.py --agent claude --copy-user-settings # first run only: copy (never link) your CLAUDE.md, skills, agents, commands
+python run.py --agent claude --doctor             # read-only: find anything that reroutes your normal sessions
+```
+
+What it does, and just as important what it refuses to do:
+
+- **Everything lives in one child process.** The endpoint, the placeholder token and the model names go into a copy of the environment that only that one `claude` process sees. We never write `~/.claude/`, `~/.claude.json`, VS Code settings, Claude Desktop's config, a shell profile or a Windows user variable, and we never run `setx`.
+- **It gets its own config folder.** `CLAUDE_CONFIG_DIR` points at `~/.claude-local`, so `/login`, `/model` and `/config` inside the local session cannot touch your subscription setup. To remove everything this feature ever made, delete `~/.claude-local`.
+- **Settings files cannot override it.** We set `CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST=1`, so an `env` block in some settings file cannot swap the endpoint or the login underneath us ([Ollama issue 17990](https://github.com/ollama/ollama/issues/17990) is what that looks like). We also blank `ANTHROPIC_API_KEY` and the Bedrock, Vertex and Foundry switches for that session.
+- **It warns before it launches.** If `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN` or `ANTHROPIC_API_KEY` is already set in your terminal or in the `env` block of `~/.claude/settings.json`, we say where (never the value) and that it reroutes or bills every normal Claude Code session, VS Code extension included. We do not edit anything.
+- **It plans for the context Ollama really has.** Claude Code assumes 200k tokens for a model it does not know, and would compact far too late. We pass `CLAUDE_CODE_MAX_CONTEXT_TOKENS` from your `OLLAMA_CONTEXT_LENGTH` (65536 if unset) and warn when that variable is unset or smaller, because Ollama's own default is 4096 and the server has to be started with the same number.
+- **No bare `claude` command is ever printed.** `--agent-config-only` has nothing to write for Claude Code, so it tells you so instead of printing a command that would use your subscription.
+
+In the banner you will see the one-line promise: this session uses your local model; plain `claude`, VS Code and Claude Desktop still use your subscription.
+
+**Check it yourself.** Inside the session, run `/status`. It should name your local endpoint and model. Open a normal terminal, run plain `claude`, and `/status` should show your subscription. Seeing both is the proof that nothing leaked.
+
+**Prefer not to run `run.py`?** These wrappers set exactly the same variables for one `claude` call and put your old values back afterwards. Replace `MODEL` with your tag (`ollama list` shows it). Paste into your profile if you like: the function holds no secret and changes nothing until you call it.
+
+```powershell
+# PowerShell
+function claude-local {
+  param([string]$Model = "MODEL")
+  $names = "CLAUDE_CONFIG_DIR","CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST","ANTHROPIC_BASE_URL","ANTHROPIC_AUTH_TOKEN","ANTHROPIC_API_KEY",
+           "CLAUDE_CODE_USE_BEDROCK","CLAUDE_CODE_USE_VERTEX","CLAUDE_CODE_USE_FOUNDRY","ANTHROPIC_DEFAULT_OPUS_MODEL",
+           "ANTHROPIC_DEFAULT_SONNET_MODEL","ANTHROPIC_DEFAULT_HAIKU_MODEL","CLAUDE_CODE_SUBAGENT_MODEL",
+           "CLAUDE_CODE_MAX_CONTEXT_TOKENS","CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"
+  $old = @{}; foreach ($n in $names) { $old[$n] = [Environment]::GetEnvironmentVariable($n, "Process") }
+  $ctx = if ($env:OLLAMA_CONTEXT_LENGTH) { $env:OLLAMA_CONTEXT_LENGTH } else { "65536" }
+  try {
+    $dir = Join-Path $HOME ".claude-local"; New-Item -ItemType Directory -Force $dir | Out-Null
+    $env:CLAUDE_CONFIG_DIR = $dir
+    $env:CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST = "1"
+    $env:ANTHROPIC_BASE_URL = "http://localhost:11434"
+    $env:ANTHROPIC_AUTH_TOKEN = "ollama"
+    $env:ANTHROPIC_API_KEY = ""; $env:CLAUDE_CODE_USE_BEDROCK = ""; $env:CLAUDE_CODE_USE_VERTEX = ""; $env:CLAUDE_CODE_USE_FOUNDRY = ""
+    $env:ANTHROPIC_DEFAULT_OPUS_MODEL = $Model; $env:ANTHROPIC_DEFAULT_SONNET_MODEL = $Model
+    $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = $Model; $env:CLAUDE_CODE_SUBAGENT_MODEL = $Model
+    $env:CLAUDE_CODE_MAX_CONTEXT_TOKENS = $ctx
+    $env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1"
+    claude --model $Model @args
+  } finally {
+    foreach ($n in $names) { [Environment]::SetEnvironmentVariable($n, $old[$n], "Process") }
+  }
+}
+```
+
+```bash
+# bash / zsh
+claude-local() {
+  local model="${1:-MODEL}"; [ $# -gt 0 ] && shift
+  ( # a subshell: every export below dies with it, so nothing needs restoring
+    export CLAUDE_CONFIG_DIR="$HOME/.claude-local"; mkdir -p "$CLAUDE_CONFIG_DIR"
+    export CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST=1
+    export ANTHROPIC_BASE_URL="http://localhost:11434" ANTHROPIC_AUTH_TOKEN=ollama
+    export ANTHROPIC_API_KEY="" CLAUDE_CODE_USE_BEDROCK="" CLAUDE_CODE_USE_VERTEX="" CLAUDE_CODE_USE_FOUNDRY=""
+    export ANTHROPIC_DEFAULT_OPUS_MODEL="$model" ANTHROPIC_DEFAULT_SONNET_MODEL="$model"
+    export ANTHROPIC_DEFAULT_HAIKU_MODEL="$model" CLAUDE_CODE_SUBAGENT_MODEL="$model"
+    export CLAUDE_CODE_MAX_CONTEXT_TOKENS="${OLLAMA_CONTEXT_LENGTH:-65536}"
+    export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+    claude --model "$model" "$@"
+  )
+}
+```
+
+**Known gaps, so nobody is surprised.** Ollama does not support `tool_choice`, prompt caching, token counting or Anthropic's hosted web search, and token counts are approximate. Small local models also fail Claude Code's tool use more often than you would like: it sends a big system prompt and many tool definitions, and our own tests found existing-file edits unreliable with `qwen2.5:14b`. So think of this route as a good fit for private, offline or cheap work, and keep the subscription for the hard jobs. We tested the environment building, the warnings and `--doctor` offline. We have not yet had a long live session with it, so tell us how yours goes.
+
+**Ollama's own helper** is `ollama launch claude`. It also sets variables for the child only, but it does not move the config folder, and it remembers your last model in `~/.ollama/config.json`. `ollama launch claude-desktop` flips the whole Claude Desktop app into third-party mode until you run it again with `--restore`, and in Ollama's current code that launch works only on macOS. We never touch Desktop or VS Code. Run our launcher in VS Code's built-in terminal instead.
+
+**If it already broke.** Your normal Claude Code is talking to a local model, or complaining about a login? No reinstall needed. Almost always some setting from an earlier experiment is still hanging around. Do this on Windows, in order:
+
+1. Run `python run.py --agent claude --doctor`. It lists every spot below that is affected, with the exact line to remove, and changes nothing.
+2. User and machine environment variables: remove any `ANTHROPIC_*`, `CLAUDE_CODE_USE_*`, `CLAUDE_CODE_OAUTH_TOKEN` or `CLAUDE_CONFIG_DIR` you did not mean to keep. PowerShell: `[Environment]::SetEnvironmentVariable('ANTHROPIC_BASE_URL', $null, 'User')`. Machine scope needs an admin window.
+3. `~/.claude/settings.json`, plus `.claude/settings.json` and `.claude/settings.local.json` in your project: delete those keys from the `env` block, and any `apiKeyHelper` or odd `model` line.
+4. VS Code user settings: delete `claudeCode.environmentVariables` and `claudeCode.disableLoginPrompt`.
+5. `C:\Program Files\ClaudeCode\managed-settings.json`: if the doctor flags it, that is a machine-wide policy file, so ask whoever manages the PC.
+6. Claude Desktop stuck in third-party mode? Run `ollama launch claude-desktop --restore`.
+7. Open a **new** terminal (old ones keep old variables), run plain `claude`, then `/status`. If it shows your subscription, you are done.
+
+**Hit your limit mid-task.** When the subscription runs out halfway through a job, you do not have to start over. Claude Code keeps a transcript of the session. This writes the useful parts into a `HANDOFF.md` (your first ask, the last few messages, the last to-do list, files touched, the last 10 shell commands, the last assistant message, `git status` and `git diff --stat`) without calling any model:
+
+```bash
+python run.py handoff                    # newest transcript for this project
+python run.py handoff --session <id>     # or a specific session (or --transcript <file.jsonl>)
+python run.py handoff --install-hook     # opt in: write it automatically when a rate limit hits or before a compaction
+python run.py --agent pi --continue-local   # start a local agent on the task (pi, opencode, codex or claude)
+```
+
+`--install-hook` shows you the exact change, asks `[y/N]`, and edits only this project's `.claude/settings.local.json` (with a one-time backup). It never touches your user settings. `--continue-local` starts the agent with the prompt "Read HANDOFF.md and AGENTS.md, then continue the task. Check git state before editing. Update HANDOFF.md before you stop." `HANDOFF.md` can contain command output and secrets from the transcript, so it is gitignored here: add it to your own project's `.gitignore` too. The transcript format is not a public contract, so the reader skips anything it does not recognise. One more thing, flagged experimental: `python run.py --agent claude --resume-from latest` forks an old session into the local model. Whether that works across config folders, and how Ollama treats the old thinking blocks, is unverified, and [Claude Code issue 109452](https://github.com/anthropics/claude-code/issues/109452) reports the model changing after a resume, so check `/status`. Going back to the subscription goes through `HANDOFF.md`, not through that fork.
 
 ### Antigravity
 - **The Antigravity SDK works with your local model.** Google added local-model support on Sept. 23, 2026. `LocalOpenAIAgentConfig` connects to any OpenAI-compatible server, including Ollama ([Google's announcement](https://developers.googleblog.com/introducing-support-for-local-ai-models-in-the-antigravity-sdk/)). This repo already uses it. `python run.py` and `python code_agent.py` talk to `LOCAL_LLM_BASE_URL` (default `http://localhost:11434/v1`) and `LOCAL_LLM_MODEL` (default `qwen2.5:14b`). To change either, set the variable in `.env` or pass `--base-url` and `--model`.

@@ -340,7 +340,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
       </details>
       <details>
         <summary>Can I use Claude Code with my local model?</summary>
-        <p>Ollama documents a way: it speaks a subset of the Anthropic API, so Claude Code can point at <code>http://localhost:11434</code> (no <code>/v1</code>). We have not built or tested that route. If you also have a Claude subscription, set the variables for one terminal only and never in your profile or <code>~/.claude/settings.json</code>, or every session will go to the local model. The README has the details and the gotchas.</p>
+        <p>Yes, with one command: <code>python run.py --agent claude</code>. Ollama speaks a subset of the Anthropic API, and we hand Claude Code the endpoint, a placeholder token and your local model for that one session only. It gets its own config folder (<code>~/.claude-local</code>) and we never write your <code>~/.claude</code> settings, so your normal sessions stay on your subscription. <code>python run.py --agent claude --doctor</code> checks, read-only, that nothing else is rerouting them. The offline tests pass, but we have not yet run a long live session. The README has the details and the gotchas.</p>
       </details>
       <details>
         <summary>Does it work on macOS or Linux?</summary>

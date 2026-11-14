@@ -19,8 +19,10 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-AGENTS = ("pi", "opencode", "codex")
+AGENTS = ("pi", "opencode", "codex", "claude")
 PACKAGES = {"pi": "@earendil-works/pi-coding-agent", "opencode": "opencode-ai", "codex": "@openai/codex"}
+CONTINUE_PROMPT = ("Read HANDOFF.md and AGENTS.md, then continue the task. Check git state before editing. "
+                   "Update HANDOFF.md before you stop.")
 NODE_DOWNLOAD = "https://nodejs.org/en/download"
 PI_NODE_MIN = (22, 19)
 BACKUP_SUFFIX = ".bak-antigravity-local"
@@ -80,6 +82,9 @@ def ensure_agent(name, which=None, input_fn=None, call=None, node_version=None, 
     if found:
         return found
 
+    if name == "claude":
+        return _ensure_claude(which, input_fn, call, out)
+
     pkg = PACKAGES[name]
     out(f"       {name} is not installed. To install it yourself: npm install -g {pkg}")
     npm = which("npm")
@@ -103,6 +108,32 @@ def ensure_agent(name, which=None, input_fn=None, call=None, node_version=None, 
         out(f"       Installed, but '{name}' is not on your PATH yet. Open a new terminal (npm's global bin folder "
             "must be on PATH), then run this again.")
         raise AgentSetupError(f"{name} was installed but is not on PATH.")
+    return found
+
+
+def _claude_install_argv():
+    if sys.platform == "win32":
+        return ["powershell", "-NoProfile", "-Command", "irm https://claude.ai/install.ps1 | iex"]
+    return ["bash", "-c", "curl -fsSL https://claude.ai/install.sh | bash"]
+
+
+def _ensure_claude(which, input_fn, call, out):
+    shown = ("irm https://claude.ai/install.ps1 | iex" if sys.platform == "win32"
+             else "curl -fsSL https://claude.ai/install.sh | bash")
+    out(f"       claude is not installed. To install it yourself (Anthropic's official script): {shown}")
+    try:
+        answer = input_fn("       Install it now with that script? [y/N] ")
+    except (EOFError, KeyboardInterrupt):
+        answer = ""
+    if answer.strip().lower() not in ("y", "yes"):
+        out("       Not installing. Run the command above yourself, then run this again.")
+        raise AgentSetupError("claude is not installed.")
+    if call(_claude_install_argv()) != 0:
+        raise AgentSetupError("The Claude Code install script failed. Run the command above in a terminal to see why.")
+    found = which("claude")
+    if not found:
+        out("       Installed, but 'claude' is not on your PATH yet. Open a new terminal, then run this again.")
+        raise AgentSetupError("claude was installed but is not on PATH.")
     return found
 
 
@@ -184,12 +215,17 @@ def _atomic_write(path, payload):
         raise
 
 
-def agent_command(name, model, exe=None):
-    """The one argv for each agent, used by the printed hint, write_config's result and launch."""
+def agent_command(name, model, exe=None, prompt=None):
+    """The one argv for each agent, used by the printed hint, write_config's result and launch.
+    `prompt` is the agent's first message (--continue-local); every agent takes it on its command line."""
     exe = exe or name
-    return {"pi": [exe, "--provider", "ollama", "--model", model],
+    argv = {"pi": [exe, "--provider", "ollama", "--model", model],
             "opencode": [exe, "--model", f"ollama/{model}"],
-            "codex": [exe, "--oss", "-m", model]}[name]
+            "codex": [exe, "--oss", "-m", model],
+            "claude": [exe, "--model", model]}[name]
+    if prompt:
+        argv += ["--prompt", prompt] if name == "opencode" else [prompt]
+    return argv
 
 
 def write_config(name, model, base_url, home=None):
@@ -198,6 +234,8 @@ def write_config(name, model, base_url, home=None):
     validate_model_tag(model)
     home = Path(home) if home else Path.home()
 
+    if name == "claude":
+        return Result(command=agent_command("claude", model))
     if name == "codex":
         notes = []
         if "11434" not in base_url:
@@ -268,26 +306,242 @@ def resolve_workspace(arg, cwd, project_dir, out=None):
     return str(here)
 
 
-def launch(name, model, workspace, call=None, which=None):
-    """Start the agent as a child process in `workspace` and return its exit code."""
+# ---------- Claude Code: environment for ONE child process, never written anywhere ----------
+
+LOCAL_CONFIG_NAME = ".claude-local"
+ROUTING_VARS = ("ANTHROPIC_BASE_URL", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_API_KEY")
+COPY_MARKER = ".antigravity-local-copied"
+DROP_SETTINGS_KEYS = ("env", "model", "modelSettings", "apiKeyHelper")
+MODEL_ALIASES = {"default", "best", "sonnet", "opus", "haiku", "opusplan", "sonnet[1m]", "opus[1m]"}
+MACHINE_ENV_KEY = r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
+MANAGED_SETTINGS = r"C:\Program Files\ClaudeCode\managed-settings.json"
+CLAUDE_BANNER = ("This session uses your local model. Plain `claude`, VS Code and Claude Desktop still use your "
+                 "subscription. Uninstall: delete ~/.claude-local.")
+
+
+def claude_base_url(base_url):
+    """LOCAL_LLM_BASE_URL minus a trailing slash and /v1: Claude Code wants the server root."""
+    url = (base_url or "http://localhost:11434").strip().rstrip("/")
+    if url.endswith("/v1"):
+        url = url[:-3]
+    return url.rstrip("/") or "http://localhost:11434"
+
+
+def claude_context(environ):
+    """(tokens, warning or None). The window Ollama really runs with is what Claude Code must plan for."""
+    raw = (environ.get("OLLAMA_CONTEXT_LENGTH") or "").strip()
+    if raw.isdigit() and int(raw) > 0:
+        n = int(raw)
+        return n, (None if n >= CONTEXT_WINDOW else
+                   f"OLLAMA_CONTEXT_LENGTH is {n}, below the 64k (65536) coding agents want.")
+    return CONTEXT_WINDOW, ("OLLAMA_CONTEXT_LENGTH is not set in this terminal. Ollama's default window is 4096, "
+                            "so start the Ollama server with OLLAMA_CONTEXT_LENGTH=65536 (we assume 65536 here; if "
+                            "the server runs smaller, Claude Code will overrun it).")
+
+
+def claude_child_env(model, base_url, home=None, environ=None):
+    """A COPY of the environment with everything Claude Code needs to talk to Ollama. Never applied to os.environ."""
+    home = Path(home) if home else Path.home()
+    env = dict(os.environ if environ is None else environ)
+    tokens, _ = claude_context(env)
+    env.update({
+        "CLAUDE_CONFIG_DIR": str((home / LOCAL_CONFIG_NAME).resolve()),
+        "CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST": "1",
+        "ANTHROPIC_BASE_URL": claude_base_url(base_url),
+        "ANTHROPIC_AUTH_TOKEN": "ollama",
+        "ANTHROPIC_API_KEY": "",
+        "CLAUDE_CODE_USE_BEDROCK": "",
+        "CLAUDE_CODE_USE_VERTEX": "",
+        "CLAUDE_CODE_USE_FOUNDRY": "",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": model,
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": model,
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": model,
+        "CLAUDE_CODE_SUBAGENT_MODEL": model,
+        "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(tokens),
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    })
+    return env
+
+
+def _read_json(path):
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def claude_routing_warnings(home=None, environ=None):
+    """Where a routing variable is already set. Names and places only, never values. Read-only."""
+    home = Path(home) if home else Path.home()
+    environ = os.environ if environ is None else environ
+    found = [f"{v} is set in this terminal's environment" for v in ROUTING_VARS if environ.get(v)]
+    settings = home / ".claude" / "settings.json"
+    env_block = _read_json(settings).get("env")
+    if isinstance(env_block, dict):
+        found += [f"{v} is set in the env block of {settings}" for v in ROUTING_VARS if v in env_block]
+    if not found:
+        return []
+    return found + ["That routes (or bills) every normal Claude Code session, and the VS Code extension, which "
+                    "shares that file and inherits Windows environment variables. We did not edit anything. Run "
+                    "`python run.py --agent claude --doctor` to see exactly what to remove."]
+
+
+def copy_user_settings(home=None, out=None):
+    """Copy (never link) a safe slice of ~/.claude into ~/.claude-local, once. Reads ~/.claude, writes only the copy."""
+    out = out or print
+    home = Path(home) if home else Path.home()
+    src, dst = home / ".claude", home / LOCAL_CONFIG_NAME
+    if (dst / COPY_MARKER).exists():
+        out(f"       Settings : already copied into {dst} on an earlier run, so left alone.")
+        return []
+    dst.mkdir(parents=True, exist_ok=True)
+    copied = []
+    if (src / "CLAUDE.md").is_file():
+        shutil.copy2(src / "CLAUDE.md", dst / "CLAUDE.md")
+        copied.append("CLAUDE.md")
+    for folder in ("skills", "agents", "commands"):
+        if (src / folder).is_dir():
+            shutil.copytree(src / folder, dst / folder, dirs_exist_ok=True)
+            copied.append(folder + "/")
+    settings = _read_json(src / "settings.json")
+    if settings:
+        kept = {k: v for k, v in settings.items() if k not in DROP_SETTINGS_KEYS}
+        _atomic_write(dst / "settings.json", _render(kept))
+        copied.append("settings.json (without env, model, modelSettings, apiKeyHelper)")
+    (dst / COPY_MARKER).write_text("copied once; delete this file to copy again\n", encoding="utf-8")
+    out(f"       Settings : copied {', '.join(copied) or 'nothing (no ~/.claude files found)'} into {dst}")
+    return copied
+
+
+def _is_claude_key(name):
+    return (name.startswith("ANTHROPIC_") or name.startswith("CLAUDE_CODE_USE_")
+            or name in ("CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_CONFIG_DIR"))
+
+
+def _registry_env(scope):
+    """Variable NAMES in a Windows environment hive ('User' or 'Machine'). Empty elsewhere."""
+    if sys.platform != "win32":
+        return []
+    try:
+        import winreg
+        hive, sub = ((winreg.HKEY_CURRENT_USER, "Environment") if scope == "User"
+                     else (winreg.HKEY_LOCAL_MACHINE, MACHINE_ENV_KEY))
+        names = []
+        with winreg.OpenKey(hive, sub) as key:
+            i = 0
+            while True:
+                try:
+                    names.append(winreg.EnumValue(key, i)[0])
+                except OSError:
+                    break
+                i += 1
+        return names
+    except Exception:
+        return []
+
+
+def _settings_findings(path):
+    data = _read_json(path)
+    hits = []
+    if isinstance(data.get("env"), dict):
+        hits += [(f'"{k}" inside the "env" block', k) for k in data["env"] if _is_claude_key(k)]
+    if "apiKeyHelper" in data:
+        hits.append(('the "apiKeyHelper" line', "apiKeyHelper"))
+    model = data.get("model")
+    if isinstance(model, str) and model not in MODEL_ALIASES and not model.startswith("claude-"):
+        hits.append((f'the "model" line (it names a non-Claude model: {model})', "model"))
+    return hits
+
+
+def claude_doctor(home=None, environ=None, project=None, registry=None, platform=None, out=None):
+    """Read-only. Finds what would send normal Claude Code sessions to a local model. Returns the number of
+    findings. Prints variable names and file paths, never values."""
+    out = out or print
+    home = Path(home) if home else Path.home()
+    environ = os.environ if environ is None else environ
+    project = Path(project) if project else Path.cwd()
+    registry = registry or _registry_env
+    platform = platform or sys.platform
+    findings = []
+
+    def hit(where, what, fix):
+        findings.append(where)
+        out(f"  FOUND  {what}\n         where: {where}\n         fix  : {fix}")
+
+    for name in sorted(environ):
+        if _is_claude_key(name):
+            hit("this process's environment", name, f"remove {name} from the shell profile or terminal that set it")
+    if platform == "win32":
+        for scope in ("User", "Machine"):
+            for name in registry(scope):
+                if _is_claude_key(name):
+                    note = "; Machine scope needs an admin PowerShell" if scope == "Machine" else ""
+                    hit(f"Windows {scope} environment variables", name,
+                        f"[Environment]::SetEnvironmentVariable('{name}', $null, '{scope}')  "
+                        f"(then open a new terminal{note})")
+    for path in (home / ".claude" / "settings.json", project / ".claude" / "settings.json",
+                 project / ".claude" / "settings.local.json"):
+        if path.exists():
+            for what, key in _settings_findings(path):
+                hit(str(path), what, f"delete {key} from that file")
+
+    vscode = [Path(environ["APPDATA"]) / "Code" / "User" / "settings.json"] if environ.get("APPDATA") else []
+    vscode += [home / ".config" / "Code" / "User" / "settings.json",
+               home / "Library" / "Application Support" / "Code" / "User" / "settings.json"]
+    for path in vscode:
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        for key in ("claudeCode.environmentVariables", "claudeCode.disableLoginPrompt"):
+            if key in text:
+                hit(str(path), f'"{key}"', f"delete the {key} setting (VS Code: Settings, search 'Claude Code')")
+
+    managed = Path(MANAGED_SETTINGS) if platform == "win32" else None
+    if managed and managed.exists():
+        for what, key in _settings_findings(managed):
+            hit(str(managed), what, "ask whoever manages this machine; it applies to every session")
+    if environ.get("LOCALAPPDATA"):
+        cfg = Path(environ["LOCALAPPDATA"]) / "Claude" / "claude_desktop_config.json"
+        if _read_json(cfg).get("deploymentMode") == "3p":
+            hit(str(cfg), '"deploymentMode": "3p" (Claude Desktop is in third-party mode)',
+                "ollama launch claude-desktop --restore")
+    if findings:
+        out(f"\n{len(findings)} thing(s) can route normal Claude Code sessions away from your subscription. "
+            "Nothing was changed. After fixing, open a new terminal and run /status inside Claude Code.")
+    else:
+        out("Nothing found: no variable, settings file, VS Code setting or Desktop mode here routes normal Claude "
+            "Code sessions to a local model. Nothing was changed.")
+    return len(findings)
+
+
+def launch(name, model, workspace, call=None, which=None, env=None, prompt=None, argv=None):
+    """Start the agent as a child process in `workspace` and return its exit code.
+    `env` (Claude Code) is a full child environment; `argv(exe)` replaces the default command (resume)."""
     call = call or subprocess.call
     which = which or shutil.which
     exe = which(name) or name
-    return call(agent_command(name, model, exe), cwd=workspace)
+    command = argv(exe) if argv else agent_command(name, model, exe, prompt=prompt)
+    if env is not None:
+        return call(command, cwd=workspace, env=env)
+    return call(command, cwd=workspace)
 
 
 def run(name, model, base_url, workspace, config_only=False, home=None, which=None, input_fn=None, call=None,
-        node_version=None, out=print):
+        node_version=None, out=print, environ=None, continue_local=False, resume_from=None,
+        copy_settings=False, find_transcript=None):
     """Install if the user agrees, write config, say what we did, then launch. Returns the exit code."""
     try:
         validate_model_tag(model)
+        prompt = CONTINUE_PROMPT if continue_local else None
         if not config_only:
             ensure_agent(name, which=which, input_fn=input_fn, call=call, node_version=node_version, out=out)
         result = write_config(name, model, base_url, home=home)
         out("")
         out(f"       Agent    : {name}")
         out(f"       Model    : {model}")
-        out(f"       Endpoint : {base_url}")
+        out(f"       Endpoint : {claude_base_url(base_url) if name == 'claude' else base_url}")
         if result.files:
             out("       Config   : " + ", ".join(str(p) for p in result.files))
             out("       Your other settings were kept. If a config file already existed, a one-time backup "
@@ -295,11 +549,44 @@ def run(name, model, base_url, workspace, config_only=False, home=None, which=No
         for note in result.notes:
             out(f"       Note     : {note}")
         out(f"       {context_hint()}")
+
+        env, argv = None, None
+        if name == "claude":
+            real_home = Path(home) if home else Path.home()
+            for line in claude_routing_warnings(real_home, environ):
+                out(f"       WARNING  : {line}")
+            _, ctx_warning = claude_context(os.environ if environ is None else environ)
+            if ctx_warning:
+                out(f"       WARNING  : {ctx_warning}")
+            out(f"       {CLAUDE_BANNER}")
+            if config_only:
+                out("       Claude Code has no config file for us to write: its settings are environment variables "
+                    "for one session. Run this without --agent-config-only, or use the wrapper function in the "
+                    "README. We will not print a bare `claude` command, because it would use your subscription.")
+                return 0
+            if copy_settings:
+                copy_user_settings(real_home, out=out)
+            (real_home / LOCAL_CONFIG_NAME).mkdir(parents=True, exist_ok=True)
+            env = claude_child_env(model, base_url, real_home, environ)
+            if resume_from:
+                path = (find_transcript or _no_transcript)(resume_from)
+                out("       Resume   : EXPERIMENTAL. Unverified: resuming across config folders, and how Ollama "
+                    "handles replayed thinking blocks. Claude Code issue 109452 reports the model changing after a "
+                    f"resume for some model ids, so check /status for the active model (should be {model}). To go "
+                    "back to your subscription, use HANDOFF.md, not this fork.")
+                argv = lambda exe: [exe, "--resume", str(path), "--fork-session", "--model", model]
         if config_only:
             out(f"       Config written. To start it: cd \"{workspace}\" && {_cmdline(result.command)}")
             return 0
+        if prompt:
+            out("       Continue : starting with the HANDOFF.md prompt.")
         out(f"       Starting {name} in {workspace} ...\n")
-        return launch(name, model, workspace, call=call, which=which)
+        return launch(name, model, workspace, call=call, which=which, env=env,
+                      prompt=None if argv else prompt, argv=argv)
     except AgentSetupError as e:
         out(f"\n[agent setup] {e}")
         return e.code
+
+
+def _no_transcript(_ident):
+    raise AgentSetupError("No transcript lookup is available.")

@@ -1,4 +1,4 @@
-"""agent_setup: write pi / OpenCode / Codex config for the local Ollama model, offline.
+"""agent_setup: write pi / OpenCode / Codex config, and launch Claude Code with a child-only environment for the local Ollama model, offline.
 
 Every test points HOME at a temp dir and mocks `which`, input and subprocess, so nothing here can touch the
 real ~/.pi or ~/.config/opencode, install anything, or start an agent.
@@ -435,6 +435,256 @@ class Workspace(Home):
         self.assertEqual(cm.exception.code, 1)
         self.assertIn("a file", str(cm.exception))
         self.assertNotIn("not found", str(cm.exception))
+
+
+def snapshot(root):
+    """{relative path: (bytes, mtime_ns)} for every file under root, to prove nothing was written."""
+    return {str(p.relative_to(root)): (p.read_bytes(), p.stat().st_mtime_ns)
+            for p in sorted(Path(root).rglob("*")) if p.is_file()}
+
+
+class ClaudeEnv(Home):
+    def env(self, base=URL, environ=None):
+        return ags.claude_child_env(MODEL, base, home=self.home, environ=environ if environ is not None else {})
+
+    def test_base_url_loses_v1_and_slashes(self):
+        for given, want in ((f"{URL}", "http://localhost:11434"), (f"{URL}/", "http://localhost:11434"),
+                            ("http://localhost:11434", "http://localhost:11434"),
+                            ("http://lmstudio:1234/v1", "http://lmstudio:1234")):
+            with self.subTest(given=given):
+                self.assertEqual(self.env(given)["ANTHROPIC_BASE_URL"], want)
+
+    def test_everything_the_spec_names_is_set(self):
+        env = self.env()
+        self.assertEqual(env["ANTHROPIC_API_KEY"], "")
+        self.assertEqual(env["ANTHROPIC_AUTH_TOKEN"], "ollama")
+        self.assertEqual(env["CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST"], "1")
+        self.assertEqual(env["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"], "1")
+        for k in ("CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX", "CLAUDE_CODE_USE_FOUNDRY"):
+            self.assertEqual(env[k], "")
+        for k in ("ANTHROPIC_DEFAULT_OPUS_MODEL", "ANTHROPIC_DEFAULT_SONNET_MODEL", "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+                  "CLAUDE_CODE_SUBAGENT_MODEL"):
+            self.assertEqual(env[k], MODEL)
+        self.assertEqual(Path(env["CLAUDE_CONFIG_DIR"]), (self.home / ".claude-local").resolve())
+
+    def test_context_follows_what_ollama_runs_with(self):
+        self.assertEqual(self.env()["CLAUDE_CODE_MAX_CONTEXT_TOKENS"], "65536")
+        self.assertEqual(self.env(environ={"OLLAMA_CONTEXT_LENGTH": "131072"})["CLAUDE_CODE_MAX_CONTEXT_TOKENS"],
+                         "131072")
+        self.assertEqual(self.env(environ={"OLLAMA_CONTEXT_LENGTH": "8192"})["CLAUDE_CODE_MAX_CONTEXT_TOKENS"],
+                         "8192")
+        self.assertIsNotNone(ags.claude_context({})[1])                                  # unset: warn
+        self.assertIsNotNone(ags.claude_context({"OLLAMA_CONTEXT_LENGTH": "8192"})[1])    # lower: warn
+        self.assertIsNone(ags.claude_context({"OLLAMA_CONTEXT_LENGTH": "65536"})[1])      # enough: quiet
+
+    def test_the_parent_environment_is_not_modified(self):
+        parent = {"PATH": "x", "ANTHROPIC_API_KEY": "sk-real"}
+        before = dict(parent)
+        env = self.env(environ=parent)
+        self.assertEqual(parent, before)
+        self.assertEqual(env["PATH"], "x")
+        self.assertEqual(env["ANTHROPIC_API_KEY"], "")  # blanked in the child only
+
+
+class ClaudeRun(Home):
+    def go(self, argv_extra=None, environ=None, which=lambda c: "/bin/" + c, **kw):
+        calls, lines = [], []
+        real_environ = dict(__import__("os").environ)
+        code = ags.run("claude", MODEL, URL, str(self.home), home=self.home, which=which,
+                       call=lambda a, **k: calls.append((a, k)) or 0, out=lines.append,
+                       environ={} if environ is None else environ, **kw)
+        self.assertEqual(dict(__import__("os").environ), real_environ)  # os.environ untouched
+        return code, calls, "\n".join(lines)
+
+    def test_launches_claude_with_the_model_flag_and_a_child_only_env(self):
+        code, calls, text = self.go()
+        self.assertEqual(code, 0)
+        (argv, kw), = calls
+        self.assertEqual(argv, ["/bin/claude", "--model", MODEL])
+        self.assertEqual(kw["env"]["ANTHROPIC_BASE_URL"], "http://localhost:11434")
+        self.assertEqual(kw["cwd"], str(self.home))
+        self.assertIn("Plain `claude`, VS Code and Claude Desktop still use your subscription", text)
+        self.assertIn("delete ~/.claude-local", text)
+
+    def test_only_claude_local_is_created_and_nothing_under_dot_claude_changes(self):
+        settings = self.write(".claude/settings.json", json.dumps({"theme": "dark"}))
+        self.write(".claude.json", "{}")
+        before = snapshot(self.home)
+        self.go()
+        after = snapshot(self.home)
+        for rel, data in before.items():
+            self.assertEqual(after[rel], data, rel)
+        new = set(after) - set(before)
+        self.assertEqual(new, set())                                  # an empty folder only, no files
+        self.assertTrue((self.home / ".claude-local").is_dir())
+        self.assertEqual(settings.read_text(encoding="utf-8"), json.dumps({"theme": "dark"}))
+
+    def test_a_preset_base_url_in_the_environment_warns_by_name_and_never_prints_the_value(self):
+        _, _, text = self.go(environ={"ANTHROPIC_BASE_URL": "http://secret-host", "ANTHROPIC_API_KEY": "sk-abc"})
+        self.assertIn("ANTHROPIC_BASE_URL is set in this terminal", text)
+        self.assertIn("ANTHROPIC_API_KEY is set in this terminal", text)
+        self.assertNotIn("secret-host", text)
+        self.assertNotIn("sk-abc", text)
+
+    def test_a_base_url_in_user_settings_warns_and_the_file_stays_byte_identical(self):
+        p = self.write(".claude/settings.json", json.dumps({"env": {"ANTHROPIC_BASE_URL": "http://x:1"}}))
+        raw, mtime = p.read_bytes(), p.stat().st_mtime_ns
+        _, _, text = self.go()
+        self.assertIn("ANTHROPIC_BASE_URL is set in the env block of", text)
+        self.assertIn("every normal Claude Code session", text)
+        self.assertEqual((p.read_bytes(), p.stat().st_mtime_ns), (raw, mtime))
+
+    def test_config_only_never_prints_a_bare_claude_command(self):
+        code, calls, text = self.go(config_only=True)
+        self.assertEqual(code, 0)
+        self.assertEqual(calls, [])
+        self.assertNotIn("&& claude", text)
+        self.assertFalse((self.home / ".claude-local").exists())
+
+    def test_missing_binary_prints_the_script_and_does_not_install_without_a_y(self):
+        for answer in ("", "n", "N"):
+            with self.subTest(answer=answer):
+                calls, lines = [], []
+                code = ags.run("claude", MODEL, URL, str(self.home), home=self.home, which=lambda c: None,
+                               input_fn=lambda _="": answer, call=lambda a, **k: calls.append(a) or 0,
+                               out=lines.append, environ={})
+                self.assertEqual(code, 1)
+                self.assertEqual(calls, [])
+                self.assertRegex("\n".join(lines), r"install\.(ps1|sh)")
+
+    def test_yes_runs_the_official_script_once(self):
+        calls, seen = [], iter([None, "/bin/claude", "/bin/claude"])  # missing, then installed
+        code = ags.run("claude", MODEL, URL, str(self.home), home=self.home, which=lambda c: next(seen),
+                       input_fn=lambda _="": "y", call=lambda a, **k: calls.append(a) or 0, out=lambda *_: None,
+                       environ={})
+        self.assertEqual(code, 0)
+        self.assertRegex(" ".join(calls[0]), r"claude\.ai/install\.(ps1|sh)")
+
+    def test_continue_local_passes_the_first_prompt_for_every_agent(self):
+        for name, wants_flag in (("pi", False), ("opencode", True), ("codex", False), ("claude", False)):
+            with self.subTest(agent=name):
+                calls = []
+                ags.run(name, MODEL, URL, str(self.home), home=self.home, which=lambda c: "/bin/" + c,
+                        call=lambda a, **k: calls.append(a) or 0, out=lambda *_: None, environ={},
+                        continue_local=True)
+                argv = calls[0]
+                self.assertIn(ags.CONTINUE_PROMPT, argv)
+                self.assertEqual("--prompt" in argv, wants_flag)
+
+    def test_resume_from_forks_the_transcript_and_prints_the_caveats(self):
+        t = self.home / "t.jsonl"
+        calls = []
+        lines = []
+        ags.run("claude", MODEL, URL, str(self.home), home=self.home, which=lambda c: "/bin/" + c,
+                call=lambda a, **k: calls.append((a, k)) or 0, out=lines.append, environ={},
+                resume_from="latest", find_transcript=lambda ident: t)
+        (argv, kw), = calls
+        self.assertEqual(argv, ["/bin/claude", "--resume", str(t), "--fork-session", "--model", MODEL])
+        self.assertEqual(kw["env"]["ANTHROPIC_DEFAULT_SONNET_MODEL"], MODEL)
+        text = "\n".join(lines)
+        self.assertIn("EXPERIMENTAL", text)
+        self.assertIn("thinking blocks", text)
+        self.assertIn("109452", text)
+
+
+class ClaudeCopySettings(Home):
+    def test_copies_a_safe_slice_once_and_leaves_the_source_alone(self):
+        self.write(".claude/CLAUDE.md", "rules")
+        self.write(".claude/skills/a/SKILL.md", "skill")
+        self.write(".claude/settings.json", json.dumps(
+            {"theme": "dark", "env": {"ANTHROPIC_API_KEY": "x"}, "model": "opus", "apiKeyHelper": "h",
+             "modelSettings": {}}))
+        before = snapshot(self.home / ".claude")
+        with quiet():
+            ags.copy_user_settings(self.home)
+        self.assertEqual(snapshot(self.home / ".claude"), before)
+        self.assertEqual(self.read(".claude-local/settings.json"), {"theme": "dark"})
+        self.assertEqual((self.home / ".claude-local" / "CLAUDE.md").read_text(encoding="utf-8"), "rules")
+        self.assertTrue((self.home / ".claude-local" / "skills" / "a" / "SKILL.md").is_file())
+        (self.home / ".claude-local" / "CLAUDE.md").write_text("edited", encoding="utf-8")
+        with quiet():
+            self.assertEqual(ags.copy_user_settings(self.home), [])  # second run: left alone
+        self.assertEqual((self.home / ".claude-local" / "CLAUDE.md").read_text(encoding="utf-8"), "edited")
+
+
+class ClaudeDoctor(Home):
+    def doctor(self, environ=None, project=None, registry=None, platform="linux"):
+        lines = []
+        n = ags.claude_doctor(home=self.home, environ=environ or {}, project=project or self.home / "proj",
+                              registry=registry or (lambda scope: []), platform=platform, out=lines.append)
+        return n, "\n".join(lines)
+
+    def test_clean_machine_reports_nothing(self):
+        n, text = self.doctor()
+        self.assertEqual(n, 0)
+        self.assertIn("Nothing found", text)
+
+    def test_finds_every_place_and_never_prints_a_secret(self):
+        self.write(".claude/settings.json", json.dumps(
+            {"env": {"ANTHROPIC_AUTH_TOKEN": "tok-SECRET1"}, "apiKeyHelper": "get-key-SECRET2", "model": "qwen3:14b"}))
+        self.write("proj/.claude/settings.local.json", json.dumps({"env": {"CLAUDE_CODE_USE_BEDROCK": "1"}}))
+        self.write("appdata/Code/User/settings.json",
+                   '{ // comment\n "claudeCode.environmentVariables": [{"name":"ANTHROPIC_API_KEY","value":"vs-SECRET3"}],'
+                   ' "claudeCode.disableLoginPrompt": true }')
+        self.write("local/Claude/claude_desktop_config.json", json.dumps({"deploymentMode": "3p"}))
+        env = {"ANTHROPIC_API_KEY": "env-SECRET4", "APPDATA": str(self.home / "appdata"),
+               "LOCALAPPDATA": str(self.home / "local"), "CLAUDE_CODE_OAUTH_TOKEN": "oauth-SECRET5"}
+        n, text = self.doctor(environ=env, registry=lambda s: ["ANTHROPIC_BASE_URL"] if s == "User" else [],
+                              platform="win32")
+        self.assertGreaterEqual(n, 9)
+        for needle in ("ANTHROPIC_AUTH_TOKEN", "apiKeyHelper", "qwen3:14b", "CLAUDE_CODE_USE_BEDROCK",
+                       "claudeCode.environmentVariables", "claudeCode.disableLoginPrompt", "deploymentMode",
+                       "ollama launch claude-desktop --restore", "Windows User environment variables",
+                       "CLAUDE_CODE_OAUTH_TOKEN"):
+            self.assertIn(needle, text)
+        self.assertNotRegex(text, r"SECRET\d")
+
+    def test_aliases_and_claude_model_ids_are_fine(self):
+        for model in ("sonnet", "claude-sonnet-4-5"):
+            self.write(".claude/settings.json", json.dumps({"model": model}))
+            self.assertEqual(self.doctor()[0], 0, model)
+
+    def test_writes_nothing(self):
+        self.write(".claude/settings.json", json.dumps({"env": {"ANTHROPIC_BASE_URL": "http://x"}}))
+        before = snapshot(self.home)
+        self.doctor(environ={"ANTHROPIC_BASE_URL": "http://y"})
+        self.assertEqual(snapshot(self.home), before)
+
+
+class ClaudeFlags(unittest.TestCase):
+    def bad(self, argv):
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as cm:
+            run.parse_args(argv)
+        self.assertEqual(cm.exception.code, 2)
+
+    def test_claude_is_a_choice_and_its_flags_parse(self):
+        a = run.parse_args(["--agent", "claude", "--doctor", "--copy-user-settings", "--resume-from", "latest"])
+        self.assertTrue(a.doctor and a.copy_user_settings)
+        self.assertEqual(a.resume_from, "latest")
+        self.assertTrue(run.parse_args(["--agent", "pi", "--continue-local"]).continue_local)
+
+    def test_claude_only_flags_are_refused_for_other_agents(self):
+        for argv in (["--doctor"], ["--agent", "pi", "--doctor"], ["--agent", "pi", "--copy-user-settings"],
+                     ["--agent", "codex", "--resume-from", "latest"], ["--continue-local"],
+                     ["--agent", "claude", "--resume-from", "x", "--continue-local"]):
+            with self.subTest(argv=argv):
+                self.bad(argv)
+
+    def test_doctor_runs_without_the_venv_or_ollama(self):
+        import subprocess
+        had_venv = (ROOT / "venv").exists()
+        r = subprocess.run([sys.executable, str(ROOT / "run.py"), "--agent", "claude", "--doctor"], cwd=ROOT,
+                           capture_output=True, text=True, timeout=60)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertRegex(r.stdout, r"Nothing found|can route normal Claude Code")
+        self.assertEqual((ROOT / "venv").exists(), had_venv)
+
+    def test_handoff_subcommand_is_routed_before_argument_parsing(self):
+        fake = types.SimpleNamespace(main=mock.Mock(return_value=0))
+        with mock.patch.dict(sys.modules, {"handoff": fake}), self.assertRaises(SystemExit) as cm:
+            run.main(["handoff", "--transcript", "x"])
+        self.assertEqual(cm.exception.code, 0)
+        fake.main.assert_called_once_with(["--transcript", "x"])
 
 
 class RunPyHooks(unittest.TestCase):
