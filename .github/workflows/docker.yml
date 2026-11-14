@@ -22,7 +22,7 @@ jobs:
       - name: Docs checks (anchors, em dashes, emoji headings)
         run: python scripts/check_docs.py
       - name: Unit tests
-        run: python -m unittest tests.test_memory_integrity tests.test_memory_determinism tests.test_serve tests.test_check_docs tests.test_launchers tests.test_repo_hygiene tests.test_task_report tests.test_site
+        run: python -m unittest tests.test_memory_integrity tests.test_memory_determinism tests.test_serve tests.test_check_docs tests.test_launchers tests.test_repo_hygiene tests.test_task_report tests.test_site tests.test_run tests.test_model_wizard tests.test_agent_entrypoints tests.test_e2e_cleanup tests.test_memory_hardening tests.test_serve_hardening
       - name: Real E2E (docker path)
         run: python tests/e2e.py docker
       - name: Log in to GHCR

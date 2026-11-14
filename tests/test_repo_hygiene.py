@@ -36,3 +36,20 @@ class GeneratedTooling(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CiRunsEveryTest(unittest.TestCase):
+    """CI lists test modules by hand. A new tests/test_*.py that is not listed never runs there (PR 26's
+    test_run and test_model_wizard were missed this way, and so were four older files)."""
+
+    def test_every_test_module_is_in_the_ci_unittest_command(self):
+        import re
+        workflow = (ROOT / ".github" / "workflows" / "docker.yml").read_text(encoding="utf-8")
+        listed = set()
+        for line in workflow.splitlines():
+            if "python -m unittest" in line:
+                listed |= set(re.findall(r"\btests\.(test_\w+)", line))
+        on_disk = {p.stem for p in (ROOT / "tests").glob("test_*.py")}
+        missing = sorted(on_disk - listed)
+        self.assertEqual(missing, [], "add these to the `python -m unittest` line in "
+                         ".github/workflows/docker.yml: " + ", ".join("tests." + m for m in missing))
