@@ -199,19 +199,7 @@
   - **Verification**: Verified all 40 internal documentation links and re-indexed the memory store.
   - Mirrored `CONTEXT_MEMORY.md` to `C:\Users\veere\antigravity-local\CONTEXT_MEMORY.md`.
 
-- [x] **Step 28**: Fallback Embedding Determinism Fix (Nov 4, 2026, branch `fix/deterministic-fallback-embeddings`):
-  - **Flaw**: `memory.py::_pure_python_embed` used builtin `hash()` (salted per process via PYTHONHASHSEED). Vectors stored at index time never matched query vectors from a later process, so the semantic tier was noise whenever Ollama had no embedding model.
-  - **Proof**: `tests/test_memory_determinism.py` (2 cross-process tests, different PYTHONHASHSEED) failed 2/2 before fix, pass after. 5 seeds now yield 1 unique vector hash.
-  - **Fix**: `zlib.crc32` instead of `hash()`. **Existing indexes are stale: run `python memory.py index --force` once after upgrading** (mtime skip would otherwise keep old vectors).
-  - **Known, not fixed (YAGNI/open)**: embedding backend (Ollama vs fallback) is not recorded per chunk, so switching backends silently zeroes cosine (dim mismatch); removed source files are never purged from the index; SQLite connections are not explicitly closed.
-
-- [x] **Step 29**: Index Integrity Fixes (Nov 4, 2026, branch `fix/memory-index-integrity`, PR opened, 2 interrogate rounds done):
-  - Architect chose per-document `documents.embed_mode` column over a global meta table (interrupted runs and mixed-dim docs stay NULL = retried; legacy DBs self-migrate via ALTER + NULL, so no manual `--force` needed).
-  - Fixed: (1) backend switch now re-embeds and search only compares vectors from the same backend; mixed-dimension docs are left NULL; (2) deleted source files purged incl. FTS rows (FTS5 has no FK cascade); (3) `get_connection` is now a context manager (commit/rollback, always close).
-  - Tests: `tests/test_memory_integrity.py` (7) failed first, 9/9 pass with determinism suite. Run: `python -m unittest tests.test_memory_integrity tests.test_memory_determinism`.
-  - Quirk: `unittest discover` fails (tests/ has no `__init__.py`); name modules explicitly.
-  - Interrogate round 1 (3 siloed adversaries): purge claim held (mutation-tested). 2 verified findings fixed test-first: (a) all-fallback docs during an Ollama outage were stamped with the Ollama mode (fix: `EmbeddingProvider.fell_back` flag, doc stays NULL and is retried); (b) concurrent open of a legacy DB raised `duplicate column name` (fix: tolerate it on ALTER). Round 2 (1 adversary): 1 verified finding fixed test-first - a fallback *query* vector was compared against Ollama-stored vectors (ghost RRF hits); search now goes BM25-only when the query embedding fell back. Review cap reached; PR opened for human review.
-  - Residual: a transient Ollama outage at index start forces re-embedding onto fallback (loud stderr warning only).
+- [x] **Steps 28-29** (Nov 4, 2026): fallback embeddings made deterministic (`zlib.crc32`, not `hash()`); index integrity fixed (per-document `embed_mode`, deleted sources purged incl. FTS rows, `get_connection` is a context manager, fallback queries go BM25-only). Details live in `docs/MEMORY_SPEC.md` and `.wiki/memory-integrity.md`. Tests: `tests/test_memory_integrity.py`, `tests/test_memory_determinism.py`. Quirk: `unittest discover -s tests` works; plain `discover` finds 0 tests.
 
 - [x] **Step 30**: Bootstrap & Docs Sync (Nov 4, 2026, branch `docs/memory-integrity-sync`):
   - Documented index-integrity invariants in `docs/MEMORY_SPEC.md` (schema + invariants), new `.wiki/memory-integrity.md` (+ index), README tree (`memory.py`, `tests/`).
@@ -297,3 +285,5 @@ pm`, reinstalled `npm install -g ./.agents/skills/archify`; `archify doctor` pas
 5. Inspect generated workspace artifacts in `C:\Users\veere\antigravity-local\workspace`.
 
 - [x] **Docs honesty pass**: corrected the docs to match the code. Model scores cap at 100, hardware tiers follow `run.py`, setup time is stated as a few minutes plus the model download (about 9 GB for the 14B model), and the graph counts come from `graphify-out/graph.json` (8,547 nodes, 13,383 edges). The helper scripts `verify_urls.py`, `verify_internal_links.py`, `interrogate_tests.py`, and `benchmark_run.py` named in earlier entries are not in the repo.
+
+- [x] **Demo + model menu** (Nov 14, 2026, branch `fix/demo-verify-content`): the demo said "File generated" whenever index.html's hash changed (a pasted run showed an unrelated "Antigravity Lab" page). Now `task_report.set_aside()` moves a leftover index.html to `index.html.prev` (the SDK refuses to create over a file) and `task_report.demo_page_ok()` requires "dark" in the page. New `model_wizard.py`: on a real terminal (`stdin` and `stdout` are ttys, no `--yes`) `run.py` shows installed models plus catalog candidates with size and GPU fit; Enter keeps the current pick; typed tags are checked against registry.ollama.ai (404 = refuse, offline = allow). Piped runs, CI and `--yes` take the old automatic path unchanged. Catalog verified 2026-11-14 by manifest HEAD and sizes (not run through the agent loop). Ranking now puts qwen3/devstral-small-2/gpt-oss/laguna above qwen2.5. Quirk: `nanbeige4.1:3b`, named in older docs, does not exist on the registry (404). Next: try a catalog model on the existing-file edit task; re-run the catalog check when models change.

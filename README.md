@@ -34,9 +34,11 @@ chmod +x run.sh && ./run.sh
 
 **What to expect:** setup takes a few minutes plus the model download, which is roughly 9 GB for the 14B model if you have no model yet. The run goes quiet in the middle while packages install. That is normal, so grab a coffee. Setup ends at a `You >` chat prompt. Type `exit` to leave, or carry on with [the guide](ZERO_TO_CODING.md#4-start-coding-interactive-pair-programmer-shell).
 
+**Pick your model (takes one keypress):** models move fast, so on a normal terminal the bootstrap shows a short menu before it settles. You see what is already installed (no download), plus a few newer candidates with their download size and whether they fit your GPU. Press Enter to keep the current pick, type a number to switch, or type any Ollama tag you like. A typed tag is checked against the public Ollama registry first, so a typo cannot start a 20 GB download of nothing. The candidate list in `model_wizard.py` carries its check date and says plainly that nobody has run those models through this project's agent loop yet. Treat it as a menu, not a leaderboard. Want the old hands-off behavior (CI, scripts, piped input)? Add `--yes`. Piped runs skip the menu on their own.
+
 #### What the 1-command bootstrap does automatically:
 1. Hardware & Inventory Inspection: Probes dedicated GPU VRAM (via `nvidia-smi` / Apple Silicon) and System RAM. Checks local Ollama inventory first to reuse existing weights with **zero downloads**.
-2. Model Matching: Compares your PC build against a list of agentic models (Nanbeige, DeepSeek, Qwen 2.5 Coder, Command-R, Codestral, GLM-4) and picks the most capable one your hardware can run.
+2. Model Matching: Shows a short menu of installed and newer candidate models (see "Pick your model" above), or with `--yes` ranks your installed models (Qwen3, Devstral, gpt-oss, Nanbeige, DeepSeek, Qwen 2.5 Coder, Command-R, Codestral, GLM-4 and friends) and picks the most capable one your hardware can run.
 3. Virtual Environment Setup: Creates isolated `venv`, installs `requirements.txt`, and generates `.env` if missing.
 4. Ollama auto-start: Pings `http://localhost:11434`. If down, launches `ollama serve` in the background.
 5. Autonomous Verification: Asks the local agent to create `workspace/index.html` with its built-in tool calling.
@@ -340,6 +342,7 @@ antigravity-local/
 ├── agent_with_workspace.py   # Script 2: Autonomous agent with file creation tools
 ├── code_agent.py             # Script 3: Interactive developer coding shell & pair-programmer
 ├── memory.py                 # Tier 3 memory engine: SQLite FTS5 + vector search
+├── model_wizard.py           # The pick-your-model menu used by run.py (installed + newer candidates)
 ├── serve.py                  # Web UI + JSON API on a free port (python run.py --serve)
 ├── Dockerfile                # Image for the Docker path (non-root, HEALTHCHECK)
 ├── tests/                    # Regression tests (stdlib unittest) + tests/e2e.py (local & docker)

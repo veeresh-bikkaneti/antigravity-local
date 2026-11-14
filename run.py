@@ -26,6 +26,7 @@ import urllib.request
 import urllib.error
 import argparse
 
+import model_wizard
 import task_report
 
 # Ensure UTF-8 console output on Windows
@@ -271,7 +272,9 @@ def get_model_capability_score(model_name: str) -> float:
     score = 0.0
 
     # 1. Family weighting for agentic / tool-calling / reasoning capabilities
-    if "nanbeige" in name:
+    if "qwen3" in name or "devstral-small-2" in name or "gpt-oss" in name or "laguna" in name:
+        score += 94.0   # 2026 agentic families (see model_wizard.CATALOG); outrank qwen2.5
+    elif "nanbeige" in name:
         score += 92.0   # Nanbeige (4.1/4.2/4.3, 2-16B) - top agentic tool caller & deep search
     elif "deepseek" in name:
         score += 90.0   # DeepSeek Coder V2 / R1 / V2.5 - world-class code synthesis
@@ -343,7 +346,29 @@ def update_env_model(model_name: str):
         except Exception:
             pass
 
-def select_and_pull_model(base_url="http://localhost:11434", requested_model=None):
+def _ask_which_model(display_names, installed_models, vram_gb, ram_gb):
+    """Run the wizard. Returns the chosen tag, or None to continue with the automatic pick."""
+    configured = os.environ.get("LOCAL_LLM_MODEL")
+    if configured and is_model_installed(configured, installed_models):
+        default = configured
+    elif display_names:
+        default = max(display_names, key=get_model_capability_score)
+    else:
+        default = None
+    menu = model_wizard.build_menu(display_names, vram_gb, ram_gb)
+    if not default:
+        default = next((m["tag"] for m in menu if m["fit"] == "gpu"), menu[0]["tag"] if menu else None)
+    chosen = model_wizard.choose(menu, default)
+    if not chosen or model_wizard._norm(chosen) == model_wizard._norm(default or ""):
+        # Kept the default: for an installed model the automatic path handles it; otherwise pull it.
+        return None if chosen and is_model_installed(chosen, installed_models) else chosen
+    if not is_model_installed(chosen, installed_models) and model_wizard.tag_exists(chosen) is False:
+        print(f"       '{chosen}' is not on the Ollama registry. Continuing with the automatic pick.")
+        return None
+    return chosen
+
+
+def select_and_pull_model(base_url="http://localhost:11434", requested_model=None, interactive=False):
     """
     Engineering Best Practice:
     1. NEVER download if compatible models are already present on the machine!
@@ -380,6 +405,11 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
 
     # 1. Did the user explicitly pass a model via CLI command-line?
     cli_requested_model = requested_model
+
+    # 1b. On a real terminal, offer a short menu (installed + newer candidates) instead of silently auto-picking.
+    #     Enter keeps the current pick. Piped runs, CI and --yes skip this and behave exactly as before.
+    if interactive and not cli_requested_model:
+        cli_requested_model = _ask_which_model(display_names, installed_models, vram_gb, ram_gb)
 
     if cli_requested_model:
         if is_model_installed(cli_requested_model, installed_models):
@@ -552,6 +582,7 @@ def parse_args(argv=None):
     ap.add_argument("--serve", action="store_true", help="start the web UI + API (needs no Ollama)")
     ap.add_argument("--host", help="with --serve: bind address")
     ap.add_argument("--port", type=int, help="with --serve: port (default: a free one)")
+    ap.add_argument("-y", "--yes", action="store_true", help="skip the model menu and auto-pick (same as a piped run)")
     ap.add_argument("--sync-memory", action="store_true", help="re-index the memory fabric and exit")
     return ap.parse_args(argv)
 
@@ -592,7 +623,8 @@ def main(argv=None):
         sys.exit(1)
 
     # Step 3: Check local inventory & auto-select most capable model
-    model = select_and_pull_model(ollama_host, args.model)
+    model = select_and_pull_model(ollama_host, args.model,
+                                  interactive=sys.stdin.isatty() and sys.stdout.isatty() and not args.yes)
     if not model:
         sys.exit(1)
 

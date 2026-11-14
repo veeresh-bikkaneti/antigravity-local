@@ -86,6 +86,94 @@ class Hardware(unittest.TestCase):
         self.assertLessEqual(run.get_model_capability_score("nanbeige-72b-coder-agent-instruct"), 100.0)
 
 
+class ModelWizardInRun(unittest.TestCase):
+    """The menu only appears on a real terminal; every other path must behave exactly as before."""
+    HW = {"ram_gb": 128.0, "vram_gb": 16.0, "gpu_name": "RTX"}
+
+    def sel(self, installed, answers=(), interactive=True, requested=None, env=None, registry=True):
+        feed = iter(answers)
+        pulls = []
+
+        def no_input(_=""):
+            raise AssertionError("the menu must not ask on this path")
+        ask = (lambda _="": next(feed)) if interactive else no_input
+        with tempfile.TemporaryDirectory() as d,                 mock.patch.object(run, "PROJECT_DIR", d),                 mock.patch.dict(run.os.environ, {"LOCAL_LLM_MODEL": env} if env else {}, clear=False),                 mock.patch.object(run, "get_hardware_profile", return_value=self.HW),                 mock.patch.object(run, "get_installed_ollama_models", return_value=set(installed)),                 mock.patch.object(run.model_wizard, "tag_exists", return_value=registry),                 mock.patch.object(run.subprocess, "check_call", side_effect=lambda c: pulls.append(c)),                 mock.patch("builtins.input", side_effect=ask),                 contextlib.redirect_stdout(io.StringIO()):
+            if not env:
+                run.os.environ.pop("LOCAL_LLM_MODEL", None)
+            got = run.select_and_pull_model(requested_model=requested, interactive=interactive)
+            envfile = Path(d, ".env")
+            wrote = envfile.read_text(encoding="utf-8") if envfile.exists() else ""
+        return got, pulls, wrote
+
+    INSTALLED = {"gemma2:27b", "qwen2.5:14b"}
+
+    def row(self, tag):
+        menu = run.model_wizard.build_menu(self.INSTALLED, 16.0, 128.0)
+        return str([m["tag"] for m in menu].index(tag) + 1)
+
+    def test_not_interactive_is_the_old_automatic_pick_and_never_asks(self):
+        got, pulls, _ = self.sel(self.INSTALLED, interactive=False)
+        self.assertEqual((got, pulls), ("qwen2.5:14b", []))
+
+    def test_enter_keeps_the_configured_model_without_a_download(self):
+        got, pulls, _ = self.sel(self.INSTALLED, [""], env="qwen2.5:14b")
+        self.assertEqual((got, pulls), ("qwen2.5:14b", []))
+
+    def test_enter_with_nothing_configured_keeps_the_top_ranked_installed(self):
+        got, pulls, _ = self.sel(self.INSTALLED, [""])
+        self.assertEqual((got, pulls), ("qwen2.5:14b", []))
+
+    def test_picking_another_installed_model_switches_without_download_and_updates_env(self):
+        got, pulls, _ = self.sel(self.INSTALLED, [self.row("gemma2:27b")], env="qwen2.5:14b")
+        self.assertEqual((got, pulls), ("gemma2:27b", []))
+
+    def test_picking_a_new_model_pulls_exactly_that_tag(self):
+        got, pulls, _ = self.sel(self.INSTALLED, [self.row("devstral-small-2:24b")])
+        self.assertEqual(got, "devstral-small-2:24b")
+        self.assertEqual(pulls, [["ollama", "pull", "devstral-small-2:24b"]])
+
+    def test_typed_tag_missing_from_registry_falls_back_without_pulling(self):
+        got, pulls, _ = self.sel(self.INSTALLED, ["nanbeige4.1:3b"], registry=False)
+        self.assertEqual((got, pulls), ("qwen2.5:14b", []))
+
+    def test_offline_registry_check_does_not_block_a_typed_tag(self):
+        got, pulls, _ = self.sel(self.INSTALLED, ["some-new:9b"], registry=None)
+        self.assertEqual((got, pulls), ("some-new:9b", [["ollama", "pull", "some-new:9b"]]))
+
+    def test_empty_machine_enter_pulls_a_model_that_fits_the_gpu(self):
+        got, pulls, _ = self.sel(set(), [""])
+        self.assertEqual(got, "gpt-oss:20b")
+        self.assertEqual(pulls, [["ollama", "pull", "gpt-oss:20b"]])
+
+    def test_explicit_cli_model_skips_the_menu(self):
+        got, pulls, _ = self.sel(self.INSTALLED, interactive=False, requested="gemma2:27b")
+        self.assertEqual((got, pulls), ("gemma2:27b", []))
+        got, pulls, _ = self.sel(self.INSTALLED, requested="gemma2:27b", interactive=False)
+        self.assertEqual(got, "gemma2:27b")
+
+    def test_yes_flag_parses_and_main_passes_non_interactive(self):
+        self.assertTrue(run.parse_args(["--yes"]).yes)
+        self.assertTrue(run.parse_args(["-y"]).yes)
+        seen = {}
+        with mock.patch.object(run, "is_in_venv", return_value=True),                 mock.patch.object(run, "check_ollama_service", return_value=True),                 mock.patch.object(run, "select_and_pull_model", side_effect=lambda *a, **k: seen.update(k) or None),                 contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                run.main(["--yes"])
+        self.assertIs(seen["interactive"], False)
+
+    def test_piped_stdin_is_never_interactive(self):
+        seen = {}
+        with mock.patch.object(run, "is_in_venv", return_value=True),                 mock.patch.object(run, "check_ollama_service", return_value=True),                 mock.patch.object(run.sys, "stdin", io.StringIO("")),                 mock.patch.object(run, "select_and_pull_model", side_effect=lambda *a, **k: seen.update(k) or None),                 contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                run.main([])
+        self.assertIs(seen["interactive"], False)
+
+    def test_ranking_prefers_newer_families_but_leaves_the_old_order_alone(self):
+        score = run.get_model_capability_score
+        self.assertGreater(score("qwen3.6:27b"), score("qwen2.5:14b"))
+        self.assertGreater(score("qwen2.5:14b"), score("gemma2:27b"))
+        self.assertLessEqual(score("qwen3-coder:30b"), 100.0)
+
+
 class PullFailure(unittest.TestCase):
     def test_failed_pull_returns_none_and_main_exits_nonzero(self):
         with mock.patch.object(run, "get_hardware_profile", return_value={"ram_gb": 32.0, "vram_gb": 0.0, "gpu_name": "x"}), \
