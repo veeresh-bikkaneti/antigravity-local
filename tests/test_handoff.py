@@ -161,7 +161,7 @@ class Main(Base):
         code, text = self.go(["--transcript", str(self.transcript())])
         self.assertEqual(code, 0)
         self.assertTrue((self.repo / "HANDOFF.md").is_file())
-        self.assertIn("gitignored", text)
+        self.assertIn("secrets from that transcript", text)
 
     def test_hook_stdin_transcript_path_is_honoured(self):
         t = self.transcript()
@@ -181,6 +181,78 @@ class Main(Base):
         code, text = self.go([], stdin=io.StringIO(""))
         self.assertEqual(code, 0)
         self.assertIn(str(t), text)
+
+
+class Safety(Base):
+    """The reviewer's three worries: secrets committed by accident, a user's own file overwritten."""
+
+    def git(self, ignored, exclude=".git/info/exclude"):
+        def runner(cmd, **kw):
+            if cmd[1] == "check-ignore":
+                return SimpleNamespace(stdout="", returncode=0 if ignored else 1)
+            if cmd[1] == "rev-parse" and "--git-path" in cmd:
+                return SimpleNamespace(stdout=exclude + "\n", returncode=0)
+            return SimpleNamespace(stdout="", returncode=1)
+        return runner
+
+    def test_a_project_that_does_not_ignore_it_gets_a_local_exclude_entry_once(self):
+        lines = []
+        for _ in range(2):
+            handoff.ensure_ignored(self.repo, git_run=self.git(False), out=lines.append)
+        text = (self.repo / ".git" / "info" / "exclude").read_text(encoding="utf-8")
+        self.assertEqual(text.splitlines().count("/HANDOFF.md*"), 1)
+        self.assertIn("never committed", lines[0])
+
+    def test_existing_exclude_content_is_kept(self):
+        ex = self.repo / ".git" / "info" / "exclude"
+        ex.parent.mkdir(parents=True)
+        ex.write_text("*.log", encoding="utf-8")
+        handoff.ensure_ignored(self.repo, git_run=self.git(False), out=lambda *_: None)
+        self.assertEqual(ex.read_text(encoding="utf-8").splitlines(), ["*.log", "/HANDOFF.md*"])
+
+    def test_an_already_ignored_file_changes_nothing(self):
+        handoff.ensure_ignored(self.repo, git_run=self.git(True), out=lambda *_: None)
+        self.assertFalse((self.repo / ".git").exists())
+
+    def test_when_git_cannot_help_it_warns_instead_of_claiming_it_is_ignored(self):
+        lines = []
+
+        def boom(*a, **k):
+            raise FileNotFoundError("git")
+        self.assertIsNone(handoff.ensure_ignored(self.repo, git_run=boom, out=lines.append))
+        self.assertIn("WARNING", lines[0])
+        self.assertNotIn("is gitignored", "\n".join(lines))
+
+    def test_main_makes_it_ignored_and_does_not_lie_about_it(self):
+        lines = []
+        code = handoff.main(["--transcript", str(self.transcript())], cwd=self.repo, git_run=self.git(False),
+                            out=lines.append)
+        self.assertEqual(code, 0)
+        self.assertIn("/HANDOFF.md*", (self.repo / ".git" / "info" / "exclude").read_text(encoding="utf-8"))
+
+    def test_a_handoff_we_did_not_write_is_backed_up_not_overwritten(self):
+        mine = self.repo / "HANDOFF.md"
+        mine.write_text("my own notes\n", encoding="utf-8")
+        lines = []
+        handoff.write_handoff(self.transcript(), self.repo, git_run=fake_git(), out=lines.append)
+        backup = Path(str(mine) + handoff.BACKUP_SUFFIX)
+        self.assertEqual(backup.read_text(encoding="utf-8"), "my own notes\n")
+        self.assertIn(handoff.MARKER, mine.read_text(encoding="utf-8"))
+        self.assertIn("saved to", lines[0])
+
+    def test_our_own_file_is_rewritten_without_a_backup(self):
+        handoff.write_handoff(self.transcript(), self.repo, git_run=fake_git(), out=lambda *_: None)
+        handoff.write_handoff(self.transcript(), self.repo, git_run=fake_git(), out=lambda *_: None)
+        self.assertFalse(Path(str(self.repo / "HANDOFF.md") + handoff.BACKUP_SUFFIX).exists())
+
+    def test_a_second_foreign_file_never_destroys_the_first_backup(self):
+        mine = self.repo / "HANDOFF.md"
+        for text in ("first\n", "second\n"):
+            mine.write_text(text, encoding="utf-8")
+            handoff.write_handoff(self.transcript(), self.repo, git_run=fake_git(), out=lambda *_: None)
+        first = Path(str(mine) + handoff.BACKUP_SUFFIX)
+        self.assertEqual(first.read_text(encoding="utf-8"), "first\n")
+        self.assertEqual(Path(str(first) + ".2").read_text(encoding="utf-8"), "second\n")
 
 
 class InstallHook(Base):

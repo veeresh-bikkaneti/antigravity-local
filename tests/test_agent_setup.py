@@ -485,6 +485,23 @@ class ClaudeEnv(Home):
         self.assertEqual(env["PATH"], "x")
         self.assertEqual(env["ANTHROPIC_API_KEY"], "")  # blanked in the child only
 
+    def test_inherited_logins_models_and_cloud_settings_do_not_reach_the_child(self):
+        parent = {"PATH": "/bin", "CLAUDE_CODE_GIT_BASH_PATH": "C:/Git/bash.exe",
+                  "CLAUDE_CODE_OAUTH_TOKEN": "oauth-SECRET", "CLAUDE_CODE_OAUTH_REFRESH_TOKEN": "r-SECRET",
+                  "ANTHROPIC_MODEL": "claude-opus", "ANTHROPIC_SMALL_FAST_MODEL": "claude-haiku",
+                  "ANTHROPIC_CUSTOM_HEADERS": "x-secret: 1", "ANTHROPIC_FOUNDRY_API_KEY": "f-SECRET",
+                  "ANTHROPIC_BEDROCK_BASE_URL": "http://bedrock"}
+        before = dict(parent)
+        env = self.env(environ=parent)
+        for k in ("CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_CODE_OAUTH_REFRESH_TOKEN", "ANTHROPIC_MODEL",
+                  "ANTHROPIC_SMALL_FAST_MODEL", "ANTHROPIC_CUSTOM_HEADERS", "ANTHROPIC_FOUNDRY_API_KEY",
+                  "ANTHROPIC_BEDROCK_BASE_URL"):
+            self.assertNotIn(k, env, k)
+        self.assertEqual(env["ANTHROPIC_AUTH_TOKEN"], "ollama")      # the ones we set are still there
+        self.assertEqual(env["CLAUDE_CODE_GIT_BASH_PATH"], "C:/Git/bash.exe")  # unrelated variables survive
+        self.assertEqual(env["PATH"], "/bin")
+        self.assertEqual(parent, before)
+
 
 class ClaudeRun(Home):
     def go(self, argv_extra=None, environ=None, which=lambda c: "/bin/" + c, **kw):

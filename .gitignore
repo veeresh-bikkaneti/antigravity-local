@@ -98,4 +98,4 @@ workspace/*
 /site/.ai-context/
 
 # Hand-off notes can hold command output and secrets from a transcript
-/HANDOFF.md
+/HANDOFF.md*

@@ -313,6 +313,7 @@ ROUTING_VARS = ("ANTHROPIC_BASE_URL", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_API_KEY
 COPY_MARKER = ".antigravity-local-copied"
 DROP_SETTINGS_KEYS = ("env", "model", "modelSettings", "apiKeyHelper")
 MODEL_ALIASES = {"default", "best", "sonnet", "opus", "haiku", "opusplan", "sonnet[1m]", "opus[1m]"}
+INHERITED_AUTH_VARS = ("CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_CODE_OAUTH_REFRESH_TOKEN", "CLAUDE_CODE_OAUTH_SCOPES")
 MACHINE_ENV_KEY = r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment"
 MANAGED_SETTINGS = r"C:\Program Files\ClaudeCode\managed-settings.json"
 CLAUDE_BANNER = ("This session uses your local model. Plain `claude`, VS Code and Claude Desktop still use your "
@@ -344,6 +345,10 @@ def claude_child_env(model, base_url, home=None, environ=None):
     home = Path(home) if home else Path.home()
     env = dict(os.environ if environ is None else environ)
     tokens, _ = claude_context(env)
+    # Anything else that can pick a different login, model, endpoint or cloud would leak through the inherited
+    # environment (a subscription token would be sent to the local server). Drop it for this child only.
+    for key in [k for k in env if k.startswith("ANTHROPIC_") or k in INHERITED_AUTH_VARS]:
+        del env[key]
     env.update({
         "CLAUDE_CONFIG_DIR": str((home / LOCAL_CONFIG_NAME).resolve()),
         "CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST": "1",

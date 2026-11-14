@@ -3,7 +3,7 @@
 `python run.py handoff [--transcript PATH | --session ID|latest] [--install-hook]`
 
 No model call. The transcript format is not a public contract, so every record is read defensively and unknown
-record types are skipped. HANDOFF.md can hold command output and secrets from the transcript: it is gitignored.
+record types are skipped. HANDOFF.md can hold command output and secrets from the transcript: we make sure git ignores it, and never overwrite a HANDOFF.md we did not write.
 
 Collaborators (stdin, input, git runner, home, cwd) are passed in and looked up at call time, so tests never touch
 the real machine.
@@ -180,7 +180,7 @@ def repo_root(cwd, run=None):
 def render(info, transcript, repo, now=None, git_run=None):
     now = now or datetime.datetime.now().astimezone()
     users = info["users"]
-    out = ["# Hand-off", "",
+    out = ["# Hand-off", "", MARKER, "",
            f"Written {now.isoformat(timespec='seconds')} from a Claude Code transcript, with no model call. "
            "Read it, check `git status`, then continue.", ""]
     out += ["## Original ask", "", _clip(users[0]) if users else "(no user message found)", ""]
@@ -217,9 +217,53 @@ def read_hook_stdin(stdin):
         return {}
 
 
-def write_handoff(transcript, repo, now=None, git_run=None):
+MARKER = "<!-- written by antigravity-local handoff -->"
+
+
+def _backup_path(target):
+    """A backup name that never overwrites an earlier backup."""
+    base = Path(str(target) + BACKUP_SUFFIX)
+    n, path = 1, base
+    while path.exists():
+        n += 1
+        path = Path(f"{base}.{n}")
+    return path
+
+
+def ensure_ignored(repo, git_run=None, out=print):
+    """Make sure git will not pick HANDOFF.md up. If the project does not already ignore it, add it to
+    .git/info/exclude (a local file that is never committed) and say so. Returns where it is ignored, or None."""
+    run = git_run or subprocess.run
+    try:
+        if run(["git", "check-ignore", "-q", "HANDOFF.md"], cwd=str(repo), capture_output=True, text=True,
+               timeout=30).returncode == 0:
+            return "your .gitignore"
+        raw = (run(["git", "rev-parse", "--git-path", "info/exclude"], cwd=str(repo), capture_output=True,
+                   text=True, timeout=30).stdout or "").strip()
+        if not raw:
+            raise OSError("not a git repository")
+        path = Path(raw) if Path(raw).is_absolute() else Path(repo) / raw
+        path.parent.mkdir(parents=True, exist_ok=True)
+        existing = path.read_text(encoding="utf-8") if path.exists() else ""
+        if "/HANDOFF.md*" not in existing.splitlines():
+            with open(path, "a", encoding="utf-8", newline="\n") as f:
+                f.write(("" if existing.endswith("\n") or not existing else "\n") + "/HANDOFF.md*\n")
+        out(f"Added /HANDOFF.md* to {path}, so git ignores it in this project (a local file, never committed).")
+        return str(path)
+    except Exception as e:
+        out(f"WARNING: could not make sure git ignores HANDOFF.md ({e.__class__.__name__}: {e}). It can hold "
+            "secrets from the transcript, so add it to this project's .gitignore before you commit.")
+        return None
+
+
+def write_handoff(transcript, repo, now=None, git_run=None, out=print):
+    """Write HANDOFF.md. A file we did not write is backed up first, never overwritten."""
     info = summarize(read_records(transcript))
     target = Path(repo) / "HANDOFF.md"
+    if target.exists() and MARKER not in target.read_text(encoding="utf-8", errors="replace"):
+        backup = _backup_path(target)
+        shutil.copy2(target, backup)
+        out(f"An existing HANDOFF.md that we did not write was saved to {backup} first.")
     target.write_text(render(info, transcript, repo, now=now, git_run=git_run), encoding="utf-8")
     return target
 
@@ -317,10 +361,10 @@ def main(argv=None, stdin=None, input_fn=None, home=None, environ=None, cwd=None
             transcript = find_transcript(args.session or "latest", repo, home=home, environ=environ)
         if not transcript.is_file():
             raise HandoffError(f"Transcript not found: {transcript}")
-        target = write_handoff(transcript, repo, git_run=git_run)
+        target = write_handoff(transcript, repo, git_run=git_run, out=out)
         out(f"Wrote {target} from {transcript}")
-        out("HANDOFF.md can hold command output and secrets from that transcript. It is gitignored: keep it out of "
-            "commits.")
+        ensure_ignored(repo, git_run=git_run, out=out)
+        out("HANDOFF.md can hold command output and secrets from that transcript. Keep it out of commits.")
         return 0
     except HandoffError as e:
         out(f"[handoff] {e}")
