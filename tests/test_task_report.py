@@ -141,7 +141,7 @@ class AgentWithWorkspaceWiring(unittest.TestCase):
 
         async def chat(self, prompt):
             if writes_file:
-                Path(self.workspace, "index.html").write_text("<html></html>", encoding="utf-8")
+                Path(self.workspace, "index.html").write_text("<html><body>dark-mode toggle</body></html>", encoding="utf-8")
             return await orig_chat(self, prompt)
         mods["google.antigravity"].Agent.chat = chat
         saved = {k: sys.modules.get(k) for k in list(mods) + ["agent_with_workspace"]}
@@ -177,7 +177,7 @@ class AgentWithWorkspaceWiring(unittest.TestCase):
     def test_missing_index_html_is_not_reported_as_success(self):
         out = self.run_script(writes_file=False)
         self.assertNotIn("completed successfully", out)
-        self.assertIn("did not create or change index.html", out)
+        self.assertIn("did not write a dark-mode page to index.html", out)
 
 
 if __name__ == "__main__":

@@ -102,7 +102,10 @@ class PullFailure(unittest.TestCase):
         self.assertEqual(cm.exception.code, 1)
 
 
-def fake_sdk(writes_file, chat_raises=False):
+DARK_PAGE = "<html><body><button id='t'>dark mode</button><script>classList.toggle('dark-mode')</script></body></html>"
+
+
+def fake_sdk(writes_file, chat_raises=False, content=DARK_PAGE):
     class FakeAgent:
         n = 0
 
@@ -120,7 +123,7 @@ def fake_sdk(writes_file, chat_raises=False):
             if chat_raises and FakeAgent.n > 1:  # call 1 is the demo
                 raise RuntimeError("backend down")
             if writes_file:
-                Path(self.workspace, "index.html").write_text("<html></html>", encoding="utf-8")
+                Path(self.workspace, "index.html").write_text(content, encoding="utf-8")
 
             async def gen():
                 yield "ok"
@@ -140,8 +143,8 @@ def fake_sdk(writes_file, chat_raises=False):
 
 
 class RunAgent(unittest.TestCase):
-    def go(self, writes_file, chat_raises=False, inputs=("exit",)):
-        mods, agent_cls = fake_sdk(writes_file, chat_raises)
+    def go(self, writes_file, chat_raises=False, inputs=("exit",), content=DARK_PAGE):
+        mods, agent_cls = fake_sdk(writes_file, chat_raises, content)
         feed = iter(inputs)
         with tempfile.TemporaryDirectory() as d, mock.patch.dict(sys.modules, mods), \
                 mock.patch.object(run, "PROJECT_DIR", d), \
@@ -154,11 +157,30 @@ class RunAgent(unittest.TestCase):
     def test_demo_without_a_file_warns_instead_of_claiming_success(self):
         out, _ = self.go(writes_file=False)
         self.assertNotIn("Demonstration complete", out)
-        self.assertIn("did not create or change", out)
+        self.assertIn("did not write a dark-mode page", out)
 
     def test_demo_with_a_file_reports_success(self):
         out, _ = self.go(writes_file=True)
         self.assertIn("Demonstration complete", out)
+
+    def test_demo_with_unrelated_html_does_not_claim_success(self):
+        # A file that changed but has no dark-mode toggle is not what the demo asked for.
+        out, _ = self.go(writes_file=True, content="<html><body>Antigravity Lab</body></html>")
+        self.assertNotIn("Demonstration complete", out)
+
+    def test_demo_sets_a_stale_index_aside_so_create_can_succeed(self):
+        # The SDK refuses to create over an existing file; a leftover from the last run caused that.
+        mods, _ = fake_sdk(writes_file=False)
+        with tempfile.TemporaryDirectory() as d, mock.patch.dict(sys.modules, mods), \
+                mock.patch.object(run, "PROJECT_DIR", d), \
+                mock.patch("builtins.input", side_effect=lambda _="": "exit"):
+            ws = Path(d, "workspace")
+            ws.mkdir(exist_ok=True)
+            (ws / "index.html").write_text("old run", encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()):
+                asyncio.run(run.run_agent("m"))
+            self.assertFalse((ws / "index.html").exists())
+            self.assertEqual((ws / "index.html.prev").read_text(encoding="utf-8"), "old run")
 
     def test_shell_stops_after_three_consecutive_errors(self):
         # 10 inputs available; the loop must give up long before using them all.

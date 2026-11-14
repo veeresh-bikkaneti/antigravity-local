@@ -479,6 +479,7 @@ async def run_agent(model, base_url="http://localhost:11434/v1"):
         "Call write_file or create_file with Path, Content, and Overwrite=True."
     )
     
+    task_report.set_aside(target_demo)
     before = task_report.snapshot(workspace_dir)
     try:
         async with Agent(config) as agent:
@@ -486,10 +487,10 @@ async def run_agent(model, base_url="http://localhost:11434/v1"):
             async for chunk in response:
                 print(chunk, end="", flush=True)
             created, changed = task_report.summarize(before, task_report.snapshot(workspace_dir))
-            if "index.html" in created + changed:
+            if "index.html" in created + changed and task_report.demo_page_ok(target_demo):
                 print("\n\n✅ Demonstration complete! File generated at: workspace/index.html\n")
             else:
-                print("\n\n⚠️ The agent finished, but it did not create or change workspace/index.html.")
+                print("\n\n⚠️ The agent finished, but it did not write a dark-mode page to workspace/index.html.")
                 print("Small local models sometimes answer without writing anything. Try the same prompt below.\n")
     except Exception as exc:
         print(f"\n⚠️ Demo notice: {exc}\n")
