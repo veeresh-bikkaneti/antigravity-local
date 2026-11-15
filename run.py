@@ -26,12 +26,19 @@ import urllib.request
 import urllib.error
 import argparse
 
+import capabilities
 import hardware
+import hf_search
+import ledger
 import model_wizard
+import ollama_library
+import ollama_models
 import pull_gate
 import quant_pick
+import ranking
 import runlog
 import task_report
+import userdata
 
 # Ensure UTF-8 console output on Windows
 if sys.platform == "win32":
@@ -409,22 +416,138 @@ def update_env_model(model_name: str):
         except Exception:
             pass
 
-def _ask_which_model(display_names, installed_models, vram_gb, ram_gb, free_vram=None, free_ram=None):
+_WARNED = set()
+
+
+def _warn_once(key, text):
+    """Print a warning line at most once per run, so a flaky connection does not spam the screen."""
+    if key not in _WARNED:
+        _WARNED.add(key)
+        print(f"       Warning: {text}")
+
+
+def get_installed_details(base_url="http://localhost:11434"):
+    """Size, age and capabilities of the installed models (ollama_models.installed_details)."""
+    return ollama_models.installed_details(base_url)
+
+
+def get_ledger_entries():
+    """What past probes said about each model on this PC (ledger.read)."""
+    return ledger.read()
+
+
+def hf_menu_search(words=None, pipeline_tag="text-generation", limit=20):
+    """Hugging Face GGUF search for the menu. Cached 24 h; offline gives [] and one warning line for the whole run."""
+    rows, source = hf_search.search_models(userdata.data_dir() / "cache", query=words, pipeline_tag=pipeline_tag,
+                                           limit=limit, token=os.environ.get("HF_TOKEN") or None)
+    if source == "offline":
+        _warn_once("hf", "Could not reach Hugging Face. Showing installed and curated models only.")
+    elif source == "stale":
+        _warn_once("hf", "Could not reach Hugging Face. Showing results saved earlier.")
+    return rows
+
+
+def get_media_rows(backend="ollama"):
+    """Picture, video and sound models for their own menu section. Listed, never picked for an agent."""
+    if backend != "ollama":
+        return []
+    if sys.platform == "darwin":
+        return [{"tag": tag, "badges": (badge,), "note": note,
+                 "hint": f'Run it yourself with: ollama run {tag} "your prompt"' + (" (the 9B Klein is non-commercial)" if nc else "")}
+                for tag, badge, note, nc in capabilities.MEDIA_MODELS]
+    rows = []
+    for pipeline in ("text-to-image", "text-to-video"):
+        for r in hf_menu_search(None, pipeline, 3)[:3]:
+            rows.append({"tag": "huggingface.co/" + r["repo"], "badges": r["badges"], "note": pipeline.replace("-", " "),
+                         "hint": f"Needs a separate runtime (for example ComfyUI or diffusers); this tool does not run it. "
+                                 f"https://huggingface.co/{r['repo']}"})
+    return rows
+
+
+def get_library_rows(scan=False):
+    """Extra models read off the Ollama library page. Only with --scan-library, because that page is read as HTML."""
+    if not scan:
+        return []
+    rows = ollama_library.scan()
+    if not rows:
+        _warn_once("library", "Could not read the Ollama library page (--scan-library is fragile). Using the curated list.")
+    return [{"tag": r["name"], "badges": r["badges"],
+             "note": ("sizes " + ", ".join(r["sizes"]) + ": " if r["sizes"] else "") + r["note"]}
+            for r in rows[:25]]
+
+
+def _find_candidate(name, pool):
+    """The candidate for a tag, tolerating the short alias run.py also lists for hf.co models."""
+    want = model_wizard._norm(name or "")
+    for c in pool:
+        have = model_wizard._norm(c["tag"])
+        if have == want or have.rsplit("/", 1)[-1] == want:
+            return c
+    return None
+
+
+def _installed_candidates(names, details, hw, entries):
+    """One ranking candidate per installed model. Fit uses this PC's TOTAL memory, because a model that is loaded
+    right now is already holding some of the free memory and must not look too big to itself."""
+    names = [n for n in names if not any(o != n and o.endswith("/" + n) for o in names)]  # drop hf.co short aliases
+    vram, ram = hw.get("vram_gb") or 0.0, hw.get("ram_gb") or 0.0
+    pool = []
+    for name in names:
+        d = ollama_models.lookup(details, name)
+        caps = d["caps"] if d else None
+        status = ledger.status(name, entries)
+        badges = capabilities.ollama_badges(caps)
+        if status == "pass":
+            badges = capabilities.confirm_tools(badges)
+        size = d["size_gb"] if d else None
+        pool.append({
+            "tag": name, "kind": capabilities.kind_from_ollama(caps),
+            "fit": model_wizard.fit_label(size, vram, ram, headroom=model_wizard.FIT_HEADROOM) if size and (vram or ram) else None,
+            "badges": badges, "installed": True, "ledger": status,
+            "last_modified": d["modified_at"] if d else None, "downloads": None, "size_gb": size,
+            "name_score": capability_rank_key(name),
+        })
+    return pool
+
+
+def _ledger_warning(tag, entries):
+    """Warns, never refuses: a model that failed the probe can still be picked."""
+    if ledger.status(tag, entries) == "fail":
+        print(f"       Warning: '{tag}' failed a tool-call probe on this PC, so it may not work as a coding agent. "
+              f"Check again with: python run.py --probe {tag}")
+
+
+def _refuse_non_chat(tag, pool):
+    """True (after saying why) when a model cannot drive a coding agent: an embedding or media model."""
+    cand = _find_candidate(tag, pool)
+    if cand and capabilities.resolve_kind(cand["kind"], cand["tag"]) in ("embedding", "media"):
+        print(f"       '{tag}' is an embedding or media model, so a coding agent cannot use it. Pick a chat model.")
+        return True
+    return False
+
+
+def _ask_which_model(display_names, installed_models, vram_gb, ram_gb, free_vram=None, free_ram=None, pool=None, scan_library=False):
     """Run the wizard. Returns the chosen tag, or None to continue with the automatic pick."""
     configured = os.environ.get("LOCAL_LLM_MODEL")
-    if configured and is_model_installed(configured, installed_models):
+    if pool is None:
+        pool = _installed_candidates(display_names, {}, {"vram_gb": vram_gb, "ram_gb": ram_gb}, [])
+    usable = ranking.agent_candidates(pool)
+    best = ranking.best_for_agent(pool)
+    if configured and is_model_installed(configured, installed_models) and _find_candidate(configured, usable):
         default = configured
-    elif display_names:
-        default = max(display_names, key=capability_rank_key)
+    elif best:
+        default = best["tag"]
     else:
         default = None
     tier = hardware_tier_model(vram_gb, ram_gb)
     menu = model_wizard.build_menu(display_names, vram_gb if free_vram is None else free_vram,
                                    ram_gb if free_ram is None else free_ram,
-                                   recommended=None if display_names else tier)
+                                   recommended=None if best else tier,
+                                   badges={model_wizard._norm(c["tag"]): c["badges"] for c in pool},
+                                   library=get_library_rows(scan_library), media=get_media_rows())
     if not default:
-        default = tier  # empty machine: Enter means exactly what the automatic path would download
-    chosen = model_wizard.choose(menu, default)
+        default = tier  # no usable model installed: Enter means exactly what the automatic path would offer
+    chosen = model_wizard.choose(menu, default, search_fn=hf_menu_search)
     if not chosen or model_wizard._norm(chosen) == model_wizard._norm(default or ""):
         # Kept the default: for an installed model the automatic path handles it; otherwise pull it.
         return None if chosen and is_model_installed(chosen, installed_models) else chosen
@@ -568,7 +691,7 @@ def _pull_with_gate(tag, interactive, hw, res):
     return None
 
 
-def select_and_pull_model(base_url="http://localhost:11434", requested_model=None, interactive=False):
+def select_and_pull_model(base_url="http://localhost:11434", requested_model=None, interactive=False, scan_library=False):
     """
     Engineering Best Practice:
     1. NEVER download if compatible models are already present on the machine!
@@ -606,6 +729,10 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
         print(f"       Found {len(display_names)} local model(s) in machine inventory: {', '.join(display_names)}")
     else:
         print("       No local models found in machine inventory.")
+    details = get_installed_details(base_url)
+    entries = get_ledger_entries()
+    pool = _installed_candidates(display_names, details, hw, entries)
+    best = ranking.best_for_agent(pool)  # None when nothing installed can drive a coding agent
 
     # 1. Did the user explicitly pass a model via CLI command-line?
     cli_requested_model = requested_model
@@ -614,11 +741,15 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
     #     Enter keeps the current pick. Piped runs, CI and --yes skip this, and they never download.
     from_menu = False
     if interactive and not cli_requested_model:
-        cli_requested_model = _ask_which_model(display_names, installed_models, vram_gb, ram_gb, free_vram, free_ram)
+        cli_requested_model = _ask_which_model(display_names, installed_models, vram_gb, ram_gb, free_vram, free_ram,
+                                               pool=pool, scan_library=scan_library)
         from_menu = True  # the menu already vetted a typed tag
 
     if cli_requested_model:
         if is_model_installed(cli_requested_model, installed_models):
+            if _refuse_non_chat(cli_requested_model, pool):
+                return None
+            _ledger_warning(cli_requested_model, entries)
             print(f"       ✅ Using explicitly requested model: '{cli_requested_model}' (Found locally. Skipping download!)")
             update_env_model(cli_requested_model)
             return cli_requested_model
@@ -629,26 +760,34 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
             target_to_pull = cli_requested_model
 
     # 2. ZERO-DOWNLOAD BEST PRACTICE: If models are already installed on this machine, REUSE THEM!
-    elif display_names:
-        # Check if .env model is installed
+    elif best:
+        # Check if .env model is installed (and can drive a coding agent: an embedding model never can)
         configured_env_model = os.environ.get("LOCAL_LLM_MODEL")
         if configured_env_model and is_model_installed(configured_env_model, installed_models):
-            print(f"       ✅ Using configured local model: '{configured_env_model}' (Found locally. Zero download needed!)")
-            return configured_env_model
+            if _find_candidate(configured_env_model, ranking.agent_candidates(pool)):
+                print(f"       ✅ Using configured local model: '{configured_env_model}' (Found locally. Zero download needed!)")
+                _ledger_warning(configured_env_model, entries)
+                return configured_env_model
+            print(f"       '{configured_env_model}' (from .env) is an embedding or media model, which a coding agent cannot use. Choosing another.")
 
-        # Rank all installed models by capability score
-        ranked_models = sorted(display_names, key=capability_rank_key, reverse=True)
-        top_model = ranked_models[0]
+        # Rank the installed models: fits this PC, not failed, has tools, installed, probe passed, newer, name score last
+        top_model = best["tag"]
         top_score = get_model_capability_score(top_model)
-        
-        print(f"       🏆 Auto-selected MOST CAPABLE installed model: '{top_model}' (Capability Score: {top_score:.1f}/100)")
+        badge_text = capabilities.format_badges(best["badges"])
+        print(f"       🏆 Auto-selected MOST CAPABLE installed model: '{top_model}' (Capability Score: {top_score:.1f}/100"
+              f"{'; ' + badge_text if badge_text else ''})")
         print(f"       ✅ Zero download needed—reusing existing local weights on this machine.")
+        _ledger_warning(top_model, entries)
         update_env_model(top_model)
         return top_model
 
     # 3. No models installed on machine at all: evaluate PC build and select optimal cutting-edge model
     else:
-        print("       Zero models found on machine. Evaluating hardware build for optimal cutting-edge model...")
+        if display_names:
+            print("       None of the installed models can drive a coding agent (embedding or media models only). "
+                  "Looking at the hardware pick instead...")
+        else:
+            print("       Zero models found on machine. Evaluating hardware build for optimal cutting-edge model...")
         
         target_to_pull = hardware_tier_model(vram_gb, ram_gb)
         if target_to_pull == "qwen2.5-coder:14b":  # Workstation / Enthusiast PC
@@ -777,6 +916,10 @@ def parse_args(argv=None):
     ap.add_argument("--serve", action="store_true", help="start the web UI + API (needs no Ollama)")
     ap.add_argument("--host", help="with --serve: bind address")
     ap.add_argument("--port", type=int, help="with --serve: port (default: a free one)")
+    ap.add_argument("--probe", action="store_true",
+                    help="run one live tool call against the model and record pass or fail in the local ledger, then exit")
+    ap.add_argument("--scan-library", action="store_true",
+                    help="also list models read off ollama.com/library (reads HTML, so it can break; the curated list stays)")
     ap.add_argument("-y", "--yes", action="store_true", help="skip the menu and every question: use the best installed model, or exit 1 and print the ollama pull command. Never downloads")
     ap.add_argument("--sync-memory", action="store_true", help="re-index the memory fabric and exit")
     ap.add_argument("--agent", choices=["shell", "pi", "opencode", "codex", "claude"], default="shell",
@@ -877,7 +1020,7 @@ def _main(argv=None):
         if backend == "openai":
             model = select_openai_model(base_api, args.model, interactive=interactive)
         else:
-            model = select_and_pull_model(ollama_host, args.model, interactive=interactive)
+            model = select_and_pull_model(ollama_host, args.model, interactive=interactive, scan_library=args.scan_library)
     except KeyboardInterrupt:
         print("\nCancelled. Nothing was saved.")
         sys.exit(130)
