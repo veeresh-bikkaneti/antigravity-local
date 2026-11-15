@@ -166,7 +166,6 @@ class HfFetch(Tmp):
         self.assertEqual(source, "offline")
 
     # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_the_response_read_is_bounded(self):
         net = Net([{"id": "u/r"}])
         self.fetch(net)
@@ -206,7 +205,6 @@ class HfSearch(Tmp):
         self.assertEqual(rows, [])
 
     # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_rows_with_junk_field_types_never_crash_and_always_have_a_string_repo(self):
         data = [{"id": 5}, {"id": ["a", "b"]}, {"id": {"x": 1}}, {"modelId": 7}, {"id": "ok/one", "pipeline_tag": ["x"]},
                 {"id": "ok/two", "pipeline_tag": {"a": 1}}, {"id": "ok/three", "pipeline_tag": 5, "gguf": [1]},
@@ -219,7 +217,6 @@ class HfSearch(Tmp):
             self.assertIsInstance(r["repo"], str, r)
 
     # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_a_bool_download_count_is_not_shown_as_a_number(self):
         rows, _ = self.search(Net([{"id": "u/r", "downloads": True}]))
         self.assertIsNone(rows[0]["downloads"])
