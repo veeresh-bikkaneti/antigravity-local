@@ -150,6 +150,24 @@ class Backoff(Base):
         self.fetch(net)
         self.assertEqual(self.slept, [2.0, 4.0])
 
+    def test_nan_and_infinite_wait_values_never_crash_the_wait(self):
+        for value in ("nan", "NaN", "-inf"):
+            with self.subTest(value=value):
+                self.slept.clear()
+                self.clock[0] += 30 * HOUR  # last round's answer must not be served from the cache
+                net = Net(too_many({"Retry-After": value}), too_many({"RateLimit": f"t={value}"}), {"ok": True})
+                self.assertEqual(self.fetch(net), ({"ok": True}, "net"))
+                self.assertEqual(self.slept, [2.0, 4.0])
+        self.slept.clear()
+        self.clock[0] += 30 * HOUR
+        self.fetch(Net(too_many({"Retry-After": "inf"}), {"ok": True}))
+        self.assertEqual(self.slept, [30.0])
+
+    def test_an_answer_that_is_not_a_list_is_not_cached_as_search_results(self):
+        rows, source = hf_search.search_models(self.cache, opener=Net({"error": "rate limited"}), now=lambda: self.clock[0], sleep=self.slept.append)
+        self.assertEqual(rows, [])
+        self.assertEqual(list(self.cache.glob("hf-*.json")), [])
+
     def test_still_limited_after_retries_serves_a_stale_cache(self):
         self.fetch(Net({"a": 1}))
         self.clock[0] += 30 * HOUR

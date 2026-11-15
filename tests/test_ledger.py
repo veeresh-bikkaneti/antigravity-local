@@ -77,6 +77,12 @@ class Ledger(unittest.TestCase):
         got = self.entries()
         self.assertEqual([e["modelRef"] for e in got], ["a:1", "b:2"])
 
+    def test_an_absurdly_nested_line_is_skipped_not_fatal(self):
+        self.add("a:1", "fail")
+        with open(ledger.ledger_path(self.home, {}), "a", encoding="utf-8") as f:
+            f.write("[" * 100000)
+        self.assertEqual([e["modelRef"] for e in self.entries()], ["a:1"])
+
     def test_a_byte_order_mark_does_not_hide_the_first_entry(self):
         path = ledger.ledger_path(self.home, {})
         path.parent.mkdir(parents=True)

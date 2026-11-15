@@ -68,7 +68,7 @@ def read(home=None, env=None):
     for line in text.splitlines():
         try:
             item = json.loads(line)
-        except ValueError:
+        except (ValueError, RecursionError):
             continue
         if isinstance(item, dict) and item.get("verdict") in VERDICTS and isinstance(item.get("modelRef"), str):
             entries.append(item)

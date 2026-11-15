@@ -6,6 +6,7 @@ HF_TOKEN is sent only when the caller hands it in, and it is never written to th
 """
 import hashlib
 import json
+import math
 import time
 import urllib.error
 import urllib.parse
@@ -45,35 +46,43 @@ def _write_cache(path, now, data):
         pass  # a cache is a courtesy
 
 
+def _seconds(value):
+    """A header value as a wait in seconds (0 to MAX_WAIT), or None when it is junk, NaN or not a number at all."""
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(number):
+        return float(MAX_WAIT) if number > 0 else None
+    return min(max(number, 0.0), MAX_WAIT)
+
+
 def _retry_wait(headers, attempt):
     """Seconds to wait after a 429: Retry-After, else the RateLimit header's t=, else 2 s then 4 s. Capped."""
-    for name in ("Retry-After",):
-        value = (headers.get(name) if headers else None)
-        try:
-            if value is not None:
-                return min(max(float(value), 0.0), MAX_WAIT)
-        except (TypeError, ValueError):
-            pass
+    value = headers.get("Retry-After") if headers else None
+    wait = _seconds(value)
+    if wait is not None:
+        return wait
     ratelimit = headers.get("RateLimit") if headers else None
     if isinstance(ratelimit, str):
         for part in ratelimit.replace(";", ",").split(","):
             part = part.strip()
             if part.startswith("t="):
-                try:
-                    return min(max(float(part[2:]), 0.0), MAX_WAIT)
-                except ValueError:
-                    break
+                wait = _seconds(part[2:])
+                if wait is not None:
+                    return wait
+                break
     return float(RETRY_WAITS[min(attempt, len(RETRY_WAITS) - 1)])
 
 
-def fetch_json(url, *, cache_dir, now=None, opener=None, sleep=None, token=None, ttl=CACHE_TTL):
+def fetch_json(url, *, cache_dir, now=None, opener=None, sleep=None, token=None, ttl=CACHE_TTL, accept=None):
     """(data, source). source: 'cache' (fresh), 'net', 'stale' (expired cache after a failure) or 'offline' (data None)."""
     now = time.time if now is None else now
     opener = urllib.request.urlopen if opener is None else opener
     sleep = time.sleep if sleep is None else sleep
     path = cache_path(url, cache_dir)
     cached, age = _read_cache(path, now())
-    if cached is not None and age < ttl:
+    if cached is not None and age < ttl and (accept is None or accept(cached)):
         return cached, "cache"
     headers = {"Accept": "application/json"}
     if token:
@@ -89,9 +98,13 @@ def fetch_json(url, *, cache_dir, now=None, opener=None, sleep=None, token=None,
             break
         except Exception:
             break
+        if accept is not None and not accept(data):
+            break  # an error body is not an answer: do not keep it for a day
         _write_cache(path, now(), data)
         return data, "net"
-    return (cached, "stale") if cached is not None else (None, "offline")
+    if cached is not None and (accept is None or accept(cached)):
+        return cached, "stale"
+    return None, "offline"
 
 
 def search_url(query=None, pipeline_tag="text-generation", limit=20):
@@ -119,7 +132,7 @@ def _result(row):
 
 def search_models(cache_dir, query=None, pipeline_tag="text-generation", limit=20, **kw):
     """([result dicts], source). A failure gives ([], 'offline'); a stale cache gives its rows with source 'stale'."""
-    data, source = fetch_json(search_url(query, pipeline_tag, limit), cache_dir=cache_dir, **kw)
+    data, source = fetch_json(search_url(query, pipeline_tag, limit), cache_dir=cache_dir, accept=lambda d: isinstance(d, list), **kw)
     if not isinstance(data, list):
         return [], ("offline" if data is None else source)
     rows = [_result(r) for r in data if isinstance(r, dict)]
