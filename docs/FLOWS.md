@@ -124,23 +124,23 @@ sequenceDiagram
 
     Developer->>Agent: task: "Generate modern landing page in index.html"
     Note over Agent: Compiles prompt, system instruction,<br/>and available tool schemas
-    Agent->>Strategy: stream_chat(messages, tools=[create_file, edit_file])
+    Agent->>Strategy: stream_chat(messages, tools=[write_to_file, edit_file])
     Strategy->>Ollama: POST /v1/chat/completions (OpenAI compatible SSE)
     
     activate Ollama
     Note over Ollama: Model infers task requirements<br/>and triggers tool call
-    Ollama-->>Strategy: Yield tool_call: create_file(path="index.html", content="...")
+    Ollama-->>Strategy: Yield tool_call: write_to_file(TargetFile="index.html", CodeContent="...")
     deactivate Ollama
 
     Strategy-->>Agent: Dispatched tool invocation
     
     activate Agent
-    Agent->>Policy: Intercept tool call: verify permission for create_file
+    Agent->>Policy: Intercept tool call: verify permission for write_to_file
     activate Policy
     Policy-->>Agent: policy.allow_all() APPROVED (workspace-scoped)
     deactivate Policy
 
-    Agent->>Harness: invoke create_file("index.html", content, overwrite=True)
+    Agent->>Harness: invoke write_to_file("index.html", content, Overwrite=True)
     activate Harness
     Harness->>Disk: Write ./workspace/index.html
     Disk-->>Harness: file written

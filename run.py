@@ -174,9 +174,9 @@ def check_ollama_service(base_url="http://localhost:11434"):
         print("\n❌ [ERROR] Ollama is not installed or not in your system PATH.")
         print("   Please install Ollama (free, open-source local LLM engine):")
         if IS_WIN:
-            print("   👉 Windows: Download from https://ollama.ai/download or run: winget install Ollama.Ollama")
+            print("   👉 Windows: Download from https://ollama.com/download or run: winget install Ollama.Ollama")
         elif sys.platform == "darwin":
-            print("   👉 macOS: Download from https://ollama.ai/download or run: brew install ollama")
+            print("   👉 macOS: Download from https://ollama.com/download or run: brew install ollama")
         else:
             print("   👉 Linux: Run: curl -fsSL https://ollama.com/install.sh | sh")
         print("\n   Once installed, run this command again!\n")
@@ -468,11 +468,11 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
         if target_to_pull == "qwen2.5-coder:14b":  # Workstation / Enthusiast PC
             print(f"       PC Build: High-performance workstation ({vram_gb:.1f}GB VRAM, {ram_gb:.1f}GB RAM)")
             print(f"       Selected cutting-edge agent model: '{target_to_pull}' (100% VRAM tool fit, flagship coding)")
-            print(f"       (Note: You can also try 'nanbeige2:16b', 'deepseek-coder-v2:16b', 'command-r:35b', or 'codestral:22b')")
+            print(f"       (Note: You can also try 'deepseek-coder-v2:16b', 'command-r:35b', or 'codestral:22b')")
         elif target_to_pull == "qwen2.5-coder:7b":  # Mid-tier PC
             print(f"       PC Build: Mid-tier hardware ({vram_gb:.1f}GB VRAM, {ram_gb:.1f}GB RAM)")
             print(f"       Selected cutting-edge agent model: '{target_to_pull}'")
-            print(f"       (Note: You can also try 'nanbeige4.1:3b', 'deepseek-coder:6.7b', or 'glm4:9b')")
+            print(f"       (Note: You can also try 'deepseek-coder:6.7b' or 'glm4:9b')")
         else:  # Entry-level / CPU
             print(f"       PC Build: Compact / CPU hardware ({ram_gb:.1f}GB RAM)")
             print(f"       Selected compact agent model: '{target_to_pull}'")

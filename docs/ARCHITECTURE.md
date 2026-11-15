@@ -30,7 +30,7 @@ graph TB
             Agent["Agent Runtime Loop<br/>(google.antigravity.Agent)"]
             Router["LocalOpenAI Router<br/>(LocalOpenAIConnectionStrategy)"]
             Policy["Safety Policy<br/>(policy.allow_all())"]
-            Harness["Workspace Harness<br/>(create_file, edit_file, read_file)"]
+            Harness["Workspace Harness<br/>(write_to_file, edit_file, read_file)"]
         end
 
         subgraph LocalInference["Local Inference & Hardware Offload"]
@@ -111,7 +111,7 @@ graph TB
    - Antigravity needs explicit policy approval before a tool can touch disk or run a system process.
    - `policy.allow_all()` authorizes file operations inside the workspace boundary.
 4. Workspace harness (`LocalHarness`):
-   - Provides the Antigravity file tools `create_file`, `edit_file`, `read_file`, and `list_dir`.
+   - Provides the Antigravity file tools `write_to_file`, `edit_file`, `read_file`, and `list_dir`.
    - Validates paths so files are written only inside the target workspace.
 
 ### 2.3. Local inference and hardware offload layer
