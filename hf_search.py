@@ -110,6 +110,8 @@ def fetch_json(url, *, cache_dir, now=None, opener=None, sleep=None, token=None,
 def search_url(query=None, pipeline_tag="text-generation", limit=20):
     parts = [("filter", "gguf"), ("pipeline_tag", pipeline_tag), ("sort", "downloads"), ("limit", str(limit))]
     if query:
+        if isinstance(query, str):
+            query = query.encode("utf-8", "replace").decode("utf-8")  # a lone surrogate becomes "?"
         parts.append(("search", query))
     base = urllib.parse.urlencode(parts)
     return f"{SEARCH_URL}?{base}&" + "&".join(f"expand[]={name}" for name in EXPAND)
