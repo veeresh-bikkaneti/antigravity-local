@@ -230,5 +230,18 @@ class Search(Base):
         self.assertEqual(got, ([], "offline"))
 
 
+
+class BlankToken(Base):
+    def test_a_blank_or_non_string_token_is_no_token_and_a_padded_one_is_trimmed(self):
+        for token in ("", "   ", None, 7, b"x"):
+            with self.subTest(token=token):
+                net = Net({"a": 1})
+                self.fetch(net, token=token, ttl=0)  # ttl=0: never answered from the cache
+                self.assertNotIn("Authorization", net.requests[0].headers)
+        net = Net({"a": 1})
+        self.fetch(net, token="  hf_x  ", ttl=0)
+        self.assertEqual(net.requests[0].get_header("Authorization"), "Bearer hf_x")
+
+
 if __name__ == "__main__":
     unittest.main()

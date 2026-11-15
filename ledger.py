@@ -57,9 +57,7 @@ def append(model_ref, verdict, reason, *, runtime="ollama", harness="probe", evi
         prefix = b"\n" if _ends_mid_line(path) else b""
         with open(path, "ab") as f:
             f.write(prefix + line.encode("ascii"))
-    except OSError as exc:
-        return False, f"Could not write the fail ledger ({exc.__class__.__name__}); carrying on without it."
-    except (UnicodeError, ValueError) as exc:
+    except (OSError, ValueError) as exc:  # UnicodeError is a ValueError
         return False, f"Could not write the fail ledger ({exc.__class__.__name__}); carrying on without it."
     return True, ""
 

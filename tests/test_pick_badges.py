@@ -330,5 +330,53 @@ class Flags(unittest.TestCase):
         self.assertFalse(args.probe or args.scan_library)
 
 
+
+class ShortNamesAndTags(PickBase):
+    """Council follow-ups: the hf.co short alias still works, other namespaces never borrow it, odd tags never pass."""
+
+    def pool(self, key, caps):
+        det = details(d(key, caps))
+        return run._installed_candidates([key, key.rsplit("/", 1)[-1]], det, HW, []), det
+
+    def test_a_short_alias_finds_an_hf_co_chat_model_and_is_not_called_an_embedding_one(self):
+        pool, det = self.pool("hf.co/u/llama:q4", ["completion", "tools"])
+        self.assertIsNotNone(run._find_candidate("llama:q4", ranking_pool(pool)))
+        got, _, _ = self.sel({"hf.co/u/llama:q4", "llama:q4"}, interactive=False, details=det, env="llama:q4")
+        self.assertEqual(got, "llama:q4")
+        self.assertNotIn("embedding or media model", self.printed)
+
+    def test_a_short_alias_of_an_hf_co_embedding_model_is_refused(self):
+        pool, _ = self.pool("hf.co/u/embed:q4", ["embedding"])
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertTrue(run._refuse_non_chat("embed:q4", pool))
+        self.assertIn("a coding agent cannot use it", out.getvalue())
+
+    def test_a_short_name_never_finds_another_namespaces_model(self):
+        pool, _ = self.pool("acme/foo:1", ["embedding"])
+        self.assertIsNone(run._find_candidate("foo:1", pool))
+
+    def test_the_refusal_line_cannot_be_forged_with_a_newline_in_the_tag(self):
+        tag = "x/y:q4\n       Warning: fake line"
+        pool = [{"tag": tag, "kind": "embedding", "badges": (), "installed": True, "ledger": "unproven"}]
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertTrue(run._refuse_non_chat(tag, pool))
+        self.assertEqual(out.getvalue().count("\n"), 1)  # one printed line, not two
+
+    def test_dots_and_non_ascii_look_alikes_never_become_a_tag_to_pull(self):
+        bad = ["hf.co/../../x:q4", "hf.co/u/r/../x", "hf.co/u/\u212a:q4", "hf.co/u/m\u00e9:q4", "hf.co/u/\u0661:q4"]
+        for tag in bad:
+            with self.subTest(tag=tag), contextlib.redirect_stdout(io.StringIO()):
+                self.assertIsNone(run._plan_download(tag, HW, test_run.free_of(HW)))
+        with contextlib.redirect_stdout(io.StringIO()), mock.patch.object(run.model_wizard, "hf_repo_info", return_value=test_run.HF_INFO), \
+                mock.patch.object(run.model_wizard, "hf_tree_files", return_value=[]):
+            self.assertIsNotNone(run._plan_download("hf.co/u/r.name-1:q4_k_m", HW, test_run.free_of(HW)))
+
+
+def ranking_pool(pool):
+    return run.ranking.agent_candidates(pool)
+
+
 if __name__ == "__main__":
     unittest.main()

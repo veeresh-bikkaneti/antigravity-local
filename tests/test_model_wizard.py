@@ -440,5 +440,25 @@ class FitFree(unittest.TestCase):
         self.assertEqual(mw.fit_label(13.8, 16, 128), "gpu")  # 13.8 x 1.11 = 15.3: the old 90% rule
 
 
+
+class HugeNumbers(unittest.TestCase):
+    """int() refuses 4300+ digits; a typed number that long must be a polite no, not a crash."""
+
+    def test_choose_treats_a_huge_number_as_out_of_range(self):
+        menu = mw.build_menu(["a:1"], 16, 128)
+        feed, out = iter(["1" * 5000, "", ""]), []
+        got = mw.choose(menu, "a:1", input_fn=lambda _="": next(feed), out=out.append)
+        self.assertEqual(got, "a:1")
+        self.assertTrue(any("Pick 1 to" in l for l in out))
+
+    def test_a_huge_number_at_the_search_list_goes_back(self):
+        rows = [{"repo": "org/r", "badges": (), "downloads": 1}]
+        self.assertIsNone(mw._search_pick(rows, lambda _="": "9" * 5000, lambda l: None))
+
+    def test_a_normal_number_still_works_at_the_search_list(self):
+        rows = [{"repo": "Org/R", "badges": (), "downloads": 1}]
+        self.assertEqual(mw._search_pick(rows, lambda _="": "1", lambda l: None), "hf.co/org/r")
+
+
 if __name__ == "__main__":
     unittest.main()

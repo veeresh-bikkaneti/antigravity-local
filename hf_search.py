@@ -85,8 +85,8 @@ def fetch_json(url, *, cache_dir, now=None, opener=None, sleep=None, token=None,
     if cached is not None and age < ttl and (accept is None or accept(cached)):
         return cached, "cache"
     headers = {"Accept": "application/json"}
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
+    if isinstance(token, str) and token.strip():  # a blank token is no token
+        headers["Authorization"] = f"Bearer {token.strip()}"
     for attempt in range(MAX_RETRIES + 1):
         try:
             with opener(urllib.request.Request(url, headers=headers), timeout=6) as resp:

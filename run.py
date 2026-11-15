@@ -478,10 +478,12 @@ def get_library_rows(scan=False):
 
 
 def _find_candidate(name, pool):
-    """The candidate for a tag, tolerating the short alias run.py also lists for hf.co models."""
+    """The candidate for a tag. A short name also finds an hf.co model (run.py lists that short alias),
+    but never a model from any other namespace."""
     want = model_wizard._norm(name or "")
     for c in pool:
-        if model_wizard._norm(c["tag"]) == want:
+        have = model_wizard._norm(c["tag"])
+        if have == want or (have.startswith("hf.co/") and have.rsplit("/", 1)[-1] == want):
             return c
     return None
 
@@ -543,7 +545,7 @@ def _refuse_non_chat(tag, pool):
     """True (after saying why) when a model cannot drive a coding agent: an embedding or media model."""
     cand = _find_candidate(tag, pool)
     if cand and capabilities.resolve_kind(cand["kind"], cand["tag"]) in ("embedding", "media"):
-        print(f"       '{tag}' is an embedding or media model, so a coding agent cannot use it. Pick a chat model.")
+        print(f"       {_printable_tag(tag)} is an embedding or media model, so a coding agent cannot use it. Pick a chat model.")
         return True
     return False
 
@@ -648,8 +650,10 @@ def _plan_download(tag, hw, res):
     """Work out what pulling `tag` really means: final tag (with the quant we picked for a typed Hugging Face repo),
     size, licence, gated or not, disk numbers. Returns the plan for pull_gate.ask_pull, or None (with a reason printed)
     when it cannot fit or the quant the user typed does not exist."""
-    if not model_wizard.TAG_RE.fullmatch((tag or "").lower()):
-        print(f"       {tag!r} is not a model tag (letters, digits, . _ - / : only, and it cannot start with a dash).")
+    text = tag or ""
+    # ASCII only (the Kelvin sign lowercases to a plain k), no "..", and the usual tag shape.
+    if not text.isascii() or ".." in text or not model_wizard.TAG_RE.fullmatch(text.lower()):
+        print(f"       {tag!r} is not a model tag (ASCII letters, digits, . _ - / : only, and it cannot start with a dash).")
         return None
     free_vram, free_ram = _free_for_fit(hw, res)
     plan = {"tag": tag, "quant": None, "size_gb": _catalog_size(tag), "license": None, "gated": False,

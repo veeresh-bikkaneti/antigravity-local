@@ -34,7 +34,11 @@ TAG_RE = re.compile(r"^[a-z0-9][a-z0-9._/-]*(:[a-z0-9._-]+)?$")
 REPO_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*")  # used with fullmatch: one slash, no spaces or shell characters
 
 
+MAX_PICK_DIGITS = 6
+
+
 def _is_repo_id(repo):
+    # ".." is allowed by the character class (dots are fine in names) but a repo id with it is a path trick.
     return isinstance(repo, str) and REPO_RE.fullmatch(repo) is not None and ".." not in repo
 
 # Hugging Face: Ollama pulls any public GGUF with `ollama pull hf.co/{username}/{repository}:{quantization}`.
@@ -262,7 +266,7 @@ def _search_pick(results, input_fn, out):
         raw = input_fn("       Pick a number, or Enter to go back > ").strip()
     except EOFError:
         return None
-    if raw.isascii() and raw.isdigit() and 1 <= int(raw) <= len(shown):
+    if raw.isascii() and raw.isdigit() and len(raw) <= MAX_PICK_DIGITS and 1 <= int(raw) <= len(shown):
         return "hf.co/" + shown[int(raw) - 1]["repo"].lower()
     return None
 
@@ -313,7 +317,7 @@ def choose(menu, default_tag, input_fn=None, out=print, backend="ollama", search
             out(f"       That looks like a yes/no answer. Type a number, a model tag, or press Enter for {fallback}.")
             continue
         if raw.isascii() and raw.isdigit():
-            n = int(raw)
+            n = int(raw) if len(raw) <= MAX_PICK_DIGITS else 0  # int() refuses 4300+ digits; no menu is that long
             if 1 <= n <= len(menu):
                 if menu[n - 1].get("hf"):
                     return _ask_hf_tag(input_fn, out, fallback, search_fn)
