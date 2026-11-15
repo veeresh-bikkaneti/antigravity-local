@@ -100,3 +100,6 @@ workspace/*
 
 # Hand-off notes can hold command output and secrets from a transcript
 /HANDOFF.md*
+
+# Local git worktrees for parallel branches
+/.worktrees/
