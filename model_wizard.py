@@ -132,7 +132,7 @@ def hf_repo_info(user, repo, timeout=4):
 
 def hf_tree_files(user, repo, timeout=6, max_pages=5):
     """[{'name', 'size'}] for every file in the repo (sizes in bytes, from the LFS size when there is one).
-    Follows the Link: rel=next header up to max_pages. Any failure returns what we have so far (maybe [])."""
+    Follows the Link: rel=next header up to max_pages, on huggingface.co only. Any failure returns []."""
     url = f"https://huggingface.co/api/models/{user}/{repo}/tree/main?expand=true&recursive=true"
     files = []
     for _ in range(max_pages):
@@ -141,9 +141,9 @@ def hf_tree_files(user, repo, timeout=6, max_pages=5):
                 rows = json.loads(resp.read().decode("utf-8"))
                 link = resp.headers.get("Link", "") if getattr(resp, "headers", None) else ""
         except Exception:
-            break
+            return []  # a half-read repo would undercount split quants, so say nothing rather than guess
         if not isinstance(rows, list):
-            break
+            return []
         for row in rows:
             if isinstance(row, dict) and row.get("type", "file") == "file":
                 size = (row.get("lfs") or {}).get("size") if isinstance(row.get("lfs"), dict) else None
@@ -152,6 +152,8 @@ def hf_tree_files(user, repo, timeout=6, max_pages=5):
         if not nxt:
             break
         url = nxt.group(1)
+        if not url.startswith("https://huggingface.co/"):
+            return []  # never follow a page link to another host
     return files
 
 

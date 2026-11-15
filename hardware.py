@@ -3,6 +3,7 @@
 Standard library only. Every probe fails quietly to "unknown" (0.0), because inventing numbers is worse than saying
 we don't know. Free memory is what matters for fitting a model: a browser or a game can be sitting on your VRAM.
 """
+import math
 import os
 import shutil
 import subprocess
@@ -111,6 +112,9 @@ def get_free_vram_gb():
             mib = float(row[0])
         except (IndexError, ValueError):
             continue
+        if not math.isfinite(mib):  # "nan" and "inf" parse as floats; they are not a reading
+            continue
+        mib = max(mib, 0.0)
         best = mib if best is None else max(best, mib)
     if best is not None:
         return best / 1024.0, True

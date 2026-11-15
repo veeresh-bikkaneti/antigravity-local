@@ -115,6 +115,14 @@ def bootstrap_venv():
     else:
         os.execv(VENV_PYTHON, [VENV_PYTHON, script_path] + sys.argv[1:])
 
+def _is_tty(stream):
+    """True for a real terminal. A missing or closed stream (pythonw, a closed pipe) is just not a terminal."""
+    try:
+        return bool(stream.isatty())
+    except (AttributeError, ValueError):
+        return False
+
+
 LOOPBACK_OLLAMA_HOST = "127.0.0.1:11434"
 
 def check_ollama_service(base_url="http://localhost:11434"):
@@ -495,6 +503,9 @@ def _plan_download(tag, hw, res):
     """Work out what pulling `tag` really means: final tag (with the quant we picked for a typed Hugging Face repo),
     size, licence, gated or not, disk numbers. Returns the plan for pull_gate.ask_pull, or None (with a reason printed)
     when it cannot fit or the quant the user typed does not exist."""
+    if not model_wizard.TAG_RE.fullmatch((tag or "").lower()):
+        print(f"       {tag!r} is not a model tag (letters, digits, . _ - / : only, and it cannot start with a dash).")
+        return None
     free_vram, free_ram = _free_for_fit(hw, res)
     plan = {"tag": tag, "quant": None, "size_gb": _catalog_size(tag), "license": None, "gated": False,
             "free_disk_gb": res["free_disk_gb"], "disk_total_gb": res["disk_total_gb"]}
@@ -845,7 +856,7 @@ def _main(argv=None):
     base_api = os.environ.get("LOCAL_LLM_BASE_URL", DEFAULT_BASE_URL)
     ollama_host = base_api.replace("/v1", "").rstrip("/")
     backend = detect_backend(base_api)
-    interactive = sys.stdin.isatty() and sys.stdout.isatty() and not args.yes
+    interactive = _is_tty(sys.stdin) and _is_tty(sys.stdout) and not args.yes
     if backend == "openai":
         print(f"🤖 [2/4] Found an OpenAI-compatible server at {base_api} (not Ollama). Nothing will be downloaded.")
         os.environ["LOCAL_LLM_BACKEND"] = "openai"  # memory.py and --agent claude read this

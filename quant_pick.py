@@ -21,13 +21,18 @@ def _bpw(quant):
 
 
 def _group(files):
-    """{quant: size_bytes or None}; split parts are summed, any unsized part makes the quant unsized."""
-    groups = {}
+    """{quant: size_bytes or None}; split parts are summed, any unsized part makes the quant unsized.
+    A repeated file name (same quant in two folders) is counted once."""
+    groups, seen = {}, set()
     for f in files or []:
         name = f.get("name") or ""
         q = quant_of(name)
         if not q or _bpw(q) is None or any(s in name.lower() for s in SKIP) or not name.lower().endswith(".gguf"):
             continue
+        base = name.replace("\\", "/").rsplit("/", 1)[-1].lower()
+        if base in seen:  # same file name in two folders is a copy, not another split part
+            continue
+        seen.add(base)
         size, prev = f.get("size"), groups.get(q, 0)
         if not isinstance(size, (int, float)) or size <= 0:
             size = None
