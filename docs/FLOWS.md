@@ -35,13 +35,16 @@ flowchart TD
 
     PipCheck --> DepsInstalled{"Dependencies present?"}
     DepsInstalled -- No --> PipInstall["Install requirements.txt via pip"]
-    DepsInstalled -- Yes --> DaemonCheck["Phase 3: Ollama Daemon Health Check<br/>GET http://localhost:11434/api/tags"]
+    DepsInstalled -- Yes --> DaemonCheck["Phase 3: Which server answers LOCAL_LLM_BASE_URL?<br/>GET /api/tags (Ollama), then GET /v1/models (OpenAI-compatible)"]
     PipInstall --> DaemonCheck
 
-    DaemonCheck --> DaemonRunning{"Ollama online?"}
-    DaemonRunning -- No --> SpawnOllama["Spawn 'ollama serve' background process<br/>Wait for socket handshake"]
-    DaemonRunning -- Yes --> ModelInventory["Phase 4: Defensive Model Pre-Check<br/>Query /api/tags & 'ollama list'"]
+    DaemonCheck --> DaemonRunning{"Which server?"}
+    DaemonRunning -- "OpenAI-compatible (LM Studio, llama.cpp, vLLM)" --> OpenAIModels["List the models the server has loaded<br/>--model, .env, the menu, or the top rank picks one<br/>Never downloads. Nothing loaded = exit 1"]
+    DaemonRunning -- "None, and a custom URL" --> NoServer(["Exit 1: one line naming the URL"])
+    DaemonRunning -- "None, default localhost:11434" --> SpawnOllama["Spawn 'ollama serve' background process<br/>Wait for socket handshake"]
+    DaemonRunning -- Ollama --> ModelInventory["Phase 4: Defensive Model Pre-Check<br/>Query /api/tags & 'ollama list'"]
     SpawnOllama --> ModelInventory
+    OpenAIModels --> WorkspaceDemo
 
     ModelInventory --> TermCheck{"Real terminal and no --yes?"}
     TermCheck -- Yes --> ModelMenu["Show model menu<br/>(Enter keeps the pick; Ctrl+C cancels, exit 130)"]
@@ -74,7 +77,7 @@ flowchart TD
 
 ## Flow 2: model inventory pre-check
 
-To avoid downloading multi-gigabyte models you already have, the system checks the local inventory in two tiers before it pulls anything. Ranking uses `capability_rank_key`, the uncapped raw score, so large models never tie at 100. `get_model_capability_score` caps at 100 for display only. Example (rank score, uncapped): `qwen3.6:27b` 105.1, `qwen2.5-coder:14b` 100.2, `qwen2.5-coder:7b` 98.1, `nanbeige4.1:3b` 92.9, `qwen2.5:14b` 92.2, `llama3.1:8b` 76.4. Embedding and reranker tags such as `qwen3-embedding:8b` (7.4) rank last. The family base is not the whole score, so Nanbeige does not always rank first.
+To avoid downloading multi-gigabyte models you already have, the system checks the local inventory in two tiers before it pulls anything. Ranking uses `capability_rank_key`, the uncapped raw score, so large models never tie at 100. `get_model_capability_score` caps at 100 for display only. Example (rank score, uncapped): `qwen3.6:27b` 105.1, `qwen2.5-coder:14b` 100.2, `qwen2.5-coder:7b` 98.1, `hf.co/mradermacher/nanbeige4.1-3b-gguf:q4_k_m` 92.9, `qwen2.5:14b` 92.2, `llama3.1:8b` 76.4. Embedding and reranker tags such as `qwen3-embedding:8b` (7.4) rank last. The family base is not the whole score, so Nanbeige does not always rank first.
 
 ```mermaid
 flowchart LR

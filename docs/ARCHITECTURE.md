@@ -117,6 +117,8 @@ graph TB
 ### 2.3. Local inference and hardware offload layer
 1. Ollama daemon (`http://localhost:11434`):
    - Manages the model lifecycle and GGUF/safetensors quantization, and exposes REST endpoints (`/api/tags`, `/api/generate`, `/v1/chat/completions`).
+   - Models from Hugging Face: `ollama pull hf.co/{username}/{repository}:{quantization}` pulls any public GGUF from the Hub. The model menu has a "Hugging Face model" row for it, and `model_wizard.hf_check` asks the Hub API (404 refused, missing quant warned, offline allowed) before anything downloads.
+   - Not using Ollama? `run.py` calls `detect_backend(LOCAL_LLM_BASE_URL)`: Ollama's `/api/tags` first, then an OpenAI-compatible `/v1/models` (LM Studio, llama.cpp, vLLM). On the second kind it lists the loaded models, picks one, and never downloads. The agents (`code_agent.py`, `agent_with_workspace.py`, the SDK shell) only ever needed the OpenAI-compatible URL, so nothing else changes. Ollama-only spots on purpose: pulls, the Hugging Face row, `--agent codex` (`--oss`), and the memory index's embedding probe.
 2. Hardware offloading:
    - GPU VRAM: a model whose weights fit in VRAM runs entirely on the GPU, which gives the best speed. A 14B model such as `qwen2.5:14b` has about 9 GB of weights, so it fits on a 16 GB card.
    - System RAM: when the weights do not fit, Ollama splits layers between the GPU and the CPU, which avoids out-of-memory crashes and runs slower. The split depends on your machine. On one example machine (16 GB VRAM, 128 GB RAM), the 15 GB `gemma2:27b` split about 79% GPU and 21% CPU.
@@ -143,7 +145,7 @@ Antigravity Local checks open-source models at runtime instead of defaulting to 
 
 | Model Family | Key Variants | Function Calling Support | Antigravity Mode | Architecture Notes & PC Build Fit |
 |---|---|---|---|---|
-| **Nanbeige** | `nanbeige2:16b`, `nanbeige4.3:16b` | Native (Top Agentic Rank) | `policy.allow_all()` | Runs sequential multi-step tool calls. A good fit for 16 GB of VRAM or more. |
+| **Nanbeige** | `hf.co/mradermacher/nanbeige4.1-3b-gguf:q4_k_m` (a GGUF Ollama pulls from Hugging Face, 2.4 GB; the Nanbeige tags are not on Ollama's own library) | Native (Top Agentic Rank) | `policy.allow_all()` | Runs sequential multi-step tool calls. Small enough for almost any GPU or a CPU-only box. |
 | **DeepSeek Coder / R1** | `deepseek-coder-v2:16b`, `deepseek-r1:14b`, `deepseek-r1:32b` | Native (Top Code Synthesis) | `policy.allow_all()` | Strong coding accuracy, fill-in-the-middle support, and good competitive programming benchmark results. |
 | **Qwen 2.5 Coder** | `qwen2.5-coder:14b`, `qwen2.5-coder:32b`, `qwen2.5:14b` | Native (Flagship Tool Fit) | `policy.allow_all()` | The 14B model fits in 16 GB of VRAM; native OpenAI tool-calling schema. |
 | **Command R / R+** | `command-r:35b` | Native (Enterprise Tool Calling) | `policy.allow_all()` | Cohere's model built for multi-step tool use and citations. Offloads layers to system RAM. |

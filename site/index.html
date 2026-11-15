@@ -219,7 +219,7 @@
 
         <li class="step" data-step="2" data-focus="model">
           <h3>Choose a model (optional)</h3>
-          <p>Step 3 picks a model that fits your machine, so you can skip this. On a normal terminal it shows a short menu and Enter takes the pick for your machine; <code>--yes</code> skips the menu. To choose one yourself, pull the model <code>run.py</code> would pick: <code>qwen2.5-coder:14b</code> with 15 GB or more of VRAM, <code>qwen2.5-coder:7b</code> with 8 GB of VRAM or 16 GB of RAM, and <code>llama3.2:3b</code> otherwise.</p>
+          <p>Step 3 picks a model that fits your machine, so you can skip this. On a normal terminal it shows a short menu and Enter takes the pick for your machine; <code>--yes</code> skips the menu. Not on Ollama? LM Studio, llama.cpp and vLLM work too: point <code>LOCAL_LLM_BASE_URL</code> at them and nothing gets downloaded. Want a model from Hugging Face? Type <code>hf.co/user/repo:quant</code> in the menu. To choose one yourself, pull the model <code>run.py</code> would pick: <code>qwen2.5-coder:14b</code> with 15 GB or more of VRAM, <code>qwen2.5-coder:7b</code> with 8 GB of VRAM or 16 GB of RAM, and <code>llama3.2:3b</code> otherwise.</p>
           <div class="code"><pre><code>ollama pull qwen2.5-coder:7b</code></pre><button class="copy" type="button" aria-label="Copy command: ollama pull qwen2.5-coder:7b">Copy</button></div>
           <p class="check">You should see the model in <code>ollama list</code>.</p>
           <p class="time">Depends on your connection</p>

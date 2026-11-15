@@ -34,7 +34,7 @@ chmod +x run.sh && ./run.sh
 
 **What to expect:** setup takes a few minutes plus the model download, which is roughly 9 GB for the 14B model if you have no model yet. The run goes quiet in the middle while packages install. That is normal, so grab a coffee. Setup ends at a `You >` chat prompt. Type `exit` to leave, or carry on with [the guide](ZERO_TO_CODING.md#4-start-coding-interactive-pair-programmer-shell).
 
-**Pick your model (takes one keypress):** models move fast, so on a normal terminal the bootstrap shows a short menu before it settles. You see what is already installed (no download), plus a few newer candidates with their download size and whether they fit your GPU. Press Enter to keep the current pick, type a number to switch, or type any Ollama tag you like. On a machine with no models at all, Enter downloads the pick for your hardware (the same one the hands-off run would choose), shown at the top as "recommended for this PC" with its size marked unknown, because we only list sizes we checked. A typed tag is checked against the public Ollama registry first, so a typo cannot start a 20 GB download of nothing. The candidate list in `model_wizard.py` carries its check date and says plainly that nobody has run those models through this project's agent loop yet. Treat it as a menu, not a leaderboard. Want the old hands-off behavior (CI, scripts, piped input)? Add `--yes`. Piped runs skip the menu on their own. Ctrl+C at the menu cancels and downloads nothing, and a model you download becomes the saved pick for the next run.
+**Pick your model (takes one keypress):** models move fast, so on a normal terminal the bootstrap shows a short menu before it settles. You see what is already installed (no download), plus a few newer candidates with their download size and whether they fit your GPU. Press Enter to keep the current pick, type a number to switch, or type any Ollama tag you like. On a machine with no models at all, Enter downloads the pick for your hardware (the same one the hands-off run would choose), shown at the top as "recommended for this PC" with its size marked unknown, because we only list sizes we checked. A typed tag is checked against the public Ollama registry first, so a typo cannot start a 20 GB download of nothing. The candidate list in `model_wizard.py` carries its check date and says plainly that nobody has run those models through this project's agent loop yet. Treat it as a menu, not a leaderboard. Want the old hands-off behavior (CI, scripts, piped input)? Add `--yes`. Piped runs skip the menu on their own. Ctrl+C at the menu cancels and downloads nothing, and a model you download becomes the saved pick for the next run. Not an Ollama person? The launcher also works with LM Studio, llama.cpp and vLLM, see [Use another server](#use-another-server-lm-studio-llamacpp-vllm). Want a model that is not in Ollama's library? See [Models from Hugging Face](#models-from-hugging-face).
 
 #### What the 1-command bootstrap does automatically:
 1. Hardware & Inventory Inspection: Probes dedicated GPU VRAM (via `nvidia-smi` / Apple Silicon) and System RAM. Checks local Ollama inventory first to reuse existing weights with **zero downloads**.
@@ -350,7 +350,7 @@ If you prefer to configure each component step-by-step rather than using the 1-c
    ```
 2. **If you already have a capable model installed, skip the download. You are ready to code.**  
    The bootstrap script scans your local inventory and picks the highest-scoring model:
-   - **`nanbeige`** (e.g., `nanbeige2:16b`, `nanbeige4.3:16b`): Multi-step agentic search and sequential tool calling.
+   - **`nanbeige`** (e.g., `hf.co/mradermacher/nanbeige4.1-3b-gguf:q4_k_m`, a small GGUF that Ollama pulls from Hugging Face; the Nanbeige tags are not on Ollama's own library): Multi-step agentic search and sequential tool calling.
    - **`deepseek-coder-v2` / `deepseek-r1`** (e.g., `deepseek-coder-v2:16b`, `deepseek-r1:14b`): Code generation, fill-in-the-middle, and algorithmic problem solving.
    - **`qwen2.5-coder` / `qwen2.5`** (e.g., `qwen2.5-coder:14b`, `qwen2.5:14b`, `qwen2.5-coder:32b`): Open-weights coding model with native OpenAI function calling.
    - **`command-r`** (e.g., `command-r:35b`): Cohere's model built for multi-step tool execution and structured outputs.
@@ -363,8 +363,8 @@ If you prefer to configure each component step-by-step rather than using the 1-c
 
 | PC Build Tier | Hardware Specs | Recommended models | Pull Command |
 | :--- | :--- | :--- | :--- |
-| **High-End Workstation** | 15 GB or more VRAM, or 8 GB VRAM with 32 GB RAM | **`qwen2.5-coder:14b`** *(Fits 100% in 16GB VRAM)*<br/>**`nanbeige2:16b`** *(scores high in `run.py`, but coder models score higher)*<br/>**`deepseek-coder-v2:16b`** *(Deep code synthesis)*<br/>**`command-r:35b`** *(Layer offload to RAM)* | `ollama pull qwen2.5-coder:14b`<br/>*(or `ollama pull nanbeige2:16b`)* |
-| **Mid-Tier PC** | 8 GB or more VRAM, or 16 GB or more RAM | **`qwen2.5-coder:7b`**<br/>**`deepseek-coder:6.7b`**<br/>**`glm4:9b`** | `ollama pull qwen2.5-coder:7b` |
+| **High-End Workstation** | 15 GB or more VRAM, or 8 GB VRAM with 32 GB RAM | **`qwen2.5-coder:14b`** *(Fits 100% in 16GB VRAM)*<br/>**`deepseek-coder-v2:16b`** *(Deep code synthesis)*<br/>**`command-r:35b`** *(Layer offload to RAM)* | `ollama pull qwen2.5-coder:14b` |
+| **Mid-Tier PC** | 8 GB or more VRAM, or 16 GB or more RAM | **`qwen2.5-coder:7b`**<br/>**`hf.co/mradermacher/nanbeige4.1-3b-gguf:q4_k_m`** *(2.4 GB, from Hugging Face)*<br/>**`deepseek-coder:6.7b`**<br/>**`glm4:9b`** | `ollama pull qwen2.5-coder:7b` |
 | **Entry / CPU Only** | Anything smaller | **`llama3.2:3b`**<br/>**`qwen2.5:3b`** | `ollama pull llama3.2:3b` |
 
 ### Step 3: clone the repository & 1-command setup
@@ -852,17 +852,32 @@ if sys.platform == "win32":
 
 ## Advanced: using custom research harnesses & servers
 
-### Pointing to LM Studio, vLLM, or llama.cpp
-To use a server other than Ollama, change the `LOCAL_LLM_BASE_URL` in `.env`:
+### Use another server (LM Studio, llama.cpp, vLLM)
+You do not need Ollama at all. Anything that speaks the OpenAI API and answers `GET /v1/models` works. Point `LOCAL_LLM_BASE_URL` at it in `.env`:
 ```bash
-# Example for LM Studio local server:
+# LM Studio local server:
 LOCAL_LLM_BASE_URL=http://localhost:1234/v1
-LOCAL_LLM_MODEL=qwen2.5-14b-instruct
 
-# Example for vLLM or text-generation-webui:
+# llama.cpp (llama-server):
+LOCAL_LLM_BASE_URL=http://localhost:8080/v1
+
+# vLLM or text-generation-webui:
 LOCAL_LLM_BASE_URL=http://localhost:8000/v1
-LOCAL_LLM_MODEL=Qwen/Qwen2.5-14B-Instruct
 ```
+When `python run.py` runs, it asks Ollama first (`/api/tags`), then tries `/v1/models`. If the second one answers, it says "Found an OpenAI-compatible server", lists what the server has loaded, and uses one (the menu on a normal terminal, the best-ranked model with `--yes`). The server owns its models, so we never download anything for you there. No model loaded? Load one in your server and re-run. Nothing answers at a non-default URL? You get one line naming the URL, so a typo is easy to spot.
+
+Good to know on this path: the model menu shows only what the server lists (no download candidates, no Hugging Face row), the memory index quietly uses its built-in vectors, and `--agent pi` and `--agent opencode` use your `LOCAL_LLM_BASE_URL` as is. `--agent claude` needs an Anthropic-compatible endpoint, which a plain OpenAI-compatible server may not give you, and `--agent codex` (`--oss`) stays Ollama-only.
+
+### Models from Hugging Face
+Ollama can pull any public GGUF straight from the Hugging Face Hub, so you are not limited to Ollama's own library. The tag has this shape:
+```bash
+ollama pull hf.co/{username}/{repository}:{quantization}
+# example (2.4 GB, a small agentic model that is not on Ollama's library):
+ollama pull hf.co/mradermacher/nanbeige4.1-3b-gguf:q4_k_m
+```
+No quantization given? Ollama uses Q4_K_M when the repo has it, and otherwise picks one reasonable quant. `huggingface.co/` works as a prefix too. Private repos need your Ollama SSH key added to your Hugging Face account first.
+
+In the model menu there is a row called "Hugging Face model": pick it, then type the tag. Before anything downloads, the launcher asks the Hugging Face API whether the repo exists. A 404 is refused with a clear message. If the quant you typed has no matching `.gguf` file, you get a warning that lists the quants the repo does have (Ollama still gets the final say). Offline? The check is skipped and Ollama decides, same as the Ollama registry check. This works on the Ollama backend only: an OpenAI-compatible server cannot pull models, so the row is hidden there.
 
 ### Pointing to Google's open-source research AI harness
 If you clone and build Google's open-source research agent harness from GitHub, you can override Antigravity's default bundled binary by setting the `ANTIGRAVITY_HARNESS_PATH` environment variable:
