@@ -1,5 +1,9 @@
 """Pick the largest GGUF quant that fits the memory that is free right now."""
+import re
+
 from model_wizard import FIT_HEADROOM as HEADROOM, QUANT_RE, SPLIT_RAM_SHARE
+
+SPLIT_PART_RE = re.compile(r"-of-\d+\.gguf$")
 
 # (prefix, bits per weight), first match wins.
 BPW = (("IQ4_XS", 4.25), ("BF16", 16), ("F16", 16), ("F32", 32), ("IQ1", 1.7), ("IQ2", 2.4),
@@ -20,7 +24,8 @@ def _bpw(quant):
 
 def _group(files):
     """{quant: size_bytes or None}; split parts are summed, any unsized part makes the quant unsized.
-    A repeated full path is counted once; the same file name in two folders is two parts."""
+    Split parts (-of-N) are told apart by full path, so same-named parts in two folders both count. A non-split
+    file that shows up twice under one name is a copy and counts once."""
     groups, seen = {}, set()
     for f in files or []:
         name = f.get("name") or ""
@@ -28,9 +33,10 @@ def _group(files):
         if not q or _bpw(q) is None or any(s in name.lower() for s in SKIP) or not name.lower().endswith(".gguf"):
             continue
         path = name.replace("\\", "/").lower()
-        if path in seen:  # the same path listed twice is a copy; a same-named part in another folder is not
+        key = ("part", path) if SPLIT_PART_RE.search(path) else ("file", path.rsplit("/", 1)[-1])
+        if key in seen:
             continue
-        seen.add(path)
+        seen.add(key)
         size, prev = f.get("size"), groups.get(q, 0)
         if not isinstance(size, (int, float)) or size <= 0:
             size = None
