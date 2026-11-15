@@ -92,16 +92,67 @@ def _norm(tag):
     return tag if ":" in tag.split("/")[-1] else tag + ":latest"
 
 
-def fit_label(size_gb, vram_gb, ram_gb):
-    """'gpu' if it should sit in VRAM with room for context, 'split' if it spills to RAM, else 'too big'."""
-    if size_gb <= vram_gb * 0.9:
+FIT_HEADROOM = 1.2         # a model needs its file size x 1.2 (context and buffers) to sit in memory
+LEGACY_HEADROOM = 1 / 0.9  # the old "90% of total VRAM" rule, kept as the default for old callers
+SPLIT_RAM_SHARE = 0.7      # share of free RAM we count on when part of the model runs on the CPU
+
+
+def fit_label(size_gb, vram_gb, ram_gb, headroom=LEGACY_HEADROOM):
+    """'gpu' if the model sits in VRAM with room to spare, 'split' if part runs on the CPU, else 'too big'.
+    Pass FREE vram and ram with headroom=FIT_HEADROOM to fit against what is available right now."""
+    need = size_gb * headroom
+    if need <= vram_gb:
         return "gpu"
-    if size_gb <= vram_gb + ram_gb * 0.7:
+    if need <= vram_gb + ram_gb * SPLIT_RAM_SHARE:
         return "split"
     return "too big"
 
 
-FIT_TEXT = {"gpu": "fits your GPU", "split": "runs, part on CPU (slower)", "too big": "too big for this PC"}
+FIT_TEXT = {"gpu": "fits your GPU", "split": "runs, part on CPU (slow)", "too big": "too big for this PC"}
+
+
+def hf_repo_info(user, repo, timeout=4):
+    """{'status': 'ok'|'missing'|'unknown', 'gated': bool, 'license': str|None} for a Hugging Face repo.
+    Sends only the repo name. gated can be False, True, 'auto' or 'manual' on the Hub: anything truthy counts."""
+    try:
+        with urllib.request.urlopen(f"https://huggingface.co/api/models/{user}/{repo}", timeout=timeout) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        return {"status": "missing" if e.code == 404 else "unknown", "gated": False, "license": None}
+    except Exception:
+        return {"status": "unknown", "gated": False, "license": None}
+    if not isinstance(data, dict):
+        return {"status": "unknown", "gated": False, "license": None}
+    card = data.get("cardData") if isinstance(data.get("cardData"), dict) else {}
+    lic = card.get("license")
+    if not lic:
+        lic = next((t[len("license:"):] for t in data.get("tags") or [] if isinstance(t, str) and t.startswith("license:")), None)
+    return {"status": "ok", "gated": bool(data.get("gated")), "license": str(lic) if lic else None}
+
+
+def hf_tree_files(user, repo, timeout=6, max_pages=5):
+    """[{'name', 'size'}] for every file in the repo (sizes in bytes, from the LFS size when there is one).
+    Follows the Link: rel=next header up to max_pages. Any failure returns what we have so far (maybe [])."""
+    url = f"https://huggingface.co/api/models/{user}/{repo}/tree/main?expand=true&recursive=true"
+    files = []
+    for _ in range(max_pages):
+        try:
+            with urllib.request.urlopen(url, timeout=timeout) as resp:
+                rows = json.loads(resp.read().decode("utf-8"))
+                link = resp.headers.get("Link", "") if getattr(resp, "headers", None) else ""
+        except Exception:
+            break
+        if not isinstance(rows, list):
+            break
+        for row in rows:
+            if isinstance(row, dict) and row.get("type", "file") == "file":
+                size = (row.get("lfs") or {}).get("size") if isinstance(row.get("lfs"), dict) else None
+                files.append({"name": row.get("path", ""), "size": size if size else row.get("size")})
+        nxt = re.search(r'<([^>]+)>;\s*rel="next"', link or "")
+        if not nxt:
+            break
+        url = nxt.group(1)
+    return files
 
 
 def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, backend="ollama"):
@@ -126,7 +177,7 @@ def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, ba
     for tag, size, note in catalog:
         if _norm(tag) in have:
             continue
-        fit = fit_label(size, vram_gb, ram_gb)
+        fit = fit_label(size, vram_gb, ram_gb, headroom=FIT_HEADROOM)
         if fit == "too big":
             continue
         menu.append({"tag": tag, "installed": False, "size_gb": size, "fit": fit, "note": note})

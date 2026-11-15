@@ -26,7 +26,11 @@ import urllib.request
 import urllib.error
 import argparse
 
+import hardware
 import model_wizard
+import pull_gate
+import quant_pick
+import runlog
 import task_report
 
 # Ensure UTF-8 console output on Windows
@@ -55,66 +59,23 @@ def is_in_venv():
     return sys.prefix != sys.base_prefix
 
 def get_system_ram_gb():
-    """Detect approximate system RAM in GB without external packages."""
-    try:
-        if IS_WIN:
-            output = subprocess.check_output(
-                ["powershell", "-NoProfile", "-Command", "(Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum / 1GB"],
-                text=True, stderr=subprocess.DEVNULL
-            ).strip()
-            return float(output)
-        elif sys.platform == "darwin":
-            output = subprocess.check_output(["sysctl", "-n", "hw.memsize"], text=True).strip()
-            return float(output) / (1024 ** 3)
-        else:
-            with open("/proc/meminfo", "r") as f:
-                for line in f:
-                    if line.startswith("MemTotal:"):
-                        kb = float(line.split()[1])
-                        return kb / (1024 ** 2)
-    except Exception:
-        pass
-    return 0.0  # unknown: never invent RAM; tier logic then picks the smallest model
+    """Total RAM in GB (0.0 = unknown). The work lives in hardware.py; this name stays for old callers."""
+    return hardware.get_system_ram_gb()
 
 def get_hardware_profile():
-    """
-    Detects hardware profile (System RAM, GPU Model, Dedicated VRAM)
-    to match the PC build with optimal, cutting-edge models.
-    """
-    ram_gb = get_system_ram_gb()
-    vram_gb = 0.0
-    gpu_name = "CPU Only"
+    """System RAM, GPU name and total VRAM. The work lives in hardware.py; this name stays for old callers."""
+    return hardware.get_hardware_profile()
 
-    # 1. NVIDIA GPU / VRAM check via nvidia-smi
-    if shutil.which("nvidia-smi"):
-        try:
-            output = subprocess.check_output(
-                ["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"],
-                text=True, stderr=subprocess.DEVNULL
-            ).strip()
-            if output:
-                first_gpu = output.splitlines()[0].split(",")
-                gpu_name = first_gpu[0].strip()
-                vram_mb = float(first_gpu[1].strip())
-                vram_gb = vram_mb / 1024.0
-        except Exception:
-            pass
+def get_free_resources():
+    """Free VRAM, free RAM and free disk right now (hardware.free_resources)."""
+    return hardware.free_resources()
 
-    # 2. Apple Silicon unified memory check
-    elif sys.platform == "darwin":
-        try:
-            cpu_brand = subprocess.check_output(["sysctl", "-n", "machdep.cpu.brand_string"], text=True).strip()
-            if "Apple" in cpu_brand:
-                gpu_name = f"Apple Silicon ({cpu_brand})"
-                vram_gb = ram_gb  # Unified memory acts as VRAM
-        except Exception:
-            pass
-
-    return {
-        "ram_gb": ram_gb,
-        "vram_gb": vram_gb,
-        "gpu_name": gpu_name
-    }
+def _free_for_fit(hw, res):
+    """(free_vram, free_ram) to fit models against. An unknown GPU counts as 0 VRAM (fit on RAM only);
+    unknown free RAM falls back to total RAM so we never fit against zero by accident."""
+    vram = res["free_vram_gb"] if res.get("gpu_known") else 0.0
+    ram = res.get("free_ram_gb") or hw.get("ram_gb") or 0.0
+    return vram, ram
 
 def bootstrap_venv():
     """Create virtual environment and install requirements if not inside one."""
@@ -154,6 +115,8 @@ def bootstrap_venv():
     else:
         os.execv(VENV_PYTHON, [VENV_PYTHON, script_path] + sys.argv[1:])
 
+LOOPBACK_OLLAMA_HOST = "127.0.0.1:11434"
+
 def check_ollama_service(base_url="http://localhost:11434"):
     """Check if Ollama is running; if not, attempt to start it."""
     print("🤖 [2/4] Verifying Ollama Local LLM Server...")
@@ -182,21 +145,26 @@ def check_ollama_service(base_url="http://localhost:11434"):
         print("\n   Once installed, run this command again!\n")
         sys.exit(1)
 
-    print("       Ollama service is not running. Launching 'ollama serve' in background...")
+    print("       Ollama service is not running. Launching 'ollama serve' in background (this PC only)...")
+    child_env = dict(os.environ, OLLAMA_HOST=LOOPBACK_OLLAMA_HOST)  # child only: our own environment stays as it was
+    if os.environ.get("OLLAMA_HOST") and os.environ["OLLAMA_HOST"] != LOOPBACK_OLLAMA_HOST:
+        print(f"       (Your OLLAMA_HOST is set; the server we start listens on {LOOPBACK_OLLAMA_HOST} only.)")
     try:
         if IS_WIN:
             subprocess.Popen(
                 ["ollama", "serve"],
                 creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS,
                 stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
+                stderr=subprocess.DEVNULL,
+                env=child_env
             )
         else:
             subprocess.Popen(
                 ["ollama", "serve"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
-                start_new_session=True
+                start_new_session=True,
+                env=child_env
             )
         
         # Wait up to 12 seconds for Ollama to spin up
@@ -433,7 +401,7 @@ def update_env_model(model_name: str):
         except Exception:
             pass
 
-def _ask_which_model(display_names, installed_models, vram_gb, ram_gb):
+def _ask_which_model(display_names, installed_models, vram_gb, ram_gb, free_vram=None, free_ram=None):
     """Run the wizard. Returns the chosen tag, or None to continue with the automatic pick."""
     configured = os.environ.get("LOCAL_LLM_MODEL")
     if configured and is_model_installed(configured, installed_models):
@@ -443,7 +411,9 @@ def _ask_which_model(display_names, installed_models, vram_gb, ram_gb):
     else:
         default = None
     tier = hardware_tier_model(vram_gb, ram_gb)
-    menu = model_wizard.build_menu(display_names, vram_gb, ram_gb, recommended=None if display_names else tier)
+    menu = model_wizard.build_menu(display_names, vram_gb if free_vram is None else free_vram,
+                                   ram_gb if free_ram is None else free_ram,
+                                   recommended=None if display_names else tier)
     if not default:
         default = tier  # empty machine: Enter means exactly what the automatic path would download
     chosen = model_wizard.choose(menu, default)
@@ -515,6 +485,75 @@ def select_openai_model(base_url, requested_model=None, interactive=False):
     return chosen
 
 
+def _catalog_size(tag):
+    """Download size in GB for a curated tag, or None."""
+    want = model_wizard._norm(tag)
+    return next((size for t, size, _ in model_wizard.CATALOG if model_wizard._norm(t) == want), None)
+
+
+def _plan_download(tag, hw, res):
+    """Work out what pulling `tag` really means: final tag (with the quant we picked for a typed Hugging Face repo),
+    size, licence, gated or not, disk numbers. Returns the plan for pull_gate.ask_pull, or None (with a reason printed)
+    when it cannot fit or the quant the user typed does not exist."""
+    free_vram, free_ram = _free_for_fit(hw, res)
+    plan = {"tag": tag, "quant": None, "size_gb": _catalog_size(tag), "license": None, "gated": False,
+            "free_disk_gb": res["free_disk_gb"], "disk_total_gb": res["disk_total_gb"]}
+    parsed = model_wizard.parse_hf_tag(tag) if model_wizard.is_hf_tag(tag) else None
+    if not parsed:
+        return plan
+    user, repo, typed_quant = parsed
+    info = model_wizard.hf_repo_info(user, repo)
+    plan["license"], plan["gated"] = info["license"], info["gated"]
+    if plan["gated"]:
+        return plan
+    files = model_wizard.hf_tree_files(user, repo)
+    if not files:
+        print("       Could not read the file sizes from Hugging Face. Asking you with the tag as typed.")
+        return plan
+    pick = quant_pick.pick_quant(files, free_vram, free_ram, wanted=typed_quant)
+    if pick is None:
+        if typed_quant:
+            have = sorted({q for q in (quant_pick.quant_of(f["name"]) for f in files) if q})
+            print(f"       No {typed_quant.upper()} file in that repo. Quants it has: {', '.join(have) or 'none'}.")
+        else:
+            print(f"       No quant in {user}/{repo} fits {free_vram:.1f} GB free VRAM + {free_ram:.1f} GB free RAM. Try a smaller model.")
+        return None
+    if pick["fit"] == "too big":
+        print(f"       {typed_quant.upper()} does not fit: {pick['why']}.")
+        return None
+    est = " (size estimated)" if pick["estimated"] else ""
+    print(f"       Quant picked: {pick['quant']}, {pick['size_gb']:.1f} GB{est}. {pick['why']}.")
+    plan.update(tag=f"hf.co/{user}/{repo}:{pick['quant']}", quant=pick["quant"], size_gb=pick["size_gb"])
+    return plan
+
+
+def _pull_with_gate(tag, interactive, hw, res):
+    """The only way a model gets downloaded. Asks first, every time, whatever the size. Only a typed y pulls.
+    --yes, piped input and CI never download: they print the exact command and return None."""
+    plan = _plan_download(tag, hw, res)
+    if plan is None:
+        return None
+    if not interactive:
+        print(f"\n🛑 '{plan['tag']}' is not installed, and this run cannot ask you. Nothing was downloaded.")
+        print(f"   To get it yourself: ollama pull {plan['tag']}\n")
+        return None
+    decision = pull_gate.ask_pull(plan, interactive)
+    if decision == "yes":
+        print(f"\n📥 Downloading '{plan['tag']}' via Ollama...")
+        try:
+            subprocess.check_call(["ollama", "pull", plan["tag"]])
+        except Exception as exc:
+            print(f"\n❌ Failed to pull model: {exc}")
+            print(f"   You can manually pull it via: ollama pull {plan['tag']}\n")
+            return None
+        print(f"✅ Model '{plan['tag']}' successfully pulled!\n")
+        update_env_model(plan["tag"])  # so the next run's menu default and --yes start from this pick
+        return plan["tag"]
+    if decision == "no":
+        print("       Nothing downloaded.")
+    return None
+
+
 def select_and_pull_model(base_url="http://localhost:11434", requested_model=None, interactive=False):
     """
     Engineering Best Practice:
@@ -536,11 +575,15 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
 
     # Inspect hardware profile
     hw = get_hardware_profile()
+    res = get_free_resources()
     ram_gb = hw["ram_gb"]
     vram_gb = hw["vram_gb"]
     gpu_name = hw["gpu_name"]
+    free_vram, free_ram = _free_for_fit(hw, res)
     ram_txt = f"{ram_gb:.1f} GB RAM" if ram_gb else "RAM unknown"
     print(f"       Detected PC Build: {gpu_name} ({vram_gb:.1f} GB VRAM) | {ram_txt}")
+    gpu_txt = f"{free_vram:.1f} GB VRAM free" if res.get("gpu_known") else "GPU unknown (fitting on RAM only)"
+    print(f"       Free right now: {gpu_txt} | {free_ram:.1f} GB RAM free | {res['free_disk_gb']:.0f} GB disk free")
 
     # Check existing models locally FIRST
     installed_models = get_installed_ollama_models(base_url)
@@ -557,7 +600,7 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
     #     Enter keeps the current pick. Piped runs, CI and --yes skip this and behave exactly as before.
     from_menu = False
     if interactive and not cli_requested_model:
-        cli_requested_model = _ask_which_model(display_names, installed_models, vram_gb, ram_gb)
+        cli_requested_model = _ask_which_model(display_names, installed_models, vram_gb, ram_gb, free_vram, free_ram)
         from_menu = True  # the menu already vetted a typed tag
 
     if cli_requested_model:
@@ -606,18 +649,9 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
             print(f"       PC Build: Compact / CPU hardware ({ram_gb:.1f}GB RAM)")
             print(f"       Selected compact agent model: '{target_to_pull}'")
 
-    # 4. Only if completely missing from local inventory, perform download
-    print(f"\n📥 Model '{target_to_pull}' not found locally. Initiating one-time download via Ollama...")
-    print("   Please wait while model weights are downloaded...")
-    try:
-        subprocess.check_call(["ollama", "pull", target_to_pull])
-        print(f"✅ Model '{target_to_pull}' successfully pulled!\n")
-        update_env_model(target_to_pull)  # so the next run's menu default and --yes start from this pick
-        return target_to_pull
-    except Exception as exc:
-        print(f"\n❌ Failed to pull model: {exc}")
-        print(f"   You can manually pull it via: ollama pull {target_to_pull}\n")
-        return None
+    # 4. Not installed: the gate asks first (and --yes, piped input and CI never download)
+    print(f"\n📥 Model '{target_to_pull}' is not installed on this machine.")
+    return _pull_with_gate(target_to_pull, interactive, hw, res)
 
 async def run_agent(model, base_url="http://localhost:11434/v1"):
     """Run autonomous demonstration and interactive shell."""
@@ -729,7 +763,7 @@ def parse_args(argv=None):
     ap.add_argument("--serve", action="store_true", help="start the web UI + API (needs no Ollama)")
     ap.add_argument("--host", help="with --serve: bind address")
     ap.add_argument("--port", type=int, help="with --serve: port (default: a free one)")
-    ap.add_argument("-y", "--yes", action="store_true", help="skip the model menu and auto-pick (same as a piped run)")
+    ap.add_argument("-y", "--yes", action="store_true", help="skip the menu and every question: use the best installed model, or exit 1 and print the ollama pull command. Never downloads")
     ap.add_argument("--sync-memory", action="store_true", help="re-index the memory fabric and exit")
     ap.add_argument("--agent", choices=["shell", "pi", "opencode", "codex", "claude"], default="shell",
                     help="coding agent to land in: shell (default, Antigravity SDK), or pi / opencode / codex / "
@@ -763,6 +797,14 @@ def parse_args(argv=None):
 
 
 def main(argv=None):
+    """Run everything, copying each printed line into logs/run-<date>.log (set ANTIGRAVITY_NO_RUN_LOG=1 to skip)."""
+    if os.environ.get("ANTIGRAVITY_NO_RUN_LOG"):
+        return _main(argv)
+    with runlog.tee(os.path.join(PROJECT_DIR, "logs")):
+        return _main(argv)
+
+
+def _main(argv=None):
     raw = sys.argv[1:] if argv is None else list(argv)
     if raw and raw[0] == "handoff":  # `python run.py handoff ...`: stdlib only, no venv, no Ollama
         import handoff

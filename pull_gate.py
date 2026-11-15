@@ -17,7 +17,9 @@ def _repo_page(tag):
     return "https://ollama.com/library/" + name
 
 
-def ask_pull(plan, interactive, input_fn=input, out=print):
+def ask_pull(plan, interactive, input_fn=None, out=None):
+    input_fn = input_fn or input  # looked up now, not at import, so a terminal or a test can swap it
+    out = out or print
     if plan.get("gated"):
         out(f"{plan['tag']} is gated. Accept its terms on the repo page first: {_repo_page(plan['tag'])}")
         return "gated"
