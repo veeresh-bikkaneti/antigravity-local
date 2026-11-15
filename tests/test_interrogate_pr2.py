@@ -461,7 +461,6 @@ class OllamaModels(unittest.TestCase):
 
 class Library(unittest.TestCase):
     # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_an_unclosed_li_flood_does_not_take_quadratic_time(self):
         import subprocess
         code = "import ollama_library as l; l.parse_library('<li>' * 100000)"
@@ -515,7 +514,6 @@ class Probe(unittest.TestCase):
         self.assertIn("plain text", res["reason"])
 
     # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_tool_calls_of_the_wrong_type_fail_cleanly(self):
         for tc in (5, "abc", {"a": 1}, [None, 3, "x"], True):
             with self.subTest(tool_calls=tc):
@@ -523,7 +521,6 @@ class Probe(unittest.TestCase):
                 self.assertEqual(res["verdict"], "fail")
 
     # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_a_message_that_is_not_an_object_fails_cleanly(self):
         for m in ("oops", [1], 5):
             with self.subTest(message=m):
@@ -531,7 +528,6 @@ class Probe(unittest.TestCase):
                 self.assertEqual(res["verdict"], "fail")
 
     # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_function_that_is_a_string_list_or_none_fails_cleanly(self):
         for fn in ("read_file", ["read_file"], None, 5, {"name": None}, {"name": ["x"], "arguments": 1}):
             with self.subTest(function=fn):
