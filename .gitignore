@@ -86,6 +86,7 @@ workspace/*
 /.claude-flow/
 /.swarm/
 /.ai-context/
+.ai-context/
 /.mcp.json
 /CLAUDE.md
 /.agents/skills/ruflo/
