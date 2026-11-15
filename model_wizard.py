@@ -31,6 +31,11 @@ CATALOG = [
 
 
 TAG_RE = re.compile(r"^[a-z0-9][a-z0-9._/-]*(:[a-z0-9._-]+)?$")
+REPO_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*")  # used with fullmatch: one slash, no spaces or shell characters
+
+
+def _is_repo_id(repo):
+    return isinstance(repo, str) and REPO_RE.fullmatch(repo) is not None and ".." not in repo
 
 # Hugging Face: Ollama pulls any public GGUF with `ollama pull hf.co/{username}/{repository}:{quantization}`.
 # Only the Ollama backend can do that, so the menu hides this row on an OpenAI-compatible server.
@@ -247,7 +252,7 @@ def render(menu, default_tag, backend="ollama"):
 
 def _search_pick(results, input_fn, out):
     """Show Hugging Face search results with their badges and let the user pick one. Returns hf.co/<repo> or None."""
-    shown = results[:10]
+    shown = [r for r in results if _is_repo_id(r.get("repo"))][:10]  # malformed repos are skipped before numbering
     for i, r in enumerate(shown, 1):
         badge_text = f"  ({capabilities.format_badges(r.get('badges'))})" if r.get("badges") else ""
         downloads = f"  {r['downloads']:,} downloads" if isinstance(r.get("downloads"), int) else ""
@@ -257,7 +262,7 @@ def _search_pick(results, input_fn, out):
         raw = input_fn("       Pick a number, or Enter to go back > ").strip()
     except EOFError:
         return None
-    if raw.isdigit() and 1 <= int(raw) <= len(shown):
+    if raw.isascii() and raw.isdigit() and 1 <= int(raw) <= len(shown):
         return "hf.co/" + shown[int(raw) - 1]["repo"].lower()
     return None
 
@@ -307,7 +312,7 @@ def choose(menu, default_tag, input_fn=None, out=print, backend="ollama", search
         if raw.lower() in YES_NO:  # "y" is a valid-looking tag, but nobody means it as one
             out(f"       That looks like a yes/no answer. Type a number, a model tag, or press Enter for {fallback}.")
             continue
-        if raw.isdigit():
+        if raw.isascii() and raw.isdigit():
             n = int(raw)
             if 1 <= n <= len(menu):
                 if menu[n - 1].get("hf"):

@@ -440,7 +440,7 @@ def get_ledger_entries():
 def hf_menu_search(words=None, pipeline_tag="text-generation", limit=20):
     """Hugging Face GGUF search for the menu. Cached 24 h; offline gives [] and one warning line for the whole run."""
     rows, source = hf_search.search_models(userdata.data_dir() / "cache", query=words, pipeline_tag=pipeline_tag,
-                                           limit=limit, token=os.environ.get("HF_TOKEN") or None)
+                                           limit=limit, token=(os.environ.get("HF_TOKEN") or "").strip() or None)
     if source == "offline":
         _warn_once("hf", "Could not reach Hugging Face. Showing installed and curated models only.")
     elif source == "stale":
@@ -481,16 +481,36 @@ def _find_candidate(name, pool):
     """The candidate for a tag, tolerating the short alias run.py also lists for hf.co models."""
     want = model_wizard._norm(name or "")
     for c in pool:
-        have = model_wizard._norm(c["tag"])
-        if have == want or have.rsplit("/", 1)[-1] == want:
+        if model_wizard._norm(c["tag"]) == want:
             return c
     return None
+
+
+def _is_hf_short_alias(name, names, details):
+    """True when `name` is only the short alias of a longer hf.co name (u/m:q4 for hf.co/u/m:q4). With details, a name
+    the details know by its own key is kept, so two namespaces that share a short name are both candidates."""
+    if details:
+        return name not in details and any(k.endswith("/" + name) for k in details)
+    return any(o != name and o.endswith("/" + name) for o in names)
+
+
+_SAFE_TAG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/:@+-]*$")
+
+
+def _printable_tag(tag):
+    """A model name as it may be printed. A safe name is quoted as-is. Anything else is escaped (repr, cut to 60
+    characters) and marked unsafe, so a newline cannot forge a printed line and a shell character cannot sit in a
+    copy-paste command."""
+    text = str(tag)
+    if _SAFE_TAG_RE.fullmatch(text):
+        return f"'{text}'"
+    return f"{repr(text)[:60]} (unsafe name, shown escaped)"
 
 
 def _installed_candidates(names, details, hw, entries):
     """One ranking candidate per installed model. Fit uses this PC's TOTAL memory, because a model that is loaded
     right now is already holding some of the free memory and must not look too big to itself."""
-    names = [n for n in names if not any(o != n and o.endswith("/" + n) for o in names)]  # drop hf.co short aliases
+    names = [n for n in names if not _is_hf_short_alias(n, names, details)]  # drop hf.co short aliases
     vram, ram = hw.get("vram_gb") or 0.0, hw.get("ram_gb") or 0.0
     pool = []
     for name in names:
@@ -514,8 +534,9 @@ def _installed_candidates(names, details, hw, entries):
 def _ledger_warning(tag, entries):
     """Warns, never refuses: a model that failed the probe can still be picked."""
     if ledger.status(tag, entries) == "fail":
-        print(f"       Warning: '{tag}' failed a tool-call probe on this PC, so it may not work as a coding agent. "
-              f"Check again with: python run.py --probe {tag}")
+        hint = f" Check again with: python run.py --probe {tag}" if _SAFE_TAG_RE.fullmatch(str(tag)) else ""
+        print(f"       Warning: {_printable_tag(tag)} failed a tool-call probe on this PC, so it may not work as a coding agent."
+              f"{hint}")
 
 
 def _refuse_non_chat(tag, pool):
@@ -934,7 +955,7 @@ def run_probe_command(args):
     if not model:
         print("❌ No model to probe. Name one: python run.py --probe <model>")
         return 1
-    print(f"🔬 Probing '{model}': one live tool call (read a file, write a file)...")
+    print(f"🔬 Probing {_printable_tag(model)}: one live tool call (read a file, write a file)...")
     if ledger.fresh_pass(model, entries):
         print("       It passed a few minutes ago, so we are not repeating it (a pass is trusted for 5 minutes).")
         return 0
