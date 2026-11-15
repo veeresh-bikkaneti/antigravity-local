@@ -30,6 +30,12 @@ class PickQuant(unittest.TestCase):
         self.assertEqual(got["quant"], "Q4_K_M")
         self.assertAlmostEqual(got["size_gb"], 9.0)
 
+    def test_same_part_name_in_two_folders_is_not_dropped(self):
+        # Issue #36: the same file name in two folders is two real parts, so both must add up.
+        parts = [{"name": f"{d}/big-Q4_K_M-00001-of-00002.gguf", "size": 3 * 10**9} for d in ("a", "b")]
+        got = pick_quant(parts, 16, 0)
+        self.assertAlmostEqual(got["size_gb"], 6.0)
+
     def test_missing_size_is_estimated(self):
         got = pick_quant([gguf("Q8_0", 8.5), gguf("Q4_K_M", None)], 16, 0, wanted="q4_k_m")
         self.assertTrue(got["estimated"])
