@@ -34,6 +34,13 @@ class Parse(unittest.TestCase):
     def test_a_model_without_chips_still_lists(self):
         self.assertEqual(lib.parse_library(page(item("plain")))[0]["badges"], ())
 
+    def test_a_list_item_with_a_long_class_attribute_still_lists(self):
+        long_class = " ".join(f"utility-{i}" for i in range(120))  # about 1,500 characters of classes
+        self.assertGreater(len(long_class), 1000)
+        li = item("llama3.1", ["tools"]).replace('<li class="flex items-baseline border-b">', f'<li class="{long_class}">', 1)
+        self.assertIn(long_class, li)
+        self.assertEqual([r["name"] for r in lib.parse_library(page(li))], ["llama3.1"])
+
     def test_duplicates_and_items_without_a_library_link_are_skipped(self):
         rows = lib.parse_library(page(item("a"), item("a"), "<li><a href='/other'>x</a></li>", item("b")))
         self.assertEqual([r["name"] for r in rows], ["a", "b"])

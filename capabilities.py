@@ -27,9 +27,16 @@ def ollama_badges(capabilities):
     """Badges from /api/show `capabilities`. Unknown values are ignored. None in, None out (we do not know)."""
     if capabilities is None:
         return None
+    if isinstance(capabilities, str):
+        return ()  # a bare string where a list belongs: nothing, no crash
+    if not isinstance(capabilities, (list, tuple)):
+        return None  # a dict or number is junk, so we do not know
+    known = [c for c in capabilities if isinstance(c, str) and c in OLLAMA_KNOWN]
+    if capabilities and not known:
+        return None  # a non-empty list with no known word is junk, not "no tools"
     out = []
-    for cap in capabilities if isinstance(capabilities, (list, tuple)) else []:
-        badge = _OLLAMA_BADGE.get(cap) if isinstance(cap, str) else None
+    for cap in known:
+        badge = _OLLAMA_BADGE.get(cap)
         if badge and badge not in out:
             out.append(badge)
     return tuple(out)
@@ -38,7 +45,7 @@ def ollama_badges(capabilities):
 def hf_badges(pipeline_tag, chat_template=None):
     """Badges from a Hugging Face repo. Template-based ones end in "?" because they are a guess."""
     out = []
-    badge = _HF_TAG_BADGE.get(pipeline_tag)
+    badge = _HF_TAG_BADGE.get(pipeline_tag) if isinstance(pipeline_tag, str) else None
     if badge:
         out.append(badge)
     template = (chat_template or "")[:TEMPLATE_CAP] if isinstance(chat_template, str) else ""
@@ -72,6 +79,8 @@ def kind_from_ollama(capabilities):
 
 
 def kind_from_hf(pipeline_tag):
+    if not isinstance(pipeline_tag, str):
+        return "chat"
     if pipeline_tag == "feature-extraction":
         return "embedding"
     if pipeline_tag in _MEDIA_TAGS:
@@ -86,8 +95,8 @@ def resolve_kind(kind, tag):
 
 def tools_level(badges):
     """2 confirmed tools, 1 a guess (tools?) or unknown, 0 known to lack tools."""
-    if badges is None:
-        return 1
+    if not isinstance(badges, (list, tuple)):
+        return 1  # None or junk: unknown
     if "tools" in badges:
         return 2
     if "tools?" in badges:
@@ -103,7 +112,9 @@ def confirm_tools(badges):
 
 
 def format_badges(badges):
-    return ", ".join(badges) if badges else ""
+    if not isinstance(badges, (list, tuple)):
+        return ""
+    return ", ".join(b for b in badges if isinstance(b, str))
 
 
 # Curated catalog: confirmed only where the catalog note already says native tool calling, a guess otherwise.

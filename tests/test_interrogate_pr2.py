@@ -165,8 +165,6 @@ class HfFetch(Tmp):
         data, source = self.fetch(net2, url=URL + "2", token=secret)
         self.assertEqual(source, "offline")
 
-    # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_the_response_read_is_bounded(self):
         net = Net([{"id": "u/r"}])
         self.fetch(net)
@@ -205,8 +203,6 @@ class HfSearch(Tmp):
             self.fail(f"search_models raised {type(exc).__name__}: {exc}")
         self.assertEqual(rows, [])
 
-    # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_rows_with_junk_field_types_never_crash_and_always_have_a_string_repo(self):
         data = [{"id": 5}, {"id": ["a", "b"]}, {"id": {"x": 1}}, {"modelId": 7}, {"id": "ok/one", "pipeline_tag": ["x"]},
                 {"id": "ok/two", "pipeline_tag": {"a": 1}}, {"id": "ok/three", "pipeline_tag": 5, "gguf": [1]},
@@ -218,8 +214,6 @@ class HfSearch(Tmp):
         for r in rows:
             self.assertIsInstance(r["repo"], str, r)
 
-    # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_a_bool_download_count_is_not_shown_as_a_number(self):
         rows, _ = self.search(Net([{"id": "u/r", "downloads": True}]))
         self.assertIsNone(rows[0]["downloads"])
@@ -340,7 +334,7 @@ class Ledger(Tmp):
 
 # ---------------------------------------------------------------- capabilities and ranking
 class Caps(unittest.TestCase):
-    # Group B: left open on purpose, see issue #39
+    # Left open on purpose: contradicts an existing test, see the issue #39 follow-up
     @unittest.expectedFailure
     def test_capabilities_that_are_not_a_list_of_known_words_mean_unknown_not_no_tools(self):
         for junk in ("tools", {"tools": True}, 5, [1, None, {}], [["tools"]]):
@@ -348,8 +342,6 @@ class Caps(unittest.TestCase):
                 self.assertIsNone(capabilities.ollama_badges(junk))
                 self.assertIn(capabilities.kind_from_ollama(junk), ("unknown",))
 
-    # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_unhashable_pipeline_tags_do_not_crash_hf_badges_or_kind(self):
         for tag in (["image-text-to-text"], {"a": 1}, 5, None, ""):
             with self.subTest(tag=tag):
@@ -363,8 +355,6 @@ class Caps(unittest.TestCase):
         self.assertEqual(capabilities.kind_from_ollama([]), "unknown")
         self.assertEqual(capabilities.resolve_kind("unknown", "nomic-embed-text:latest"), "embedding")
 
-    # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_format_badges_tolerates_non_strings(self):
         try:
             text = capabilities.format_badges(("tools", 5, None))
@@ -391,8 +381,6 @@ class Ranks(unittest.TestCase):
         self.assertEqual([x["tag"] for x in ranking.agent_candidates(c)], [None])
         self.assertIsNone(ranking.best_for_agent(c[:3]))
 
-    # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_junk_field_values_never_crash_the_key(self):
         c = {"tag": "m:1", "kind": "chat", "fit": ["gpu"], "badges": 5, "last_modified": ["x"], "downloads": "9",
              "size_gb": float("nan"), "name_score": float("inf"), "ledger": ["fail"]}
@@ -435,8 +423,6 @@ class OllamaModels(unittest.TestCase):
         self.assertEqual(det["c:1"]["caps"], ["tools"])
         self.assertIsNone(det["d:1"]["caps"])  # old Ollama: unknown, never "none"
 
-    # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_a_junk_capabilities_list_is_unknown_not_empty(self):
         tags = {"models": [{"name": "c:1", "capabilities": [1, None, {}]}]}
         det = ollama_models.installed_details(opener=FakeOllama(tags))
@@ -460,8 +446,6 @@ class OllamaModels(unittest.TestCase):
 
 
 class Library(unittest.TestCase):
-    # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_an_unclosed_li_flood_does_not_take_quadratic_time(self):
         import subprocess
         code = "import ollama_library as l; l.parse_library('<li>' * 100000)"
@@ -514,24 +498,18 @@ class Probe(unittest.TestCase):
         self.assertEqual(res["verdict"], "fail")
         self.assertIn("plain text", res["reason"])
 
-    # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_tool_calls_of_the_wrong_type_fail_cleanly(self):
         for tc in (5, "abc", {"a": 1}, [None, 3, "x"], True):
             with self.subTest(tool_calls=tc):
                 res, _ = self.never_raises(lambda i, r, tc=tc: {"role": "assistant", "content": "", "tool_calls": tc})
                 self.assertEqual(res["verdict"], "fail")
 
-    # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_a_message_that_is_not_an_object_fails_cleanly(self):
         for m in ("oops", [1], 5):
             with self.subTest(message=m):
                 res, _ = self.never_raises(lambda i, r, m=m: m)
                 self.assertEqual(res["verdict"], "fail")
 
-    # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_function_that_is_a_string_list_or_none_fails_cleanly(self):
         for fn in ("read_file", ["read_file"], None, 5, {"name": None}, {"name": ["x"], "arguments": 1}):
             with self.subTest(function=fn):
@@ -676,8 +654,6 @@ def _feed(answers):
 
 
 class Menu(unittest.TestCase):
-    # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_render_survives_non_string_badges_in_any_row_kind(self):
         media = [{"tag": "x/m", "badges": ("image", 5, None), "note": "n", "hint": "h"}]
         library = [{"tag": "lib", "badges": (1, ["x"]), "note": "n"}]
@@ -687,14 +663,12 @@ class Menu(unittest.TestCase):
         except Exception as exc:  # noqa: BLE001
             self.fail(f"{type(exc).__name__}: {exc}")
 
-    # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_a_badges_string_is_not_split_into_letters(self):
         menu = model_wizard.build_menu([], 16, 128, media=[{"tag": "x/m", "badges": "image", "note": "n", "hint": "h"}])
         text = "\n".join(model_wizard.render(menu, None))
         self.assertNotIn("i, m, a, g, e", text)
 
-    # Group B: left open on purpose, see issue #39
+    # Left open on purpose: contradicts an existing test, see the issue #39 follow-up
     @unittest.expectedFailure
     def test_five_hundred_media_rows_render_and_the_default_stays_a_chat_model(self):
         media = [{"tag": f"x/img{i}", "badges": ("image",), "note": "n", "hint": f"hint{i}"} for i in range(500)]
@@ -714,8 +688,6 @@ class Menu(unittest.TestCase):
             self.assertEqual(got, "a:1")
             self.assertTrue(any("edia" in l for l in out[-2:]), (hint, out[-2:]))
 
-    # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_a_whitespace_hint_prints_something_readable(self):
         media = [{"tag": "x/m", "badges": ("image",), "note": "n", "hint": "   "}]
         menu = model_wizard.build_menu(["a:1"], 16, 128, media=media)
@@ -724,8 +696,6 @@ class Menu(unittest.TestCase):
         model_wizard.choose(menu, "a:1", input_fn=_feed([str(n), ""]), out=out.append)
         self.assertTrue(out[-1].strip(), "an all-blank line was printed as the explanation")
 
-    # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_a_media_tag_that_is_also_installed_is_not_listed_twice(self):
         media = [{"tag": "x/img", "badges": ("image",), "note": "n", "hint": "h"}]
         menu = model_wizard.build_menu(["x/img:latest"], 16, 128, media=media)

@@ -19,6 +19,7 @@ CACHE_TTL = 24 * 3600
 RETRY_WAITS = (2, 4)      # seconds, used when the Hub does not say how long to wait
 MAX_WAIT = 30             # no single wait is longer than this, whatever the Hub asks for
 MAX_RETRIES = 2
+MAX_BYTES = 3_000_000     # a search reply bigger than this is not trusted, so it is never read whole
 EXPAND = ("gguf", "downloads", "lastModified", "pipeline_tag", "tags")  # a list reply only has fields asked for
 
 
@@ -75,6 +76,16 @@ def _retry_wait(headers, attempt):
     return float(RETRY_WAITS[min(attempt, len(RETRY_WAITS) - 1)])
 
 
+def _read_capped(resp):
+    """At most MAX_BYTES + 1 bytes of the reply, so a bigger one can be spotted and refused.
+    Real responses are capped with read(MAX_BYTES + 1). Only a reader that takes no argument (TypeError) falls back to
+    read() plus a slice, which reads the whole body first."""
+    try:
+        return resp.read(MAX_BYTES + 1)
+    except TypeError:
+        return resp.read()[:MAX_BYTES + 1]
+
+
 def fetch_json(url, *, cache_dir, now=None, opener=None, sleep=None, token=None, ttl=CACHE_TTL, accept=None):
     """(data, source). source: 'cache' (fresh), 'net', 'stale' (expired cache after a failure) or 'offline' (data None)."""
     now = time.time if now is None else now
@@ -90,7 +101,10 @@ def fetch_json(url, *, cache_dir, now=None, opener=None, sleep=None, token=None,
     for attempt in range(MAX_RETRIES + 1):
         try:
             with opener(urllib.request.Request(url, headers=headers), timeout=6) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
+                raw = _read_capped(resp)
+                if len(raw) > MAX_BYTES:
+                    break  # too big to trust: do not keep it
+                data = json.loads(raw.decode("utf-8"))
         except urllib.error.HTTPError as e:
             if e.code == 429 and attempt < MAX_RETRIES:
                 sleep(_retry_wait(getattr(e, "headers", None) or {}, attempt))
@@ -117,18 +131,28 @@ def search_url(query=None, pipeline_tag="text-generation", limit=20):
     return f"{SEARCH_URL}?{base}&" + "&".join(f"expand[]={name}" for name in EXPAND)
 
 
+def _text(value):
+    """The value if it is a string, else None. A list or dict in a text field is junk, not a name."""
+    return value if isinstance(value, str) else None
+
+
+def _count(value):
+    """The value if it is a whole number, else None. bool is an int subclass, so True is not a count."""
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
 def _result(row):
     gguf = row.get("gguf") if isinstance(row.get("gguf"), dict) else {}
-    pipeline = row.get("pipeline_tag")
+    pipeline = _text(row.get("pipeline_tag"))
     return {
-        "repo": row.get("id") or row.get("modelId") or "",
-        "downloads": row.get("downloads") if isinstance(row.get("downloads"), int) else None,
-        "last_modified": row.get("lastModified") if isinstance(row.get("lastModified"), str) else None,
+        "repo": _text(row.get("id")) or _text(row.get("modelId")) or "",
+        "downloads": _count(row.get("downloads")),
+        "last_modified": _text(row.get("lastModified")),
         "pipeline_tag": pipeline,
         "badges": capabilities.hf_badges(pipeline, gguf.get("chat_template")),
         "kind": capabilities.kind_from_hf(pipeline),
-        "context_length": gguf.get("context_length") if isinstance(gguf.get("context_length"), int) else None,
-        "total_file_size": gguf.get("totalFileSize") if isinstance(gguf.get("totalFileSize"), int) else None,
+        "context_length": _count(gguf.get("context_length")),
+        "total_file_size": _count(gguf.get("totalFileSize")),
     }
 
 

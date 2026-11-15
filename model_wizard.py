@@ -189,13 +189,28 @@ def hf_tree_files(user, repo, timeout=6, max_pages=5):
     return files
 
 
+def _badge_list(value):
+    """Badges as a tuple of non-empty strings. A bare string is one badge (never split into letters); anything
+    that is not a list or tuple, and any non-string item, counts as unknown and is dropped."""
+    if isinstance(value, str):
+        value = (value,)
+    if not isinstance(value, (list, tuple)):
+        return ()
+    return tuple(b for b in value if isinstance(b, str) and b.strip())
+
+
+def _text(value):
+    """A note or hint as stripped text. Anything that is not a string, or is blank, becomes ''."""
+    return value.strip() if isinstance(value, str) else ""
+
+
 def _badges(tag, known=None):
     """Badges for a row: what we were told (installed models), else the curated catalog, plus a coding hint."""
     found = known.get(_norm(tag)) if known else None
     if found is None:
         found = capabilities.catalog_badges(tag)
     extra = capabilities.coding_badge(tag)
-    out = tuple(found or ())
+    out = _badge_list(found)
     return out + ((extra,) if extra and extra not in out else ())
 
 
@@ -248,10 +263,13 @@ def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, ba
             gb, src = _sized(row["tag"], None, size_of)
             menu.append({"tag": row["tag"], "installed": False, "size_gb": gb, "size_source": src,
                          "fit": fit_label(gb, vram_gb, ram_gb, headroom=FIT_HEADROOM) if gb else None,
-                         "badges": tuple(row.get("badges") or ()), "note": row.get("note", "from the Ollama library page")})
+                         "badges": _badge_list(row.get("badges")), "note": row.get("note", "from the Ollama library page")})
     for row in media or []:
+        if _norm(row["tag"]) in have:  # already listed (installed, catalog or library): one row per model
+            continue
+        have.add(_norm(row["tag"]))
         menu.append({"tag": row["tag"], "installed": False, "size_gb": None, "fit": None, "media": True,
-                     "badges": tuple(row.get("badges") or ()), "note": row.get("note", ""), "hint": row.get("hint", "")})
+                     "badges": _badge_list(row.get("badges")), "note": _text(row.get("note")), "hint": _text(row.get("hint"))})
     menu.append({"tag": HF_ROW_TAG, "installed": False, "size_gb": None, "fit": None, "hf": True,
                  "note": "Hugging Face model (type hf.co/user/repo:quant)"})
     return menu

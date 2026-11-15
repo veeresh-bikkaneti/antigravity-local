@@ -4,6 +4,7 @@ Ollama has no documented JSON API for its library, so this reads the HTML page. 
 with no stable hooks, so a redesign can break it at any time. That is why it sits behind --scan-library and why a
 page we cannot read gives an empty list instead of an error. The curated catalog stays the dependable list.
 """
+import bisect
 import html
 import re
 import urllib.request
@@ -12,10 +13,26 @@ LIBRARY_URL = "https://ollama.com/library"
 MAX_BYTES = 3_000_000
 CAPABILITY_CHIPS = {"tools": "tools", "vision": "vision", "thinking": "thinking", "embedding": "embedding"}
 # The page paints capability chips indigo and size chips blue. Anything else is ignored.
-_ITEM = re.compile(r'<li\b[^>]*>(.*?)</li>', re.DOTALL)
+_ITEM_OPEN = re.compile(r'<li\b[^>]{0,4000}>')  # the cap keeps a flood of "<li" linear, and allows long real attributes
+_ITEM_CLOSE = re.compile(r'</li>')
 _LINK = re.compile(r'href="/library/([a-z0-9][a-z0-9._-]*)"', re.IGNORECASE)
 _CHIP = re.compile(r'<span[^>]*class="[^"]*?(bg-indigo-50|bg-\[#ddf4ff\])[^"]*"[^>]*>\s*([^<]+?)\s*</span>', re.DOTALL)
 _DESC = re.compile(r'<p[^>]*class="[^"]*max-w-lg[^"]*"[^>]*>(.*?)</p>', re.DOTALL)
+
+
+def _items(page):
+    """The body of each <li>...</li>, in order. Same answer as the old regex, but one pass: no backtracking over the
+    rest of the page for every unclosed <li>."""
+    closes = [m.start() for m in _ITEM_CLOSE.finditer(page)]
+    pos = 0
+    for opening in _ITEM_OPEN.finditer(page):
+        if opening.start() < pos:
+            continue  # inside the item we just took, as the old non-overlapping regex would have skipped it
+        i = bisect.bisect_left(closes, opening.end())
+        if i == len(closes):
+            break  # no closing tag after this point, so none after the later ones either
+        yield page[opening.end():closes[i]]
+        pos = closes[i] + len("</li>")
 
 
 def parse_library(page):
@@ -23,7 +40,7 @@ def parse_library(page):
     if not isinstance(page, str):
         return []
     rows, seen = [], set()
-    for item in _ITEM.findall(page):
+    for item in _items(page):
         link = _LINK.search(item)
         if not link or link.group(1) in seen:
             continue
