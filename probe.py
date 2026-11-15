@@ -8,6 +8,7 @@ Plain stdlib, talking to /v1/chat/completions, so it works for Ollama and for an
 """
 import json
 import os
+import re
 import secrets
 import shutil
 import tempfile
@@ -33,6 +34,10 @@ TOOLS = [
 def _inside(folder, path):
     """The real path of `path` under `folder`, or None when it would land outside (absolute, .., symlink tricks)."""
     if not isinstance(path, str) or not path.strip() or "\x00" in path:
+        return None
+    # Same answer on every OS: a backslash is a separator, and a drive letter, a leading slash or any ".." is out.
+    path = path.replace("\\", "/")
+    if path.startswith("/") or re.match(r"[A-Za-z]:", path) or ".." in path.split("/"):
         return None
     root = os.path.realpath(folder)
     target = os.path.realpath(os.path.join(root, path))

@@ -179,7 +179,8 @@ class Probe(unittest.TestCase):
 
     def test_a_path_outside_the_folder_fails_before_anything_else_and_is_never_run(self):
         escaped = os.path.join(os.path.dirname(os.path.abspath(__file__)), "escaped_by_probe_test.txt")
-        for path in ("../escaped.txt", "..\\escaped.txt", "/etc/passwd", "C:\\Windows\\win.ini", escaped, "sub/../../x", ""):
+        for path in ("../escaped.txt", "..\\escaped.txt", "/etc/passwd", "C:\\Windows\\win.ini", escaped, "sub/../../x", "",
+                     "..\\x", "a\\..\\..\\x", "C:\\x", "c:x", "\\x", "seed.md\x00.txt"):
             with self.subTest(path=path):
                 result = self.run_probe(lambda step, req, p=path: msg(call("write_file", {"path": p, "content": "x"})))
                 self.assertEqual(result["verdict"], "fail")
