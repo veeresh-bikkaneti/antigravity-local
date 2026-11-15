@@ -13,7 +13,7 @@ LIBRARY_URL = "https://ollama.com/library"
 MAX_BYTES = 3_000_000
 CAPABILITY_CHIPS = {"tools": "tools", "vision": "vision", "thinking": "thinking", "embedding": "embedding"}
 # The page paints capability chips indigo and size chips blue. Anything else is ignored.
-_ITEM_OPEN = re.compile(r'<li\b[^>]{0,500}>')  # the cap on attributes keeps a flood of "<li" linear
+_ITEM_OPEN = re.compile(r'<li\b[^>]{0,4000}>')  # the cap keeps a flood of "<li" linear, and allows long real attributes
 _ITEM_CLOSE = re.compile(r'</li>')
 _LINK = re.compile(r'href="/library/([a-z0-9][a-z0-9._-]*)"', re.IGNORECASE)
 _CHIP = re.compile(r'<span[^>]*class="[^"]*?(bg-indigo-50|bg-\[#ddf4ff\])[^"]*"[^>]*>\s*([^<]+?)\s*</span>', re.DOTALL)
