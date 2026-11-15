@@ -31,6 +31,12 @@ import test_run  # noqa: E402
 T0 = 1_800_000_000.0
 URL = "https://huggingface.co/api/models?x=1"
 
+def expected_failure_on_windows(test):
+    """Group B, issue #39: this gap only shows on Windows (an extreme timestamp raises OSError there). Linux already
+    passes, and an expected failure that passes counts as a failure, so only mark it where it really fails."""
+    return unittest.expectedFailure(test) if sys.platform == "win32" else test
+
+
 
 class _Reply:
     def __init__(self, body, headers=None):
@@ -308,7 +314,7 @@ class Ledger(Tmp):
         self.assertEqual([e["modelRef"] for e in self.entries()], ["ok:1"])
 
     # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
+    @expected_failure_on_windows
     def test_fresh_pass_survives_weird_timestamps(self):
         for stamp in ("0001-01-01T00:00:00", "0001-01-01T00:00:00Z", "9999-12-31T23:59:59", "9999-12-31T23:59:59Z",
                       "garbage", None, 5, ["x"], "", "2026-13-01T00:00:00Z", "1e999"):
