@@ -47,8 +47,14 @@ def _inside(folder, path):
         return None
 
 
-def _tool_args(call):
-    raw = (call.get("function") or {}).get("arguments")
+def _function(call):
+    """The call's function object, or None when the model sent something else (a string, a list, null)."""
+    fn = call.get("function")
+    return fn if isinstance(fn, dict) and isinstance(fn.get("name"), str) else None
+
+
+def _tool_args(fn):
+    raw = fn.get("arguments")
     if isinstance(raw, dict):
         return raw
     try:
@@ -106,7 +112,7 @@ def run_probe(base_url, model, *, opener=None, clock=None, timeout=120, max_call
     marker = secrets.token_hex(16)
     folder = tempfile.mkdtemp(prefix="antigravity-probe-")
     started, tokens, calls = clock(), 0, 0
-    tool_seen = outside = looped = errored = timed_out = False
+    tool_seen = outside = looped = errored = timed_out = malformed = False
     wrote_as_text = False
     messages = [{"role": "user", "content": PROMPT}]
 
@@ -125,12 +131,17 @@ def run_probe(base_url, model, *, opener=None, clock=None, timeout=120, max_call
                 reply = _chat(opener, url, {"model": model, "messages": messages, "tools": TOOLS, "stream": False,
                                             "temperature": 0}, min(left, 60))
                 message = reply["choices"][0]["message"]
+                if not isinstance(message, dict):
+                    raise ValueError("message is not an object")
+                raw_calls = message.get("tool_calls") or []
+                if not isinstance(raw_calls, list):
+                    raise ValueError("tool_calls is not a list")
                 used = (reply.get("usage") or {}).get("completion_tokens")
                 tokens += used if isinstance(used, int) and not isinstance(used, bool) and used > 0 else 0
             except Exception as exc:  # transport, HTTP status, bad JSON, missing fields: all "the server did not work"
                 errored = type(exc).__name__
                 break
-            tool_calls = [c for c in (message.get("tool_calls") or []) if isinstance(c, dict)]
+            tool_calls = [c for c in raw_calls if isinstance(c, dict)]
             if not tool_calls:
                 text = message.get("content") if isinstance(message.get("content"), str) else ""
                 wrote_as_text = "read_file" in text or "write_file" in text
@@ -142,13 +153,16 @@ def run_probe(base_url, model, *, opener=None, clock=None, timeout=120, max_call
                 if calls > max_calls:
                     looped = True
                     break
-                name = (call.get("function") or {}).get("name")
-                text, bad_path = _run_tool(folder, name, _tool_args(call))
+                fn = _function(call)
+                if fn is None:
+                    malformed = True
+                    break
+                text, bad_path = _run_tool(folder, fn["name"], _tool_args(fn))
                 if bad_path:
                     outside = True
                     break
                 messages.append({"role": "tool", "tool_call_id": call.get("id") or f"call_{calls}", "content": text})
-            if outside or looped:
+            if outside or looped or malformed:
                 break
 
         # The spec's order: server error, path outside the folder, no structured tool call, loop, then the file itself.
@@ -158,6 +172,8 @@ def run_probe(base_url, model, *, opener=None, clock=None, timeout=120, max_call
             return done("fail", f"the server did not answer properly ({errored})")
         if outside:
             return done("fail", "a tool call asked for a path outside the working folder")
+        if malformed:
+            return done("fail", "a tool call had no usable function name")
         if not tool_seen:
             return done("fail", "no structured tool call"
                         + (" (it wrote the call out as plain text)" if wrote_as_text else ""))
