@@ -27,6 +27,7 @@ import urllib.error
 import argparse
 
 import capabilities
+import download_size
 import hardware
 import hf_search
 import ledger
@@ -448,6 +449,19 @@ def hf_menu_search(words=None, pipeline_tag="text-generation", limit=20):
     return rows
 
 
+def hf_menu_search_sized(words, free_vram, free_ram, limit=10):
+    """hf_menu_search, plus the size of the quant each of the first rows would pull (one Hub tree read per repo)."""
+    rows = hf_menu_search(words)
+    for r in rows[:limit]:
+        if not model_wizard._is_repo_id(r.get("repo")):
+            continue
+        user, repo = r["repo"].split("/", 1)
+        info = download_size.hf_quant_size(user, repo, free_vram, free_ram)
+        if info:
+            r.update(size_gb=info["gb"], quant=info["quant"], size_source=info["source"])
+    return rows
+
+
 def get_media_rows(backend="ollama"):
     """Picture, video and sound models for their own menu section. Listed, never picked for an agent."""
     if backend != "ollama":
@@ -568,10 +582,13 @@ def _ask_which_model(display_names, installed_models, vram_gb, ram_gb, free_vram
                                    ram_gb if free_ram is None else free_ram,
                                    recommended=None if best else tier,
                                    badges={model_wizard._norm(c["tag"]): c["badges"] for c in pool},
-                                   library=get_library_rows(scan_library), media=get_media_rows())
+                                   library=get_library_rows(scan_library), media=get_media_rows(),
+                                   size_of=download_size.resolve)
     if not default:
         default = tier  # no usable model installed: Enter means exactly what the automatic path would offer
-    chosen = model_wizard.choose(menu, default, search_fn=hf_menu_search)
+    fv = vram_gb if free_vram is None else free_vram
+    fr = ram_gb if free_ram is None else free_ram
+    chosen = model_wizard.choose(menu, default, search_fn=lambda words: hf_menu_search_sized(words, fv, fr))
     if not chosen or model_wizard._norm(chosen) == model_wizard._norm(default or ""):
         # Kept the default: for an installed model the automatic path handles it; otherwise pull it.
         return None if chosen and is_model_installed(chosen, installed_models) else chosen
@@ -656,10 +673,13 @@ def _plan_download(tag, hw, res):
         print(f"       {tag!r} is not a model tag (ASCII letters, digits, . _ - / : only, and it cannot start with a dash).")
         return None
     free_vram, free_ram = _free_for_fit(hw, res)
-    plan = {"tag": tag, "quant": None, "size_gb": _catalog_size(tag), "license": None, "gated": False,
+    plan = {"tag": tag, "quant": None, "size_gb": None, "size_source": None, "license": None, "gated": False,
             "free_disk_gb": res["free_disk_gb"], "disk_total_gb": res["disk_total_gb"]}
     parsed = model_wizard.parse_hf_tag(tag) if model_wizard.is_hf_tag(tag) else None
     if not parsed:
+        info = download_size.resolve(tag, _catalog_size(tag))
+        if info:
+            plan.update(size_gb=info["gb"], size_source=info["source"])
         return plan
     user, repo, typed_quant = parsed
     info = model_wizard.hf_repo_info(user, repo)
@@ -686,7 +706,8 @@ def _plan_download(tag, hw, res):
         return None
     est = " (size estimated)" if pick["estimated"] else ""
     print(f"       Quant picked: {pick['quant']}, {pick['size_gb']:.1f} GB{est}. {pick['why']}.")
-    plan.update(tag=f"hf.co/{user}/{repo}:{pick['quant']}", quant=pick["quant"], size_gb=pick["size_gb"])
+    plan.update(tag=f"hf.co/{user}/{repo}:{pick['quant']}", quant=pick["quant"], size_gb=pick["size_gb"],
+                size_source="estimate" if pick["estimated"] else "hugging face")
     return plan
 
 

@@ -365,12 +365,16 @@ class ModelWizardInRun(unittest.TestCase):
     def test_empty_machine_menu_printed_by_run_marks_the_tier_pick(self):
         """Goes through run.select_and_pull_model, so dropping recommended= in run.py fails this."""
         hw = {"ram_gb": 32.0, "vram_gb": 0.0, "gpu_name": "x"}
-        self.sel(set(), [""], hw=hw)
+        import download_size
+        download_size.reset_cache()
+        with mock.patch.object(download_size, "_get_json", return_value=None):  # offline: no registry answer
+            self.sel(set(), [""], hw=hw)
+        download_size.reset_cache()
         lines = self.printed.splitlines()
         rows = [ln for ln in lines if "qwen2.5-coder:7b" in ln]
         self.assertTrue(rows, self.printed)
         self.assertIn("recommended for this PC", rows[0])
-        self.assertIn("size unknown", rows[0])
+        self.assertIn("~3.9 GB download (estimate)", rows[0])  # 7b x 4.5 bits: sized, and labelled as a guess
         self.assertIn("*", rows[0])
         self.assertRegex(rows[0].strip(), r"^\* 1\. qwen2\.5-coder:7b")  # row 1, and it carries the default mark
 

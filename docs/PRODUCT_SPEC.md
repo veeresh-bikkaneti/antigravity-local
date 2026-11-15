@@ -8,6 +8,12 @@
 
 ## 1. Product vision and value
 
+> **From zero to coding with one bootstrapped command and a setup wizard.**
+>
+> - **Goal:** one command takes you from nothing to a local coding agent you chose, on your own model, with your project context, so work keeps going when a cloud limit hits.
+> - **Vision:** local AI coding as easy as starting a game, and never stuck on an old model.
+> - **Mission:** bootstrap, pick, pull only with your yes, serve, wire any agent, keep shared memory current, and recommend upgrades, all in a guided wizard with plain, readable logs and an arcade feel.
+
 Google Antigravity Local pulls the official `google-antigravity` SDK off Google Cloud Gemini and points it at local open-weights models (Nanbeige, Qwen 2.5 Coder, DeepSeek, Codestral, Command R, Gemma 2) served by Ollama. Inference runs on your machine. Setup still downloads Python packages, Ollama, and the model, so you need internet for that part.
 
 ### Core value pillars

@@ -180,8 +180,15 @@ def _badges(tag, known=None):
     return out + ((extra,) if extra and extra not in out else ())
 
 
+def _sized(tag, list_gb, size_of):
+    """(gb, source) for a download row. `size_of(tag, list_gb)` is the caller's resolver (see download_size.resolve);
+    without one, only our own list number is known."""
+    info = size_of(tag, list_gb) if size_of else ({"gb": list_gb, "source": "list"} if list_gb else None)
+    return (info["gb"], info["source"]) if info and info.get("gb") else (None, None)
+
+
 def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, backend="ollama",
-               badges=None, library=None, media=None):
+               badges=None, library=None, media=None, size_of=None):
     """Installed models first (no download), then the hardware pick if given, then catalog models that can run here,
     then one row that explains how to type a Hugging Face model.
 
@@ -201,21 +208,27 @@ def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, ba
     if backend == "openai":
         return menu
     if recommended and _norm(recommended) not in have:
-        menu.append({"tag": recommended, "installed": False, "size_gb": None, "fit": None,
+        gb, src = _sized(recommended, None, size_of)
+        menu.append({"tag": recommended, "installed": False, "size_gb": gb, "size_source": src,
+                     "fit": fit_label(gb, vram_gb, ram_gb, headroom=FIT_HEADROOM) if gb else None,
                      "badges": _badges(recommended), "note": "recommended for this PC"})
         have.add(_norm(recommended))
     for tag, size, note in catalog:
         if _norm(tag) in have:
             continue
-        fit = fit_label(size, vram_gb, ram_gb, headroom=FIT_HEADROOM)
+        gb, src = _sized(tag, size, size_of)
+        fit = fit_label(gb, vram_gb, ram_gb, headroom=FIT_HEADROOM) if gb else None
         if fit == "too big":
             continue
-        menu.append({"tag": tag, "installed": False, "size_gb": size, "fit": fit, "badges": _badges(tag), "note": note})
+        menu.append({"tag": tag, "installed": False, "size_gb": gb, "size_source": src, "fit": fit,
+                     "badges": _badges(tag), "note": note})
         have.add(_norm(tag))
     for row in library or []:
         if _norm(row["tag"]) not in have:
             have.add(_norm(row["tag"]))
-            menu.append({"tag": row["tag"], "installed": False, "size_gb": None, "fit": None,
+            gb, src = _sized(row["tag"], None, size_of)
+            menu.append({"tag": row["tag"], "installed": False, "size_gb": gb, "size_source": src,
+                         "fit": fit_label(gb, vram_gb, ram_gb, headroom=FIT_HEADROOM) if gb else None,
                          "badges": tuple(row.get("badges") or ()), "note": row.get("note", "from the Ollama library page")})
     for row in media or []:
         menu.append({"tag": row["tag"], "installed": False, "size_gb": None, "fit": None, "media": True,
@@ -243,7 +256,12 @@ def render(menu, default_tag, backend="ollama"):
         if m["installed"]:
             detail = "loaded, no download" if backend == "openai" else "installed, no download"
         else:
-            size = f"{m['size_gb']:.1f} GB download" if m["size_gb"] is not None else "size unknown"
+            if m["size_gb"] is None:
+                size = "size unknown"
+            elif m.get("size_source") == "estimate":
+                size = f"~{m['size_gb']:.1f} GB download (estimate)"
+            else:
+                size = f"{m['size_gb']:.1f} GB download"
             detail = size + (f", {FIT_TEXT[m['fit']]}" if m["fit"] else "")
         badge_text = f"  ({capabilities.format_badges(m.get('badges'))})" if m.get("badges") else ""
         lines.append(f"       {star}{i:>2}. {m['tag']}  [{detail}]{badge_text}  {m['note']}")
@@ -254,13 +272,23 @@ def render(menu, default_tag, backend="ollama"):
     return lines
 
 
+def _search_size_text(r):
+    """'  Q4_K_M 2.4 GB download' for a search row that was sized, '' when it was not."""
+    if r.get("size_gb") is None:
+        return ""
+    approx = "~" if r.get("size_source") == "estimate" else ""
+    quant = f"{r['quant']} " if r.get("quant") else ""
+    tail = " (estimate)" if r.get("size_source") == "estimate" else ""
+    return f"  {quant}{approx}{r['size_gb']:.1f} GB download{tail}"
+
+
 def _search_pick(results, input_fn, out):
     """Show Hugging Face search results with their badges and let the user pick one. Returns hf.co/<repo> or None."""
     shown = [r for r in results if _is_repo_id(r.get("repo"))][:10]  # malformed repos are skipped before numbering
     for i, r in enumerate(shown, 1):
         badge_text = f"  ({capabilities.format_badges(r.get('badges'))})" if r.get("badges") else ""
         downloads = f"  {r['downloads']:,} downloads" if isinstance(r.get("downloads"), int) else ""
-        out(f"       {i:>2}. {r['repo']}{badge_text}{downloads}")
+        out(f"       {i:>2}. {r['repo']}{badge_text}{downloads}{_search_size_text(r)}")
     out("       (a ? after a badge is a guess from the chat template; run python run.py --probe to check it)")
     try:
         raw = input_fn("       Pick a number, or Enter to go back > ").strip()

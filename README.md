@@ -1,5 +1,11 @@
 # Local Google Antigravity agent (open-source edition)
 
+> **From zero to coding with one bootstrapped command and a setup wizard.**
+>
+> - **Goal:** one command takes you from nothing to a local coding agent you chose, on your own model, with your project context, so work keeps going when a cloud limit hits.
+> - **Vision:** local AI coding as easy as starting a game, and never stuck on an old model.
+> - **Mission:** bootstrap, pick, pull only with your yes, serve, wire any agent, keep shared memory current, and recommend upgrades, all in a guided wizard with plain, readable logs and an arcade feel.
+
 > Run fully autonomous, private AI agents on your local machine using the official Google Antigravity SDK (`google-antigravity`) connected to local models (Ollama, LM Studio, vLLM) or Google's open-source Research AI Harness. No cloud lock-in, no API fees.
 >
 > Prefer a guided tour? The [project site](https://veeresh-bikkaneti.github.io/antigravity-local/) walks through each step beside a drawing of your machine, with the architecture diagrams.
