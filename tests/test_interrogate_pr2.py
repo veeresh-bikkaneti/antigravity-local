@@ -349,7 +349,6 @@ class Caps(unittest.TestCase):
                 self.assertIn(capabilities.kind_from_ollama(junk), ("unknown",))
 
     # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_unhashable_pipeline_tags_do_not_crash_hf_badges_or_kind(self):
         for tag in (["image-text-to-text"], {"a": 1}, 5, None, ""):
             with self.subTest(tag=tag):
@@ -364,7 +363,6 @@ class Caps(unittest.TestCase):
         self.assertEqual(capabilities.resolve_kind("unknown", "nomic-embed-text:latest"), "embedding")
 
     # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_format_badges_tolerates_non_strings(self):
         try:
             text = capabilities.format_badges(("tools", 5, None))
@@ -392,7 +390,6 @@ class Ranks(unittest.TestCase):
         self.assertIsNone(ranking.best_for_agent(c[:3]))
 
     # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_junk_field_values_never_crash_the_key(self):
         c = {"tag": "m:1", "kind": "chat", "fit": ["gpu"], "badges": 5, "last_modified": ["x"], "downloads": "9",
              "size_gb": float("nan"), "name_score": float("inf"), "ledger": ["fail"]}
@@ -436,7 +433,6 @@ class OllamaModels(unittest.TestCase):
         self.assertIsNone(det["d:1"]["caps"])  # old Ollama: unknown, never "none"
 
     # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_a_junk_capabilities_list_is_unknown_not_empty(self):
         tags = {"models": [{"name": "c:1", "capabilities": [1, None, {}]}]}
         det = ollama_models.installed_details(opener=FakeOllama(tags))

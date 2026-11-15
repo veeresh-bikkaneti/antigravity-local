@@ -24,7 +24,11 @@ def _get_json(opener, url, timeout, data=None):
 
 
 def _caps(value):
-    return [c for c in value if isinstance(c, str)] if isinstance(value, list) else None
+    """Known-type entries only. A non-empty list with nothing usable is unknown (None), not an empty list."""
+    if not isinstance(value, list):
+        return None
+    kept = [c for c in value if isinstance(c, str)]
+    return kept if kept or not value else None
 
 
 def installed_details(base_url="http://localhost:11434", opener=None, timeout=3):
