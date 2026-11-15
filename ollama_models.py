@@ -60,13 +60,18 @@ def installed_details(base_url="http://localhost:11434", opener=None, timeout=3)
 
 
 def lookup(details, name):
-    """The details for a tag, tolerating the short alias run.py also lists (hf.co/u/m:q4 shows up as m:q4)."""
+    """The details for a tag: the exact normalised tag first.
+
+    A short name (m:q4) may find an hf.co/ model (hf.co/u/m:q4), because run.py
+    lists that short alias. It never finds a model in any other namespace:
+    acme/foo:1 does not answer to foo:1.
+    """
     if not details or not name:
         return None
     want = model_wizard._norm(name)
     if want in details:
         return details[want]
     for key, value in details.items():
-        if key.rsplit("/", 1)[-1] == want:
+        if key.startswith("hf.co/") and key.rsplit("/", 1)[-1] == want:
             return value
     return None
