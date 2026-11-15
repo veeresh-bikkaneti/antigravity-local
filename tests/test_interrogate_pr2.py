@@ -677,7 +677,6 @@ def _feed(answers):
 
 class Menu(unittest.TestCase):
     # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_render_survives_non_string_badges_in_any_row_kind(self):
         media = [{"tag": "x/m", "badges": ("image", 5, None), "note": "n", "hint": "h"}]
         library = [{"tag": "lib", "badges": (1, ["x"]), "note": "n"}]
@@ -688,7 +687,6 @@ class Menu(unittest.TestCase):
             self.fail(f"{type(exc).__name__}: {exc}")
 
     # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_a_badges_string_is_not_split_into_letters(self):
         menu = model_wizard.build_menu([], 16, 128, media=[{"tag": "x/m", "badges": "image", "note": "n", "hint": "h"}])
         text = "\n".join(model_wizard.render(menu, None))
@@ -715,7 +713,6 @@ class Menu(unittest.TestCase):
             self.assertTrue(any("edia" in l for l in out[-2:]), (hint, out[-2:]))
 
     # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_a_whitespace_hint_prints_something_readable(self):
         media = [{"tag": "x/m", "badges": ("image",), "note": "n", "hint": "   "}]
         menu = model_wizard.build_menu(["a:1"], 16, 128, media=media)
@@ -725,7 +722,6 @@ class Menu(unittest.TestCase):
         self.assertTrue(out[-1].strip(), "an all-blank line was printed as the explanation")
 
     # Group B: left open on purpose, see issue #39
-    @unittest.expectedFailure
     def test_a_media_tag_that_is_also_installed_is_not_listed_twice(self):
         media = [{"tag": "x/img", "badges": ("image",), "note": "n", "hint": "h"}]
         menu = model_wizard.build_menu(["x/img:latest"], 16, 128, media=media)
