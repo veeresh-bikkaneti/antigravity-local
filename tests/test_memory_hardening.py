@@ -15,6 +15,28 @@ DEAD_OLLAMA = "http://127.0.0.1:9"
 DOC = "# Zebra\n\nzebra memory fabric hybrid retrieval notes for testing the search floor\n"
 
 
+class NonOllamaBackend(unittest.TestCase):
+    def test_openai_compatible_server_skips_the_ollama_probe_and_stays_quiet(self):
+        from unittest import mock
+        out = io.StringIO()
+        with mock.patch.dict(memory.os.environ, {"LOCAL_LLM_BACKEND": "openai"}), \
+                mock.patch.object(memory.urllib.request, "urlopen", side_effect=OSError("down")) as probe, \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+            emb = memory.EmbeddingProvider("http://127.0.0.1:1234")
+        probe.assert_not_called()  # the probe swallows its own errors, so "never called" is the only honest check
+        self.assertEqual(emb.mode, "pure_python_tfidf")
+        self.assertIsNone(emb.ollama_model)
+        self.assertEqual(out.getvalue(), "")
+
+    def test_without_the_marker_the_probe_still_runs(self):
+        from unittest import mock
+        with mock.patch.dict(memory.os.environ, {}, clear=False), \
+                mock.patch.object(memory.urllib.request, "urlopen", side_effect=OSError("down")) as call:
+            memory.os.environ.pop("LOCAL_LLM_BACKEND", None)
+            memory.EmbeddingProvider(DEAD_OLLAMA)
+        self.assertTrue(call.called)
+
+
 class Base(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

@@ -103,6 +103,107 @@ class SmallFixes(unittest.TestCase):
         self.assertEqual(got, "qwen3:8b")
 
 
+def _hub_reply(files, status=200):
+    """A pretend huggingface.co/api/models/... reply for urllib.request.urlopen."""
+    import io
+    import json
+    import urllib.error
+    if status != 200:
+        return urllib.error.HTTPError("https://huggingface.co/api/models/x/y", status, "err", {}, io.BytesIO(b""))
+    body = json.dumps({"id": "x/y", "siblings": [{"rfilename": f} for f in files]}).encode()
+    reply = mock.MagicMock()
+    reply.__enter__.return_value.read.return_value = body
+    return reply
+
+
+class HuggingFace(unittest.TestCase):
+    FILES = ["README.md", "Nanbeige4.1-3B.Q4_K_M.gguf", "Nanbeige4.1-3B.Q8_0.gguf", "Nanbeige4.1-3B.IQ4_XS.gguf",
+             "Nanbeige4.1-3B.f16.gguf"]
+
+    def check(self, tag, reply):
+        effect = reply if isinstance(reply, BaseException) else None
+        with mock.patch.object(mw.urllib.request, "urlopen", side_effect=effect, return_value=None if effect else reply):
+            return mw.hf_check(tag)
+
+    def test_tag_shapes(self):
+        self.assertTrue(mw.is_hf_tag("hf.co/a/b:q4_k_m"))
+        self.assertTrue(mw.is_hf_tag("HuggingFace.co/a/b"))
+        self.assertFalse(mw.is_hf_tag("qwen3.6:27b"))
+        self.assertEqual(mw.parse_hf_tag("hf.co/mradermacher/Nanbeige4.1-3B-GGUF:Q4_K_M"),
+                         ("mradermacher", "Nanbeige4.1-3B-GGUF", "Q4_K_M"))
+        self.assertEqual(mw.parse_hf_tag("huggingface.co/a/b"), ("a", "b", None))
+        for bad in ("hf.co/justone", "hf.co/a/b/c", "hf.co//b", "qwen3.6:27b"):
+            self.assertIsNone(mw.parse_hf_tag(bad), bad)
+
+    def test_repo_that_exists_is_ok_with_or_without_a_quant(self):
+        self.assertEqual(self.check("hf.co/x/y", _hub_reply(self.FILES)), ("ok", None))
+        self.assertEqual(self.check("hf.co/x/y:q4_k_m", _hub_reply(self.FILES)), ("ok", None))
+        self.assertEqual(self.check("hf.co/x/y:IQ4_XS", _hub_reply(self.FILES)), ("ok", None))
+
+    def test_404_means_missing(self):
+        self.assertEqual(self.check("hf.co/x/nope", _hub_reply([], status=404)), ("missing", None))
+
+    def test_offline_and_private_are_unknown_not_refused(self):
+        self.assertEqual(self.check("hf.co/x/y", OSError("no network")), ("unknown", None))
+        self.assertEqual(self.check("hf.co/x/y", _hub_reply([], status=401)), ("unknown", None))
+        self.assertEqual(self.check("hf.co/x/y", _hub_reply([], status=500)), ("unknown", None))
+
+    def test_a_quant_the_repo_does_not_have_lists_the_ones_it_has(self):
+        status, have = self.check("hf.co/x/y:q5_k_m", _hub_reply(self.FILES))
+        self.assertEqual(status, "no_quant")
+        self.assertEqual(have, ["F16", "IQ4_XS", "Q4_K_M", "Q8_0"])
+
+    def test_a_repo_with_no_gguf_files_has_no_quants(self):
+        self.assertEqual(self.check("hf.co/x/y:q4_k_m", _hub_reply(["model.safetensors"])), ("no_quant", []))
+
+    def test_bad_shape_never_touches_the_network(self):
+        with mock.patch.object(mw.urllib.request, "urlopen", side_effect=AssertionError("no network")):
+            self.assertEqual(mw.hf_check("hf.co/justone"), ("bad_tag", None))
+
+    def test_the_hub_check_only_sends_the_repo_name(self):
+        with mock.patch.object(mw.urllib.request, "urlopen", return_value=_hub_reply(self.FILES)) as call:
+            mw.hf_check("hf.co/x/y:q4_k_m")
+        self.assertEqual(call.call_args.args[0], "https://huggingface.co/api/models/x/y")
+
+
+class HuggingFaceMenu(unittest.TestCase):
+    def test_ollama_menu_ends_with_the_hugging_face_row_and_lists_nanbeige(self):
+        menu = mw.build_menu(["qwen2.5:14b"], 16, 128)
+        self.assertTrue(menu[-1].get("hf"))
+        self.assertIn("Hugging Face model (type hf.co/user/repo:quant)", "\n".join(mw.render(menu, "qwen2.5:14b")))
+        nb = [m for m in menu if m["tag"].startswith("hf.co/mradermacher/nanbeige4.1-3b-gguf")]
+        self.assertEqual(len(nb), 1)
+        self.assertTrue(mw.is_hf_tag(nb[0]["tag"]) and mw.parse_hf_tag(nb[0]["tag"])[2] == "q4_k_m")
+
+    def test_openai_backend_has_only_what_the_server_lists(self):
+        menu = mw.build_menu(["lm-model-a", "lm-model-b"], 16, 128, backend="openai", recommended="qwen2.5-coder:7b")
+        self.assertEqual([m["tag"] for m in menu], ["lm-model-a", "lm-model-b"])
+        self.assertFalse(any(m.get("hf") for m in menu))
+        text = "\n".join(mw.render(menu, "lm-model-a", backend="openai"))
+        self.assertNotIn("Hugging Face", text)
+        self.assertIn("a model id your server lists", text)
+        self.assertNotIn("Ollama tag", text)
+
+    def test_picking_the_hf_row_asks_for_a_tag_and_returns_it_lowercased(self):
+        menu = mw.build_menu(["qwen2.5:14b"], 16, 128)
+        row = str(len(menu))
+        answers = iter([row, "HF.co/User/Repo:Q4_K_M"])
+        got = mw.choose(menu, "qwen2.5:14b", input_fn=lambda _="": next(answers), out=lambda *_: None)
+        self.assertEqual(got, "hf.co/user/repo:q4_k_m")
+
+    def test_hf_row_with_a_blank_or_wrong_answer_keeps_the_default(self):
+        menu = mw.build_menu(["qwen2.5:14b"], 16, 128)
+        row = str(len(menu))
+        for typed in ("", "not-a-hf-tag", "qwen3.6:27b"):
+            answers = iter([row, typed, typed, typed])
+            got = mw.choose(menu, "qwen2.5:14b", input_fn=lambda _="": next(answers), out=lambda *_: None)
+            self.assertEqual(got, "qwen2.5:14b", typed)
+
+    def test_the_placeholder_row_is_never_the_fallback(self):
+        menu = [m for m in mw.build_menu([], 0, 0, catalog=[]) ]
+        self.assertEqual(mw.choose(menu, None, input_fn=lambda _="": "", out=lambda *_: None), None)
+
+
 class TagExists(unittest.TestCase):
     def test_other_registry_is_unknown_and_never_asks_ollama(self):
         # tag_exists swallows exceptions, so a raising mock would pass vacuously; assert on calls instead.

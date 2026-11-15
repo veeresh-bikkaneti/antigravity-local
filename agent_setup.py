@@ -568,6 +568,9 @@ def run(name, model, base_url, workspace, config_only=False, home=None, which=No
         out(f"       Agent    : {name}")
         out(f"       Model    : {model}")
         out(f"       Endpoint : {claude_base_url(base_url) if name == 'claude' else base_url}")
+        if name == "claude" and (os.environ if environ is None else environ).get("LOCAL_LLM_BACKEND") == "openai":
+            out("       Note     : Claude Code needs an Anthropic-compatible endpoint (it talks /v1/messages). A plain "
+                "OpenAI-compatible server may not answer that, so this session can fail to connect.")
         if result.files:
             out("       Config   : " + ", ".join(str(p) for p in result.files))
             out("       Your other settings were kept. If a config file already existed, a one-time backup "

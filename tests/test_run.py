@@ -2,11 +2,13 @@
 import asyncio
 import contextlib
 import io
+import json
 import subprocess
 import sys
 import tempfile
 import types
 import unittest
+import urllib.error
 from pathlib import Path
 from unittest import mock
 
@@ -177,6 +179,43 @@ class ModelWizardInRun(unittest.TestCase):
         self.assertEqual((got, len(pulls)), ("devstral-small-2:24b", 1))
         self.assertIn("LOCAL_LLM_MODEL=devstral-small-2:24b", wrote)
 
+    HF = "hf.co/mradermacher/nanbeige4.1-3b-gguf:q4_k_m"
+
+    def sel_hf(self, status, detail=None, **kw):
+        with mock.patch.object(run.model_wizard, "hf_check", return_value=(status, detail)) as check:
+            got, pulls, wrote = self.sel(self.INSTALLED, [self.HF], **kw)
+        return got, pulls, wrote, check
+
+    def test_typed_hf_tag_that_exists_is_pulled_as_typed_and_saved(self):
+        got, pulls, wrote, check = self.sel_hf("ok", env_text="LOCAL_LLM_MODEL=qwen2.5:14b\n")
+        self.assertEqual((got, pulls), (self.HF, [["ollama", "pull", self.HF]]))
+        self.assertIn("LOCAL_LLM_MODEL=" + self.HF, wrote)
+        check.assert_called_once_with(self.HF)
+
+    def test_typed_hf_tag_that_is_a_404_is_refused_and_nothing_is_pulled(self):
+        got, pulls, _, _ = self.sel_hf("missing")
+        self.assertEqual((got, pulls), ("qwen2.5:14b", []))
+        self.assertIn("not found on Hugging Face", self.printed)
+
+    def test_typed_hf_tag_while_offline_is_allowed(self):
+        got, pulls, _, _ = self.sel_hf("unknown")
+        self.assertEqual((got, pulls), (self.HF, [["ollama", "pull", self.HF]]))
+
+    def test_typed_hf_tag_with_a_missing_quant_warns_with_the_quants_that_exist_then_lets_ollama_decide(self):
+        got, pulls, _, _ = self.sel_hf("no_quant", ["Q4_K_M", "Q8_0"])
+        self.assertEqual(got, self.HF)
+        self.assertIn("Quants it has: Q4_K_M, Q8_0", self.printed)
+
+    def test_cli_hf_model_is_vetted_too(self):
+        with mock.patch.object(run.model_wizard, "hf_check", return_value=("missing", None)):
+            got, pulls, _ = self.sel(self.INSTALLED, interactive=False, requested="hf.co/nobody/nothing:q4_k_m")
+        self.assertEqual((got, pulls), (None, []))
+
+    def test_the_ollama_menu_offers_the_hf_row_and_nanbeige(self):
+        self.sel(self.INSTALLED, [""], env="qwen2.5:14b")
+        self.assertIn("Hugging Face model (type hf.co/user/repo:quant)", self.printed)
+        self.assertIn(self.HF, self.printed)
+
     def test_typed_tag_missing_from_registry_falls_back_without_pulling(self):
         got, pulls, _ = self.sel(self.INSTALLED, ["nanbeige4.1:3b"], registry=False)
         self.assertEqual((got, pulls), ("qwen2.5:14b", []))
@@ -311,6 +350,178 @@ class ModelWizardInRun(unittest.TestCase):
         self.assertGreater(score("qwen3.6:27b"), score("qwen2.5:14b"))
         self.assertGreater(score("qwen2.5:14b"), score("gemma2:27b"))
         self.assertLessEqual(score("qwen3-coder:30b"), 100.0)
+
+
+class _Server:
+    """Pretend HTTP for urlopen: URLs in `routes` (url -> body text) answer 200, everything else is refused."""
+    def __init__(self, routes):
+        self.routes, self.seen = routes, []
+
+    def __call__(self, url, timeout=None):
+        u = url if isinstance(url, str) else url.full_url
+        self.seen.append(u)
+        if u in self.routes:
+            resp = mock.MagicMock()
+            resp.status = 200
+            resp.read.return_value = self.routes[u].encode("utf-8")
+            resp.__enter__.return_value = resp
+            return resp
+        raise urllib.error.URLError("refused")
+
+
+LM = "http://localhost:1234/v1"
+LM_MODELS = json.dumps({"data": [{"id": "qwen2.5-coder-7b-instruct"}, {"id": "gemma-2-27b"}]})
+OLLAMA_TAGS = "http://localhost:11434/api/tags"
+
+
+class AnyBackend(unittest.TestCase):
+    """run.py works with Ollama, or any OpenAI-compatible server (LM Studio, llama.cpp, vLLM) with no download."""
+
+    def detect(self, base, routes):
+        with mock.patch.object(run.urllib.request, "urlopen", _Server(routes)):
+            return run.detect_backend(base)
+
+    def test_ollama_answering_wins_even_though_it_also_serves_v1_models(self):
+        both = {OLLAMA_TAGS: "{}", "http://localhost:11434/v1/models": LM_MODELS}
+        self.assertEqual(self.detect("http://localhost:11434/v1", both), "ollama")
+
+    def test_only_v1_models_answering_is_an_openai_compatible_server(self):
+        self.assertEqual(self.detect(LM, {LM + "/models": LM_MODELS}), "openai")
+
+    def test_a_base_url_without_v1_still_finds_the_models_list(self):
+        self.assertEqual(self.detect("http://localhost:8080", {"http://localhost:8080/v1/models": LM_MODELS}), "openai")
+
+    def test_nothing_answering_is_none(self):
+        self.assertIsNone(self.detect(LM, {}))
+
+    def test_a_models_reply_without_a_data_list_is_not_an_openai_server(self):
+        self.assertIsNone(self.detect(LM, {LM + "/models": json.dumps({"error": "nope"})}))
+        self.assertIsNone(self.detect(LM, {LM + "/models": "<html>not json</html>"}))
+
+    def test_only_the_default_address_counts_as_the_default_ollama_url(self):
+        self.assertTrue(run.is_default_ollama_url("http://localhost:11434/v1"))
+        self.assertTrue(run.is_default_ollama_url("http://127.0.0.1:11434"))
+        self.assertFalse(run.is_default_ollama_url(LM))
+
+    def test_list_openai_models_returns_the_ids(self):
+        with mock.patch.object(run.urllib.request, "urlopen", _Server({LM + "/models": LM_MODELS})):
+            self.assertEqual(run.list_openai_models(LM), ["qwen2.5-coder-7b-instruct", "gemma-2-27b"])
+
+    def main_with(self, base, routes, argv=("--yes",), env_extra=None, **patches):
+        """run.main against pretend servers. Returns (exit code or None, printed text, what run_agent got)."""
+        boom = AssertionError("Ollama must not be touched on an OpenAI-compatible server")
+        ran, out = {}, io.StringIO()
+
+        async def fake_agent(model, base_url):
+            ran.update(model=model, base=base_url, backend=run.os.environ.get("LOCAL_LLM_BACKEND"))
+        env = {"LOCAL_LLM_BASE_URL": base} if base else {}
+        env.update(env_extra or {})
+        code = None
+        with tempfile.TemporaryDirectory() as d, mock.patch.dict(run.os.environ, env), \
+                mock.patch.object(run, "PROJECT_DIR", d), mock.patch.object(run, "is_in_venv", return_value=True), \
+                mock.patch.object(run.urllib.request, "urlopen", _Server(routes)), \
+                mock.patch.object(run, "check_or_update_memory"), mock.patch.object(run, "run_agent", fake_agent), \
+                mock.patch.object(run.sys, "stdin", io.StringIO("")), contextlib.redirect_stdout(out):
+            if not base:
+                run.os.environ.pop("LOCAL_LLM_BASE_URL", None)
+            for name, value in patches.items():
+                value = value if value is not None else boom
+                mock.patch.object(run, name, **({"side_effect": value} if isinstance(value, BaseException) else {"new": value})).start()
+            try:
+                run.main(list(argv))
+            except SystemExit as e:
+                code = e.code
+            finally:
+                mock.patch.stopall()
+        return code, out.getvalue(), ran
+
+    def test_openai_server_runs_without_touching_ollama_and_downloads_nothing(self):
+        boom = AssertionError("Ollama must not be touched on an OpenAI-compatible server")
+        with mock.patch.object(run.subprocess, "check_call") as pull, mock.patch.object(run.subprocess, "Popen") as start, \
+                mock.patch.object(run.shutil, "which") as find, mock.patch.object(run, "get_hardware_profile") as hw:
+            code, text, ran = self.main_with(LM, {LM + "/models": LM_MODELS}, check_ollama_service=boom)
+        for call in (pull, start, find, hw):  # no `ollama pull`, no `ollama serve`, no PATH hunt, no hardware probe
+            call.assert_not_called()
+        self.assertIsNone(code, text)
+        self.assertEqual((ran["model"], ran["base"], ran["backend"]), ("qwen2.5-coder-7b-instruct", LM, "openai"))
+        self.assertIn(f"Found an OpenAI-compatible server at {LM}", text)
+
+    def test_openai_server_with_no_model_loaded_says_so_and_exits_1(self):
+        code, text, ran = self.main_with(LM, {LM + "/models": json.dumps({"data": []})})
+        self.assertEqual(code, 1)
+        self.assertIn("Load a model in your server, then re-run", text)
+        self.assertEqual(ran, {})
+
+    def test_requested_model_the_server_does_not_have_exits_1_instead_of_downloading(self):
+        boom = AssertionError("never download")
+        with mock.patch.object(run.subprocess, "check_call", side_effect=boom):
+            code, text, _ = self.main_with(LM, {LM + "/models": LM_MODELS}, argv=("--yes", "llama3:8b"))
+        self.assertEqual(code, 1)
+        self.assertIn("is not loaded on this server", text)
+
+    def test_unreachable_custom_url_exits_1_naming_the_url_and_never_starts_ollama(self):
+        code, text, _ = self.main_with("http://localhost:9999/v1", {}, check_ollama_service=None)
+        self.assertEqual(code, 1)
+        self.assertIn("http://localhost:9999/v1", text)
+
+    def test_default_url_with_nothing_running_still_goes_through_the_ollama_start_path(self):
+        called = []
+        code, text, ran = self.main_with(None, {}, check_ollama_service=lambda host: called.append(host) or True,
+                                         select_and_pull_model=lambda *a, **k: "qwen2.5:14b")
+        self.assertEqual(called, ["http://localhost:11434"])
+        self.assertIsNone(code, text)
+        self.assertEqual((ran["model"], ran["backend"]), ("qwen2.5:14b", None))
+
+    def test_a_stale_openai_marker_does_not_leak_into_an_ollama_run(self):
+        code, text, ran = self.main_with(None, {OLLAMA_TAGS: "{}"}, env_extra={"LOCAL_LLM_BACKEND": "openai"},
+                                         check_ollama_service=lambda host: True,
+                                         select_and_pull_model=lambda *a, **k: "qwen2.5:14b")
+        self.assertIsNone(ran["backend"])
+
+    def pick(self, ids, requested=None, interactive=False, answers=(), env=None, env_text=None):
+        feed, out = iter(answers), io.StringIO()
+        body = json.dumps({"data": [{"id": i} for i in ids]})
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(run, "PROJECT_DIR", d), \
+                mock.patch.dict(run.os.environ, {"LOCAL_LLM_MODEL": env} if env else {}), \
+                mock.patch.object(run.urllib.request, "urlopen", _Server({LM + "/models": body})), \
+                mock.patch("builtins.input", side_effect=lambda _="": next(feed)), contextlib.redirect_stdout(out):
+            if not env:
+                run.os.environ.pop("LOCAL_LLM_MODEL", None)
+            if env_text is not None:
+                Path(d, ".env").write_text(env_text, encoding="utf-8")
+            got = run.select_openai_model(LM, requested, interactive=interactive)
+            envfile = Path(d, ".env")
+            wrote = envfile.read_text(encoding="utf-8") if envfile.exists() else ""
+        self.printed = out.getvalue()
+        return got, wrote
+
+    IDS = ["gemma-2-27b", "qwen2.5-coder-7b-instruct"]
+
+    def test_picks_the_top_ranked_loaded_model_when_nothing_is_configured(self):
+        self.assertEqual(self.pick(self.IDS)[0], "qwen2.5-coder-7b-instruct")
+
+    def test_configured_model_wins_when_the_server_lists_it_and_is_ignored_when_it_does_not(self):
+        self.assertEqual(self.pick(self.IDS, env="gemma-2-27b")[0], "gemma-2-27b")
+        self.assertEqual(self.pick(self.IDS, env="not-loaded")[0], "qwen2.5-coder-7b-instruct")
+
+    def test_requested_model_matches_case_insensitively_and_the_servers_spelling_is_used(self):
+        self.assertEqual(self.pick(["Qwen2.5-Coder-7B"], requested="qwen2.5-coder-7b")[0], "Qwen2.5-Coder-7B")
+
+    def test_the_pick_is_saved_to_env(self):
+        _, wrote = self.pick(self.IDS, env_text="LOCAL_LLM_MODEL=old\n")
+        self.assertIn("LOCAL_LLM_MODEL=qwen2.5-coder-7b-instruct", wrote)
+
+    def test_interactive_menu_lists_only_what_the_server_has(self):
+        got, _ = self.pick(self.IDS, interactive=True, answers=["1"])
+        self.assertEqual(got, "gemma-2-27b")
+        for gone in ("Hugging Face", "GB download", "Ollama tag", "nanbeige"):
+            self.assertNotIn(gone, self.printed)
+        self.assertIn("loaded, no download", self.printed)
+
+    def test_interactive_typed_id_the_server_does_not_have_keeps_the_default(self):
+        got, _ = self.pick(self.IDS, interactive=True, answers=["hf.co/user/repo:q4_k_m"])
+        self.assertEqual(got, "qwen2.5-coder-7b-instruct")
+        self.assertIn("is not loaded on this server", self.printed)
 
 
 class PullFailure(unittest.TestCase):

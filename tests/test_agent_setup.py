@@ -523,6 +523,22 @@ class ClaudeRun(Home):
         self.assertIn("Plain `claude`, VS Code and Claude Desktop still use your subscription", text)
         self.assertIn("delete ~/.claude-local", text)
 
+    def test_non_ollama_server_gets_a_one_line_anthropic_endpoint_note(self):
+        _, _, text = self.go(environ={"LOCAL_LLM_BACKEND": "openai"})
+        self.assertEqual(text.count("Anthropic-compatible endpoint"), 1)
+        _, _, plain = self.go(environ={})
+        self.assertNotIn("Anthropic-compatible endpoint", plain)
+
+    def test_pi_and_opencode_use_the_base_url_as_is_so_lm_studio_works(self):
+        lm = "http://localhost:1234/v1"
+        pi = ags.write_config("pi", MODEL, lm, home=self.home)
+        oc = ags.write_config("opencode", MODEL, lm, home=self.home)
+        files = {p.name: p.read_text(encoding="utf-8") for p in pi.files + oc.files}
+        self.assertTrue(files)
+        for name, body in files.items():
+            self.assertIn(lm, body, name)
+            self.assertNotIn("11434", body, name)
+
     def test_only_claude_local_is_created_and_nothing_under_dot_claude_changes(self):
         settings = self.write(".claude/settings.json", json.dumps({"theme": "dark"}))
         self.write(".claude.json", "{}")

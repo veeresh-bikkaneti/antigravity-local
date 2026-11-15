@@ -4,7 +4,9 @@ Why this exists: run.py used to grab whatever was already installed and call it 
 Models move fast, so we show what is installed plus a short list of newer candidates, say what fits
 this machine, and let the human choose. Enter keeps the current pick, so it costs one keypress.
 """
+import json
 import re
+import urllib.error
 import urllib.request
 
 # Re-check this list when you touch it: `curl -I https://registry.ollama.ai/v2/library/<name>/manifests/<tag>`
@@ -19,10 +21,70 @@ CATALOG = [
     ("qwen3.8:27b", 17.7, "Newest Qwen; strongest reported coding, but tool calling is new and unproven"),
     ("qwen3-coder:30b", 18.6, "Coding-tuned mixture-of-experts, fast for its size"),
     ("laguna-xs.2:latest", 23.1, "Long-horizon agent model; reported by third-party guides only"),
+    # Not on Ollama's library (registry 404), so it comes from Hugging Face. Verified 2026-11-14: the Hub API lists
+    # a Q4_K_M .gguf in mradermacher/Nanbeige4.1-3B-GGUF (2.44 GB), and `ollama pull` of this tag succeeded (2.4 GB).
+    ("hf.co/mradermacher/nanbeige4.1-3b-gguf:q4_k_m", 2.4,
+     "Nanbeige4.1-3B agentic tool caller, a GGUF that Ollama pulls from Hugging Face"),
 ]
 
 
 TAG_RE = re.compile(r"^[a-z0-9][a-z0-9._/-]*(:[a-z0-9._-]+)?$")
+
+# Hugging Face: Ollama pulls any public GGUF with `ollama pull hf.co/{username}/{repository}:{quantization}`.
+# Only the Ollama backend can do that, so the menu hides this row on an OpenAI-compatible server.
+HF_PREFIXES = ("hf.co/", "huggingface.co/")
+HF_ROW_TAG = "hf.co/<user>/<repo>:<quant>"  # placeholder shown on the menu row, never returned as a pick
+QUANT_RE = re.compile(r"(?<![A-Za-z0-9])((?:IQ|Q)\d(?:_[A-Z0-9]+)*|BF16|F16|F32)(?![A-Za-z0-9])", re.IGNORECASE)
+
+
+def is_hf_tag(tag):
+    return (tag or "").strip().lower().startswith(HF_PREFIXES)
+
+
+def parse_hf_tag(tag):
+    """(user, repo, quant or None) for hf.co/user/repo[:quant], or None when the shape is wrong."""
+    text = (tag or "").strip()
+    for prefix in HF_PREFIXES:
+        if text.lower().startswith(prefix):
+            text = text[len(prefix):]
+            break
+    else:
+        return None
+    path, _, quant = text.partition(":")
+    parts = path.split("/")
+    if len(parts) != 2 or not all(parts):
+        return None
+    return parts[0], parts[1], (quant or None)
+
+
+def hf_check(tag, timeout=4):
+    """Ask the Hugging Face API about an hf.co tag. Returns (status, detail), status one of:
+    'ok'       the repo is there (and has a .gguf for the quant, when one was given)
+    'missing'  the repo is a 404: refuse it
+    'no_quant' the repo exists but no .gguf matches the quant; detail = the quants it does have
+    'bad_tag'  not hf.co/user/repo[:quant]
+    'unknown'  could not tell (offline, private or gated repo, odd reply): allow it, like the Ollama registry check
+    Sends only the repo name."""
+    parsed = parse_hf_tag(tag)
+    if not parsed:
+        return "bad_tag", None
+    user, repo, quant = parsed
+    try:
+        with urllib.request.urlopen(f"https://huggingface.co/api/models/{user}/{repo}", timeout=timeout) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        return ("missing", None) if e.code == 404 else ("unknown", None)
+    except Exception:
+        return "unknown", None
+    if not isinstance(data, dict):
+        return "unknown", None
+    if not quant:
+        return "ok", None
+    files = [s.get("rfilename", "") for s in (data.get("siblings") or []) if s.get("rfilename", "").lower().endswith(".gguf")]
+    have = sorted({q.upper() for f in files for q in QUANT_RE.findall(f)})
+    if quant.upper() in have:
+        return "ok", None
+    return "no_quant", have
 
 
 def _norm(tag):
@@ -42,15 +104,21 @@ def fit_label(size_gb, vram_gb, ram_gb):
 FIT_TEXT = {"gpu": "fits your GPU", "split": "runs, part on CPU (slower)", "too big": "too big for this PC"}
 
 
-def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None):
-    """Installed models first (no download), then the hardware pick if given, then catalog models that can run here.
+def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, backend="ollama"):
+    """Installed models first (no download), then the hardware pick if given, then catalog models that can run here,
+    then one row that explains how to type a Hugging Face model.
 
     `recommended` is the tier pick for this PC (run.hardware_tier_model). Its size is not known without a
     registry call, so the row says so instead of guessing.
+    On an OpenAI-compatible server (backend="openai") only the models it lists are offered: we cannot download
+    anything there, so no catalog rows and no Hugging Face row.
     """
     have = {_norm(m) for m in installed}
-    menu = [{"tag": m, "installed": True, "size_gb": None, "fit": None, "note": "already on this machine"}
+    menu = [{"tag": m, "installed": True, "size_gb": None, "fit": None,
+             "note": "already on this machine" if backend != "openai" else "loaded on your server"}
             for m in sorted(installed)]
+    if backend == "openai":
+        return menu
     if recommended and _norm(recommended) not in have:
         menu.append({"tag": recommended, "installed": False, "size_gb": None, "fit": None,
                      "note": "recommended for this PC"})
@@ -62,30 +130,51 @@ def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None):
         if fit == "too big":
             continue
         menu.append({"tag": tag, "installed": False, "size_gb": size, "fit": fit, "note": note})
+    menu.append({"tag": HF_ROW_TAG, "installed": False, "size_gb": None, "fit": None, "hf": True,
+                 "note": "Hugging Face model (type hf.co/user/repo:quant)"})
     return menu
 
 
-def render(menu, default_tag):
+def render(menu, default_tag, backend="ollama"):
     lines = [f"       Pick a model (list checked {CATALOG_VERIFIED}; not yet run through this project's agent loop):"]
     for i, m in enumerate(menu, 1):
         star = "*" if _norm(m["tag"]) == _norm(default_tag or "") else " "
+        if m.get("hf"):
+            lines.append(f"       {star}{i:>2}. {m['note']}")
+            continue
         if m["installed"]:
-            detail = "installed, no download"
+            detail = "loaded, no download" if backend == "openai" else "installed, no download"
         else:
             size = f"{m['size_gb']:.1f} GB download" if m["size_gb"] is not None else "size unknown"
             detail = size + (f", {FIT_TEXT[m['fit']]}" if m["fit"] else "")
         lines.append(f"       {star}{i:>2}. {m['tag']}  [{detail}]  {m['note']}")
     keep = (f"Enter keeps {default_tag}" if default_tag
             else "Enter picks 1" if menu else "Enter continues with the automatic pick")
-    lines.append(f"       Type a number, or any other Ollama tag. {keep}. (* = current)")
+    what = "a model id your server lists" if backend == "openai" else "any other Ollama tag"
+    lines.append(f"       Type a number, or {what}. {keep}. (* = current)")
     return lines
 
 
-def choose(menu, default_tag, input_fn=None, out=print):
+def _ask_hf_tag(input_fn, out, fallback):
+    """The Hugging Face row was picked: ask for the tag. Blank or three bad tries gives the fallback."""
+    for _ in range(3):
+        try:
+            raw = input_fn("       hf.co tag (hf.co/user/repo:quant) > ").strip().lower()
+        except EOFError:
+            return fallback
+        if not raw:
+            return fallback
+        if is_hf_tag(raw) and TAG_RE.match(raw):
+            return raw
+        out("       That is not a Hugging Face tag. Use the form hf.co/user/repo:quant.")
+    return fallback
+
+
+def choose(menu, default_tag, input_fn=None, out=print, backend="ollama"):
     """Return the chosen tag. Bad input re-asks up to 3 times, then falls back to the default."""
     input_fn = input_fn or input  # looked up now, not at import, so a terminal or a test can swap it
-    fallback = default_tag or (menu[0]["tag"] if menu else None)
-    for line in render(menu, default_tag):
+    fallback = default_tag or next((m["tag"] for m in menu if not m.get("hf")), None)
+    for line in render(menu, default_tag, backend):
         out(line)
     for _ in range(3):
         try:
@@ -97,6 +186,8 @@ def choose(menu, default_tag, input_fn=None, out=print):
         if raw.isdigit():
             n = int(raw)
             if 1 <= n <= len(menu):
+                if menu[n - 1].get("hf"):
+                    return _ask_hf_tag(input_fn, out, fallback)
                 return menu[n - 1]["tag"]
             out(f"       Pick 1 to {len(menu)}, or type a tag.")
             continue

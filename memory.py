@@ -72,6 +72,8 @@ class EmbeddingProvider:
 
     def _detect_ollama_embedding_model(self) -> str | None:
         """Check if Ollama has a known embedding model installed."""
+        if os.getenv("LOCAL_LLM_BACKEND") == "openai":
+            return None  # run.py found a non-Ollama server: there is no /api/tags to ask, so use the built-in vectors quietly
         try:
             req = urllib.request.Request(f"{self.base_url}/api/tags", headers={"User-Agent": "antigravity-memory"})
             with urllib.request.urlopen(req, timeout=1.5) as resp:

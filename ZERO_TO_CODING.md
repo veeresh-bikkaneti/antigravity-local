@@ -384,7 +384,16 @@ LOCAL_LLM_BASE_URL=http://localhost:8000/v1
 LOCAL_LLM_MODEL=Qwen/Qwen2.5-14B-Instruct
 ```
 
-### Option 3: Google Research AI Harness binary
+**What `python run.py` does with these servers:** it asks Ollama first, then asks your server for `/v1/models`. If your server answers, you see "Found an OpenAI-compatible server", the list of models it has loaded, and a pick (the menu on a normal terminal, the best-ranked one with `--yes`). It never downloads anything there, because the server owns its models. Nothing loaded? Load a model in LM Studio (or start vLLM or `llama-server` with one), then run it again. Wrong URL in `.env`? You get one line naming it. `--agent claude` wants an Anthropic-compatible endpoint, which a plain OpenAI-compatible server may not give you, and `--agent codex` stays Ollama-only.
+
+### Option 3: Models from Hugging Face (with Ollama)
+Ollama can pull any public GGUF from the Hugging Face Hub. The tag is `hf.co/{username}/{repository}:{quantization}`:
+```bash
+ollama pull hf.co/mradermacher/nanbeige4.1-3b-gguf:q4_k_m
+```
+Leave the quantization off and Ollama takes Q4_K_M if the repo has it (otherwise one sensible quant). `huggingface.co/` works as a prefix too, and a private repo needs your Ollama SSH key added to your Hugging Face account. In the model menu, pick the "Hugging Face model" row and type the tag: the launcher checks the repo on Hugging Face first, so a typo does not start a download (a quant the repo does not have gets a warning that lists the ones it does). This is Ollama-only; the row is hidden when your server is not Ollama.
+
+### Option 4: Google Research AI Harness binary
 If you build Google's research agent harness from source, point Antigravity at your custom binary:
 ```powershell
 $env:ANTIGRAVITY_HARNESS_PATH="C:\path\to\custom\localharness.exe"

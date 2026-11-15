@@ -215,6 +215,72 @@ def check_ollama_service(base_url="http://localhost:11434"):
     print(f"\n⚠️  Please ensure Ollama is running (`ollama serve`) at {base_url} and re-run.\n")
     return False
 
+DEFAULT_BASE_URL = "http://localhost:11434/v1"
+DEFAULT_OLLAMA_HOSTS = ("http://localhost:11434", "http://127.0.0.1:11434")
+
+
+def _http_get(url, timeout=3):
+    """Body text of a 200 reply, or None for anything else (refused, timeout, non-200)."""
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as resp:
+            if resp.status == 200:
+                return resp.read().decode("utf-8")
+    except Exception:
+        pass
+    return None
+
+
+def _server_urls(base_url):
+    """(ollama root, [candidate /models URLs]) for a LOCAL_LLM_BASE_URL such as http://localhost:1234/v1."""
+    base = (base_url or DEFAULT_BASE_URL).strip().rstrip("/")
+    if base.endswith("/v1"):
+        return base[:-3].rstrip("/"), [base + "/models"]
+    return base, [base + "/v1/models", base + "/models"]
+
+
+def list_openai_models(base_url):
+    """Model ids from an OpenAI-compatible GET /models (the `data[].id` list). [] when it does not answer in that shape."""
+    for url in _server_urls(base_url)[1]:
+        body = _http_get(url)
+        if body is None:
+            continue
+        try:
+            data = json.loads(body).get("data")
+        except Exception:
+            continue
+        if isinstance(data, list):
+            return [m["id"] for m in data if isinstance(m, dict) and isinstance(m.get("id"), str) and m["id"].strip()]
+    return []
+
+
+def _openai_answers(base_url):
+    for url in _server_urls(base_url)[1]:
+        body = _http_get(url)
+        if body is None:
+            continue
+        try:
+            if isinstance(json.loads(body).get("data"), list):
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def detect_backend(base_url):
+    """Which server answers at LOCAL_LLM_BASE_URL: "ollama" (its own /api/tags), "openai" (an OpenAI-compatible
+    GET /models with a `data` list, e.g. LM Studio, llama.cpp, vLLM), or None when neither answers."""
+    host = _server_urls(base_url)[0]
+    if _http_get(f"{host}/api/tags") is not None:
+        return "ollama"
+    if _openai_answers(base_url):
+        return "openai"
+    return None
+
+
+def is_default_ollama_url(base_url):
+    return _server_urls(base_url)[0].lower() in DEFAULT_OLLAMA_HOSTS
+
+
 def get_installed_ollama_models(base_url="http://localhost:11434"):
     """
     Rigorously detect already pulled models using dual-tier checks:
@@ -384,9 +450,68 @@ def _ask_which_model(display_names, installed_models, vram_gb, ram_gb):
     if not chosen or model_wizard._norm(chosen) == model_wizard._norm(default or ""):
         # Kept the default: for an installed model the automatic path handles it; otherwise pull it.
         return None if chosen and is_model_installed(chosen, installed_models) else chosen
-    if not is_model_installed(chosen, installed_models) and model_wizard.tag_exists(chosen) is False:
-        print(f"       '{chosen}' is not on the Ollama registry. Continuing with the automatic pick.")
+    if not is_model_installed(chosen, installed_models):
+        if model_wizard.is_hf_tag(chosen):
+            if not _hf_tag_ok(chosen):
+                print("       Continuing with the automatic pick.")
+                return None
+        elif model_wizard.tag_exists(chosen) is False:
+            print(f"       '{chosen}' is not on the Ollama registry. Continuing with the automatic pick.")
+            return None
+    return chosen
+
+
+def _hf_tag_ok(tag):
+    """Vet a typed hf.co tag against the Hugging Face API. False (with a reason) only when it is clearly wrong:
+    not a repo, or not the hf.co/user/repo[:quant] shape. A quant with no matching .gguf is a warning, because
+    Ollama is the final judge. Offline or private repos are allowed, same rule as the Ollama registry check."""
+    status, detail = model_wizard.hf_check(tag)
+    if status == "bad_tag":
+        print(f"       '{tag}' is not a Hugging Face tag. Use hf.co/{{username}}/{{repository}}:{{quantization}}.")
+        return False
+    if status == "missing":
+        print(f"       '{tag}' was not found on Hugging Face (404). Check the user and repo name.")
+        return False
+    if status == "no_quant":
+        have = ", ".join(detail) if detail else "none (no .gguf files in that repo)"
+        print(f"       Warning: no .gguf file in that repo matches the quant in '{tag}'. Quants it has: {have}.")
+    return True
+
+
+def select_openai_model(base_url, requested_model=None, interactive=False):
+    """Pick a model from an OpenAI-compatible server (LM Studio, llama.cpp, vLLM). We never download here:
+    the server owns its models. Order: --model, then LOCAL_LLM_MODEL if the server lists it, then the menu
+    (real terminal) or the top-ranked loaded model (--yes, piped, CI). Returns the id, or None."""
+    print("🧠 [3/4] Checking which models your server has loaded...")
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(os.path.join(PROJECT_DIR, ".env"))
+    except ImportError:
+        pass
+    ids = list_openai_models(base_url)
+    if not ids:
+        print("       The server answered but lists no models. Load a model in your server, then re-run.")
         return None
+    print(f"       Found {len(ids)} model(s) on the server: {', '.join(ids)}")
+    by_name = {m.lower(): m for m in ids}
+    if requested_model:
+        chosen = by_name.get(requested_model.strip().lower())
+        if not chosen:
+            print(f"       '{requested_model}' is not loaded on this server. Load it there, or pick one it lists.")
+            return None
+    else:
+        configured = (os.environ.get("LOCAL_LLM_MODEL") or "").strip().lower()
+        default = by_name.get(configured) or max(ids, key=capability_rank_key)
+        chosen = default
+        if interactive:
+            menu = model_wizard.build_menu(ids, 0.0, 0.0, backend="openai")
+            picked = model_wizard.choose(menu, default, backend="openai")
+            chosen = by_name.get((picked or "").lower())
+            if not chosen:
+                print(f"       '{picked}' is not loaded on this server. Keeping '{default}'.")
+                chosen = default
+    print(f"       ✅ Using '{chosen}' from your server. Nothing to download.")
+    update_env_model(chosen)
     return chosen
 
 
@@ -430,8 +555,10 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
 
     # 1b. On a real terminal, offer a short menu (installed + newer candidates) instead of silently auto-picking.
     #     Enter keeps the current pick. Piped runs, CI and --yes skip this and behave exactly as before.
+    from_menu = False
     if interactive and not cli_requested_model:
         cli_requested_model = _ask_which_model(display_names, installed_models, vram_gb, ram_gb)
+        from_menu = True  # the menu already vetted a typed tag
 
     if cli_requested_model:
         if is_model_installed(cli_requested_model, installed_models):
@@ -440,6 +567,8 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
             return cli_requested_model
         else:
             print(f"       User explicitly requested model '{cli_requested_model}' which is not in local inventory.")
+            if not from_menu and model_wizard.is_hf_tag(cli_requested_model) and not _hf_tag_ok(cli_requested_model):
+                return None
             target_to_pull = cli_requested_model
 
     # 2. ZERO-DOWNLOAD BEST PRACTICE: If models are already installed on this machine, REUSE THEM!
@@ -468,11 +597,11 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
         if target_to_pull == "qwen2.5-coder:14b":  # Workstation / Enthusiast PC
             print(f"       PC Build: High-performance workstation ({vram_gb:.1f}GB VRAM, {ram_gb:.1f}GB RAM)")
             print(f"       Selected cutting-edge agent model: '{target_to_pull}' (100% VRAM tool fit, flagship coding)")
-            print(f"       (Note: You can also try 'nanbeige2:16b', 'deepseek-coder-v2:16b', 'command-r:35b', or 'codestral:22b')")
+            print(f"       (Note: You can also try 'deepseek-coder-v2:16b', 'command-r:35b', or 'codestral:22b')")
         elif target_to_pull == "qwen2.5-coder:7b":  # Mid-tier PC
             print(f"       PC Build: Mid-tier hardware ({vram_gb:.1f}GB VRAM, {ram_gb:.1f}GB RAM)")
             print(f"       Selected cutting-edge agent model: '{target_to_pull}'")
-            print(f"       (Note: You can also try 'nanbeige4.1:3b', 'deepseek-coder:6.7b', or 'glm4:9b')")
+            print(f"       (Note: You can also try 'hf.co/mradermacher/nanbeige4.1-3b-gguf:q4_k_m', 'deepseek-coder:6.7b', or 'glm4:9b')")
         else:  # Entry-level / CPU
             print(f"       PC Build: Compact / CPU hardware ({ram_gb:.1f}GB RAM)")
             print(f"       Selected compact agent model: '{target_to_pull}'")
@@ -671,15 +800,28 @@ def main(argv=None):
         return
 
     # Step 2: Ensure Ollama is running
-    base_api = os.environ.get("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1")
+    base_api = os.environ.get("LOCAL_LLM_BASE_URL", DEFAULT_BASE_URL)
     ollama_host = base_api.replace("/v1", "").rstrip("/")
-    if not check_ollama_service(ollama_host):
-        sys.exit(1)
+    backend = detect_backend(base_api)
+    interactive = sys.stdin.isatty() and sys.stdout.isatty() and not args.yes
+    if backend == "openai":
+        print(f"🤖 [2/4] Found an OpenAI-compatible server at {base_api} (not Ollama). Nothing will be downloaded.")
+        os.environ["LOCAL_LLM_BACKEND"] = "openai"  # memory.py and --agent claude read this
+    else:
+        os.environ.pop("LOCAL_LLM_BACKEND", None)
+        if backend is None and not is_default_ollama_url(base_api):
+            print(f"\n❌ Nothing answered at {base_api}: no Ollama (/api/tags) and no OpenAI-compatible /models. "
+                  "Start your server, or fix LOCAL_LLM_BASE_URL in .env.")
+            sys.exit(1)
+        if not check_ollama_service(ollama_host):
+            sys.exit(1)
 
     # Step 3: Check local inventory & auto-select most capable model
     try:
-        model = select_and_pull_model(ollama_host, args.model,
-                                      interactive=sys.stdin.isatty() and sys.stdout.isatty() and not args.yes)
+        if backend == "openai":
+            model = select_openai_model(base_api, args.model, interactive=interactive)
+        else:
+            model = select_and_pull_model(ollama_host, args.model, interactive=interactive)
     except KeyboardInterrupt:
         print("\nCancelled. Nothing was saved.")
         sys.exit(130)
