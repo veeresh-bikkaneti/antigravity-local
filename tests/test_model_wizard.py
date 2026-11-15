@@ -250,6 +250,142 @@ class TagExists(unittest.TestCase):
             self.assertIsNone(mw.tag_exists("qwen3.6:27b"))
 
 
+class MenuBadges(unittest.TestCase):
+    """Badges sit AFTER the bracket, so the row still starts with its number and tag."""
+
+    def rows(self, menu, default=None):
+        return mw.render(menu, default)
+
+    def test_installed_rows_show_what_ollama_said(self):
+        menu = mw.build_menu(["qwen3:8b"], 16, 128, badges={"qwen3:8b": ("tools", "thinking")})
+        self.assertEqual(menu[0]["badges"], ("tools", "thinking"))
+        line = next(l for l in self.rows(menu) if "qwen3:8b" in l)
+        self.assertRegex(line.strip(), r"^1\. qwen3:8b  \[installed, no download\]  \(tools, thinking\)  already on this machine$")
+
+    def test_unknown_badges_show_nothing_rather_than_a_guess(self):
+        menu = mw.build_menu(["old:1b"], 16, 128, badges={})
+        self.assertEqual(menu[0]["badges"], ())
+        self.assertNotIn("(", next(l for l in self.rows(menu) if "old:1b" in l))
+
+    def test_catalog_rows_carry_the_curated_badges_and_guesses_keep_their_question_mark(self):
+        menu = {m["tag"]: m for m in mw.build_menu([], 16, 128)}
+        self.assertIn("tools", menu["gpt-oss:20b"]["badges"])
+        self.assertIn("tools?", menu["qwen3.8:27b"]["badges"])
+        text = "\n".join(self.rows(list(menu.values())))
+        self.assertIn("(tools?, thinking?)", text)
+
+    def test_a_coding_name_gets_a_coding_badge_once(self):
+        menu = mw.build_menu(["qwen2.5-coder:7b"], 16, 128, badges={"qwen2.5-coder:7b": ("tools", "coding")})
+        self.assertEqual(menu[0]["badges"].count("coding"), 1)
+
+    def test_rows_stay_alphabetical_whatever_the_badges(self):
+        menu = mw.build_menu(["zeta:1", "alpha:1"], 16, 128, badges={"zeta:1": ("tools",)})
+        self.assertEqual([m["tag"] for m in menu[:2]], ["alpha:1", "zeta:1"])
+
+    def test_library_rows_are_added_once_and_never_duplicate_an_installed_or_catalog_model(self):
+        lib = [{"tag": "newmodel:7b", "badges": ("tools",), "note": "n"}, {"tag": "newmodel:7b"}, {"tag": "gpt-oss:20b"}]
+        tags = [m["tag"] for m in mw.build_menu([], 16, 128, library=lib)]
+        self.assertEqual(tags.count("newmodel:7b"), 1)
+        self.assertEqual(tags.count("gpt-oss:20b"), 1)
+
+
+class MediaSection(unittest.TestCase):
+    MEDIA = [{"tag": "x/z-image-turbo", "badges": ("image",), "note": "text to image",
+              "hint": 'Run it with: ollama run x/z-image-turbo "a red fox"'}]
+
+    def menu(self):
+        return mw.build_menu(["qwen3:8b"], 16, 128, media=self.MEDIA)
+
+    def test_media_rows_come_before_the_hf_row_which_stays_last(self):
+        menu = self.menu()
+        self.assertTrue(menu[-1].get("hf"))
+        self.assertTrue(menu[-2].get("media"))
+
+    def test_render_prints_a_section_header_once_and_marks_the_row(self):
+        menu = mw.build_menu([], 16, 128, media=self.MEDIA * 2)
+        lines = mw.render(menu, None)
+        self.assertEqual(sum("Media models" in l for l in lines), 1)
+        row = next(l for l in lines if "x/z-image-turbo" in l)
+        self.assertIn("[media]  (image)", row)
+
+    def test_picking_a_media_row_shows_how_to_run_it_and_asks_again_never_returning_it(self):
+        menu = self.menu()
+        n = str([m["tag"] for m in menu].index("x/z-image-turbo") + 1)
+        feed, out = iter([n, ""]), []
+        got = mw.choose(menu, "qwen3:8b", input_fn=lambda _="": next(feed), out=out.append)
+        self.assertEqual(got, "qwen3:8b")
+        self.assertTrue(any('ollama run x/z-image-turbo "a red fox"' in l for l in out))
+
+    def test_a_media_row_is_never_the_fallback_when_there_is_no_default(self):
+        menu = mw.build_menu([], 16, 128, media=self.MEDIA, catalog=[])
+        out = []
+        got = mw.choose(menu, None, input_fn=lambda _="": "", out=out.append)
+        self.assertIsNone(got)  # nothing but a media row and the HF placeholder: no pick, never the media row
+
+    def test_three_media_picks_in_a_row_fall_back_to_the_default(self):
+        menu = self.menu()
+        n = str([m["tag"] for m in menu].index("x/z-image-turbo") + 1)
+        feed = iter([n, n, n])
+        self.assertEqual(mw.choose(menu, "qwen3:8b", input_fn=lambda _="": next(feed), out=lambda l: None), "qwen3:8b")
+
+
+class HfSearchAtTheMenu(unittest.TestCase):
+    RESULTS = [{"repo": "Org/Fast-GGUF", "badges": ("tools?",), "downloads": 12345},
+               {"repo": "org/Other", "badges": (), "downloads": None}]
+
+    def ask(self, answers, search):
+        feed, out, seen = iter(answers), [], []
+
+        def fake_search(words):
+            seen.append(words)
+            return search
+
+        got = mw._ask_hf_tag(lambda p="": next(feed), out.append, "fallback:1", fake_search)
+        return got, out, seen
+
+    def test_words_are_searched_and_a_pick_becomes_an_hf_tag(self):
+        got, out, seen = self.ask(["Fast coder", "1"], self.RESULTS)
+        self.assertEqual(got, "hf.co/org/fast-gguf")
+        self.assertEqual(seen, ["fast coder"])
+        text = "\n".join(out)
+        self.assertIn("Org/Fast-GGUF  (tools?)  12,345 downloads", text)
+        self.assertIn("a ? after a badge is a guess", text)
+
+    def test_a_real_hf_tag_is_taken_as_typed_without_searching(self):
+        got, _, seen = self.ask(["hf.co/u/r:q4_k_m"], self.RESULTS)
+        self.assertEqual((got, seen), ("hf.co/u/r:q4_k_m", []))
+
+    def test_no_results_says_so_and_asks_again(self):
+        got, out, _ = self.ask(["nothing here", ""], [])
+        self.assertEqual(got, "fallback:1")
+        self.assertTrue(any("No GGUF models found" in l for l in out))
+
+    def test_enter_at_the_result_list_goes_back_and_a_bad_number_is_not_a_pick(self):
+        self.assertEqual(self.ask(["words", "", ""], self.RESULTS)[0], "fallback:1")
+        self.assertEqual(self.ask(["words", "99", ""], self.RESULTS)[0], "fallback:1")
+
+    def test_a_bare_yes_or_no_is_not_searched(self):
+        got, out, seen = self.ask(["yes", ""], self.RESULTS)
+        self.assertEqual((got, seen), ("fallback:1", []))
+
+    def test_without_a_search_function_words_are_still_refused_like_before(self):
+        feed, out = iter(["some words", ""]), []
+        self.assertEqual(mw._ask_hf_tag(lambda p="": next(feed), out.append, "fb"), "fb")
+        self.assertTrue(any("not a Hugging Face tag" in l for l in out))
+
+    def test_eof_while_picking_a_result_goes_back(self):
+        answers = iter(["words"])
+
+        def input_fn(prompt=""):
+            try:
+                return next(answers)
+            except StopIteration:
+                raise EOFError
+
+        got = mw._ask_hf_tag(input_fn, lambda l: None, "fb", lambda words: self.RESULTS)
+        self.assertEqual(got, "fb")
+
+
 class TreePages(unittest.TestCase):
     """hf_tree_files follows next-page links, but never past max_pages: a partial list would undercount split quants."""
 
