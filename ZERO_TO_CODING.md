@@ -100,7 +100,7 @@ Takes about 3 minutes.
 You should see a version number. If you get "command not found", close the terminal and open a new one. The installer updates your PATH, and an old terminal doesn't know yet.
 
 ### Step 2: Download the agent coding model
-You can skip this step. Step 3 picks a model that fits your machine and downloads it if you have none, and it reuses any capable model you already have, so nothing downloads twice. On a normal terminal, step 3 shows a short menu and Enter takes the pick for your machine; `--yes` skips the menu. If you want the default pick for your hardware, skip ahead.
+You can skip this step. Step 3 picks a model that fits your machine and offers to download it if you have none (nothing downloads until you type y), and it reuses any capable model you already have, so nothing downloads twice. On a normal terminal, step 3 shows a short menu and Enter takes the pick for your machine; `--yes` skips the menu and never downloads. If you want the default pick for your hardware, skip ahead.
 
 Want to choose the model yourself? Pull the one `run.py` would pick for your machine, or any tool-capable model. The download time depends on your connection.
 ```bash

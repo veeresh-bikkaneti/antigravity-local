@@ -310,6 +310,13 @@ class ModelWizardInRun(unittest.TestCase):
         self.assertEqual((got, pulls), ("hf.co/u/m:Q6_K", [["ollama", "pull", "hf.co/u/m:Q6_K"]]))
         self.assertIn("fits 16 GB free VRAM", self.printed)
 
+    def test_typed_hf_repo_where_nothing_fits_downloads_nothing_and_says_why(self):
+        files = [{"name": "m-Q4_K_M.gguf", "size": 90_000_000_000}, {"name": "m-Q8_0.gguf", "size": 170_000_000_000}]
+        got, pulls, _ = self.sel(set(), [""], hf_files=files, requested="hf.co/u/m", interactive=True,
+                                 hw={"ram_gb": 16.0, "vram_gb": 8.0, "gpu_name": "x"})
+        self.assertEqual((got, pulls, self.gate_asked), (None, [], []))
+        self.assertIn("No quant in u/m fits", self.printed)
+
     def test_typed_hf_quant_the_repo_lacks_downloads_nothing(self):
         files = [{"name": "m-Q4_K_M.gguf", "size": 8_500_000_000}]
         got, pulls, _ = self.sel(set(), [""], hf_files=files, requested="hf.co/u/m:Q5_K_S", interactive=True)

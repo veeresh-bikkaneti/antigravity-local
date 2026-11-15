@@ -223,5 +223,26 @@ class TagExists(unittest.TestCase):
             self.assertIsNone(mw.tag_exists("qwen3.6:27b"))
 
 
+class FitFree(unittest.TestCase):
+    """The fit rule against FREE memory: size x 1.2 in VRAM is a GPU fit, else it can spill into 70% of free RAM."""
+
+    def fit(self, size, vram, ram):
+        return mw.fit_label(size, vram, ram, headroom=mw.FIT_HEADROOM)
+
+    def test_gpu_fit_needs_twenty_percent_headroom(self):
+        self.assertEqual(self.fit(13.3, 16, 0), "gpu")   # 13.3 x 1.2 = 15.96
+        self.assertEqual(self.fit(13.4, 16, 0), "too big")  # 16.08: no RAM to spill into
+
+    def test_cpu_only_split_fit_is_labelled_slow(self):
+        self.assertEqual(self.fit(15.2, 0, 128), "split")  # 18.2 <= 0.7 x 128
+        self.assertIn("slow", mw.FIT_TEXT["split"])
+
+    def test_nothing_free_fits_nothing(self):
+        self.assertEqual(self.fit(1.0, 0, 0), "too big")
+
+    def test_the_old_total_vram_default_is_unchanged(self):
+        self.assertEqual(mw.fit_label(13.8, 16, 128), "gpu")  # 13.8 x 1.11 = 15.3: the old 90% rule
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -597,7 +597,7 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
     cli_requested_model = requested_model
 
     # 1b. On a real terminal, offer a short menu (installed + newer candidates) instead of silently auto-picking.
-    #     Enter keeps the current pick. Piped runs, CI and --yes skip this and behave exactly as before.
+    #     Enter keeps the current pick. Piped runs, CI and --yes skip this, and they never download.
     from_menu = False
     if interactive and not cli_requested_model:
         cli_requested_model = _ask_which_model(display_names, installed_models, vram_gb, ram_gb, free_vram, free_ram)
