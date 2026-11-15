@@ -5,6 +5,8 @@ Before downloading any model, `run.py` performs a two-tier inventory pre-flight 
 1. REST API query to `http://localhost:11434/api/tags`.
 2. CLI fallback via `ollama list`.
 
+**Ranking**: among installed chat models the pick goes in this order, and a lower level never rescues a loss on a higher one: (1) fits this PC, GPU fit before split fit; (2) not marked failed in `~/.antigravity-local/ledger.jsonl`; (3) has tools (`tools` beats `tools?` beats a model known to lack them; unknown capabilities count as `tools?`); (4) installed; (5) passed `python run.py --probe`; (6) newer, then more downloads, then larger; (7) the name score below. Embedding and media models are filtered out first and never picked for an agent.
+
 **Rule**: If ANY capable model is already present on disk (e.g. `qwen2.5:14b`), the runner reuses the highest-ranked local model, updates `.env`, and skips the download. On a real terminal (stdin and stdout both terminals, no `--yes`) it first shows a short menu: Enter keeps the pick, Ctrl+C cancels and downloads nothing, and a model you download is saved to `.env` as the pick for the next run. `--yes`, piped input and CI skip the menu and never download: with nothing installed they exit 1 and print the `ollama pull` command. Every pull on a terminal asks `Download? [y/N]` first, and the fit uses free VRAM and RAM.
 
 ## 2. Model Scoring Hierarchy

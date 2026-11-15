@@ -9,6 +9,8 @@ import re
 import urllib.error
 import urllib.request
 
+import capabilities
+
 # Re-check this list when you touch it: `curl -I https://registry.ollama.ai/v2/library/<name>/manifests/<tag>`
 # must return 200, and sizes come from the manifest layers. Nothing here has been run through this
 # project's agent loop yet, so the notes say what is reported, not what we measured.
@@ -29,6 +31,15 @@ CATALOG = [
 
 
 TAG_RE = re.compile(r"^[a-z0-9][a-z0-9._/-]*(:[a-z0-9._-]+)?$")
+REPO_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*")  # used with fullmatch: one slash, no spaces or shell characters
+
+
+MAX_PICK_DIGITS = 6
+
+
+def _is_repo_id(repo):
+    # ".." is allowed by the character class (dots are fine in names) but a repo id with it is a path trick.
+    return isinstance(repo, str) and REPO_RE.fullmatch(repo) is not None and ".." not in repo
 
 # Hugging Face: Ollama pulls any public GGUF with `ollama pull hf.co/{username}/{repository}:{quantization}`.
 # Only the Ollama backend can do that, so the menu hides this row on an OpenAI-compatible server.
@@ -159,7 +170,18 @@ def hf_tree_files(user, repo, timeout=6, max_pages=5):
     return files
 
 
-def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, backend="ollama"):
+def _badges(tag, known=None):
+    """Badges for a row: what we were told (installed models), else the curated catalog, plus a coding hint."""
+    found = known.get(_norm(tag)) if known else None
+    if found is None:
+        found = capabilities.catalog_badges(tag)
+    extra = capabilities.coding_badge(tag)
+    out = tuple(found or ())
+    return out + ((extra,) if extra and extra not in out else ())
+
+
+def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, backend="ollama",
+               badges=None, library=None, media=None):
     """Installed models first (no download), then the hardware pick if given, then catalog models that can run here,
     then one row that explains how to type a Hugging Face model.
 
@@ -167,16 +189,20 @@ def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, ba
     registry call, so the row says so instead of guessing.
     On an OpenAI-compatible server (backend="openai") only the models it lists are offered: we cannot download
     anything there, so no catalog rows and no Hugging Face row.
+
+    `badges` maps a normalised installed tag to its badges (from /api/show); `library` is extra scanned rows
+    ({"tag", "badges", "note"}); `media` are image/video/audio rows that are listed but never picked for an agent
+    ({"tag", "badges", "note", "hint"}): choosing one only shows its hint.
     """
     have = {_norm(m) for m in installed}
-    menu = [{"tag": m, "installed": True, "size_gb": None, "fit": None,
+    menu = [{"tag": m, "installed": True, "size_gb": None, "fit": None, "badges": _badges(m, badges),
              "note": "already on this machine" if backend != "openai" else "loaded on your server"}
             for m in sorted(installed)]
     if backend == "openai":
         return menu
     if recommended and _norm(recommended) not in have:
         menu.append({"tag": recommended, "installed": False, "size_gb": None, "fit": None,
-                     "note": "recommended for this PC"})
+                     "badges": _badges(recommended), "note": "recommended for this PC"})
         have.add(_norm(recommended))
     for tag, size, note in catalog:
         if _norm(tag) in have:
@@ -184,7 +210,16 @@ def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, ba
         fit = fit_label(size, vram_gb, ram_gb, headroom=FIT_HEADROOM)
         if fit == "too big":
             continue
-        menu.append({"tag": tag, "installed": False, "size_gb": size, "fit": fit, "note": note})
+        menu.append({"tag": tag, "installed": False, "size_gb": size, "fit": fit, "badges": _badges(tag), "note": note})
+        have.add(_norm(tag))
+    for row in library or []:
+        if _norm(row["tag"]) not in have:
+            have.add(_norm(row["tag"]))
+            menu.append({"tag": row["tag"], "installed": False, "size_gb": None, "fit": None,
+                         "badges": tuple(row.get("badges") or ()), "note": row.get("note", "from the Ollama library page")})
+    for row in media or []:
+        menu.append({"tag": row["tag"], "installed": False, "size_gb": None, "fit": None, "media": True,
+                     "badges": tuple(row.get("badges") or ()), "note": row.get("note", ""), "hint": row.get("hint", "")})
     menu.append({"tag": HF_ROW_TAG, "installed": False, "size_gb": None, "fit": None, "hf": True,
                  "note": "Hugging Face model (type hf.co/user/repo:quant)"})
     return menu
@@ -192,8 +227,16 @@ def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, ba
 
 def render(menu, default_tag, backend="ollama"):
     lines = [f"       Pick a model (list checked {CATALOG_VERIFIED}; not yet run through this project's agent loop):"]
+    seen_media = False
     for i, m in enumerate(menu, 1):
         star = "*" if _norm(m["tag"]) == _norm(default_tag or "") else " "
+        if m.get("media"):
+            if not seen_media:
+                seen_media = True
+                lines.append("       Media models (for pictures, video or sound: not coding agents, never picked automatically):")
+            badge_text = f"  ({capabilities.format_badges(m.get('badges'))})" if m.get("badges") else ""
+            lines.append(f"       {star}{i:>2}. {m['tag']}  [media]{badge_text}  {m['note']}")
+            continue
         if m.get("hf"):
             lines.append(f"       {star}{i:>2}. {m['note']}")
             continue
@@ -202,7 +245,8 @@ def render(menu, default_tag, backend="ollama"):
         else:
             size = f"{m['size_gb']:.1f} GB download" if m["size_gb"] is not None else "size unknown"
             detail = size + (f", {FIT_TEXT[m['fit']]}" if m["fit"] else "")
-        lines.append(f"       {star}{i:>2}. {m['tag']}  [{detail}]  {m['note']}")
+        badge_text = f"  ({capabilities.format_badges(m.get('badges'))})" if m.get("badges") else ""
+        lines.append(f"       {star}{i:>2}. {m['tag']}  [{detail}]{badge_text}  {m['note']}")
     keep = (f"Enter keeps {default_tag}" if default_tag
             else "Enter picks 1" if menu else "Enter continues with the automatic pick")
     what = "a model id your server lists" if backend == "openai" else "any other Ollama tag"
@@ -210,17 +254,45 @@ def render(menu, default_tag, backend="ollama"):
     return lines
 
 
-def _ask_hf_tag(input_fn, out, fallback):
-    """The Hugging Face row was picked: ask for the tag. Blank or three bad tries gives the fallback."""
+def _search_pick(results, input_fn, out):
+    """Show Hugging Face search results with their badges and let the user pick one. Returns hf.co/<repo> or None."""
+    shown = [r for r in results if _is_repo_id(r.get("repo"))][:10]  # malformed repos are skipped before numbering
+    for i, r in enumerate(shown, 1):
+        badge_text = f"  ({capabilities.format_badges(r.get('badges'))})" if r.get("badges") else ""
+        downloads = f"  {r['downloads']:,} downloads" if isinstance(r.get("downloads"), int) else ""
+        out(f"       {i:>2}. {r['repo']}{badge_text}{downloads}")
+    out("       (a ? after a badge is a guess from the chat template; run python run.py --probe to check it)")
+    try:
+        raw = input_fn("       Pick a number, or Enter to go back > ").strip()
+    except EOFError:
+        return None
+    if raw.isascii() and raw.isdigit() and len(raw) <= MAX_PICK_DIGITS and 1 <= int(raw) <= len(shown):
+        return "hf.co/" + shown[int(raw) - 1]["repo"].lower()
+    return None
+
+
+def _ask_hf_tag(input_fn, out, fallback, search_fn=None):
+    """The Hugging Face row was picked: ask for a tag, or for words to search for. Blank or three bad tries gives
+    the fallback."""
+    prompt = "       hf.co tag (hf.co/user/repo:quant)" + (", or words to search for > " if search_fn else " > ")
     for _ in range(3):
         try:
-            raw = input_fn("       hf.co tag (hf.co/user/repo:quant) > ").strip().lower()
+            raw = input_fn(prompt).strip().lower()
         except EOFError:
             return fallback
         if not raw:
             return fallback
         if is_hf_tag(raw) and TAG_RE.match(raw):
             return raw
+        if search_fn and not is_hf_tag(raw) and raw not in YES_NO:
+            results = search_fn(raw)
+            if not results:
+                out("       No GGUF models found (or Hugging Face could not be reached). Try other words.")
+                continue
+            picked = _search_pick(results, input_fn, out)
+            if picked:
+                return picked
+            continue
         out("       That is not a Hugging Face tag. Use the form hf.co/user/repo:quant.")
     return fallback
 
@@ -228,10 +300,10 @@ def _ask_hf_tag(input_fn, out, fallback):
 YES_NO = {"y", "yes", "n", "no"}
 
 
-def choose(menu, default_tag, input_fn=None, out=print, backend="ollama"):
+def choose(menu, default_tag, input_fn=None, out=print, backend="ollama", search_fn=None):
     """Return the chosen tag. Bad input re-asks up to 3 times, then falls back to the default."""
     input_fn = input_fn or input  # looked up now, not at import, so a terminal or a test can swap it
-    fallback = default_tag or next((m["tag"] for m in menu if not m.get("hf")), None)
+    fallback = default_tag or next((m["tag"] for m in menu if not m.get("hf") and not m.get("media")), None)
     for line in render(menu, default_tag, backend):
         out(line)
     for _ in range(3):
@@ -244,11 +316,14 @@ def choose(menu, default_tag, input_fn=None, out=print, backend="ollama"):
         if raw.lower() in YES_NO:  # "y" is a valid-looking tag, but nobody means it as one
             out(f"       That looks like a yes/no answer. Type a number, a model tag, or press Enter for {fallback}.")
             continue
-        if raw.isdigit():
-            n = int(raw)
+        if raw.isascii() and raw.isdigit():
+            n = int(raw) if len(raw) <= MAX_PICK_DIGITS else 0  # int() refuses 4300+ digits; no menu is that long
             if 1 <= n <= len(menu):
                 if menu[n - 1].get("hf"):
-                    return _ask_hf_tag(input_fn, out, fallback)
+                    return _ask_hf_tag(input_fn, out, fallback, search_fn)
+                if menu[n - 1].get("media"):  # never a pick: say how to run it, then ask again
+                    out(f"       {menu[n - 1].get('hint') or 'Media models are not used by coding agents.'}")
+                    continue
                 return menu[n - 1]["tag"]
             out(f"       Pick 1 to {len(menu)}, or type a tag.")
             continue
