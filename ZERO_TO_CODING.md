@@ -62,7 +62,7 @@ Unlike web-based chat interfaces or API-metered plugins, this agent runs on your
    │ Ollama Inference Engine (localhost:11434)    │
    │ Models: qwen2.5:14b / llama3.1:8b            │
    └──────────────────────┬───────────────────────┘
-                          │ Model emits function call: create_file(Path, Content)
+                          │ Model emits function call: write_to_file(TargetFile, CodeContent)
                           ▼
    ┌──────────────────────────────────────────────┐
    │ Security Policy Engine: policy.allow_all()   │
@@ -84,7 +84,7 @@ Goal: go from nothing to your first AI-written file. The bootstrap itself takes 
 > - Windows 11 is the only system we tested natively. macOS and Linux should work, and we have not checked.
 > - Free disk: about 10 GB for the 14B model.
 > - RAM: 16 GB or more is comfortable. With 8 GB, use a 3B or 7B model, and let `run.py` pick.
-> - Python 3.11 or newer and git.
+> - Python 3.11, 3.12 or 3.13 and git.
 > - Ollama: install it from [ollama.com/download](https://ollama.com/download) (Windows, macOS, and Linux installers are all there).
 > - Time: a few minutes of setup plus the download, and the first run goes quiet while packages install.
 
@@ -119,7 +119,7 @@ The bootstrap takes about 3 minutes the first time, not counting any model downl
    python --version
    git --version
    ```
-   You should see Python 3.11 or newer and a git version.
+   You should see Python 3.11, 3.12 or 3.13 and a git version.
 2. Get the code:
    ```bash
    git clone https://github.com/veeresh-bikkaneti/antigravity-local.git

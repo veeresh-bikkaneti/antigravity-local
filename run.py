@@ -174,9 +174,9 @@ def check_ollama_service(base_url="http://localhost:11434"):
         print("\n❌ [ERROR] Ollama is not installed or not in your system PATH.")
         print("   Please install Ollama (free, open-source local LLM engine):")
         if IS_WIN:
-            print("   👉 Windows: Download from https://ollama.ai/download or run: winget install Ollama.Ollama")
+            print("   👉 Windows: Download from https://ollama.com/download or run: winget install Ollama.Ollama")
         elif sys.platform == "darwin":
-            print("   👉 macOS: Download from https://ollama.ai/download or run: brew install ollama")
+            print("   👉 macOS: Download from https://ollama.com/download or run: brew install ollama")
         else:
             print("   👉 Linux: Run: curl -fsSL https://ollama.com/install.sh | sh")
         print("\n   Once installed, run this command again!\n")
