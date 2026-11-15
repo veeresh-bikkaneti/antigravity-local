@@ -166,12 +166,12 @@ def hf_tree_files(user, repo, timeout=6, max_pages=5):
                 rows = json.loads(resp.read().decode("utf-8"))
                 link = resp.headers.get("Link", "") if getattr(resp, "headers", None) else ""
         except urllib.error.HTTPError:
-            return []  # the Hub answered with an error: say nothing rather than guess
+            return []  # the Hub answered with an error: say nothing rather than give a wrong size
         except (urllib.error.URLError, OSError, TimeoutError):
             _STATE["offline"] = True  # no network: stop asking for the rest of the run
             return []
         except Exception:
-            return []  # a half-read repo would undercount split quants, so say nothing rather than guess
+            return []  # a half-read repo would undercount split quants, so say nothing rather than give a wrong size
         if not isinstance(rows, list):
             return []
         for row in rows:

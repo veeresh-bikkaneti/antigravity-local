@@ -1,12 +1,15 @@
 """How big is a download, before you say yes. Standard library only.
 
 Order for an Ollama tag: the registry manifest (the real layer sizes), then our own curated list, then an estimate
-from the parameter count in the tag. An estimate is always printed as "~X GB download (estimate)". Nothing here downloads a
+from the parameter count in the tag. An estimate is always labelled "(estimate)". Nothing here downloads a
 model; it reads a small JSON manifest, and only from registry.ollama.ai.
 """
+import http.client
 import json
 import re
+import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 import model_wizard
@@ -19,13 +22,15 @@ DEFAULT_BPW = 4.5  # Ollama's default tags are mostly Q4_K_M, about 4.5 bits per
 PARAMS_RE = re.compile(r"(?<![a-z\d.])(\d+(?:\.\d+)?)b(?![a-z])", re.IGNORECASE)  # "e2b" is not 2B
 
 _CACHE = {}          # normalised tag -> bytes or None, kept for this run only
-_STATE = {"offline": False}
+SIZE_BUDGET_S = 8  # one budget for every size lookup in a run; slow-but-answering networks cannot stall the menu
+_STATE = {"offline": False, "started": None}
 
 
 def reset_cache():
     """Forget every answer. Tests and a fresh run start from nothing."""
     _CACHE.clear()
     _STATE["offline"] = False
+    _STATE["started"] = None
     model_wizard._STATE["offline"] = False
 
 
@@ -33,16 +38,24 @@ _SameHostOnly = model_wizard._SameHostOnly  # kept here so older callers and tes
 _OPENER = urllib.request.build_opener(_SameHostOnly)
 
 
+def _budget_spent():
+    """True once the run has used its SIZE_BUDGET_S. The clock starts at the first lookup."""
+    now = time.monotonic()
+    if _STATE["started"] is None:
+        _STATE["started"] = now
+    return now - _STATE["started"] > SIZE_BUDGET_S
+
+
 def _get_json(url, headers=None, timeout=3):
     """Parsed JSON, or None. Sets the offline flag on a network failure so the rest of the run stops asking."""
-    if _STATE["offline"]:
+    if _STATE["offline"] or _budget_spent():
         return None
     req = urllib.request.Request(url, headers=headers or {})
     try:
         with _OPENER.open(req, timeout=timeout) as resp:
             return json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError:
-        return None  # the server answered (404, redirect refused, ...): not an outage
+    except (urllib.error.HTTPError, http.client.HTTPException):
+        return None  # the server answered (404, redirect refused, a cut-off reply): not an outage
     except (urllib.error.URLError, OSError, TimeoutError):
         _STATE["offline"] = True
         return None
@@ -52,6 +65,8 @@ def _get_json(url, headers=None, timeout=3):
 
 def ollama_registry_size(tag):
     """Total bytes of the model layers in the registry manifest, or None (offline, unknown tag, other registry)."""
+    if any(bad in (tag or "") for bad in ("?", "#", " ", "..")):
+        return None  # would change the request path; never send it
     key = model_wizard._norm(tag)
     if key in _CACHE:
         return _CACHE[key]
@@ -60,7 +75,7 @@ def ollama_registry_size(tag):
         return None  # hf.co/... and other registries are not ours to size
     if "/" not in name:
         name = "library/" + name
-    data = _get_json(f"{REGISTRY}{name}/manifests/{version}", headers={"Accept": MANIFEST_ACCEPT})
+    data = _get_json(f"{REGISTRY}{urllib.parse.quote(name, safe='/')}/manifests/{urllib.parse.quote(version, safe='')}", headers={"Accept": MANIFEST_ACCEPT})
     layers = data.get("layers") if isinstance(data, dict) else None
     if not isinstance(layers, list):
         layers = None
@@ -71,7 +86,7 @@ def ollama_registry_size(tag):
 
 
 def estimate_gb(tag):
-    """Size guess from the parameter count in the tag (27b at 4.5 bits is about 15 GB). None when the tag has none."""
+    """Size estimate from the parameter count in the tag (27b at 4.5 bits is about 15 GB). None when the tag has none."""
     version = (tag or "").rpartition(":")[2]
     m = PARAMS_RE.search(version)
     if not m:
@@ -95,7 +110,7 @@ def resolve(tag, list_gb=None):
 def hf_quant_size(user, repo, free_vram, free_ram):
     """Size of the quant that would be pulled for a Hugging Face repo, judged against the memory free right now.
     {"gb", "quant", "source": "hugging face" | "estimate"} or None."""
-    if model_wizard._STATE["offline"]:
+    if model_wizard._STATE["offline"] or _budget_spent():
         return None
     files = model_wizard.hf_tree_files(user, repo)
     if not files:

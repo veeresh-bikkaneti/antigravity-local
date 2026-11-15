@@ -1,4 +1,5 @@
-"""PR A: real download sizes on every row, with the source shown. No test touches the network."""
+"""PR A: real download sizes on every row. No test touches the network."""
+import http.client
 import io
 import unittest
 import urllib.error
@@ -7,6 +8,7 @@ from unittest import mock
 import download_size
 import model_wizard
 import pull_gate
+import run
 
 _REAL_GET_JSON = download_size._get_json  # kept before any test patches it
 
@@ -189,6 +191,51 @@ class CouncilFixes(unittest.TestCase):
         with mock.patch.object(model_wizard, "hf_tree_files") as tree:
             self.assertIsNone(download_size.hf_quant_size("u", "r", 24.0, 32.0))
             tree.assert_not_called()
+
+
+class FixPass(unittest.TestCase):
+    """PR 41 fix pass: truncated reply, total time budget, offline at the Hub call, escaping, rows that are shown."""
+
+    def setUp(self):
+        download_size.reset_cache()
+        self.addCleanup(download_size.reset_cache)
+
+    def test_a_cut_off_reply_returns_none_and_is_not_an_outage(self):
+        resp = mock.MagicMock()
+        resp.__enter__.return_value.read.side_effect = http.client.IncompleteRead(b"")
+        with mock.patch.object(download_size._OPENER, "open", return_value=resp):
+            self.assertIsNone(download_size.ollama_registry_size("qwen3:8b"))
+        self.assertFalse(download_size._STATE["offline"])
+
+    def test_no_lookup_opens_a_connection_once_the_budget_is_spent(self):
+        download_size._STATE["started"] = 0.0
+        with mock.patch.object(download_size.time, "monotonic", return_value=download_size.SIZE_BUDGET_S + 1.0),                 mock.patch.object(download_size._OPENER, "open") as opened,                 mock.patch.object(model_wizard, "hf_tree_files") as tree:
+            self.assertIsNone(download_size._get_json("https://registry.ollama.ai/v2/x"))
+            self.assertIsNone(download_size.hf_quant_size("u", "r", 24.0, 32.0))
+        opened.assert_not_called()
+        tree.assert_not_called()
+
+    def test_the_hub_is_not_asked_again_when_it_is_offline(self):
+        model_wizard._STATE["offline"] = True
+        res = {"free_disk_gb": 100, "disk_total_gb": 500}
+        with mock.patch.object(run, "_free_for_fit", return_value=(24.0, 32.0)),                 mock.patch.object(model_wizard, "hf_repo_info") as info,                 mock.patch.object(model_wizard, "hf_tree_files") as tree, mock.patch("builtins.print"):
+            plan = run._plan_download("hf.co/u/r:Q4_K_M", {}, res)
+        self.assertIsNotNone(plan)
+        info.assert_not_called()
+        tree.assert_not_called()
+
+    def test_a_tag_that_could_change_the_request_path_is_refused(self):
+        with mock.patch.object(download_size, "_get_json") as got:
+            for bad in ("qwen3:7b?x=1", "qwen3:7b#x", "qwen3:7b x", "qwen3:7b..x"):
+                self.assertIsNone(download_size.ollama_registry_size(bad), bad)
+        got.assert_not_called()
+
+    def test_all_ten_valid_rows_are_sized_after_three_invalid_ones(self):
+        rows = [{"repo": "bad"}, {"repo": ""}, {"repo": "a/b/c"}] + [{"repo": f"u/m{i}"} for i in range(10)]
+        info = {"gb": 4.0, "quant": "Q4_K_M", "source": "hugging face"}
+        with mock.patch.object(run, "hf_menu_search", return_value=rows),                 mock.patch.object(download_size, "hf_quant_size", return_value=info) as sized:
+            run.hf_menu_search_sized("x", 24.0, 32.0, limit=10)
+        self.assertEqual(sized.call_count, 10)
 
 
 if __name__ == "__main__":

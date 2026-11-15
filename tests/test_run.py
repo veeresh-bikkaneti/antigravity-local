@@ -374,7 +374,7 @@ class ModelWizardInRun(unittest.TestCase):
         rows = [ln for ln in lines if "qwen2.5-coder:7b" in ln]
         self.assertTrue(rows, self.printed)
         self.assertIn("recommended for this PC", rows[0])
-        self.assertIn("~3.9 GB download (estimate)", rows[0])  # 7b x 4.5 bits: sized, and labelled as a guess
+        self.assertIn("~3.9 GB download (estimate)", rows[0])  # 7b x 4.5 bits: sized, and labelled as an estimate
         self.assertIn("*", rows[0])
         self.assertRegex(rows[0].strip(), r"^\* 1\. qwen2\.5-coder:7b")  # row 1, and it carries the default mark
 

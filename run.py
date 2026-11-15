@@ -452,9 +452,13 @@ def hf_menu_search(words=None, pipeline_tag="text-generation", limit=20):
 def hf_menu_search_sized(words, free_vram, free_ram, limit=10):
     """hf_menu_search, plus the size of the quant each of the first rows would pull (one Hub tree read per repo)."""
     rows = hf_menu_search(words)
-    for r in rows[:limit]:
+    sized = 0
+    for r in rows:
+        if sized >= limit:
+            break
         if not model_wizard._is_repo_id(r.get("repo")):
             continue
+        sized += 1
         user, repo = r["repo"].split("/", 1)
         info = download_size.hf_quant_size(user, repo, free_vram, free_ram)
         if info:
@@ -682,14 +686,17 @@ def _plan_download(tag, hw, res):
             plan.update(size_gb=info["gb"], size_source=info["source"])
         return plan
     user, repo, typed_quant = parsed
-    info = model_wizard.hf_repo_info(user, repo)
+    if model_wizard._STATE["offline"]:
+        info = {"status": "unknown", "gated": False, "license": None}  # the Hub is down this run: do not ask again
+    else:
+        info = model_wizard.hf_repo_info(user, repo)
     if info["status"] == "missing":
         print(f"       '{user}/{repo}' was not found on Hugging Face (404). Check the user and repo name.")
         return None
     plan["license"], plan["gated"] = info["license"], info["gated"]
     if plan["gated"]:
         return plan
-    files = model_wizard.hf_tree_files(user, repo)
+    files = [] if model_wizard._STATE["offline"] else model_wizard.hf_tree_files(user, repo)
     if not files:
         print("       Could not read the file sizes from Hugging Face. Asking you with the tag as typed.")
         return plan
@@ -704,7 +711,7 @@ def _plan_download(tag, hw, res):
     if pick["fit"] == "too big":
         print(f"       {typed_quant.upper()} does not fit: {pick['why']}.")
         return None
-    est = " (size estimated)" if pick["estimated"] else ""
+    est = " (estimate)" if pick["estimated"] else ""
     print(f"       Quant picked: {pick['quant']}, {pick['size_gb']:.1f} GB{est}. {pick['why']}.")
     plan.update(tag=f"hf.co/{user}/{repo}:{pick['quant']}", quant=pick["quant"], size_gb=pick["size_gb"],
                 size_source="estimate" if pick["estimated"] else "hugging face")
