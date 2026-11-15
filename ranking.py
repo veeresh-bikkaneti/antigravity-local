@@ -4,6 +4,7 @@ Pure functions: no network, no clock, no files. Feed in candidate dicts, get a
 winner back. Higher rank_key wins, and the levels are compared strictly in order,
 so a lower level can never rescue a candidate that lost on a higher one.
 """
+import math
 from datetime import datetime, timezone
 
 import capabilities
@@ -28,12 +29,15 @@ def epoch(value):
 
 
 def _num(value):
-    return value if isinstance(value, (int, float)) and not isinstance(value, bool) else 0
+    """A real, finite number, else 0. NaN and inf would make the winner depend on input order."""
+    ok = isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+    return value if ok else 0
 
 
 def rank_key(c):
     """Tuple where HIGHER is better, in the spec order. Missing keys count as unknown or zero."""
-    fit = _FIT.get(c.get("fit"), 1)
+    fit_name = c.get("fit")
+    fit = _FIT.get(fit_name, 1) if isinstance(fit_name, str) else 1
     not_failed = 0 if c.get("ledger") == "fail" else 1
     tools = capabilities.tools_level(c.get("badges"))
     installed = 1 if c.get("installed") else 0

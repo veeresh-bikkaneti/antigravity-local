@@ -147,6 +147,29 @@ class Robustness(unittest.TestCase):
         b = cand(downloads="lots", size_gb="big", last_modified="soon", name_score="high")
         self.assertEqual(ranking.rank_key(a), ranking.rank_key(b))
 
+    def test_nan_and_inf_count_as_zero_so_they_cannot_win_by_position_or_size(self):
+        for field in ("name_score", "size_gb", "downloads"):
+            for bad in (float("nan"), float("inf"), float("-inf")):
+                with self.subTest(field=field, bad=bad):
+                    ok, odd = cand("ok"), cand("odd", **{field: bad})
+                    self.assertEqual(ranking.rank_key(odd), ranking.rank_key(cand("zero", **{field: 0})))
+                    self.assertEqual(ranking.best_for_agent([odd, ok])["tag"], "ok")
+                    self.assertEqual(ranking.best_for_agent([ok, odd])["tag"], "ok")
+
+    def test_string_numbers_and_bool_downloads_do_not_crash_or_win(self):
+        pool = [cand("text", downloads="500"), cand("flag", downloads=True), cand("real", downloads=5)]
+        self.assertEqual(ranking.best_for_agent(pool)["tag"], "real")
+        self.assertEqual(ranking.best_for_agent(pool[::-1])["tag"], "real")
+
+    def test_an_unhashable_fit_or_ledger_is_just_unknown(self):
+        self.assertEqual(ranking.rank_key(cand(fit=["gpu"], ledger=["fail"]))[:2], (1, 1))
+
+    def test_lowercase_z_timestamps_parse(self):
+        self.assertEqual(ranking.epoch("2026-11-01T00:00:00z"), ranking.epoch("2026-11-01T00:00:00Z"))
+
+    def test_the_exact_default_key_for_an_empty_candidate(self):
+        self.assertEqual(ranking.rank_key({}), (1, 1, 1, 0, 0, (0, 0, 0), 0))
+
     def test_full_tie_first_in_input_order_wins(self):
         a, b, c = cand("a"), cand("b"), cand("c")
         self.assertEqual(ranking.best_for_agent([a, b, c])["tag"], "a")
