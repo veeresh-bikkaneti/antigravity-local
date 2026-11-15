@@ -408,13 +408,13 @@ class TreePages(unittest.TestCase):
                 for i in range(1, n + 1)]
 
     def test_more_pages_than_the_cap_gives_nothing(self):
-        with mock.patch("urllib.request.urlopen", side_effect=self.pages(8)):
+        with mock.patch.object(mw._HF_OPENER, "open", side_effect=self.pages(8)):
             self.assertEqual(mw.hf_tree_files("u", "r", max_pages=5), [])
 
     def test_pages_within_the_cap_are_all_read(self):
         last = self._Page([{"type": "file", "path": "m-Q4_K_M-00003-of-00003.gguf", "size": 1}])
         first_two = self.pages(2)
-        with mock.patch("urllib.request.urlopen", side_effect=first_two + [last]):
+        with mock.patch.object(mw._HF_OPENER, "open", side_effect=first_two + [last]):
             got = mw.hf_tree_files("u", "r", max_pages=5)
         self.assertEqual(len(got), 3)
 

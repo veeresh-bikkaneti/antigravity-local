@@ -17,6 +17,16 @@ def _repo_page(tag):
     return "https://ollama.com/library/" + name
 
 
+SOURCE_TEXT = {"registry": "Ollama registry", "hugging face": "Hugging Face", "list": "our list", "estimate": "estimate"}
+
+
+def size_line(size, source):
+    """'14.0 GB (from Ollama registry)', or '~15.2 GB (estimate)' when the number is an estimate."""
+    if source == "estimate":
+        return f"~{float(size):.1f} GB (estimate)"
+    return f"{float(size):.1f} GB (from {SOURCE_TEXT.get(source, 'an unknown source')})"
+
+
 def ask_pull(plan, interactive, input_fn=None, out=None):
     input_fn = input_fn or input  # looked up now, not at import, so a terminal or a test can swap it
     out = out or print
@@ -37,7 +47,7 @@ def ask_pull(plan, interactive, input_fn=None, out=None):
     lic = str(lic) if lic else None
     flag = " (NON-COMMERCIAL, check before business use)" if lic and any(k in lic.lower() for k in NON_COMMERCIAL) else ""
     size = plan.get("size_gb")
-    size_text = f"{float(size):.1f} GB" if size else "unknown (the disk check could not run)"
+    size_text = size_line(size, plan.get("size_source")) if size else "unknown"
     disk_text = f"{after:.1f} GB" if size else "unknown"
     out(f"model: {plan['tag']}\nquant: {plan.get('quant') or 'unknown'}\nsize: {size_text}\n"
         f"license: {lic or 'unknown'}{flag}\nfree disk after: {disk_text}")

@@ -231,7 +231,7 @@ class HfApi(unittest.TestCase):
             if isinstance(nxt, BaseException):
                 raise nxt
             return nxt
-        with mock.patch.object(model_wizard.urllib.request, "urlopen", fake):
+        with mock.patch.object(model_wizard._HF_OPENER, "open", fake):
             return model_wizard.hf_tree_files("u", "m"), seen
 
     def info(self, response):
