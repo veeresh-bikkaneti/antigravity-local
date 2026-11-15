@@ -30,6 +30,7 @@ Start every session by reading `CONTEXT_MEMORY.md` (rule R1). Python/Docker repo
 | R21 | No `git reset --hard`, `git clean`, history rewrite, or deleting untracked user files. | judgment: user reviews `git reflog` | the `pre-bash` hook if it is configured to deny; otherwise none |
 | R22 | Commits use Conventional Commits (`feat(scope): ...`). Wrap any `@name` that is not a real login in backticks. | `git log main..HEAD --format=%s` read by reviewer agent | none |
 | R23 | Technical docs (README, guides, wiki) follow the user's tone: human, light, collaborative, positive, conversational. | judgment: reviewer agent reads the diff against `~/.claude/CLAUDE.md` tone pillars | none |
+| R24 | Every task states a token cap and an estimate up front (default cap 150k if the brief gives none). Count the main session plus every seat from runtime counters. Council seats read only the evidence pack, never the whole repo. Stop and ask the user before the running total passes the cap. Report tokens with each result. | judgment: reviewer agent finds the cap, estimate and running total in the transcript | none |
 
 ## The 9-field subagent brief
 
