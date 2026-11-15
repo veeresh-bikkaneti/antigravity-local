@@ -12,8 +12,8 @@ SKIP = ("mmproj", "imatrix")
 
 
 def quant_of(filename):
-    m = QUANT_RE.search(filename)
-    return m.group(1).upper() if m else None
+    found = QUANT_RE.findall(filename or "")
+    return found[-1].upper() if found else None
 
 
 def _bpw(quant):
@@ -23,12 +23,14 @@ def _bpw(quant):
 def _group(files):
     """{quant: size_bytes or None}; split parts are summed, any unsized part makes the quant unsized."""
     groups = {}
-    for f in files:
-        name = f.get("name", "")
+    for f in files or []:
+        name = f.get("name") or ""
         q = quant_of(name)
         if not q or _bpw(q) is None or any(s in name.lower() for s in SKIP) or not name.lower().endswith(".gguf"):
             continue
         size, prev = f.get("size"), groups.get(q, 0)
+        if not isinstance(size, (int, float)) or size <= 0:
+            size = None
         groups[q] = None if size is None or prev is None else prev + size
     return groups
 

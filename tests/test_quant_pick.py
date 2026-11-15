@@ -54,6 +54,27 @@ class PickQuant(unittest.TestCase):
         self.assertIsNone(pick_quant(extra, 16, 0))
 
 
+class Hostile(unittest.TestCase):
+    def test_typed_quant_the_repo_lacks_is_none_not_a_silent_swap(self):
+        self.assertIsNone(pick_quant(LADDER, 16, 0, wanted="Q5_K_S"))
+
+    def test_none_or_garbage_input_does_not_crash(self):
+        self.assertIsNone(pick_quant(None, 16, 16))
+        self.assertIsNone(quant_of(None))
+        files = [{"name": "m-Q4_K_M.gguf", "size": "4500"}, {"name": None, "size": 5}]
+        self.assertIsNone(pick_quant(files, 16, 16))
+
+    def test_zero_and_negative_sizes_count_as_missing(self):
+        files = [gguf("Q8_0", 8.0), {"name": "m-Q4_K_M.gguf", "size": 0}, {"name": "m-Q5_K_M.gguf", "size": -3}]
+        got = pick_quant(files, 16, 0)
+        self.assertEqual(got["quant"], "Q8_0")  # the others are estimated from Q8_0 and are smaller
+
+    def test_free_vram_exactly_at_the_edge_fits(self):
+        # 10 GB x 1.2 = 12 GB: exactly 12 GB free VRAM is a GPU fit, a hair under is split.
+        self.assertEqual(pick_quant([gguf("Q4_K_M", 10.0)], 12, 0)["fit"], "gpu")
+        self.assertEqual(pick_quant([gguf("Q4_K_M", 10.0)], 11.99, 10)["fit"], "split")
+
+
 class QuantOf(unittest.TestCase):
     def test_names(self):
         self.assertEqual(quant_of("Llama-3.1-8B-q4_k_m.gguf"), "Q4_K_M")

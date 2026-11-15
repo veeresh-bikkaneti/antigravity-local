@@ -69,5 +69,16 @@ class AskPull(unittest.TestCase):
         self.assertIn("license: unknown", run("n", plan(license=None))[1])
 
 
+class Hostile(unittest.TestCase):
+    def test_odd_plan_values_do_not_crash(self):
+        got, shown, _ = run("n", plan(license=5, quant=None, size_gb=None))
+        self.assertEqual(got, "no")
+        self.assertIn("quant: unknown", shown)
+
+    def test_missing_disk_fields_refuse_instead_of_crashing(self):
+        got, _, calls = run("y", {"tag": "x", "quant": "Q4_K_M", "size_gb": 1.0})
+        self.assertEqual((got, calls), ("disk_refused", []))
+
+
 if __name__ == "__main__":
     unittest.main()
