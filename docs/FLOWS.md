@@ -232,6 +232,63 @@ flowchart TD
 
 ---
 
+## Flow 8: fit the model to what is free, and ask before every pull
+
+This is the model-picking part of Flow 1, drawn as a state machine. Two rules drive it. First, models are fitted to the memory that is free right now (a game sitting on your VRAM counts), with 20% headroom. Second, nothing downloads until you type `y`. The `--yes` flag, piped input and CI never download: they use the best installed model, or stop with exit 1 and print the exact `ollama pull` line.
+
+```mermaid
+stateDiagram-v2
+    [*] --> ReadPC
+    ReadPC --> FindServer: free VRAM, RAM, disk read
+    FindServer --> InstalledFound: server answers, a model is installed
+    FindServer --> Menu: terminal, no --yes
+    FindServer --> NonInteractive: --yes or piped, nothing installed
+    InstalledFound --> Done: reuse it, nothing to download
+    Menu --> TypedTag: typed hf.co/user/repo
+    Menu --> GateAsked: picked a model that is not installed
+    TypedTag --> QuantPicked: biggest quant that fits free memory
+    TypedTag --> DoesNotFit: nothing fits, or the typed quant is missing
+    TypedTag --> Gated: repo is gated
+    QuantPicked --> GateAsked: tag, quant, size, license, disk left
+    GateAsked --> DiskRefused: less than 10 percent disk would be left
+    GateAsked --> Pulled: y or yes
+    GateAsked --> Declined: Enter, n, anything else, EOF
+    Pulled --> Done: saved to .env
+    Pulled --> PullFailed: ollama pull errors
+    NonInteractive --> Exit1: print the ollama pull command
+    DoesNotFit --> Exit1
+    DiskRefused --> Exit1
+    Gated --> Exit1: print the repo page
+    Declined --> Exit1
+    PullFailed --> Exit1
+    Done --> [*]
+    Exit1 --> [*]
+```
+
+Every transition and the test that covers it:
+
+| Transition | Test |
+|---|---|
+| ReadPC to FindServer | `tests.test_hardware.FreeVram.test_reads_mib_as_gb`, `tests.test_pull_flow.OllamaServe.test_spawned_serve_listens_on_this_pc_only` |
+| FindServer to InstalledFound | `tests.test_pull_flow.NeverDownloads.test_yes_with_an_installed_model_still_just_uses_it` |
+| FindServer to Menu | `tests.test_run.ModelWizardInRun.test_picking_a_new_model_pulls_exactly_that_tag` |
+| FindServer to NonInteractive | `tests.test_pull_flow.NeverDownloads.test_yes_with_no_installed_model_exits_1_prints_the_command_and_never_pulls`, `test_piped_input_with_no_installed_model_exits_1_and_never_pulls` |
+| Menu to TypedTag | `tests.test_run.ModelWizardInRun.test_typed_hf_tag_that_exists_is_pulled_as_typed_and_saved` |
+| Menu to GateAsked | `tests.test_run.ModelWizardInRun.test_every_pull_asks_first_even_a_small_one` |
+| TypedTag to QuantPicked | `tests.test_run.ModelWizardInRun.test_typed_hf_repo_gets_the_largest_quant_that_fits_free_vram`, `tests.test_quant_pick.PickQuant.test_16gb_free_vram_picks_largest_under_13_3` |
+| TypedTag to DoesNotFit | `tests.test_run.ModelWizardInRun.test_typed_hf_quant_the_repo_lacks_downloads_nothing`, `test_typed_hf_repo_where_nothing_fits_downloads_nothing_and_says_why` |
+| TypedTag to Gated | `tests.test_run.ModelWizardInRun.test_gated_repo_is_skipped_with_its_page` |
+| QuantPicked to GateAsked | `tests.test_run.ModelWizardInRun.test_typed_hf_repo_gets_the_largest_quant_that_fits_free_vram` |
+| GateAsked to DiskRefused | `tests.test_run.ModelWizardInRun.test_full_disk_refuses_before_any_pull`, `tests.test_pull_gate` disk tests |
+| GateAsked to Pulled | `tests.test_run.ModelWizardInRun.test_only_a_typed_y_downloads` |
+| GateAsked to Declined | `test_only_a_typed_y_downloads`, `test_eof_at_the_prompt_downloads_nothing`, `tests.test_pull_flow.NeverDownloads.test_a_terminal_answer_of_n_downloads_nothing_and_exits_1`; Ctrl+C: `test_ctrl_c_at_the_prompt_stops_and_downloads_nothing` |
+| Pulled to Done | `tests.test_run.ModelWizardInRun.test_a_newly_downloaded_pick_is_saved_to_env` |
+| Pulled to PullFailed | `tests.test_run.ModelWizardInRun.test_a_failed_download_leaves_env_alone` |
+| Anything to Exit1 | `tests.test_pull_flow.NeverDownloads` (exit code 1 and no `ollama pull` call), `tests.test_run.PullFailure.test_failed_pull_returns_none_and_main_exits_nonzero` |
+| Free memory to fit label | `tests.test_model_wizard.FitLabel` (old total-VRAM cases), `tests.test_quant_pick.PickQuant.test_cpu_only_split_fit` |
+| Every printed line to the run log | `tests.test_pull_flow.NeverDownloads.test_every_printed_line_also_lands_in_the_run_log`, `tests.test_runlog.Tee` |
+| Server we start is loopback only, a running one is left alone | `tests.test_pull_flow.OllamaServe` |
+
 ## Summary of flow triggers
 
 | Action | Command / Trigger | Primary Module | Visual Architecture Ref |

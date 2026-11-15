@@ -3,6 +3,7 @@ import asyncio
 import contextlib
 import io
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -15,6 +16,18 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import run  # noqa: E402
+
+
+os.environ["ANTIGRAVITY_NO_RUN_LOG"] = "1"  # tests must not write into the real logs/ folder
+
+
+def free_of(hw, disk_free=1000.0, disk_total=2000.0):
+    """A fake hardware.free_resources() that says 'everything in hw is free', so no test probes this PC."""
+    return {"free_vram_gb": hw["vram_gb"], "gpu_known": hw["vram_gb"] > 0, "free_ram_gb": hw["ram_gb"],
+            "free_disk_gb": disk_free, "disk_total_gb": disk_total, "models_dir": "x"}
+
+
+HF_INFO = {"status": "ok", "gated": False, "license": "apache-2.0"}
 
 
 class _Tty(io.StringIO):
@@ -83,11 +96,15 @@ class Hardware(unittest.TestCase):
 
     def test_unknown_ram_picks_the_smallest_model(self):
         calls = []
-        with mock.patch.object(run, "get_hardware_profile", return_value={"ram_gb": 0.0, "vram_gb": 0.0, "gpu_name": "CPU"}), \
+        hw = {"ram_gb": 0.0, "vram_gb": 0.0, "gpu_name": "CPU"}
+        with mock.patch.object(run, "get_hardware_profile", return_value=hw), \
+                mock.patch.object(run, "get_free_resources", return_value=free_of(hw)), \
                 mock.patch.object(run, "get_installed_ollama_models", return_value=set()), \
                 mock.patch.object(run.subprocess, "check_call", side_effect=lambda c: calls.append(c)), \
+                mock.patch("builtins.input", side_effect=["", "y"]), \
                 contextlib.redirect_stdout(io.StringIO()):
-            self.assertEqual(run.select_and_pull_model(), "llama3.2:3b")
+            # Enter at the model menu keeps llama3.2:3b, then "y" answers "Download? [y/N]"
+            self.assertEqual(run.select_and_pull_model(interactive=True), "llama3.2:3b")
         self.assertEqual(calls, [["ollama", "pull", "llama3.2:3b"]])
 
     def test_score_is_capped_at_100(self):
@@ -99,7 +116,7 @@ class ModelWizardInRun(unittest.TestCase):
     HW = {"ram_gb": 128.0, "vram_gb": 16.0, "gpu_name": "RTX"}
 
     def sel(self, installed, answers=(), interactive=True, requested=None, env=None, registry=True, hw=None,
-            env_text=None, pull_error=None):
+            env_text=None, pull_error=None, gate="y", free=None, hf_files=()):
         """Returns (model, pull commands, final .env text). The printed menu is left in self.printed."""
         feed = iter(answers)
         pulls = []
@@ -112,11 +129,23 @@ class ModelWizardInRun(unittest.TestCase):
 
         def no_input(_=""):
             raise AssertionError("the menu must not ask on this path")
-        ask = (lambda _="": next(feed)) if interactive else no_input
+        self.gate_asked = []
+
+        def interactive_ask(prompt=""):
+            if prompt.startswith("Download?"):
+                self.gate_asked.append(prompt)
+                if isinstance(gate, BaseException):
+                    raise gate
+                return gate
+            return next(feed)
+        ask = interactive_ask if interactive else no_input
         with tempfile.TemporaryDirectory() as d, \
                 mock.patch.object(run, "PROJECT_DIR", d), \
                 mock.patch.dict(run.os.environ, {"LOCAL_LLM_MODEL": env} if env else {}, clear=False), \
                 mock.patch.object(run, "get_hardware_profile", return_value=hw or self.HW), \
+                mock.patch.object(run, "get_free_resources", return_value=free or free_of(hw or self.HW)), \
+                mock.patch.object(run.model_wizard, "hf_repo_info", return_value=HF_INFO), \
+                mock.patch.object(run.model_wizard, "hf_tree_files", return_value=list(hf_files)), \
                 mock.patch.object(run, "get_installed_ollama_models", return_value=set(installed)), \
                 mock.patch.object(run.model_wizard, "tag_exists", return_value=registry), \
                 mock.patch.object(run.subprocess, "check_call", side_effect=fake_pull), \
@@ -174,7 +203,7 @@ class ModelWizardInRun(unittest.TestCase):
         self.assertEqual(wrote, text)
 
     def test_cli_model_that_needs_a_download_is_saved_to_env_too(self):
-        got, pulls, wrote = self.sel({"qwen2.5:14b"}, interactive=False, requested="devstral-small-2:24b",
+        got, pulls, wrote = self.sel({"qwen2.5:14b"}, interactive=True, requested="devstral-small-2:24b",
                                      env_text="LOCAL_LLM_MODEL=qwen2.5:14b\n")
         self.assertEqual((got, len(pulls)), ("devstral-small-2:24b", 1))
         self.assertIn("LOCAL_LLM_MODEL=devstral-small-2:24b", wrote)
@@ -237,7 +266,84 @@ class ModelWizardInRun(unittest.TestCase):
                 got, pulls, _ = self.sel(set(), [""], hw=hw)
                 auto, auto_pulls, _ = self.sel(set(), interactive=False, hw=hw)
                 self.assertEqual((got, pulls), (want, [["ollama", "pull", want]]))
-                self.assertEqual((got, pulls), (auto, auto_pulls))
+                self.assertEqual((auto, auto_pulls), (None, []))  # --yes / piped: never downloads
+                self.assertIn(f"ollama pull {want}", self.printed)
+
+    def test_every_pull_asks_first_even_a_small_one(self):
+        got, pulls, _ = self.sel(set(), [""], hw={"ram_gb": 8.0, "vram_gb": 0.0, "gpu_name": "x"})
+        self.assertEqual(got, "llama3.2:3b")
+        self.assertEqual(len(self.gate_asked), 1)
+
+    def test_only_a_typed_y_downloads(self):
+        for answer in ("", "n", "N", "no", "maybe", "yy", " "):
+            with self.subTest(answer=answer):
+                got, pulls, _ = self.sel(set(), [""], gate=answer)
+                self.assertEqual((got, pulls), (None, []))
+        for answer in ("y", "Y", "yes", "YES"):
+            with self.subTest(answer=answer):
+                got, pulls, _ = self.sel(set(), [""], gate=answer)
+                self.assertEqual(len(pulls), 1)
+
+    def test_eof_at_the_prompt_downloads_nothing(self):
+        got, pulls, _ = self.sel(set(), [""], gate=EOFError())
+        self.assertEqual((got, pulls), (None, []))
+
+    def test_ctrl_c_at_the_prompt_stops_and_downloads_nothing(self):
+        with self.assertRaises(KeyboardInterrupt):
+            self.sel(set(), [""], gate=KeyboardInterrupt())
+
+    def test_full_disk_refuses_before_any_pull(self):
+        full = free_of(self.HW, disk_free=20.0, disk_total=1000.0)  # a 9 GB model would leave 11 GB: under 10%
+        got, pulls, _ = self.sel(set(), [""], free=full)
+        self.assertEqual((got, pulls, self.gate_asked), (None, [], []))
+        self.assertIn("Not enough disk", self.printed)
+
+    def test_yes_with_a_cli_model_that_is_not_installed_downloads_nothing(self):
+        got, pulls, _ = self.sel({"qwen2.5:14b"}, interactive=False, requested="devstral-small-2:24b")
+        self.assertEqual((got, pulls), (None, []))
+        self.assertIn("ollama pull devstral-small-2:24b", self.printed)
+
+    def test_typed_hf_repo_gets_the_largest_quant_that_fits_free_vram(self):
+        files = [{"name": f"m-{q}.gguf", "size": int(gb * 1e9)}
+                 for q, gb in (("Q8_0", 14.1), ("Q6_K", 11.9), ("Q4_K_M", 8.5), ("Q2_K", 5.4))]
+        got, pulls, _ = self.sel(set(), [""], hf_files=files, requested="hf.co/u/m",
+                                 hw={"ram_gb": 128.0, "vram_gb": 16.0, "gpu_name": "x"}, interactive=True)
+        self.assertEqual((got, pulls), ("hf.co/u/m:Q6_K", [["ollama", "pull", "hf.co/u/m:Q6_K"]]))
+        self.assertIn("fits 16 GB free VRAM", self.printed)
+
+    def test_typed_hf_repo_where_nothing_fits_downloads_nothing_and_says_why(self):
+        files = [{"name": "m-Q4_K_M.gguf", "size": 90_000_000_000}, {"name": "m-Q8_0.gguf", "size": 170_000_000_000}]
+        got, pulls, _ = self.sel(set(), [""], hf_files=files, requested="hf.co/u/m", interactive=True,
+                                 hw={"ram_gb": 16.0, "vram_gb": 8.0, "gpu_name": "x"})
+        self.assertEqual((got, pulls, self.gate_asked), (None, [], []))
+        self.assertIn("No quant in u/m fits", self.printed)
+
+    def test_typed_hf_repo_that_does_not_exist_is_refused_before_the_prompt(self):
+        missing = {"status": "missing", "gated": False, "license": None}
+        with mock.patch.object(run.model_wizard, "hf_repo_info", return_value=missing), \
+                mock.patch("builtins.input", side_effect=AssertionError("must not ask for a repo that is not there")), \
+                mock.patch.object(run.subprocess, "check_call", side_effect=AssertionError("must not pull")), \
+                contextlib.redirect_stdout(io.StringIO()) as shown:
+            got = run._pull_with_gate("hf.co/nobody/nothing", True, self.HW, free_of(self.HW))
+        self.assertIsNone(got)
+        self.assertIn("was not found on Hugging Face", shown.getvalue())
+
+    def test_typed_hf_quant_the_repo_lacks_downloads_nothing(self):
+        files = [{"name": "m-Q4_K_M.gguf", "size": 8_500_000_000}]
+        got, pulls, _ = self.sel(set(), [""], hf_files=files, requested="hf.co/u/m:Q5_K_S", interactive=True)
+        self.assertEqual((got, pulls), (None, []))
+        self.assertIn("No Q5_K_S file", self.printed)
+
+    def test_gated_repo_is_skipped_with_its_page(self):
+        plan_out = io.StringIO()
+        info = {"status": "ok", "gated": True, "license": "llama3"}
+        with mock.patch.object(run.model_wizard, "hf_repo_info", return_value=info), \
+                mock.patch("builtins.input", side_effect=AssertionError("must not ask for a gated repo")), \
+                mock.patch.object(run.subprocess, "check_call", side_effect=AssertionError("must not pull")), \
+                contextlib.redirect_stdout(plan_out):
+            got = run._pull_with_gate("hf.co/meta/llama", True, self.HW, free_of(self.HW))
+        self.assertIsNone(got)
+        self.assertIn("https://huggingface.co/meta/llama", plan_out.getvalue())
 
     def test_empty_machine_menu_shows_the_tier_pick_as_recommended_and_default(self):
         tier = run.hardware_tier_model(0.0, 32.0)
@@ -333,6 +439,7 @@ class ModelWizardInRun(unittest.TestCase):
                 mock.patch.object(run, "is_in_venv", return_value=True), \
                 mock.patch.object(run, "check_ollama_service", return_value=True), \
                 mock.patch.object(run, "get_hardware_profile", return_value={"ram_gb": 32.0, "vram_gb": 0.0, "gpu_name": "x"}), \
+                mock.patch.object(run, "get_free_resources", return_value=free_of({"ram_gb": 32.0, "vram_gb": 0.0})), \
                 mock.patch.object(run, "get_installed_ollama_models", return_value=set()), \
                 mock.patch.object(run.model_wizard, "tag_exists", return_value=True), \
                 mock.patch.object(run.subprocess, "check_call", side_effect=lambda c: pulls.append(c)), \
@@ -527,6 +634,7 @@ class AnyBackend(unittest.TestCase):
 class PullFailure(unittest.TestCase):
     def test_failed_pull_returns_none_and_main_exits_nonzero(self):
         with mock.patch.object(run, "get_hardware_profile", return_value={"ram_gb": 32.0, "vram_gb": 0.0, "gpu_name": "x"}), \
+                mock.patch.object(run, "get_free_resources", return_value=free_of({"ram_gb": 32.0, "vram_gb": 0.0})), \
                 mock.patch.object(run, "get_installed_ollama_models", return_value=set()), \
                 mock.patch.object(run.subprocess, "check_call", side_effect=OSError("boom")), \
                 contextlib.redirect_stdout(io.StringIO()):

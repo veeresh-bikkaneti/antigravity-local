@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import unittest
@@ -50,6 +51,32 @@ class Choose(unittest.TestCase):
 
     def test_custom_tag_is_accepted(self):
         self.assertEqual(self.pick("qwen3.9:30b")[0], "qwen3.9:30b")
+
+    def test_a_yes_or_no_is_not_a_model_name_and_asks_again(self):
+        tag, out = self.pick("y", "")
+        self.assertEqual(tag, "qwen2.5:14b")
+        self.assertIn("       That looks like a yes/no answer. Type a number, a model tag, or press Enter for qwen2.5:14b.", out)
+
+    def test_yes_no_in_any_case_with_spaces_then_a_number_picks_that_row(self):
+        for answer in ("NO", " Yes ", "n", "y"):
+            with self.subTest(answer=answer):
+                self.assertEqual(self.pick(answer, "2")[0], self.MENU[1]["tag"])
+
+    def test_eof_after_a_yes_behaves_like_eof_today(self):
+        answers = iter(["y"])
+
+        def input_fn(_=""):
+            try:
+                return next(answers)
+            except StopIteration:
+                raise EOFError
+
+        out = []
+        self.assertEqual(mw.choose(self.MENU, "qwen2.5:14b", input_fn=input_fn, out=out.append), "qwen2.5:14b")
+        self.assertEqual(sum("yes/no" in line for line in out), 1)
+
+    def test_three_yes_no_answers_use_up_the_tries_and_fall_back(self):
+        self.assertEqual(self.pick("y", "n", "yes")[0], "qwen2.5:14b")
 
     def test_out_of_range_reasks_then_falls_back_after_three(self):
         tag, out = self.pick("99", "0", "-1")
@@ -221,6 +248,60 @@ class TagExists(unittest.TestCase):
     def test_offline_is_unknown_not_false(self):
         with mock.patch("urllib.request.urlopen", side_effect=OSError("offline")):
             self.assertIsNone(mw.tag_exists("qwen3.6:27b"))
+
+
+class TreePages(unittest.TestCase):
+    """hf_tree_files follows next-page links, but never past max_pages: a partial list would undercount split quants."""
+
+    class _Page:
+        def __init__(self, rows, link=""):
+            self.body, self.headers = json.dumps(rows).encode(), {"Link": link}
+
+        def read(self):
+            return self.body
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    def pages(self, n):
+        nxt = '<https://huggingface.co/api/models/u/r/tree/main?cursor=%d>; rel="next"'
+        return [self._Page([{"type": "file", "path": f"m-Q4_K_M-0000{i}-of-0000{n}.gguf", "size": 1}], nxt % i)
+                for i in range(1, n + 1)]
+
+    def test_more_pages_than_the_cap_gives_nothing(self):
+        with mock.patch("urllib.request.urlopen", side_effect=self.pages(8)):
+            self.assertEqual(mw.hf_tree_files("u", "r", max_pages=5), [])
+
+    def test_pages_within_the_cap_are_all_read(self):
+        last = self._Page([{"type": "file", "path": "m-Q4_K_M-00003-of-00003.gguf", "size": 1}])
+        first_two = self.pages(2)
+        with mock.patch("urllib.request.urlopen", side_effect=first_two + [last]):
+            got = mw.hf_tree_files("u", "r", max_pages=5)
+        self.assertEqual(len(got), 3)
+
+
+class FitFree(unittest.TestCase):
+    """The fit rule against FREE memory: size x 1.2 in VRAM is a GPU fit, else it can spill into 70% of free RAM."""
+
+    def fit(self, size, vram, ram):
+        return mw.fit_label(size, vram, ram, headroom=mw.FIT_HEADROOM)
+
+    def test_gpu_fit_needs_twenty_percent_headroom(self):
+        self.assertEqual(self.fit(13.3, 16, 0), "gpu")   # 13.3 x 1.2 = 15.96
+        self.assertEqual(self.fit(13.4, 16, 0), "too big")  # 16.08: no RAM to spill into
+
+    def test_cpu_only_split_fit_is_labelled_slow(self):
+        self.assertEqual(self.fit(15.2, 0, 128), "split")  # 18.2 <= 0.7 x 128
+        self.assertIn("slow", mw.FIT_TEXT["split"])
+
+    def test_nothing_free_fits_nothing(self):
+        self.assertEqual(self.fit(1.0, 0, 0), "too big")
+
+    def test_the_old_total_vram_default_is_unchanged(self):
+        self.assertEqual(mw.fit_label(13.8, 16, 128), "gpu")  # 13.8 x 1.11 = 15.3: the old 90% rule
 
 
 if __name__ == "__main__":

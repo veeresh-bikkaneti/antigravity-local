@@ -5,7 +5,7 @@ Before downloading any model, `run.py` performs a two-tier inventory pre-flight 
 1. REST API query to `http://localhost:11434/api/tags`.
 2. CLI fallback via `ollama list`.
 
-**Rule**: If ANY capable model is already present on disk (e.g. `qwen2.5:14b`), the runner reuses the highest-ranked local model, updates `.env`, and skips the download. On a real terminal (stdin and stdout both terminals, no `--yes`) it first shows a short menu: Enter keeps the pick, Ctrl+C cancels and downloads nothing, and a model you download is saved to `.env` as the pick for the next run. `--yes`, piped input and CI skip the menu.
+**Rule**: If ANY capable model is already present on disk (e.g. `qwen2.5:14b`), the runner reuses the highest-ranked local model, updates `.env`, and skips the download. On a real terminal (stdin and stdout both terminals, no `--yes`) it first shows a short menu: Enter keeps the pick, Ctrl+C cancels and downloads nothing, and a model you download is saved to `.env` as the pick for the next run. `--yes`, piped input and CI skip the menu and never download: with nothing installed they exit 1 and print the `ollama pull` command. Every pull on a terminal asks `Download? [y/N]` first, and the fit uses free VRAM and RAM.
 
 ## 2. Model Scoring Hierarchy
 Models are ranked by family base score, highest first (the numbers are in `run.py`, `_raw_capability_score`):
