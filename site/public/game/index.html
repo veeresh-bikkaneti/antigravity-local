@@ -373,7 +373,7 @@ body.motion-off .blockcursor,body.motion-off .bulb,body.motion-off .bob-anim,bod
 
     <!-- every command, BIG and readable, with its result -->
     <div class="command-bar" aria-label="The command he is running now, shown big">
-      <div class="cmd-label"><span>He types — <b>the command</b></span><span id="cmdWhere"></span></div>
+      <div class="cmd-label"><span id="cmdLabel">He types — <b>the command</b></span><span id="cmdWhere"></span></div>
       <div class="cmd-text"><span class="prompt">C:\&gt;</span> <span id="cmdTyped"></span><span class="blockcursor" aria-hidden="true"></span></div>
       <div class="cmd-result" id="cmdResult" aria-live="polite"></div>
     </div>
@@ -609,18 +609,18 @@ var HOPS=[
  {short:'The Command',hoop:'THE COMMAND',sub:'run.bat · run.sh · run.ps1',head:['Spin the','wheel.'],
   kicker:'Checkpoint 1 · The Command — run.bat / run.sh / run.ps1 at the start line',
   arrow:'he types his start command → the wheel spins → the level starts',
-  body:'One level, start to finish — and it begins the way the real setup begins: with a command. He types his OS\u2019s start command at his desk — run.bat on Windows, run.sh on Mac/Linux, run.ps1 in PowerShell; on the big screen the start-line wheel spins, the lights chase, and Muse — the cream plush, face set and determined — steps up to the line. The big terminal in the hoop is the system he is touching: the CLI. Clearing the hoop collects it — tool number one drops into the pocket under the screen, and every hoop after this one adds its own tool the same way.',
+  body:'One level, start to finish — and it begins the way the real setup begins: with a command. He types his OS\u2019s start command at his desk — run.bat on Windows, run.sh on Mac/Linux, run.ps1 in PowerShell; on the big screen the start-line wheel spins, the lights chase, and Muse — the cream plush, face set and determined — steps up to the line. The big terminal in the hoop is the system he is touching: the CLI. Clearing the hoop collects it — tool number one drops into the pocket under the screen, and every hoop after this one adds its own tool the same way. Ollama, Python and the repo are already in place (guide steps 1 to 3).',
   cmd:'run.bat  ·  run.sh  ·  run.ps1',where:'his terminal — one launcher per OS',result:'✓ WHEEL SPUN — GAME START! Whichever name his OS uses, the launcher (python run.py) is live and the run begins.'},
- {short:'Ollama pull',hoop:'OLLAMA PULL',sub:'the engine comes down',head:['Pull the','engine down.'],
-  kicker:'Checkpoint 2 · Ollama pull — the engine comes down',
+ {short:'Ollama install',hoop:'OLLAMA INSTALL',sub:'the engine comes down',head:['Pull the','engine down.'],
+  kicker:'Checkpoint 2 · Ollama install — the engine comes down',
   arrow:'download Ollama → install it on this PC → the engine is in',
   body:'First hoop: before anything can be served, the engine itself has to land on this machine. The command pulls Ollama down from the sky in a shower of glowing points — the big llama in the hoop is the system he is touching — and the plush strains with effort, jumps the hoop, and catches the llama as it lands: collected, into the pocket. No engine, no game; this is the hoop everything else stands on.',
   cmd:'irm https://ollama.com/install.ps1 | iex',where:'PowerShell · installs Ollama',result:'✓ Ollama installed on this PC — the engine is in. Next hoop: the brain.'},
- {short:'Model pull',hoop:'MODEL PULL',sub:'qwen2.5-coder:14b · 9 GB',head:['Pull the','9 GB brain.'],
-  kicker:'Checkpoint 3 · Model pull — qwen2.5-coder:14b',
+ {short:'Model pull',hoop:'MODEL PULL',sub:'the pick for this PC',head:['Pull the','9 GB brain.'],
+  kicker:'Checkpoint 3 · Model pull — the pick for this PC',
   arrow:'ollama pull → the 9 GB crate comes down the conveyor → model on the shelf',
-  body:'An engine with no model is an empty arcade cabinet. This hoop pulls the one brain the whole show runs on — qwen2.5-coder:14b, about 9 GB — and the crate drops in from the branch overhead in a burst of glowing points; the plush catches it as it falls and pockets it. Already there from a previous run? The plush rolls straight through, wide-eyed at the size of the crate: it is reused, not re-downloaded.',
-  cmd:'ollama pull qwen2.5-coder:14b',where:'only if the shelf is empty',result:'✓ Model on the shelf — qwen2.5-coder:14b ready. Next hoop: bring it to life.'},
+  body:'An engine with no model is an empty arcade cabinet. This hoop pulls the one brain the whole show runs on — the pick for this PC (qwen2.5-coder:14b, about 9 GB, on a big GPU) — and the crate drops in from the branch overhead in a burst of glowing points; the plush catches it as it falls and pockets it. Already there from a previous run? The plush rolls straight through, wide-eyed at the size of the crate: it is reused, not re-downloaded.',
+  cmd:'ollama pull qwen2.5-coder:14b',where:'only if the shelf is empty; a menu comes first, and Enter takes the pick',result:'✓ Model on the shelf — qwen2.5-coder:14b ready. Next hoop: bring it to life.'},
  {short:'Serve network',hoop:'SERVE NETWORK',sub:'listening on :11434',head:['Light the','network.'],
   kicker:'Checkpoint 4 · Serve the network — ollama serve',
   arrow:'ollama serve → the mast lights up → listening on localhost:11434',
@@ -630,7 +630,7 @@ var HOPS=[
   kicker:'Checkpoint 5 · Configure the endpoint — for the Antigravity harness',
   arrow:'set the base URL → the harness plugs into :11434/v1 → health check 200',
   body:'A listening server nobody talks to is a hoop half-jumped. This is the wiring hoop: the Antigravity harness is configured with Ollama\u2019s endpoint — base URL, port and all — the plug clicks into the harness box, and the health check answers 200. Engine, brain, network, wiring: the machine side is done.',
-  cmd:'OLLAMA_BASE_URL = http://localhost:11434/v1',where:'set in the Antigravity harness config',result:'✓ Harness connected — GET /api/tags → 200 through the configured endpoint. Next hoop: the Agent.'},
+  cmd:'LOCAL_LLM_BASE_URL=http://localhost:11434/v1',where:'in .env, set by run.py',result:'✓ Harness connected — GET /api/tags → 200 through the configured endpoint. Next hoop: the Agent.'},
  {short:'Agent start',hoop:'AGENT START',sub:'the Agent wakes',head:['Wake the','agent.'],
   kicker:'Checkpoint 6 · Start the Agent — the harness brings its worker online',
   arrow:'start the Agent → it loads the endpoint + its tools → ready for orders',
@@ -639,13 +639,13 @@ var HOPS=[
  {short:'Agent calls Ollama',hoop:'THE CALL',sub:'packet → core → tool_call',head:['The agent','calls home.'],
   kicker:'Checkpoint 7 · Agent calls Ollama — through the endpoint, to this PC',
   arrow:'the packet flies the wire → the model answers → a tool_call rides back',
-  body:'He types "Fix the login bug". The Agent compiles it — prompt plus tools — wraps it in the very packet Muse has carried the whole run, and sends it through the configured endpoint to the model on this PC. The Firewall Imp on the wire is grappled aside, the packet arcs to the Ollama Core and comes back changed: no longer a question — a decision, tool_call: create_file("index.html", …). Nothing left the machine: the call went from the harness to localhost:11434 and back.',
-  cmd:'POST http://localhost:11434/v1/chat/completions',where:'the Agent → Ollama, via the endpoint',result:'✓ 200 OK — tool_call back: create_file("index.html", …). The model decided. Next station: the write itself.'},
+  body:'He types "Fix the login bug". The Agent compiles it — prompt plus tools — wraps it in the very packet Muse has carried the whole run, and sends it through the configured endpoint to the model on this PC. The Firewall Imp on the wire is grappled aside, the packet arcs to the Ollama Core and comes back changed: no longer a question — a decision, tool_call: write_to_file("index.html", …). Nothing left the machine: the call went from the harness to localhost:11434 and back.',
+  cmd:'POST http://localhost:11434/v1/chat/completions',where:'the Agent → Ollama, via the endpoint',result:'✓ 200 OK — tool_call back: write_to_file("index.html", …). The model decided. Next station: the write itself.'},
  {short:'Workspace write',hoop:'WORKSPACE WRITE',sub:'index.html lands',head:['The file','lands.'],
   kicker:'Checkpoint 8 · Workspace write — the file lands',
   arrow:'policy check → write ./workspace/index.html → a real page exists',
   body:'The Policy Gate lets exactly one kind of run through: a write scoped to the workspace. Muse shows the guard the tool_call, the stamp comes down — APPROVED — and the harness writes ./workspace/index.html: a real page, not a promise, sitting in the folder as the plush heaves it through and clears the station.',
-  cmd:'create_file("./workspace/index.html")',where:'run by the harness, through the Policy Gate',result:'✓ policy.allow_all() APPROVED — index.html written to the workspace. Last station: bank the run, then the Editor.'},
+  cmd:'write_to_file("./workspace/index.html")',where:'run by the harness, through the Policy Gate',result:'✓ policy.allow_all() APPROVED — index.html written to the workspace. Last station: bank the run, then the Editor.'},
  {short:'Memory + Editor',hoop:'MEMORY + EDITOR',sub:'FINISH · banked & open',head:['Bank it.','Code it.'],
   kicker:'Checkpoint 9 · Memory + Editor — the destination',
   arrow:'bank the run in memory → blast the Editor door → CodeAgent [You] >',
@@ -753,7 +753,7 @@ var ENEMIES=[
  '<g class="enemy">'+tele(98,92)+eshadow(98)+'<path d="M76 128 l-12 -14 M120 128 l12 -14" stroke="#ffa11f" stroke-width="4.4" stroke-linecap="round"/><rect x="66" y="126" width="64" height="72" rx="10" fill="#171204" stroke="#ffa11f" stroke-width="3"/><circle cx="86" cy="152" r="4.6" fill="#ff5347"/><circle cx="110" cy="152" r="4.6" fill="#ff5347"/><path d="M82 172 l10 -6 l8 6 l8 -6 l6 6" fill="none" stroke="#ff5347" stroke-width="3" stroke-linejoin="round"/><rect x="84" y="182" width="28" height="9" fill="#0d0800" stroke="#7a5410"/><path d="M66 150 L44 178 M130 150 L152 178" stroke="#171204" stroke-width="11" stroke-linecap="round"/><rect x="76" y="198" width="13" height="13" fill="#26241f"/><rect x="107" y="198" width="13" height="13" fill="#26241f"/></g>'
 ];
 var ACTIONS=['grapple','grapple','blast','throw','grapple','grapple','packet','stamp','blast'];
-var CARRY=['run.bat','the launcher, live','Ollama — the engine','qwen2.5-coder:14b',':11434, listening','the endpoint, wired','prompt + tools','tool_call → create_file','index.html + the run log'];
+var CARRY=['run.bat','the launcher, live','Ollama — the engine','qwen2.5-coder:14b',':11434, listening','the endpoint, wired','prompt + tools','tool_call → write_to_file','index.html + the run log'];
 
 /* build hoops + front arcs */
 var hoopsG=document.getElementById('hoops'), farcsG=document.getElementById('farcs');
@@ -1047,6 +1047,7 @@ function renderText(){
   elBody.textContent=h.body;
   elCounter.textContent=pad(cur+1)+' / '+pad(HOPS.length);
   elCmdWhere.textContent=h.where;
+  document.getElementById('cmdLabel').innerHTML=cur===0?'He types — <b>the command</b>':'run.py does this — <b>the step</b>';
   elCmdResult.textContent='';
   if(resultTimer)clearTimeout(resultTimer);
   typeInto(elTyped,h.arrow,22);

@@ -69,7 +69,7 @@
           <ul>
             <li>Windows 11 is the only system we tested natively.</li>
             <li>About 10 GB of free disk for the 14B model, and 16 GB of RAM or more for comfort.</li>
-            <li>Python 3.11 or newer, git, and <a href="https://ollama.com/download">Ollama for Windows, macOS, or Linux</a>.</li>
+            <li>Python 3.11, 3.12 or 3.13, git, and <a href="https://ollama.com/download">Ollama for Windows, macOS, or Linux</a>. Step 1 shows how to install them.</li>
             <li>Time: a few minutes of setup plus the model download, which is roughly 9 GB for the 14B model.</li>
           </ul>
         </div>
@@ -210,7 +210,8 @@
 
       <ol class="steps">
         <li class="step" data-step="1" data-focus="ollama">
-          <h3>Install Ollama</h3>
+          <h3>Install Python, Git and Ollama</h3>
+          <p>Open PowerShell (Start menu, type PowerShell) and run each command on this page there. First install Python 3.12 from <a href="https://www.python.org/downloads/">python.org</a> (tick "Add python.exe to PATH") and Git from <a href="https://git-scm.com/downloads">git-scm.com</a>. Then open a new PowerShell window. <code>python --version</code> and <code>git --version</code> should each print a version.</p>
           <p>Ollama is the program that holds the model and answers requests. Download it from <a href="https://ollama.com/download">ollama.com/download</a>, then check it works.</p>
           <div class="code"><pre><code>ollama --version</code></pre><button class="copy" type="button" aria-label="Copy command: ollama --version">Copy</button></div>
           <p class="check">You should see a version number. If the command is not found, open a new terminal.</p>
@@ -219,7 +220,7 @@
 
         <li class="step" data-step="2" data-focus="model">
           <h3>Choose a model (optional)</h3>
-          <p>Step 3 picks a model that fits your machine, so you can skip this. On a normal terminal it shows a short menu and Enter takes the pick for your machine; <code>--yes</code> skips the menu. To choose one yourself, pull the model <code>run.py</code> would pick: <code>qwen2.5-coder:14b</code> with 15 GB or more of VRAM, <code>qwen2.5-coder:7b</code> with 8 GB of VRAM or 16 GB of RAM, and <code>llama3.2:3b</code> otherwise.</p>
+          <p>Step 3 picks a model that fits your machine, so you can skip this. On a normal terminal it shows a short menu and Enter takes the pick for your machine; <code>--yes</code> skips the menu. To choose one yourself, pull the model <code>run.py</code> would pick: <code>qwen2.5-coder:14b</code> with 15 GB or more of VRAM (your graphics card's own memory), <code>qwen2.5-coder:7b</code> with 8 GB of VRAM or 16 GB of RAM, and <code>llama3.2:3b</code> otherwise.</p>
           <div class="code"><pre><code>ollama pull qwen2.5-coder:7b</code></pre><button class="copy" type="button" aria-label="Copy command: ollama pull qwen2.5-coder:7b">Copy</button></div>
           <p class="check">You should see the model in <code>ollama list</code>.</p>
           <p class="time">Depends on your connection</p>
@@ -227,13 +228,13 @@
 
         <li class="step" data-step="3" data-focus="repo">
           <h3>Clone the repo and run setup</h3>
-          <p>One command builds a Python environment, installs the packages, and runs a short demo.</p>
+          <p>One command builds a virtual environment (a private Python folder for this project), installs the packages, and runs a short demo. At stage 3 a short model menu appears. Press Enter to take the pick for your PC. If no model is installed, it downloads one now (about 9 GB for the 14B model).</p>
           <div class="code"><pre><code>git clone https://github.com/veeresh-bikkaneti/antigravity-local.git
 cd antigravity-local
 python run.py</code></pre><button class="copy" type="button" aria-label="Copy the three setup commands">Copy</button></div>
           <p class="check">You should see four numbered stages and then a <code>You&nbsp;&gt;</code> prompt. Type <code>exit</code> for now. On macOS and Linux, use <code>python3</code>. On Windows you can also run <code>.\run.ps1</code> or <code>run.bat</code>.</p>
           <p class="time">About 3 minutes the first time, not counting a model download. It goes quiet in the middle while packages install, and that is normal.</p>
-          <p class="check">Two common errors. <code>No module named 'google'</code> means you are outside the virtual environment, so activate it (step 4). <code>Connection refused</code> on <code>:11434</code> means Ollama is not running, so start the app or run <code>ollama serve</code>.</p>
+          <p class="check">A common error: <code>Connection refused</code> on <code>:11434</code> means Ollama is not running, so start the app or run <code>ollama serve</code>.</p>
         </li>
 
         <li class="step" data-step="4" data-focus="venv">
@@ -252,6 +253,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
           <p>Open the coding shell on a workspace folder. Type a request in plain English. Creating a new file works most of the time. Editing an existing file does not, so read <a href="#limits">the limits below</a> before you point it at real code.</p>
           <div class="code"><pre><code>python code_agent.py --workspace ./workspace</code></pre><button class="copy" type="button" aria-label="Copy command: python code_agent.py --workspace ./workspace">Copy</button></div>
           <p class="check">A banner shows your model and workspace, then a <code>CodeAgent [You] &gt;</code> prompt. Try <code>/files</code>, then <code>/wiki</code>, then <code>exit</code>. <code>/clear</code> starts a fresh session.</p>
+          <p class="check">If you see <code>No module named 'google'</code>, you are outside the virtual environment, so activate it (step 4) and try again.</p>
           <p class="time">1 minute</p>
         </li>
 
@@ -265,9 +267,9 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
 
         <li class="step" data-step="7" data-focus="editor">
           <h3>Use it from your editor or the browser</h3>
-          <p>Start a search page on a free port, or run the Docker image. For VS Code, the README lists four routes: our shell in the terminal, the Ollama extension, Continue, and Cline. Want a sturdier terminal agent? <code>python run.py --agent pi</code> (or <code>opencode</code>, or <code>codex</code>) sets one up for your local model and asks before it installs anything.</p>
+          <p>Start a search page on a free port, or run it in Docker (the <a href="https://github.com/veeresh-bikkaneti/antigravity-local#serve-it-search-ui--api-on-a-free-port-local-or-docker">README has the three Docker commands</a>). For VS Code, the README lists four routes: our shell in the terminal, the Ollama extension, Continue, and Cline. Want a sturdier terminal agent? <code>python run.py --agent pi</code> (or <code>opencode</code>, or <code>codex</code>) sets one up for your local model and asks before it installs anything.</p>
           <div class="code"><pre><code>python run.py --serve</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --serve">Copy</button></div>
-          <p class="check">You should see <code>Serving on http://127.0.0.1:</code> followed by a port number. Open that address. The first run builds its own virtual environment and installs packages, so it takes a few minutes. The page has no login, so keep it on your machine.</p>
+          <p class="check">You should see <code>Serving on http://127.0.0.1:</code> followed by a port number. Open that address. A port is just a numbered door on your computer, and this command picks one that is free. The page has no login, so keep it on your machine.</p>
           <p class="time">Under a minute. <a href="https://github.com/veeresh-bikkaneti/antigravity-local#use-your-local-model-from-antigravity-or-vs-code">Editor setup in the README</a></p>
         </li>
       </ol>
