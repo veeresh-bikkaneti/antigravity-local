@@ -92,7 +92,7 @@ class SameHostRedirects(unittest.TestCase):  # pass/fail 5: no new host followed
 
 
 class MenuRows(_Net):
-    def test_rows_show_registry_list_and_estimate_text(self):  # pass/fail 1, 3: every row has a size and its source
+    def test_rows_show_registry_list_and_estimate_text(self):  # pass/fail 1, 3: every row has a size, and an estimate says so
         self.answers["manifests/27b"] = {"layers": [{"size": 12_300_000_000}]}
         menu = model_wizard.build_menu([], 24.0, 32.0, catalog=[], recommended="qwen3.6:27b",
                                        library=[{"tag": "llama3.1:70b", "badges": ()}],
@@ -157,6 +157,38 @@ class PullQuestion(unittest.TestCase):
     def test_pull_question_defaults_to_no(self):  # a blank answer never pulls
         decision = pull_gate.ask_pull(self._plan("registry"), True, input_fn=lambda _: "", out=lambda _: None)
         self.assertEqual(decision, "no")
+
+
+class CouncilFixes(unittest.TestCase):
+    """Regression tests for the council findings on PR 41: wrong estimate, malformed registry reply,
+    cross-host redirect on the Hub path, and no offline stop for the Hub path."""
+
+    def setUp(self):
+        download_size.reset_cache()
+        self.addCleanup(download_size.reset_cache)
+
+    def test_a_tag_like_e2b_is_not_read_as_2b(self):
+        # gemma3n:e2b is a 5.6 GB pull; a "2b" guess would print about 1.1 GB.
+        self.assertIsNone(download_size.estimate_gb("gemma3n:e2b"))
+        self.assertIsNotNone(download_size.estimate_gb("qwen3-coder:30b"))
+
+    def test_a_registry_reply_with_a_wrong_shape_does_not_crash(self):
+        with mock.patch.object(download_size, "_get_json", return_value={"layers": 5}):
+            self.assertIsNone(download_size.ollama_registry_size("qwen3:8b"))
+
+    def test_the_hub_path_uses_the_same_host_opener(self):
+        handlers = download_size.model_wizard._HF_OPENER.handlers
+        self.assertTrue(any(isinstance(h, model_wizard._SameHostOnly) for h in handlers))
+
+    def test_a_network_failure_on_the_hub_stops_later_calls_in_the_run(self):
+        model_wizard._STATE["offline"] = False
+        self.addCleanup(lambda: model_wizard._STATE.__setitem__("offline", False))
+        with mock.patch.object(model_wizard._HF_OPENER, "open", side_effect=urllib.error.URLError("down")):
+            self.assertEqual(model_wizard.hf_tree_files("u", "r"), [])
+        self.assertTrue(model_wizard._STATE["offline"])
+        with mock.patch.object(model_wizard, "hf_tree_files") as tree:
+            self.assertIsNone(download_size.hf_quant_size("u", "r", 24.0, 32.0))
+            tree.assert_not_called()
 
 
 if __name__ == "__main__":

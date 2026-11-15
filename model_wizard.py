@@ -141,6 +141,20 @@ def hf_repo_info(user, repo, timeout=4):
     return {"status": "ok", "gated": bool(data.get("gated")), "license": str(lic) if lic else None}
 
 
+class _SameHostOnly(urllib.request.HTTPRedirectHandler):
+    """Follow a redirect only when it stays on the host we asked. Anything else is an error, not a new host."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        from urllib.parse import urlsplit
+        if urlsplit(newurl).netloc != urlsplit(req.full_url).netloc:
+            return None
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_HF_OPENER = urllib.request.build_opener(_SameHostOnly)
+_STATE = {"offline": False}  # set when the Hub cannot be reached; later calls in the run stop asking
+
+
 def hf_tree_files(user, repo, timeout=6, max_pages=5):
     """[{'name', 'size'}] for every file in the repo (sizes in bytes, from the LFS size when there is one).
     Follows the Link: rel=next header up to max_pages, on huggingface.co only. Any failure returns []."""
@@ -148,9 +162,14 @@ def hf_tree_files(user, repo, timeout=6, max_pages=5):
     files = []
     for _ in range(max_pages):
         try:
-            with urllib.request.urlopen(url, timeout=timeout) as resp:
+            with _HF_OPENER.open(url, timeout=timeout) as resp:
                 rows = json.loads(resp.read().decode("utf-8"))
                 link = resp.headers.get("Link", "") if getattr(resp, "headers", None) else ""
+        except urllib.error.HTTPError:
+            return []  # the Hub answered with an error: say nothing rather than guess
+        except (urllib.error.URLError, OSError, TimeoutError):
+            _STATE["offline"] = True  # no network: stop asking for the rest of the run
+            return []
         except Exception:
             return []  # a half-read repo would undercount split quants, so say nothing rather than guess
         if not isinstance(rows, list):

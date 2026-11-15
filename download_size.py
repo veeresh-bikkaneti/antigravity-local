@@ -1,7 +1,7 @@
 """How big is a download, before you say yes. Standard library only.
 
 Order for an Ollama tag: the registry manifest (the real layer sizes), then our own curated list, then an estimate
-from the parameter count in the tag. An estimate is always printed as "~X GB (estimate)". Nothing here downloads a
+from the parameter count in the tag. An estimate is always printed as "~X GB download (estimate)". Nothing here downloads a
 model; it reads a small JSON manifest, and only from registry.ollama.ai.
 """
 import json
@@ -16,7 +16,7 @@ REGISTRY = "https://registry.ollama.ai/v2/"
 MANIFEST_ACCEPT = ("application/vnd.docker.distribution.manifest.v2+json, "
                    "application/vnd.oci.image.manifest.v1+json")
 DEFAULT_BPW = 4.5  # Ollama's default tags are mostly Q4_K_M, about 4.5 bits per weight
-PARAMS_RE = re.compile(r"(?<![\d.])(\d+(?:\.\d+)?)b(?![a-z])", re.IGNORECASE)
+PARAMS_RE = re.compile(r"(?<![a-z\d.])(\d+(?:\.\d+)?)b(?![a-z])", re.IGNORECASE)  # "e2b" is not 2B
 
 _CACHE = {}          # normalised tag -> bytes or None, kept for this run only
 _STATE = {"offline": False}
@@ -26,18 +26,10 @@ def reset_cache():
     """Forget every answer. Tests and a fresh run start from nothing."""
     _CACHE.clear()
     _STATE["offline"] = False
+    model_wizard._STATE["offline"] = False
 
 
-class _SameHostOnly(urllib.request.HTTPRedirectHandler):
-    """Follow a redirect only when it stays on the host we asked. Anything else is an error, not a new host."""
-
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        from urllib.parse import urlsplit
-        if urlsplit(newurl).netloc != urlsplit(req.full_url).netloc:
-            return None  # urllib turns this into an HTTPError for the caller
-        return super().redirect_request(req, fp, code, msg, headers, newurl)
-
-
+_SameHostOnly = model_wizard._SameHostOnly  # kept here so older callers and tests keep working
 _OPENER = urllib.request.build_opener(_SameHostOnly)
 
 
@@ -70,6 +62,8 @@ def ollama_registry_size(tag):
         name = "library/" + name
     data = _get_json(f"{REGISTRY}{name}/manifests/{version}", headers={"Accept": MANIFEST_ACCEPT})
     layers = data.get("layers") if isinstance(data, dict) else None
+    if not isinstance(layers, list):
+        layers = None
     sizes = [l.get("size") for l in layers or [] if isinstance(l, dict) and isinstance(l.get("size"), int)]
     total = sum(sizes) if sizes and len(sizes) == len(layers) else None
     _CACHE[key] = total if total and total > 0 else None
@@ -101,6 +95,8 @@ def resolve(tag, list_gb=None):
 def hf_quant_size(user, repo, free_vram, free_ram):
     """Size of the quant that would be pulled for a Hugging Face repo, judged against the memory free right now.
     {"gb", "quant", "source": "hugging face" | "estimate"} or None."""
+    if model_wizard._STATE["offline"]:
+        return None
     files = model_wizard.hf_tree_files(user, repo)
     if not files:
         return None
