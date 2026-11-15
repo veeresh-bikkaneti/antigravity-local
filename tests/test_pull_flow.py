@@ -73,7 +73,7 @@ class NeverDownloads(unittest.TestCase):
         self.assertEqual(pulls, [])
 
     def test_a_terminal_answer_of_n_downloads_nothing_and_exits_1(self):
-        with mock.patch("builtins.input", return_value="n"):
+        with mock.patch("builtins.input", side_effect=["", "n"]):  # Enter at the menu, then "n" at the download prompt
             code, text, pulls, _ = self.main_with([], _Tty(), tty_out=True)
         self.assertEqual((code, pulls), (1, []))
         self.assertIn("Nothing downloaded", text)

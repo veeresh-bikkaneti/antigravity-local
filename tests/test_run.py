@@ -101,8 +101,9 @@ class Hardware(unittest.TestCase):
                 mock.patch.object(run, "get_free_resources", return_value=free_of(hw)), \
                 mock.patch.object(run, "get_installed_ollama_models", return_value=set()), \
                 mock.patch.object(run.subprocess, "check_call", side_effect=lambda c: calls.append(c)), \
-                mock.patch("builtins.input", return_value="y"), \
+                mock.patch("builtins.input", side_effect=["", "y"]), \
                 contextlib.redirect_stdout(io.StringIO()):
+            # Enter at the model menu keeps llama3.2:3b, then "y" answers "Download? [y/N]"
             self.assertEqual(run.select_and_pull_model(interactive=True), "llama3.2:3b")
         self.assertEqual(calls, [["ollama", "pull", "llama3.2:3b"]])
 
