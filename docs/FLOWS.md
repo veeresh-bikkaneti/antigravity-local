@@ -289,6 +289,95 @@ Every transition and the test that covers it:
 | Every printed line to the run log | `tests.test_pull_flow.NeverDownloads.test_every_printed_line_also_lands_in_the_run_log`, `tests.test_runlog.Tee` |
 | Server we start is loopback only, a running one is left alone | `tests.test_pull_flow.OllamaServe` |
 
+## Flow 9: pick by what a model can do, and check it with a probe
+
+Models carry badges (`tools`, `thinking`, `vision`, `embedding`, `coding`). Ollama's `/api/show` says for sure; Hugging Face only hints, so those badges keep a `?` until `python run.py --probe` passes. The pick filters out embedding and media models first, then ranks what is left in a fixed order. A model that failed a probe ranks lower but is never refused.
+
+```mermaid
+stateDiagram-v2
+    [*] --> ListInstalled
+    ListInstalled --> Filter: capabilities came with the model list
+    ListInstalled --> AskShow: capabilities missing
+    AskShow --> Filter: /api/show answered
+    AskShow --> Unknown: no answer, or an old Ollama
+    Unknown --> Filter: counts like a guessed tools badge
+    Filter --> NothingUsable: only embedding or media models
+    Filter --> Rank: chat models left
+    NothingUsable --> HardwarePick: no pick, hardware pick offered
+    Rank --> Picked: fit, not failed, tools, installed, probe, newer, name score
+    Picked --> WarnFailed: ledger says fail
+    Picked --> Done
+    WarnFailed --> Done: one warning line, still allowed
+    HardwarePick --> [*]
+    Done --> [*]
+```
+
+```mermaid
+stateDiagram-v2
+    [*] --> FreshPass
+    FreshPass --> Skipped: passed in the last 5 minutes
+    FreshPass --> Setup
+    Setup --> Asking: temp folder, seed.md with a random marker
+    Asking --> FailTimeout: 120 seconds used up
+    Asking --> FailServer: the server errors or answers oddly
+    Asking --> FailPath: a tool call leaves the folder
+    Asking --> FailNoTool: no structured tool call
+    Asking --> FailLoop: more than 8 tool calls
+    Asking --> CheckOutput: the model stops
+    CheckOutput --> FailMissing: no output.md
+    CheckOutput --> FailEmpty: empty output.md
+    CheckOutput --> FailWrong: not the marker
+    CheckOutput --> Pass
+    Pass --> Recorded
+    FailTimeout --> Recorded
+    FailServer --> Recorded
+    FailPath --> Recorded
+    FailNoTool --> Recorded
+    FailLoop --> Recorded
+    FailMissing --> Recorded
+    FailEmpty --> Recorded
+    FailWrong --> Recorded
+    Recorded --> CleanedUp: ledger line written, speed printed
+    CleanedUp --> [*]
+    Skipped --> [*]
+```
+
+Every transition and the test that covers it:
+
+| Transition | Test |
+|---|---|
+| ListInstalled to Filter | `tests.test_ollama_models.InstalledDetails.test_capabilities_in_tags_mean_no_show_calls` |
+| ListInstalled to AskShow | `tests.test_ollama_models.InstalledDetails.test_missing_capabilities_are_asked_for_once_per_model_with_the_model_key` |
+| AskShow to Unknown | `tests.test_ollama_models.InstalledDetails.test_an_old_server_with_no_capabilities_field_is_unknown_not_empty` |
+| Unknown to Filter | `tests.test_pick_badges.Ranking.test_unknown_capabilities_from_an_old_ollama_fall_back_to_the_name_score` |
+| Filter to NothingUsable | `tests.test_pick_badges.EmbeddingOnly.test_an_embedding_only_install_is_never_picked_and_the_pull_command_is_printed` |
+| Filter to Rank | `tests.test_ranking.RankingTable.test_each_level_beats_everything_below_it` |
+| Rank (no tools ranks lower) | `tests.test_pick_badges.Ranking.test_a_model_without_tools_ranks_below_one_with_tools_even_with_a_better_name` |
+| Rank (ledger fail below unproven) | `tests.test_pick_badges.Ranking.test_a_ledger_fail_ranks_below_unproven` |
+| Picked to WarnFailed | `tests.test_pick_badges.Ranking.test_a_model_that_failed_can_still_be_asked_for_and_gets_one_warning_line` |
+| WarnFailed to Done (a later pass clears it) | `tests.test_pick_badges.Ranking.test_a_later_pass_clears_the_fail` |
+| A configured embedding model is skipped | `tests.test_pick_badges.EmbeddingOnly.test_a_configured_embedding_model_is_ignored_with_a_note` |
+| An embedding model named by hand is refused | `tests.test_pick_badges.EmbeddingOnly.test_asking_for_an_embedding_model_by_name_is_refused` |
+| FreshPass to Skipped | `tests.test_pick_badges.ProbeCommand.test_a_pass_from_the_last_five_minutes_is_not_repeated` |
+| FreshPass to Setup, Setup to Asking | `tests.test_probe.Probe.test_seed_md_holds_exactly_marker_equals_128_bits_of_hex_and_no_newline`, `test_the_request_is_a_non_streaming_chat_with_both_tools_to_the_v1_endpoint` |
+| Asking to FailTimeout | `tests.test_probe.Probe.test_running_out_of_time_fails_with_a_timeout` |
+| Asking to FailServer | `tests.test_probe.Probe.test_a_server_that_errors_fails_with_the_server_reason` |
+| Asking to FailPath | `tests.test_probe.Probe.test_a_path_outside_the_folder_fails_before_anything_else_and_is_never_run` |
+| Asking to FailNoTool | `tests.test_probe.Probe.test_no_structured_tool_call_fails_even_if_the_text_looks_like_one` |
+| Asking to FailLoop | `tests.test_probe.Probe.test_more_than_eight_tool_calls_is_a_loop` |
+| CheckOutput to FailMissing, FailEmpty, FailWrong | `tests.test_probe.Probe.test_output_md_missing_fails`, `test_output_md_empty_fails`, `test_output_md_with_the_wrong_content_fails` |
+| CheckOutput to Pass | `tests.test_probe.Probe.test_a_model_that_reads_and_writes_the_marker_through_tools_passes` |
+| Any verdict to Recorded | `tests.test_pick_badges.ProbeCommand.test_a_pass_is_recorded_and_exits_zero`, `test_a_fail_is_recorded_exits_one_and_a_slow_model_is_called_slow` |
+| Recorded to CleanedUp | `tests.test_probe.Probe.test_the_temp_folder_is_removed_after_a_pass_a_fail_and_a_server_error` |
+| Speed (slow under 5 tok/s, silent with no counts) | `tests.test_probe.Probe.test_tokens_per_second_is_completion_tokens_over_elapsed_rounded_to_a_tenth`, `tests.test_pick_badges.ProbeCommand.test_no_token_count_prints_nothing_about_speed` |
+| The marker never leaks | `tests.test_probe.Probe.test_no_reason_ever_contains_the_marker_even_if_the_model_echoes_it` |
+| Hugging Face search from the menu | `tests.test_model_wizard.HfSearchAtTheMenu.test_words_are_searched_and_a_pick_becomes_an_hf_tag`, `tests.test_pick_badges.MenuRows.test_typing_words_at_the_hf_row_searches_and_a_pick_goes_through_the_download_gate` |
+| Cache fresh for 24 hours, then expired | `tests.test_hf_search.Cache.test_second_call_inside_24h_never_touches_the_network`, `test_cache_expires_at_24h` |
+| Busy Hub (429) waited out, then give up | `tests.test_hf_search.Backoff` |
+| Offline gives one warning line | `tests.test_pick_badges.Offline.test_hugging_face_unreachable_warns_exactly_once_for_the_whole_run` |
+| Media rows listed, never picked | `tests.test_model_wizard.MediaSection.test_picking_a_media_row_shows_how_to_run_it_and_asks_again_never_returning_it`, `tests.test_pick_badges.MediaAndLibrary` |
+| Badge mapping per source | `tests.test_capabilities.OllamaBadges`, `HfBadges`, `Catalog` |
+
 ## Summary of flow triggers
 
 | Action | Command / Trigger | Primary Module | Visual Architecture Ref |
