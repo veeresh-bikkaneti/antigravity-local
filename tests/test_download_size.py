@@ -238,5 +238,26 @@ class FixPass(unittest.TestCase):
         self.assertEqual(sized.call_count, 10)
 
 
+class LookupWindow(unittest.TestCase):
+    def setUp(self):
+        download_size.reset_cache()
+        self.addCleanup(download_size.reset_cache)
+
+    def test_a_new_window_asks_again_but_keeps_what_it_already_knows(self):
+        download_size._CACHE["qwen3:8b"] = 5_000_000_000
+        download_size._STATE["started"] = 0.0
+        download_size._STATE["offline"] = True
+        model_wizard._STATE["offline"] = True
+        with mock.patch.object(download_size.time, "monotonic", return_value=download_size.SIZE_BUDGET_S + 1.0),                 mock.patch.object(download_size._OPENER, "open") as opened:
+            self.assertIsNone(download_size._get_json("https://registry.ollama.ai/v2/x"))
+            opened.assert_not_called()
+            opened.return_value.__enter__.return_value.read.return_value = b"{}"
+            download_size.new_lookup_window()
+            self.assertEqual(download_size.ollama_registry_size("qwen3:8b"), 5_000_000_000)  # cached: no call
+            opened.assert_not_called()
+            download_size._get_json("https://registry.ollama.ai/v2/x")  # a fresh window: asks again
+            opened.assert_called_once()
+
+
 if __name__ == "__main__":
     unittest.main()

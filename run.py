@@ -451,6 +451,7 @@ def hf_menu_search(words=None, pipeline_tag="text-generation", limit=20):
 
 def hf_menu_search_sized(words, free_vram, free_ram, limit=10):
     """hf_menu_search, plus the size of the quant each of the first rows would pull (one Hub tree read per repo)."""
+    download_size.new_lookup_window()
     rows = hf_menu_search(words)
     sized = 0
     for r in rows:
@@ -582,6 +583,7 @@ def _ask_which_model(display_names, installed_models, vram_gb, ram_gb, free_vram
     else:
         default = None
     tier = hardware_tier_model(vram_gb, ram_gb)
+    download_size.new_lookup_window()
     menu = model_wizard.build_menu(display_names, vram_gb if free_vram is None else free_vram,
                                    ram_gb if free_ram is None else free_ram,
                                    recommended=None if best else tier,

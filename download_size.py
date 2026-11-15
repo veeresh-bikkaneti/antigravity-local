@@ -34,6 +34,14 @@ def reset_cache():
     model_wizard._STATE["offline"] = False
 
 
+def new_lookup_window():
+    """Start a fresh time budget and forget an earlier outage, but keep every size already found.
+    Called when the user opens a menu or searches, so one slow lookup does not blind the next one."""
+    _STATE["started"] = None
+    _STATE["offline"] = False
+    model_wizard._STATE["offline"] = False
+
+
 _SameHostOnly = model_wizard._SameHostOnly  # kept here so older callers and tests keep working
 _OPENER = urllib.request.build_opener(_SameHostOnly)
 
