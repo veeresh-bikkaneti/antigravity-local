@@ -225,6 +225,9 @@ def _ask_hf_tag(input_fn, out, fallback):
     return fallback
 
 
+YES_NO = {"y", "yes", "n", "no"}
+
+
 def choose(menu, default_tag, input_fn=None, out=print, backend="ollama"):
     """Return the chosen tag. Bad input re-asks up to 3 times, then falls back to the default."""
     input_fn = input_fn or input  # looked up now, not at import, so a terminal or a test can swap it
@@ -238,6 +241,9 @@ def choose(menu, default_tag, input_fn=None, out=print, backend="ollama"):
             return fallback
         if not raw:
             return fallback
+        if raw.lower() in YES_NO:  # "y" is a valid-looking tag, but nobody means it as one
+            out(f"       That looks like a yes/no answer. Type a number, a model tag, or press Enter for {fallback}.")
+            continue
         if raw.isdigit():
             n = int(raw)
             if 1 <= n <= len(menu):

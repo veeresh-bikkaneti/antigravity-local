@@ -52,6 +52,32 @@ class Choose(unittest.TestCase):
     def test_custom_tag_is_accepted(self):
         self.assertEqual(self.pick("qwen3.9:30b")[0], "qwen3.9:30b")
 
+    def test_a_yes_or_no_is_not_a_model_name_and_asks_again(self):
+        tag, out = self.pick("y", "")
+        self.assertEqual(tag, "qwen2.5:14b")
+        self.assertIn("       That looks like a yes/no answer. Type a number, a model tag, or press Enter for qwen2.5:14b.", out)
+
+    def test_yes_no_in_any_case_with_spaces_then_a_number_picks_that_row(self):
+        for answer in ("NO", " Yes ", "n", "y"):
+            with self.subTest(answer=answer):
+                self.assertEqual(self.pick(answer, "2")[0], self.MENU[1]["tag"])
+
+    def test_eof_after_a_yes_behaves_like_eof_today(self):
+        answers = iter(["y"])
+
+        def input_fn(_=""):
+            try:
+                return next(answers)
+            except StopIteration:
+                raise EOFError
+
+        out = []
+        self.assertEqual(mw.choose(self.MENU, "qwen2.5:14b", input_fn=input_fn, out=out.append), "qwen2.5:14b")
+        self.assertEqual(sum("yes/no" in line for line in out), 1)
+
+    def test_three_yes_no_answers_use_up_the_tries_and_fall_back(self):
+        self.assertEqual(self.pick("y", "n", "yes")[0], "qwen2.5:14b")
+
     def test_out_of_range_reasks_then_falls_back_after_three(self):
         tag, out = self.pick("99", "0", "-1")
         self.assertEqual(tag, "qwen2.5:14b")
