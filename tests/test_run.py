@@ -99,6 +99,9 @@ class Hardware(unittest.TestCase):
         hw = {"ram_gb": 0.0, "vram_gb": 0.0, "gpu_name": "CPU"}
         with mock.patch.object(run, "get_hardware_profile", return_value=hw), \
                 mock.patch.object(run, "get_free_resources", return_value=free_of(hw)), \
+                mock.patch.object(run, "get_installed_details", return_value={}), \
+                mock.patch.object(run, "get_ledger_entries", return_value=[]), \
+                mock.patch.object(run, "get_media_rows", return_value=[]), \
                 mock.patch.object(run, "get_installed_ollama_models", return_value=set()), \
                 mock.patch.object(run.subprocess, "check_call", side_effect=lambda c: calls.append(c)), \
                 mock.patch("builtins.input", side_effect=["", "y"]), \
@@ -116,7 +119,7 @@ class ModelWizardInRun(unittest.TestCase):
     HW = {"ram_gb": 128.0, "vram_gb": 16.0, "gpu_name": "RTX"}
 
     def sel(self, installed, answers=(), interactive=True, requested=None, env=None, registry=True, hw=None,
-            env_text=None, pull_error=None, gate="y", free=None, hf_files=()):
+            env_text=None, pull_error=None, gate="y", free=None, hf_files=(), details=None, entries=None, media=()):
         """Returns (model, pull commands, final .env text). The printed menu is left in self.printed."""
         feed = iter(answers)
         pulls = []
@@ -144,6 +147,9 @@ class ModelWizardInRun(unittest.TestCase):
                 mock.patch.dict(run.os.environ, {"LOCAL_LLM_MODEL": env} if env else {}, clear=False), \
                 mock.patch.object(run, "get_hardware_profile", return_value=hw or self.HW), \
                 mock.patch.object(run, "get_free_resources", return_value=free or free_of(hw or self.HW)), \
+                mock.patch.object(run, "get_installed_details", return_value=details or {}), \
+                mock.patch.object(run, "get_ledger_entries", return_value=entries or []), \
+                mock.patch.object(run, "get_media_rows", return_value=list(media)), \
                 mock.patch.object(run.model_wizard, "hf_repo_info", return_value=HF_INFO), \
                 mock.patch.object(run.model_wizard, "hf_tree_files", return_value=list(hf_files)), \
                 mock.patch.object(run, "get_installed_ollama_models", return_value=set(installed)), \
@@ -440,6 +446,9 @@ class ModelWizardInRun(unittest.TestCase):
                 mock.patch.object(run, "check_ollama_service", return_value=True), \
                 mock.patch.object(run, "get_hardware_profile", return_value={"ram_gb": 32.0, "vram_gb": 0.0, "gpu_name": "x"}), \
                 mock.patch.object(run, "get_free_resources", return_value=free_of({"ram_gb": 32.0, "vram_gb": 0.0})), \
+                mock.patch.object(run, "get_installed_details", return_value={}), \
+                mock.patch.object(run, "get_ledger_entries", return_value=[]), \
+                mock.patch.object(run, "get_media_rows", return_value=[]), \
                 mock.patch.object(run, "get_installed_ollama_models", return_value=set()), \
                 mock.patch.object(run.model_wizard, "tag_exists", return_value=True), \
                 mock.patch.object(run.subprocess, "check_call", side_effect=lambda c: pulls.append(c)), \
@@ -635,6 +644,9 @@ class PullFailure(unittest.TestCase):
     def test_failed_pull_returns_none_and_main_exits_nonzero(self):
         with mock.patch.object(run, "get_hardware_profile", return_value={"ram_gb": 32.0, "vram_gb": 0.0, "gpu_name": "x"}), \
                 mock.patch.object(run, "get_free_resources", return_value=free_of({"ram_gb": 32.0, "vram_gb": 0.0})), \
+                mock.patch.object(run, "get_installed_details", return_value={}), \
+                mock.patch.object(run, "get_ledger_entries", return_value=[]), \
+                mock.patch.object(run, "get_media_rows", return_value=[]), \
                 mock.patch.object(run, "get_installed_ollama_models", return_value=set()), \
                 mock.patch.object(run.subprocess, "check_call", side_effect=OSError("boom")), \
                 contextlib.redirect_stdout(io.StringIO()):
