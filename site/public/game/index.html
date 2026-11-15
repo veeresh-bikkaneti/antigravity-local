@@ -1047,7 +1047,7 @@ function renderText(){
   elBody.textContent=h.body;
   elCounter.textContent=pad(cur+1)+' / '+pad(HOPS.length);
   elCmdWhere.textContent=h.where;
-  document.getElementById('cmdLabel').innerHTML=cur===0?'He types — <b>the command</b>':'run.py does this — <b>the step</b>';
+  document.getElementById('cmdLabel').innerHTML=cur<2?'He types — <b>the command</b>':'run.py does this — <b>the step</b>';
   elCmdResult.textContent='';
   if(resultTimer)clearTimeout(resultTimer);
   typeInto(elTyped,h.arrow,22);
