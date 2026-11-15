@@ -56,6 +56,7 @@ IS_WIN = sys.platform == "win32"
 VENV_PYTHON = os.path.join(VENV_DIR, "Scripts" if IS_WIN else "bin", "python.exe" if IS_WIN else "python")
 
 MAX_SHELL_FAILURES = 3
+_SETUP_ONLY = False  # set by main() when there is no terminal (--yes, piped, CI): stop after setup
 
 def print_header():
     print("""
@@ -864,6 +865,9 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
 
 async def run_agent(model, base_url="http://localhost:11434/v1"):
     """Run autonomous demonstration and interactive shell."""
+    if _SETUP_ONLY:
+        print(f"Ready: {model} at {base_url}. Run python run.py in a terminal to chat.")
+        return
     print("🎯 [4/4] Launching Google Antigravity Local Agent...")
     
     from google.antigravity import Agent, LocalOpenAIAgentConfig
@@ -1102,6 +1106,8 @@ def _main(argv=None):
     ollama_host = base_api.replace("/v1", "").rstrip("/")
     backend = detect_backend(base_api)
     interactive = _is_tty(sys.stdin) and _is_tty(sys.stdout) and not args.yes
+    global _SETUP_ONLY
+    _SETUP_ONLY = not interactive
     if backend == "openai":
         print(f"🤖 [2/4] Found an OpenAI-compatible server at {base_api} (not Ollama). Nothing will be downloaded.")
         os.environ["LOCAL_LLM_BACKEND"] = "openai"  # memory.py and --agent claude read this

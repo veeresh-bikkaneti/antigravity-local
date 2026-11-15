@@ -705,6 +705,12 @@ def fake_sdk(writes_file, chat_raises=False, content=DARK_PAGE):
 
 
 class RunAgent(unittest.TestCase):
+    def setUp(self):
+        # main() sets run._SETUP_ONLY for no-terminal runs and never resets it; keep other tests on the shell path.
+        saved = run._SETUP_ONLY
+        run._SETUP_ONLY = False
+        self.addCleanup(setattr, run, "_SETUP_ONLY", saved)
+
     def go(self, writes_file, chat_raises=False, inputs=("exit",), content=DARK_PAGE):
         mods, agent_cls = fake_sdk(writes_file, chat_raises, content)
         feed = iter(inputs)
@@ -749,6 +755,25 @@ class RunAgent(unittest.TestCase):
         out, calls = self.go(writes_file=False, chat_raises=True, inputs=["hi"] * 10)
         self.assertEqual(calls, 1 + run.MAX_SHELL_FAILURES)
         self.assertIn("Stopping after 3 errors", out)
+
+    def test_setup_only_prints_ready_and_never_builds_the_agent(self):
+        # --yes, piped input and CI have no terminal: stop after setup instead of starting the demo.
+        mods, _ = fake_sdk(writes_file=True)
+        agent_built = mock.Mock(side_effect=AssertionError("agent built in setup-only mode"))
+        mods["google.antigravity"].Agent = agent_built
+        saved = run._SETUP_ONLY
+        run._SETUP_ONLY = True
+        try:
+            buf = io.StringIO()
+            with mock.patch.dict(sys.modules, mods), \
+                    mock.patch("builtins.input", side_effect=AssertionError("no prompt in setup-only")), \
+                    contextlib.redirect_stdout(buf):
+                asyncio.run(run.run_agent("m"))
+        finally:
+            run._SETUP_ONLY = saved
+        self.assertIn("Ready: m at http://localhost:11434/v1. Run python run.py in a terminal to chat.", buf.getvalue())
+        self.assertNotIn("Launching", buf.getvalue())
+        agent_built.assert_not_called()
 
 
 if __name__ == "__main__":
