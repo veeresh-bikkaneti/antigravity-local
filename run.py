@@ -544,11 +544,11 @@ def _pull_with_gate(tag, interactive, hw, res):
     plan = _plan_download(tag, hw, res)
     if plan is None:
         return None
-    if not interactive:
+    decision = pull_gate.ask_pull(plan, interactive)
+    if decision == "non_interactive":
         print(f"\n🛑 '{plan['tag']}' is not installed, and this run cannot ask you. Nothing was downloaded.")
         print(f"   To get it yourself: ollama pull {plan['tag']}\n")
         return None
-    decision = pull_gate.ask_pull(plan, interactive)
     if decision == "yes":
         print(f"\n📥 Downloading '{plan['tag']}' via Ollama...")
         try:

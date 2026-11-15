@@ -2,6 +2,8 @@
 from model_wizard import QUANT_RE
 
 HEADROOM = 1.2
+# File sizes are decimal GB (bytes / 1e9), the way Hugging Face and Ollama print them. Free memory is in GiB, so the
+# comparison errs a little on the safe side.
 SPLIT_RAM_SHARE = 0.7
 # (prefix, bits per weight), first match wins.
 BPW = (("IQ4_XS", 4.25), ("BF16", 16), ("F16", 16), ("F32", 32), ("IQ1", 1.7), ("IQ2", 2.4),
