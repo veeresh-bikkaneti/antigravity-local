@@ -78,7 +78,8 @@ def _retry_wait(headers, attempt):
 
 def _read_capped(resp):
     """At most MAX_BYTES + 1 bytes of the reply, so a bigger one can be spotted and refused.
-    A reader that takes no size argument is read once and cut down to the same limit."""
+    Real responses are capped with read(MAX_BYTES + 1). Only a reader that takes no argument (TypeError) falls back to
+    read() plus a slice, which reads the whole body first."""
     try:
         return resp.read(MAX_BYTES + 1)
     except TypeError:
