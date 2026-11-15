@@ -25,15 +25,22 @@ def ask_pull(plan, interactive, input_fn=None, out=None):
         return "gated"
     ok, after = check_disk(plan)
     if not ok:
-        out(f"Not enough disk: {after:.1f} GB would be left of {float(plan.get('disk_total_gb') or 0):.0f} GB (need {MIN_FREE_SHARE:.0%}).")
+        total = float(plan.get("disk_total_gb") or 0)
+        if total <= 0:
+            out("Could not read the free disk space where Ollama keeps models, so nothing was downloaded.")
+        else:
+            out(f"Not enough disk: {after:.1f} GB would be left of {total:.0f} GB (need {MIN_FREE_SHARE:.0%}).")
         return "disk_refused"
     if not interactive:
         return "non_interactive"
     lic = plan.get("license")
     lic = str(lic) if lic else None
     flag = " (NON-COMMERCIAL, check before business use)" if lic and any(k in lic.lower() for k in NON_COMMERCIAL) else ""
-    out(f"model: {plan['tag']}\nquant: {plan.get('quant') or 'unknown'}\nsize: {float(plan.get('size_gb') or 0):.1f} GB\n"
-        f"license: {lic or 'unknown'}{flag}\nfree disk after: {after:.1f} GB")
+    size = plan.get("size_gb")
+    size_text = f"{float(size):.1f} GB" if size else "unknown (the disk check could not run)"
+    disk_text = f"{after:.1f} GB" if size else "unknown"
+    out(f"model: {plan['tag']}\nquant: {plan.get('quant') or 'unknown'}\nsize: {size_text}\n"
+        f"license: {lic or 'unknown'}{flag}\nfree disk after: {disk_text}")
     try:
         answer = input_fn("Download? [y/N] ")
     except EOFError:

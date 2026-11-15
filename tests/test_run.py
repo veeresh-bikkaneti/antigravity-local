@@ -317,6 +317,16 @@ class ModelWizardInRun(unittest.TestCase):
         self.assertEqual((got, pulls, self.gate_asked), (None, [], []))
         self.assertIn("No quant in u/m fits", self.printed)
 
+    def test_typed_hf_repo_that_does_not_exist_is_refused_before_the_prompt(self):
+        missing = {"status": "missing", "gated": False, "license": None}
+        with mock.patch.object(run.model_wizard, "hf_repo_info", return_value=missing), \
+                mock.patch("builtins.input", side_effect=AssertionError("must not ask for a repo that is not there")), \
+                mock.patch.object(run.subprocess, "check_call", side_effect=AssertionError("must not pull")), \
+                contextlib.redirect_stdout(io.StringIO()) as shown:
+            got = run._pull_with_gate("hf.co/nobody/nothing", True, self.HW, free_of(self.HW))
+        self.assertIsNone(got)
+        self.assertIn("was not found on Hugging Face", shown.getvalue())
+
     def test_typed_hf_quant_the_repo_lacks_downloads_nothing(self):
         files = [{"name": "m-Q4_K_M.gguf", "size": 8_500_000_000}]
         got, pulls, _ = self.sel(set(), [""], hf_files=files, requested="hf.co/u/m:Q5_K_S", interactive=True)

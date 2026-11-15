@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import unittest
@@ -221,6 +222,39 @@ class TagExists(unittest.TestCase):
     def test_offline_is_unknown_not_false(self):
         with mock.patch("urllib.request.urlopen", side_effect=OSError("offline")):
             self.assertIsNone(mw.tag_exists("qwen3.6:27b"))
+
+
+class TreePages(unittest.TestCase):
+    """hf_tree_files follows next-page links, but never past max_pages: a partial list would undercount split quants."""
+
+    class _Page:
+        def __init__(self, rows, link=""):
+            self.body, self.headers = json.dumps(rows).encode(), {"Link": link}
+
+        def read(self):
+            return self.body
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    def pages(self, n):
+        nxt = '<https://huggingface.co/api/models/u/r/tree/main?cursor=%d>; rel="next"'
+        return [self._Page([{"type": "file", "path": f"m-Q4_K_M-0000{i}-of-0000{n}.gguf", "size": 1}], nxt % i)
+                for i in range(1, n + 1)]
+
+    def test_more_pages_than_the_cap_gives_nothing(self):
+        with mock.patch("urllib.request.urlopen", side_effect=self.pages(8)):
+            self.assertEqual(mw.hf_tree_files("u", "r", max_pages=5), [])
+
+    def test_pages_within_the_cap_are_all_read(self):
+        last = self._Page([{"type": "file", "path": "m-Q4_K_M-00003-of-00003.gguf", "size": 1}])
+        first_two = self.pages(2)
+        with mock.patch("urllib.request.urlopen", side_effect=first_two + [last]):
+            got = mw.hf_tree_files("u", "r", max_pages=5)
+        self.assertEqual(len(got), 3)
 
 
 class FitFree(unittest.TestCase):

@@ -80,11 +80,11 @@ def get_free_ram_gb():
         if IS_WIN:
             out = subprocess.check_output(
                 ["powershell", "-NoProfile", "-Command", "(Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory"],
-                text=True, stderr=subprocess.DEVNULL
+                text=True, stderr=subprocess.DEVNULL, timeout=15
             ).strip()
             return float(out) / (1024 ** 2)  # the value is in KB
         if sys.platform == "darwin":
-            out = subprocess.check_output(["vm_stat"], text=True)
+            out = subprocess.check_output(["vm_stat"], text=True, timeout=10)
             page = 4096.0
             pages = 0.0
             for line in out.splitlines():

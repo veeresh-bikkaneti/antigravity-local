@@ -1,10 +1,6 @@
 """Pick the largest GGUF quant that fits the memory that is free right now."""
-from model_wizard import QUANT_RE
+from model_wizard import FIT_HEADROOM as HEADROOM, QUANT_RE, SPLIT_RAM_SHARE
 
-HEADROOM = 1.2
-# File sizes are decimal GB (bytes / 1e9), the way Hugging Face and Ollama print them. Free memory is in GiB, so the
-# comparison errs a little on the safe side.
-SPLIT_RAM_SHARE = 0.7
 # (prefix, bits per weight), first match wins.
 BPW = (("IQ4_XS", 4.25), ("BF16", 16), ("F16", 16), ("F32", 32), ("IQ1", 1.7), ("IQ2", 2.4),
        ("IQ3", 3.3), ("IQ4", 4.25), ("Q8", 8.5), ("Q6", 6.6), ("Q5", 5.5), ("Q4", 4.5),
@@ -43,6 +39,8 @@ def _group(files):
 
 
 def pick_quant(files, free_vram, free_ram, wanted=None):
+    # File sizes are decimal GB (bytes / 1e9), the way Hugging Face and Ollama print them. Free memory is in GiB, so
+    # the comparison errs a little on the safe side.
     groups = _group(files)
     sized = [(q, s) for q, s in sorted(groups.items()) if s]
     params = sized[0][1] * 8 / _bpw(sized[0][0]) if sized else None  # weights implied by one real file

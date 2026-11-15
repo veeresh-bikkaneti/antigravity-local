@@ -514,6 +514,9 @@ def _plan_download(tag, hw, res):
         return plan
     user, repo, typed_quant = parsed
     info = model_wizard.hf_repo_info(user, repo)
+    if info["status"] == "missing":
+        print(f"       '{user}/{repo}' was not found on Hugging Face (404). Check the user and repo name.")
+        return None
     plan["license"], plan["gated"] = info["license"], info["gated"]
     if plan["gated"]:
         return plan

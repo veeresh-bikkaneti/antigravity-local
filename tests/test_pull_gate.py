@@ -80,5 +80,19 @@ class Hostile(unittest.TestCase):
         self.assertEqual((got, calls), ("disk_refused", []))
 
 
+class UnknownNumbers(unittest.TestCase):
+    def test_an_unknown_size_is_said_out_loud_not_printed_as_zero(self):
+        got, shown, _ = run("n", plan(size_gb=None))
+        self.assertEqual(got, "no")
+        self.assertIn("size: unknown", shown)
+        self.assertNotIn("0.0 GB", shown)
+
+    def test_an_unreadable_disk_says_so_instead_of_printing_nonsense(self):
+        got, shown, calls = run("y", plan(free_disk_gb=0, disk_total_gb=0))
+        self.assertEqual((got, calls), ("disk_refused", []))
+        self.assertIn("Could not read the free disk space", shown)
+        self.assertNotIn("-", shown.replace("non-commercial", ""))
+
+
 if __name__ == "__main__":
     unittest.main()

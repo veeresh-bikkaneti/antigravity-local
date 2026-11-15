@@ -154,6 +154,8 @@ def hf_tree_files(user, repo, timeout=6, max_pages=5):
         url = nxt.group(1)
         if not url.startswith("https://huggingface.co/"):
             return []  # never follow a page link to another host
+    else:
+        return []  # still more pages after max_pages: a partial list would undercount split quants
     return files
 
 
