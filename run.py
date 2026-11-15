@@ -33,6 +33,7 @@ import ledger
 import model_wizard
 import ollama_library
 import ollama_models
+import probe
 import pull_gate
 import quant_pick
 import ranking
@@ -910,6 +911,47 @@ def check_or_update_memory():
         pass
 
 
+def run_probe_command(args):
+    """`python run.py --probe [model]`: one live tool call, recorded in the local ledger. Returns the exit code.
+    It runs before the venv step and never starts or pulls anything: it only talks to a server that is already up."""
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(os.path.join(PROJECT_DIR, ".env"))
+    except ImportError:
+        pass
+    base_api = os.environ.get("LOCAL_LLM_BASE_URL", DEFAULT_BASE_URL)
+    backend = detect_backend(base_api)
+    if backend is None:
+        print(f"❌ Nothing answered at {base_api}. Start your model server, then run --probe again.")
+        return 1
+    host = base_api.replace("/v1", "").rstrip("/")
+    entries = get_ledger_entries()
+    model = args.model or os.environ.get("LOCAL_LLM_MODEL")
+    if not model and backend == "ollama":
+        names = sorted(n for n in get_installed_ollama_models(host) if ":" in n or "/" in n)
+        best = ranking.best_for_agent(_installed_candidates(names, get_installed_details(host), get_hardware_profile(), entries))
+        model = best["tag"] if best else None
+    if not model:
+        print("❌ No model to probe. Name one: python run.py --probe <model>")
+        return 1
+    print(f"🔬 Probing '{model}': one live tool call (read a file, write a file)...")
+    if ledger.fresh_pass(model, entries):
+        print("       It passed a few minutes ago, so we are not repeating it (a pass is trusted for 5 minutes).")
+        return 0
+    result = probe.run_probe(base_api, model)
+    ok, warning = ledger.append(model, result["verdict"], result["reason"], runtime=backend, harness="probe")
+    if result["verdict"] == "pass":
+        print(f"       ✅ Passed: {result['reason']}.")
+    else:
+        print(f"       ❌ Failed: {result['reason']}.")
+        print("          Models that fail are ranked below ones we have not tried, but you can still pick them.")
+    if result["tok_s"] is not None:
+        print(f"       slow on this PC ({result['tok_s']} tok/s)" if result["tok_s"] < 5 else f"       Speed: {result['tok_s']} tok/s")
+    if not ok:
+        print(f"       Warning: {warning}")
+    return 0 if result["verdict"] == "pass" else 1
+
+
 def parse_args(argv=None):
     ap = argparse.ArgumentParser(description="Plug-and-play bootstrap for Antigravity with a local Ollama model.")
     ap.add_argument("model", nargs="?", help="Ollama model to use (pulled if missing)")
@@ -971,6 +1013,8 @@ def _main(argv=None):
         import agent_setup
         agent_setup.claude_doctor()
         return
+    if args.probe:  # stdlib only, no venv: talks to a model server that is already running
+        sys.exit(run_probe_command(args))
     print_header()
 
     if args.sync_memory:

@@ -229,6 +229,99 @@ class MediaAndLibrary(PickBase):
         self.assertEqual(out.getvalue().count("--scan-library is fragile"), 1)
 
 
+class ProbeCommand(unittest.TestCase):
+    """python run.py --probe: one live tool call, recorded in a real (temporary) ledger."""
+    PASS = {"verdict": "pass", "reason": "read the marker and wrote it back through tools", "tok_s": 12.3, "calls": 2}
+    FAIL = {"verdict": "fail", "reason": "no structured tool call", "tok_s": 3.2, "calls": 0}
+
+    def go(self, args=("--probe", "qwen3:8b"), result=None, backend="ollama", env=None, before=None, **patches):
+        import tempfile
+        out, calls = io.StringIO(), []
+        with tempfile.TemporaryDirectory() as home, tempfile.TemporaryDirectory() as proj:
+            envs = {"ANTIGRAVITY_LOCAL_HOME": home, "LOCAL_LLM_BASE_URL": "http://localhost:11434/v1"}
+            envs.update(env or {})
+            with mock.patch.dict(run.os.environ, envs), mock.patch.object(run, "PROJECT_DIR", proj),                     mock.patch.object(run, "detect_backend", return_value=backend),                     mock.patch.object(run.probe, "run_probe", side_effect=lambda *a, **k: calls.append((a, k)) or result),                     contextlib.redirect_stdout(out):
+                if before:
+                    before()
+                for name, value in patches.items():
+                    mock.patch.object(run, name, value).start()
+                try:
+                    code = run.run_probe_command(run.parse_args(list(args)))
+                finally:
+                    mock.patch.stopall()
+                entries = run.ledger.read()
+        return code, out.getvalue(), calls, entries
+
+    def test_a_pass_is_recorded_and_exits_zero(self):
+        code, text, calls, entries = self.go(result=self.PASS)
+        self.assertEqual(code, 0)
+        self.assertEqual([(e["modelRef"], e["verdict"], e["harness"], e["runtime"]) for e in entries],
+                         [("qwen3:8b", "pass", "probe", "ollama")])
+        self.assertEqual(calls[0][0][1], "qwen3:8b")
+        self.assertIn("Passed:", text)
+        self.assertIn("Speed: 12.3 tok/s", text)
+
+    def test_a_fail_is_recorded_exits_one_and_a_slow_model_is_called_slow(self):
+        code, text, _, entries = self.go(result=self.FAIL)
+        self.assertEqual(code, 1)
+        self.assertEqual((entries[0]["verdict"], entries[0]["reason"]), ("fail", "no structured tool call"))
+        self.assertIn("Failed: no structured tool call", text)
+        self.assertIn("slow on this PC (3.2 tok/s)", text)
+
+    def test_exactly_five_tokens_a_second_is_not_slow(self):
+        _, text, _, _ = self.go(result=dict(self.PASS, tok_s=5.0))
+        self.assertNotIn("slow on this PC", text)
+        self.assertIn("Speed: 5.0 tok/s", text)
+
+    def test_no_token_count_prints_nothing_about_speed(self):
+        _, text, _, _ = self.go(result=dict(self.PASS, tok_s=None))
+        self.assertNotIn("tok/s", text)
+
+    def test_a_pass_from_the_last_five_minutes_is_not_repeated(self):
+        def earlier_pass():
+            run.ledger.append("qwen3:8b", "pass", "earlier")
+        code, text, calls, entries = self.go(result=self.PASS, before=earlier_pass)
+        self.assertEqual((code, calls, len(entries)), (0, [], 1))
+        self.assertIn("not repeating", text)
+
+    def test_nothing_answering_is_exit_one_and_no_probe(self):
+        code, text, calls, entries = self.go(result=self.PASS, backend=None)
+        self.assertEqual((code, calls, entries), (1, [], []))
+        self.assertIn("Nothing answered", text)
+
+    def test_the_model_comes_from_the_environment_when_not_named(self):
+        _, _, calls, _ = self.go(args=("--probe",), result=self.PASS, env={"LOCAL_LLM_MODEL": "from-env:1b"})
+        self.assertEqual(calls[0][0][1], "from-env:1b")
+
+    def test_with_no_model_named_the_best_installed_chat_model_is_probed(self):
+        det = details(d("nomic-embed-text:latest", ["embedding"]), d("qwen2.5:14b", ["completion", "tools"]))
+        _, _, calls, _ = self.go(args=("--probe",), result=self.PASS, env={"LOCAL_LLM_MODEL": ""},
+                                 get_installed_ollama_models=lambda base: {"nomic-embed-text:latest", "qwen2.5:14b"},
+                                 get_installed_details=lambda base: det, get_hardware_profile=lambda: HW)
+        self.assertEqual(calls[0][0][1], "qwen2.5:14b")
+
+    def test_no_model_anywhere_is_exit_one(self):
+        code, text, calls, _ = self.go(args=("--probe",), result=self.PASS, env={"LOCAL_LLM_MODEL": ""},
+                                       get_installed_ollama_models=lambda base: set(),
+                                       get_installed_details=lambda base: {}, get_hardware_profile=lambda: HW)
+        self.assertEqual((code, calls), (1, []))
+        self.assertIn("No model to probe", text)
+
+    def test_a_ledger_that_cannot_be_written_warns_and_the_exit_code_still_follows_the_verdict(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile() as blocker:  # a file where the folder should be
+            code, text, _, _ = self.go(result=self.PASS, env={"ANTIGRAVITY_LOCAL_HOME": blocker.name + os.sep + "x"})
+        self.assertEqual(code, 0)
+        self.assertEqual(text.count("Could not write the fail ledger"), 1)
+
+    def test_probe_is_an_early_exit_that_never_touches_the_venv_or_ollama_setup(self):
+        with mock.patch.object(run, "run_probe_command", return_value=0) as cmd,                 mock.patch.object(run, "bootstrap_venv", side_effect=AssertionError("no venv for --probe")),                 mock.patch.object(run, "check_ollama_service", side_effect=AssertionError("no ollama start for --probe")),                 mock.patch.object(run, "print_header", side_effect=AssertionError("no header")):
+            with self.assertRaises(SystemExit) as caught:
+                run._main(["--probe", "m"])
+        self.assertEqual(caught.exception.code, 0)
+        cmd.assert_called_once()
+
+
 class Flags(unittest.TestCase):
     def test_new_flags_parse_and_default_off(self):
         args = run.parse_args(["--probe", "--scan-library"])
