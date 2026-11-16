@@ -34,7 +34,28 @@ class Tee(unittest.TestCase):
         out = io.StringIO()
         written, _, _ = self.run_block(out, "🧠 [3/4] picking")
         self.assertEqual(out.getvalue(), "🧠 [3/4] picking\n")
-        self.assertEqual(written, "🧠 [3/4] picking\n")
+        self.assertRegex(written, r"^\d{2}:\d{2}:\d{2} .* \[3/4\] picking\n$")  # the log is stamped; the screen is not
+
+    def test_log_strips_colour_codes_and_the_screen_keeps_them(self):
+        out = io.StringIO()
+        written, _, _ = self.run_block(out, "\x1b[31mred\x1b[0m text")
+        self.assertEqual(out.getvalue(), "\x1b[31mred\x1b[0m text\n")
+        self.assertNotIn("\x1b", written)
+        self.assertIn("red text", written)
+
+    def test_a_prompt_without_a_newline_still_reaches_the_log(self):
+        out = io.StringIO()
+        real = sys.stdout, sys.stderr
+        sys.stdout, sys.stderr = out, io.StringIO()
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                with runlog.tee(os.path.join(d, "logs"), datetime.date(2026, 11, 15)) as path:
+                    sys.stdout.write("Show the command? [y/N] ")
+                    sys.stdout.flush()
+                written = open(path, encoding="utf-8").read()
+        finally:
+            sys.stdout, sys.stderr = real
+        self.assertIn("Show the command? [y/N] ", written)
 
     def test_isatty_is_delegated_to_the_real_stream(self):
         self.assertTrue(self.run_block(_Tty(), "x")[1])

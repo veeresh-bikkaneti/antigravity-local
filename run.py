@@ -70,18 +70,21 @@ _SETUP_ONLY = False  # set by main() when there is no terminal (--yes, piped, CI
 _FACTS = {"source": "installed"}  # set to "pulled" when this run downloads the model
 
 
+_PLAIN = {"on": False}  # set by _main() from --plain
+
+
 def _plain():
     """--plain or NO_COLOR: no art, no emoji, no bar blocks."""
-    return "--plain" in sys.argv or bool(os.environ.get("NO_COLOR"))
+    return _PLAIN["on"] or bool(os.environ.get("NO_COLOR"))
 
 
 def _safe_print(text):
     """print() that never raises on a console that cannot encode the text (cp1252, for example)."""
     try:
-        print(text)
+        print(text, flush=True)
     except UnicodeEncodeError:
         enc = getattr(sys.stdout, "encoding", None) or "ascii"
-        print(text.encode(enc, "replace").decode(enc, "replace"))
+        print(text.encode(enc, "replace").decode(enc, "replace"), flush=True)
 
 
 def stage(n, total, name, next_line):
@@ -112,6 +115,27 @@ def level_clear(model, agent, ready=None):
         lines.append(f"  {ready}")
     lines.append(bar)
     _safe_print("\n".join(lines))
+
+
+def context_check(interactive, ask=None, out=print):
+    """Stage 4: say once if the server's context window is too small for coding agents. Never changes Ollama."""
+    import agent_setup
+    check = getattr(agent_setup, "claude_context", None)  # a test may stub the module without it
+    if check is None:
+        return
+    warning = check(os.environ)[1]
+    if warning is None:
+        return
+    out(f"       {warning}")
+    if not interactive:
+        return
+    ask = ask or input  # looked up at call time, so a test can replace input()
+    if ask("       Show the command to raise it? [y/N] ").strip().lower() != "y":
+        return
+    if sys.platform == "win32":
+        out("       $env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve")
+    else:
+        out("       OLLAMA_CONTEXT_LENGTH=65536 ollama serve")
 
 
 def print_header():
@@ -145,7 +169,7 @@ def _free_for_fit(hw, res):
 
 def bootstrap_venv():
     """Create virtual environment and install requirements if not inside one."""
-    stage(1, 4, "ENVIRONMENT", "check the Python environment, then find Ollama")
+    stage(1, 5, "ENVIRONMENT", "check the Python environment, then find Ollama")
     if not os.path.exists(VENV_DIR) or not os.path.exists(VENV_PYTHON):
         print(f"       Creating virtual environment at: {VENV_DIR}")
         subprocess.check_call([sys.executable, "-m", "venv", VENV_DIR])
@@ -172,6 +196,8 @@ def bootstrap_venv():
 
     # Relaunch script using the venv python
     print("       Switching execution to managed environment...\n")
+    sys.stdout.flush()  # the venv child writes next; our buffered lines must reach the log and screen first
+    sys.stderr.flush()
     script_path = os.path.abspath(__file__)
     if IS_WIN:
         try:
@@ -193,7 +219,7 @@ LOOPBACK_OLLAMA_HOST = "127.0.0.1:11434"
 
 def check_ollama_service(base_url="http://localhost:11434"):
     """Check if Ollama is running; if not, attempt to start it."""
-    stage(2, 4, "SERVER", "make sure Ollama is answering")
+    stage(2, 5, "SERVER", "make sure Ollama is answering")
     tags_url = f"{base_url}/api/tags"
     
     # 1. Test if already responsive
@@ -791,7 +817,7 @@ def select_openai_model(base_url, requested_model=None, interactive=False):
     """Pick a model from an OpenAI-compatible server (LM Studio, llama.cpp, vLLM). We never download here:
     the server owns its models. Order: --model, then LOCAL_LLM_MODEL if the server lists it, then the menu
     (real terminal) or the top-ranked loaded model (--yes, piped, CI). Returns the id, or None."""
-    stage(3, 4, "MODEL", "pick the model your server already has loaded")
+    stage(3, 5, "MODEL", "pick the model your server already has loaded")
     _load_env()
     ids = list_openai_models(base_url)
     if not ids:
@@ -915,7 +941,7 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
     4. Only if the machine has ZERO models installed, evaluate the PC build (RAM, GPU, VRAM)
        and recommend/pull the optimal cutting-edge model tailored to the hardware.
     """
-    stage(3, 4, "MODEL", "match a model to this machine's memory")
+    stage(3, 5, "MODEL", "match a model to this machine's memory")
     
     # Load .env if present
     _load_env()
@@ -1023,9 +1049,14 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
 async def run_agent(model, base_url="http://localhost:11434/v1"):
     """Run autonomous demonstration and interactive shell."""
     if _SETUP_ONLY:
+        stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
+        context_check(interactive=False)
+        stage(5, 5, "LAUNCH", "skipped: no terminal, so the chat does not start. Run python run.py in a terminal to chat")
         level_clear(model, "built-in shell", ready=f"Ready: {model} at {base_url}. Run python run.py in a terminal to chat.")
         return
-    stage(4, 4, "LAUNCH", "start the agent")
+    stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
+    context_check(interactive=True)
+    stage(5, 5, "LAUNCH", "start the agent")
     level_clear(model, "built-in shell")
     
     from google.antigravity import Agent, LocalOpenAIAgentConfig
@@ -1225,6 +1256,7 @@ def _main(argv=None):
         import handoff
         sys.exit(handoff.main(raw[1:]))
     args = parse_args(argv)  # before bootstrap_venv: --help / bad flags must not touch pip
+    _PLAIN["on"] = bool(args.plain)
     if args.doctor:  # read-only and stdlib: needs neither the venv nor Ollama
         import agent_setup
         agent_setup.claude_doctor()
@@ -1268,7 +1300,7 @@ def _main(argv=None):
     global _SETUP_ONLY
     _SETUP_ONLY = not interactive
     if backend == "openai":
-        stage(2, 4, "SERVER", "use the OpenAI-compatible server you already run")
+        stage(2, 5, "SERVER", "use the OpenAI-compatible server you already run")
         print(f"       Found an OpenAI-compatible server at {base_api} (not Ollama). Nothing will be downloaded.")
         os.environ["LOCAL_LLM_BACKEND"] = "openai"  # memory.py and --agent claude read this
     else:
@@ -1310,6 +1342,9 @@ def _main(argv=None):
                     return handoff.find_transcript(ident, handoff.repo_root(workspace))
                 except handoff.HandoffError as e:
                     raise agent_setup.AgentSetupError(str(e))
+        stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
+        context_check(interactive=interactive)
+        level_clear(model, args.agent)
         sys.exit(agent_setup.run(args.agent, model, base_api, workspace, config_only=args.agent_config_only,
                                  continue_local=args.continue_local, resume_from=args.resume_from,
                                  copy_settings=args.copy_user_settings, find_transcript=finder))

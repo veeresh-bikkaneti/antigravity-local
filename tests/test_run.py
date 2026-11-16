@@ -713,6 +713,10 @@ class RunAgent(unittest.TestCase):
         saved = run._SETUP_ONLY
         run._SETUP_ONLY = False
         self.addCleanup(setattr, run, "_SETUP_ONLY", saved)
+        # A small context window would ask a question first; these tests feed the chat its answers.
+        env = mock.patch.dict(run.os.environ, {"OLLAMA_CONTEXT_LENGTH": "65536"})
+        env.start()
+        self.addCleanup(env.stop)
 
     def go(self, writes_file, chat_raises=False, inputs=("exit",), content=DARK_PAGE):
         mods, agent_cls = fake_sdk(writes_file, chat_raises, content)
@@ -987,6 +991,89 @@ class StageWizard(unittest.TestCase):
         self.assertIn("Ready: m at", text)
         self.assertIn("LEVEL CLEAR", text)
         fake_agent.assert_not_called()
+
+
+class WizardD2(unittest.TestCase):
+    def yes_run(self, argv, agent=None):
+        """main() on a no-terminal run with the server and network stubbed. Returns the printed text."""
+        fake_agent = mock.Mock(side_effect=AssertionError("agent built on a --yes run"))
+        mods, _ = fake_sdk(writes_file=True)
+        mods["google.antigravity"].Agent = fake_agent
+        out = io.StringIO()
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.dict(sys.modules, mods), \
+                mock.patch.object(run, "PROJECT_DIR", d), \
+                mock.patch.object(run, "is_in_venv", return_value=True), \
+                mock.patch.object(run, "check_ollama_service", return_value=True), \
+                mock.patch.object(run, "detect_backend", return_value="ollama"), \
+                mock.patch.object(run, "select_and_pull_model", return_value="m"), \
+                mock.patch.object(run, "check_or_update_memory"), \
+                mock.patch.dict(run.os.environ, {}, clear=False), \
+                mock.patch.object(run.sys, "stdin", io.StringIO("")), \
+                contextlib.redirect_stdout(out):
+            run.main(argv)
+        self.fake_agent = fake_agent
+        return out.getvalue()
+
+    def test_stage_banner_is_flushed_so_the_venv_child_cannot_jump_ahead(self):
+        with mock.patch("builtins.print") as printed:
+            run.stage(1, 5, "ENVIRONMENT", "x")
+        self.assertTrue(printed.call_args_list)
+        for call in printed.call_args_list:
+            self.assertTrue(call.kwargs.get("flush"), call)
+
+    def test_context_unset_and_interactive_asks_then_y_prints_the_powershell_line(self):
+        asked, out = [], []
+        with mock.patch.dict(run.os.environ, {}, clear=True), mock.patch.object(run.sys, "platform", "win32"):
+            run.context_check(True, ask=lambda p: asked.append(p) or "y", out=out.append)
+        self.assertTrue(asked)
+        self.assertIn("OLLAMA_CONTEXT_LENGTH is not set", "\n".join(out))
+        self.assertIn("$env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve", "\n".join(out))
+
+    def test_context_on_a_yes_run_prints_one_line_and_asks_nothing(self):
+        out = []
+        def no_question(prompt):
+            raise AssertionError("asked a question on a --yes run")
+        with mock.patch.dict(run.os.environ, {}, clear=True):
+            run.context_check(False, ask=no_question, out=out.append)
+        self.assertEqual(len(out), 1)
+        self.assertIn("OLLAMA_CONTEXT_LENGTH is not set", out[0])
+
+    def test_context_at_or_above_65536_prints_nothing(self):
+        out = []
+        with mock.patch.dict(run.os.environ, {"OLLAMA_CONTEXT_LENGTH": "65536"}, clear=True):
+            run.context_check(True, ask=lambda p: "y", out=out.append)
+        self.assertEqual(out, [])
+
+    def test_plain_flag_gives_hash_bars_not_block_characters(self):
+        text = self.yes_run(["--plain", "--yes"])
+        self.assertIn("STAGE 5/5  LAUNCH", text)
+        self.assertIn("#", text)
+        self.assertNotIn("\u2588", text)
+        self.fake_agent.assert_not_called()
+
+    def test_yes_run_prints_ready_inside_level_clear_and_never_builds_the_agent(self):
+        text = self.yes_run(["--yes"])
+        self.assertLess(text.index("LEVEL CLEAR"), text.index("Ready: m at"))
+        self.fake_agent.assert_not_called()
+
+    def test_level_clear_is_printed_before_the_agent_hand_off(self):
+        order = []
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.object(run, "PROJECT_DIR", d), \
+                mock.patch.object(run, "is_in_venv", return_value=True), \
+                mock.patch.object(run, "check_ollama_service", return_value=True), \
+                mock.patch.object(run, "detect_backend", return_value="ollama"), \
+                mock.patch.object(run, "select_and_pull_model", return_value="m"), \
+                mock.patch.object(run, "check_or_update_memory", side_effect=lambda: order.append("index")), \
+                mock.patch.object(run, "level_clear", side_effect=lambda *a, **k: order.append("box")), \
+                mock.patch.object(run.sys, "stdin", io.StringIO("")), \
+                contextlib.redirect_stdout(io.StringIO()):
+            import agent_setup
+            with mock.patch.object(agent_setup, "run", side_effect=lambda *a, **k: order.append("agent") or 0):
+                with self.assertRaises(SystemExit):
+                    run.main(["--agent", "pi", "--yes"])
+        self.assertEqual(order, ["index", "box", "agent"])
 
 
 if __name__ == "__main__":
