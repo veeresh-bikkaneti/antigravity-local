@@ -239,7 +239,7 @@ class HfApi(unittest.TestCase):
             if isinstance(response, BaseException):
                 raise response
             return response
-        with mock.patch.object(model_wizard.urllib.request, "urlopen", fake):
+        with mock.patch.object(model_wizard._HF_OPENER, "open", fake):
             return model_wizard.hf_repo_info("u", "m")
 
     ROW = {"type": "file", "path": "m-Q4_K_M-00001-of-00002.gguf", "size": 1000}
