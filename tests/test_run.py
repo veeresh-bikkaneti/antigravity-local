@@ -972,7 +972,16 @@ class StageWizard(unittest.TestCase):
         mods, _ = fake_sdk(writes_file=True)
         mods["google.antigravity"].Agent = fake_agent
         out = io.StringIO()
-        with tempfile.TemporaryDirectory() as d,                 mock.patch.dict(sys.modules, mods),                 mock.patch.object(run, "PROJECT_DIR", d),                 mock.patch.object(run, "is_in_venv", return_value=True),                 mock.patch.object(run, "check_ollama_service", return_value=True),                 mock.patch.object(run, "detect_backend", return_value="ollama"),                 mock.patch.object(run, "select_and_pull_model", return_value="m"),                 mock.patch.object(run, "check_or_update_memory"),                 mock.patch.object(run.sys, "stdin", io.StringIO("")),                 contextlib.redirect_stdout(out):
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.dict(sys.modules, mods), \
+                mock.patch.object(run, "PROJECT_DIR", d), \
+                mock.patch.object(run, "is_in_venv", return_value=True), \
+                mock.patch.object(run, "check_ollama_service", return_value=True), \
+                mock.patch.object(run, "detect_backend", return_value="ollama"), \
+                mock.patch.object(run, "select_and_pull_model", return_value="m"), \
+                mock.patch.object(run, "check_or_update_memory"), \
+                mock.patch.object(run.sys, "stdin", io.StringIO("")), \
+                contextlib.redirect_stdout(out):
             run.main(["--yes"])
         text = out.getvalue()
         self.assertIn("Ready: m at", text)
