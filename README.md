@@ -64,7 +64,7 @@ The demo in step 5 checks whether the file was actually written. If the agent an
 
 ### What you see while it sets up
 
-Setup runs in four stages. Each one prints a banner such as `STAGE 2/4  SERVER`, a short progress bar and a `next:` line, then the facts it found. When it finishes, a `LEVEL CLEAR` box shows the model, where it came from, the agent, and the log file under `logs/`.
+Setup runs in five stages: ENVIRONMENT, SERVER, MODEL, CONTEXT and LAUNCH. Each one prints a banner such as `STAGE 2/5  SERVER`, a short progress bar and a `next:` line, then the facts it found. The CONTEXT stage checks that Ollama's context window is at least 64k, the size coding agents need. If it is smaller, it says so once and, on an interactive run, asks whether to show the command that raises it. It never changes your Ollama settings. When it finishes, a `LEVEL CLEAR` box shows the model, where it came from, the agent, and the log file under `logs/`.
 
 - `--plain` (or `NO_COLOR=1`) turns off the art and the bar blocks, and keeps the output to plain ASCII.
 - A run with no terminal (`--yes`, piped input or CI) stops after setup. The box ends with a `Ready:` line, and it never starts the chat or the demo.
