@@ -491,7 +491,7 @@ body.motion-off .blockcursor,body.motion-off .bulb,body.motion-off .bob-anim,bod
             </div>
             <div class="ide-promptline"><span class="prompt">CodeAgent [You] &gt;</span> say hello to the world</div>
             <div class="ide-hello"><span id="ideHello"></span><span class="blockcursor" aria-hidden="true"></span></div>
-            <p class="ide-note">The payoff: everything Muse collected on the run — the CLI, Ollama, the model, the server, the endpoint plug, the Agent, the file, memory — is in the pocket and loaded here, ready. This is what the whole level was for.</p>
+            <p class="ide-note">The payoff: everything Muse collected on the run — the CLI, Ollama, the model, the server, the endpoint plug, the Agent, the file, memory — is in the pocket and loaded here, ready. This is what the whole level was for. Want the same brain in a real coding app? One command sets it up: <code>python run.py --agent opencode</code>, and your pick stays saved as <code>LOCAL_LLM_MODEL</code> in <code>.env</code>.</p>
           </div>
         </div>
         <!-- GAME SCREENS: title (with the first-play tutorial), pause, settings, results -->
@@ -619,7 +619,7 @@ var HOPS=[
  {short:'Model pull',hoop:'MODEL PULL',sub:'the pick for this PC',head:['Pull the','9 GB brain.'],
   kicker:'Checkpoint 3 · Model pull — the pick for this PC',
   arrow:'ollama pull → the 9 GB crate comes down the conveyor → model on the shelf',
-  body:'An engine with no model is an empty arcade cabinet. This hoop pulls the one brain the whole show runs on — the pick for this PC (qwen2.5-coder:14b, about 9 GB, on a big GPU) — and the crate drops in from the branch overhead in a burst of glowing points; the plush catches it as it falls and pockets it. Already there from a previous run? The plush rolls straight through, wide-eyed at the size of the crate: it is reused, not re-downloaded. If a better model fits this PC, the wizard offers it as one of three choices: upgrade now, pick another, or stay. Nothing downloads without a yes.',
+  body:'An engine with no model is an empty arcade cabinet. This hoop pulls the one brain the whole show runs on — the pick for this PC (qwen2.5-coder:14b, about 9 GB, on a big GPU) — and the crate drops in from the branch overhead in a burst of glowing points; the plush catches it as it falls and pockets it. Already there from a previous run? The plush rolls straight through, wide-eyed at the size of the crate: it is reused, not re-downloaded. If a better model fits this PC, the wizard lists it as a recommended upgrade in the same numbered model list, and your current model is marked with a *. Enter keeps the one you have. Nothing downloads without a yes.',
   cmd:'ollama pull qwen2.5-coder:14b',where:'only if the shelf is empty; a menu comes first, and Enter takes the pick',result:'✓ Model on the shelf — qwen2.5-coder:14b ready. Next hoop: bring it to life.'},
  {short:'Serve network',hoop:'SERVE NETWORK',sub:'listening on :11434',head:['Light the','network.'],
   kicker:'Checkpoint 4 · Serve the network — ollama serve',

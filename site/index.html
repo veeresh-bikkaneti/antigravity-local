@@ -228,7 +228,7 @@
 
         <li class="step" data-step="3" data-focus="repo">
           <h3>Clone the repo and run setup</h3>
-          <p>One command runs five stages: ENVIRONMENT (a private Python folder for this project, plus the packages), SERVER (checks Ollama), MODEL (a short menu, where Enter takes the pick for your PC), CONTEXT (checks the 64k context window coding agents need) and LAUNCH. Then a LEVEL CLEAR box sums up the model, the agent and the log file. A better model that fits can be offered as an upgrade: upgrade now, pick another, or stay. If no model is installed, it asks before it downloads one (about 9 GB for the 14B model).</p>
+          <p>One command runs five stages: ENVIRONMENT (a private Python folder for this project, plus the packages), SERVER (checks Ollama), MODEL (a short menu, where Enter takes the pick for your PC), CONTEXT (checks the 64k context window coding agents need) and LAUNCH. Then a LEVEL CLEAR box sums up the model, the agent and the log file. A better model that fits shows up as a recommended upgrade row in the same numbered list, and your current model is marked with a <code>*</code>. If no model is installed, it asks before it downloads one (about 9 GB for the 14B model).</p>
           <div class="code"><pre><code>git clone https://github.com/veeresh-bikkaneti/antigravity-local.git
 cd antigravity-local
 python run.py</code></pre><button class="copy" type="button" aria-label="Copy the three setup commands">Copy</button></div>
@@ -237,7 +237,15 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
           <p class="check">A common error: <code>Connection refused</code> on <code>:11434</code> means Ollama is not running, so start the app or run <code>ollama serve</code>.</p>
         </li>
 
-        <li class="step" data-step="4" data-focus="venv">
+        <li class="step" data-step="4" data-focus="agent">
+          <h3>Use your model in a coding app</h3>
+          <p>Your pick is saved as <code>LOCAL_LLM_MODEL</code> in <code>.env</code>, so every app uses the same model. Choose the app with <code>--agent</code>: <code>pi</code>, <code>opencode</code>, <code>codex</code> or <code>claude</code>. It adds only an Ollama entry to that app's config, and it asks before it installs anything. Coding apps want a 64k context window. If stage 4 says yours is smaller, set <code>OLLAMA_CONTEXT_LENGTH=65536</code> and restart Ollama. The README covers this route and Ollama's own <code>ollama launch</code>.</p>
+          <div class="code"><pre><code>python run.py --agent opencode</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --agent opencode">Copy</button></div>
+          <p class="check">The app opens in your project, already pointed at your local model. Your other settings are left alone.</p>
+          <p class="time">A minute, plus the app install if you say yes. <a href="https://github.com/veeresh-bikkaneti/antigravity-local#use-your-model-in-a-coding-app">Setup in the README</a></p>
+        </li>
+
+        <li class="step" data-step="5" data-focus="venv">
           <h3>Activate the virtual environment</h3>
           <p>Do this once per terminal window, from inside the <code>antigravity-local</code> folder.</p>
           <p class="shell">Windows PowerShell</p>
@@ -248,16 +256,16 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
           <p class="time">10 seconds</p>
         </li>
 
-        <li class="step" data-step="5" data-focus="agent">
+        <li class="step" data-step="6" data-focus="agent">
           <h3>Chat with your agent</h3>
           <p>Open the coding shell on a workspace folder. Type a request in plain English. Creating a new file works most of the time. Editing an existing file does not, so read <a href="#limits">the limits below</a> before you point it at real code.</p>
           <div class="code"><pre><code>python code_agent.py --workspace ./workspace</code></pre><button class="copy" type="button" aria-label="Copy command: python code_agent.py --workspace ./workspace">Copy</button></div>
           <p class="check">A banner shows your model and workspace, then a <code>CodeAgent [You] &gt;</code> prompt. Try <code>/files</code>, then <code>/wiki</code>, then <code>exit</code>. <code>/clear</code> starts a fresh session.</p>
-          <p class="check">If you see <code>No module named 'google'</code>, you are outside the virtual environment, so activate it (step 4) and try again.</p>
+          <p class="check">If you see <code>No module named 'google'</code>, you are outside the virtual environment, so activate it (step 5) and try again.</p>
           <p class="time">1 minute</p>
         </li>
 
-        <li class="step" data-step="6" data-focus="job">
+        <li class="step" data-step="7" data-focus="job">
           <h3>Give it one job</h3>
           <p>Hand the agent a single task and let it finish without chatting.</p>
           <div class="code"><pre><code>python code_agent.py --workspace ./my-project --task "Create hello.py that prints hi"</code></pre><button class="copy" type="button" aria-label="Copy the one-shot task command">Copy</button></div>
@@ -265,7 +273,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
           <p class="time">Under a minute</p>
         </li>
 
-        <li class="step" data-step="7" data-focus="editor">
+        <li class="step" data-step="8" data-focus="editor">
           <h3>Use it from your editor or the browser</h3>
           <p>Start a search page on a free port, or run it in Docker (the <a href="https://github.com/veeresh-bikkaneti/antigravity-local#serve-it-search-ui--api-on-a-free-port-local-or-docker">README has the three Docker commands</a>). For VS Code, the README lists four routes: our shell in the terminal, the Ollama extension, Continue, and Cline. Want a sturdier terminal agent? <code>python run.py --agent pi</code> (or <code>opencode</code>, or <code>codex</code>) sets one up for your local model and asks before it installs anything.</p>
           <div class="code"><pre><code>python run.py --serve</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --serve">Copy</button></div>
