@@ -832,12 +832,12 @@ class InteractiveOffer(unittest.TestCase):
         self.addCleanup(patch.stop)
         self.now = 1_800_000_000.0
 
-    def offer(self, answer=None, now=None):
+    def offer(self, answer=None, now=None, installed=("llama3.2:3b",)):
         ask = (mock.MagicMock(return_value=answer) if answer is not None
                else mock.MagicMock(side_effect=AssertionError("must not prompt")))
         with mock.patch.object(builtins, "input", ask), \
                 contextlib.redirect_stdout(io.StringIO()):
-            tag = run.offer_upgrade({"llama3.2:3b"}, HW, 24.0, 64.0, now=self.now if now is None else now)
+            tag = run.offer_upgrade(set(installed), HW, 24.0, 64.0, now=self.now if now is None else now)
         return tag, ask
 
     def test_enter_stays_and_never_returns_a_pull(self):
@@ -845,7 +845,7 @@ class InteractiveOffer(unittest.TestCase):
         self.assertIsNone(tag)
         self.assertEqual(ask.call_count, 1)
         with open(self.state, encoding="utf-8") as f:
-            self.assertAlmostEqual(json.load(f)["stay_until"], self.now + 7 * DAY)
+            self.assertAlmostEqual(json.load(f)["stay_until"]["llama3.2:3b"], self.now + 7 * DAY)
 
     def test_upgrade_now_returns_the_top_pick(self):
         tag, _ = self.offer(answer="upgrade now")
@@ -862,6 +862,22 @@ class InteractiveOffer(unittest.TestCase):
         tag, ask = self.offer(answer="", now=self.now + 8 * DAY)
         self.assertIsNone(tag)
         self.assertEqual(ask.call_count, 1)
+
+    def test_a_stay_on_one_model_still_offers_when_another_model_is_current(self):
+        self.offer(answer="")  # stay on llama3.2:3b
+        _, ask = self.offer(answer="", installed=("tinyllama:1b",))
+        self.assertEqual(ask.call_count, 1)
+        with open(self.state, encoding="utf-8") as f:
+            self.assertIn("llama3.2:3b", json.load(f)["stay_until"])
+
+    def test_an_old_bare_number_state_file_is_no_stay_and_does_not_crash(self):
+        with open(self.state, "w", encoding="utf-8") as f:
+            json.dump({"stay_until": self.now + 7 * DAY}, f)
+        tag, ask = self.offer(answer="")
+        self.assertIsNone(tag)
+        self.assertEqual(ask.call_count, 1)
+        with open(self.state, encoding="utf-8") as f:
+            self.assertEqual(list(json.load(f)["stay_until"]), ["llama3.2:3b"])
 
     def test_no_installed_model_means_no_offer(self):
         with mock.patch.object(builtins, "input", side_effect=AssertionError("must not ask")):
