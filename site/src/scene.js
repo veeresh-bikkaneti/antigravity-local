@@ -322,7 +322,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
   armL.add(foreL);
   part(foreL, new THREE.SphereGeometry(0.072, 12, 10), matSkin, 0, -0.36, 0).scale.set(1, 0.8, 1.15);
 
-  // --- the seven pieces: one vertical column. Every layer shares the same
+  // --- the stack pieces (one per guide step): one vertical column. Every layer shares the same
   // x/z - each new piece lands directly on top of the previous one.
   const PIECE_SCALE = 1;
   const pieces = [];
@@ -619,7 +619,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
     }
   }
   function setCount(n, opts = {}) {
-    n = Math.max(0, Math.min(7, n));
+    n = Math.max(0, Math.min(STEPS.length, n));
     if (!opts.viaPlay) cancelPlay();
     const prev = assembledCount;
     if (n === prev) return;
@@ -654,7 +654,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
   }
   function focus(name) { goTo(name); }
   function stepTo(n, opts = {}) {
-    n = Math.max(0, Math.min(7, n));
+    n = Math.max(0, Math.min(STEPS.length, n));
     if (n === assembledCount) return;
     goTo(n > 0 ? STEP_KEYS[n - 1] : "overview", { ...opts, forceCount: true });
   }
@@ -824,7 +824,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
   applyAll();
   // Reduced motion (or paused at load): the assembled state, no animation.
   // Scrolling still moves the camera; the stack itself stays assembled.
-  if (isPaused()) setCount(7, { instant: true, viaPlay: true });
+  if (isPaused()) setCount(STEPS.length, { instant: true, viaPlay: true });
   goTo("overview");
   canvas.addEventListener("webglcontextlost", (e) => { e.preventDefault(); canvas.style.display = "none"; });
   frame();

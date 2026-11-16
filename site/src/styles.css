@@ -318,7 +318,7 @@ html.motion-off .tag, html.motion-off .btn, html.motion-off .step, html.motion-o
 }
 .sheet-icon .dot { fill: var(--signal); stroke: none; }
 
-/* Hero drawing: a flat line drawing of the same seven-layer stack. It is the
+/* Hero drawing: a flat line drawing of the same eight-layer stack. It is the
    picture without WebGL or JavaScript, and on phones, where the 3D scene is
    only a faint backdrop. On wide screens it steps aside once the 3D starts. */
 .hero-art { margin: 0; display: flex; justify-content: center; align-items: center; transition: opacity var(--t-med), visibility var(--t-med); }
