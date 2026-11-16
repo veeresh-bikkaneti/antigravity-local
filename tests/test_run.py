@@ -147,6 +147,8 @@ class ModelWizardInRun(unittest.TestCase):
         ask = interactive_ask if interactive else no_input
         with tempfile.TemporaryDirectory() as d, \
                 mock.patch.object(run, "PROJECT_DIR", d), \
+                mock.patch.object(run, "UPGRADE_STATE_FILE", os.path.join(d, ".antigravity_upgrade_state.json")), \
+                mock.patch.object(run, "offer_upgrade", return_value=None), \
                 mock.patch.dict(run.os.environ, {"LOCAL_LLM_MODEL": env} if env else {}, clear=False), \
                 mock.patch.object(run, "get_hardware_profile", return_value=hw or self.HW), \
                 mock.patch.object(run, "get_free_resources", return_value=free or free_of(hw or self.HW)), \
