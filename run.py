@@ -803,13 +803,17 @@ def _ask_which_model(display_names, installed_models, vram_gb, ram_gb, free_vram
                                    badges={model_wizard._norm(c["tag"]): c["badges"] for c in pool},
                                    library=get_library_rows(scan_library), media=get_media_rows(),
                                    size_of=download_size.resolve, upgrade=upgrade)
+    label = "current model"
     if not default:
         default = tier  # no usable model installed: Enter means exactly what the automatic path would offer
+        label = "recommended pick"
     fv = vram_gb if free_vram is None else free_vram
     fr = ram_gb if free_ram is None else free_ram
+    ended = {}
     chosen = model_wizard.choose(menu, default, search_fn=lambda words: hf_menu_search_sized(words, fv, fr),
-                                 validate_fn=lambda tag: _typed_tag_problem(tag, installed_models))
-    if upgrade and chosen and model_wizard._norm(chosen) == model_wizard._norm(default or ""):
+                                 validate_fn=lambda tag: _typed_tag_problem(tag, installed_models),
+                                 default_label=label, result=ended)
+    if upgrade and ended.get("how") == "enter":
         _remember_upgrade_stay(upgrade["current"])  # Enter kept the model while the upgrade row was on screen
     if not chosen or model_wizard._norm(chosen) == model_wizard._norm(default or ""):
         # Kept the default: for an installed model the automatic path handles it; otherwise pull it.
