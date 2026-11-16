@@ -22,7 +22,10 @@ from pathlib import Path
 AGENTS = ("pi", "opencode", "codex", "claude")
 PACKAGES = {"pi": "@earendil-works/pi-coding-agent", "opencode": "opencode-ai", "codex": "@openai/codex"}
 CONTINUE_PROMPT = ("Read HANDOFF.md and AGENTS.md, then continue the task. Check git state before editing. "
-                   "Update HANDOFF.md before you stop.")
+                   "Update HANDOFF.md before you stop. "
+                   "Project memory: this project keeps a local index of its code, docs and wiki pages. "
+                   "Before you guess, search it: python memory.py search \"<words>\" gives ranked hits. "
+                   "For a topic page, run python memory.py wiki <topic>. If results look stale, run python memory.py index.")
 NODE_DOWNLOAD = "https://nodejs.org/en/download"
 PI_NODE_MIN = (22, 19)
 BACKUP_SUFFIX = ".bak-antigravity-local"

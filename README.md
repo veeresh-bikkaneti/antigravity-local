@@ -797,7 +797,7 @@ python code_agent.py
 python code_agent.py --with-memory
 ```
 
-Graphify is not part of the runtime agent path. Only `python memory.py sync` calls `graphify update .`, and only when `graphify` is installed. The committed graph has 8,547 nodes and 13,383 edges.
+Graphify is optional and external: you install it yourself, and it is not part of the runtime agent path. `python memory.py sync` runs `graphify update .` only when the `graphify` command is on your PATH, and skips that step otherwise. The committed graph has 8,547 nodes and 13,383 edges.
 
 Inside the interactive shell:
 - `/memory <query>` : Searches project memory with BM25 + Vector fusion and displays matching lines.

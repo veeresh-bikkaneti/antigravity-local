@@ -45,6 +45,8 @@ class CiRunsEveryTest(unittest.TestCase):
         workflow = (ROOT / ".github" / "workflows" / "docker.yml").read_text(encoding="utf-8")
         listed = set()
         for line in workflow.splitlines():
+            if "python -m unittest discover -s tests" in line:
+                return  # discover runs every tests/test_*.py, so no module can be left out
             if "python -m unittest" in line:
                 listed |= set(re.findall(r"\btests\.(test_\w+)", line))
         on_disk = {p.stem for p in (ROOT / "tests").glob("test_*.py")}
