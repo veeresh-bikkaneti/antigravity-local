@@ -13,6 +13,7 @@ const STEPS = [
   { key: "ollama", name: "Install Ollama", short: "Ollama", plate: "OLLAMA" },
   { key: "model", name: "Choose a model", short: "Qwen model", plate: "QWEN2.5-CODER:14B" },
   { key: "repo", name: "Clone the repo and run setup", short: "Repo · run.bat", plate: "REPO · RUN.BAT" },
+  { key: "app", name: "Use your model in a coding app", short: "Coding app", plate: "CODING APP · OLLAMA LAUNCH" },
   { key: "venv", name: "Activate the virtual environment", short: ".venv terminal", plate: ".VENV · TERMINAL" },
   { key: "agent", name: "Chat with your agent", short: "Agent", plate: "ANTIGRAVITY AGENT" },
   { key: "job", name: "Give it one job", short: "One job · Gate", plate: "HARNESS · POLICY GATE" },
@@ -30,6 +31,7 @@ const SOURCES = [
   new THREE.Vector3(-2.5, 0.15, -0.7),   // monitor - Ollama
   new THREE.Vector3(-2.5, 0.3, -0.6),    // monitor download - the model
   new THREE.Vector3(-1.6, -0.3, -0.55),  // files folder on the desk - the repo
+  new THREE.Vector3(-2.5, 0.22, -0.62),  // monitor - the coding app
   new THREE.Vector3(-2.0, -0.3, 0.1),    // keyboard - the terminal
   new THREE.Vector3(-2.5, 0.2, -0.6),    // monitor - the agent
   new THREE.Vector3(-1.05, -0.2, 0.7),   // through his hand - the job
@@ -47,13 +49,14 @@ const FOCUS = {
   ollama: { cam: [3.4, -0.2, 4.6], look: [0.75, -1.0, -0.2], count: 1, on: ["ollama"] },
   model: { cam: [3.2, 0.3, 4.4], look: [0.75, -0.5, -0.2], count: 2, on: ["model"] },
   repo: { cam: [3.2, 0.8, 4.4], look: [0.75, 0.1, -0.2], count: 3, on: ["repo"] },
-  venv: { cam: [3.2, 1.3, 4.4], look: [0.75, 0.7, -0.2], count: 4, on: ["venv"] },
-  agent: { cam: [3.2, 1.8, 4.4], look: [0.75, 1.3, -0.2], count: 5, on: ["agent"] },
-  job: { cam: [3.2, 2.3, 4.4], look: [0.75, 1.9, -0.2], count: 6, on: ["job"] },
-  editor: { cam: [3.4, 2.9, 4.6], look: [0.75, 2.5, -0.2], count: 7, on: ["editor"] },
-  assembly: { cam: [7.6, 3.8, 9.6], look: [0.4, 0.6, -0.2], count: 7, on: [] },
-  cloud: { cam: [6.4, 3.6, 8.2], look: [1.6, 1.6, -0.8], count: 7, on: ["cloud"] },
-  showcase: { cam: [8.6, 4.2, 9.8], look: [0.4, 0.6, -0.2], count: 7, on: [] },
+  app: { cam: [3.2, 1.3, 4.4], look: [0.75, 0.7, -0.2], count: 4, on: ["app"] },
+  venv: { cam: [3.2, 1.8, 4.4], look: [0.75, 1.3, -0.2], count: 5, on: ["venv"] },
+  agent: { cam: [3.2, 2.3, 4.4], look: [0.75, 1.9, -0.2], count: 6, on: ["agent"] },
+  job: { cam: [3.2, 2.8, 4.4], look: [0.75, 2.5, -0.2], count: 7, on: ["job"] },
+  editor: { cam: [3.4, 3.4, 4.6], look: [0.75, 3.1, -0.2], count: 8, on: ["editor"] },
+  assembly: { cam: [7.6, 4.1, 9.6], look: [0.4, 0.9, -0.2], count: 8, on: [] },
+  cloud: { cam: [6.4, 3.6, 8.2], look: [1.6, 1.6, -0.8], count: 8, on: ["cloud"] },
+  showcase: { cam: [8.6, 4.5, 9.8], look: [0.4, 0.9, -0.2], count: 8, on: [] },
 };
 
 const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -149,7 +152,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
   world.add(benchDisc, benchEdge);
   const pedestal = at(fillSignal(new THREE.CylinderGeometry(0.95, 1.05, 0.12, 36), 0.18), CORE.x, FLOOR + 0.16, CORE.z);
   world.add(pedestal);
-  const guidePts = [new THREE.Vector3(CORE.x, FLOOR + 0.4, CORE.z - 0.95), new THREE.Vector3(CORE.x, CORE.y + 6 * LAYER_H + 0.55, CORE.z - 0.95)];
+  const guidePts = [new THREE.Vector3(CORE.x, FLOOR + 0.4, CORE.z - 0.95), new THREE.Vector3(CORE.x, CORE.y + (STEPS.length - 1) * LAYER_H + 0.55, CORE.z - 0.95)];
   const guideLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(guidePts), reg(lineMats, new THREE.LineDashedMaterial({ dashSize: 0.14, gapSize: 0.1, transparent: true, opacity: 0.6 }), 0.6));
   guideLine.computeLineDistances();
   world.add(guideLine);
@@ -339,7 +342,8 @@ export function start({ canvas, tags, isPaused, onStack }) {
   const buildPiece = (i) => {
     const g = new THREE.Group();
     const p = { g, mats: [], v: 0, landed: 0 };
-    if (i === 0) { // OLLAMA - the llama mark in 3D: head, ears, snout, neck
+    const k = STEPS[i].key; // shapes go by key, so a new step can slot in anywhere
+    if (k === "ollama") { // OLLAMA - the llama mark in 3D: head, ears, snout, neck
       holo(p, new THREE.CylinderGeometry(0.13, 0.17, 0.36, 12), 0, -0.3, 0, 0.35);
       const hd = holo(p, new THREE.SphereGeometry(0.27, 12, 10), 0, 0.1, 0, 0.35);
       hd.scale.set(0.85, 1, 0.9);
@@ -356,7 +360,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
       tuft.scale.set(1.2, 0.6, 1);
       const portD = holo(p, new THREE.CylinderGeometry(0.3, 0.3, 0.07, 20), 0, -0.55, 0.1);
       portD.rotation.x = 0.5;
-    } else if (i === 1) { // MODEL - a processor chip, pins all round
+    } else if (k === "model") { // MODEL - a processor chip, pins all round
       holo(p, new THREE.BoxGeometry(0.54, 0.54, 0.16), 0, 0, 0, 0.28);
       holo(p, new THREE.BoxGeometry(0.34, 0.34, 0.2), 0, 0, 0, 0.35);
       for (let k = 0; k < 4; k++) {
@@ -366,7 +370,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
         holo(p, new THREE.BoxGeometry(0.14, 0.05, 0.05), 0.34, off, 0);
         holo(p, new THREE.BoxGeometry(0.14, 0.05, 0.05), -0.34, off, 0);
       }
-    } else if (i === 2) { // REPO - a folder of workspace files with run.bat's play launcher
+    } else if (k === "repo") { // REPO - a folder of workspace files with run.bat's play launcher
       holo(p, new THREE.BoxGeometry(0.64, 0.48, 0.04), 0, 0.02, -0.07);
       holo(p, new THREE.BoxGeometry(0.24, 0.09, 0.045), -0.18, 0.29, -0.07);
       holo(p, new THREE.BoxGeometry(0.52, 0.4, 0.02), 0, 0.08, 0, 0.35);
@@ -379,13 +383,21 @@ export function start({ canvas, tags, isPaused, onStack }) {
       tri.position.set(0, -0.05, 0.14);
       g.add(tri);
       p.mats.push(tri.material);
-    } else if (i === 3) { // VENV - a terminal window with a typed prompt
+    } else if (k === "app") { // CODING APP - an app window with a launch arrow plugged into it
+      holo(p, new THREE.BoxGeometry(0.74, 0.5, 0.05), 0, 0, 0, 0.26);
+      const as = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.34), new THREE.MeshBasicMaterial({ map: codeTexture([3, 5, 2, 6, 4, 3]) }));
+      as.position.set(0.1, -0.04, 0.032);
+      g.add(as);
+      holo(p, new THREE.BoxGeometry(0.74, 0.09, 0.055), 0, 0.205, 0, 0.45);
+      const arrow = holo(p, new THREE.ConeGeometry(0.07, 0.16, 3), -0.24, -0.04, 0.05, 0.7, "signal");
+      arrow.rotation.z = -Math.PI / 2;
+    } else if (k === "venv") { // VENV - a terminal window with a typed prompt
       holo(p, new THREE.BoxGeometry(0.7, 0.52, 0.05), 0, 0, 0, 0.28);
       const ts = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.36), new THREE.MeshBasicMaterial({ map: codeTexture([4, 2, 5, 3, 6, 2, 4]) }));
       ts.position.set(0, -0.05, 0.032);
       g.add(ts);
       holo(p, new THREE.BoxGeometry(0.7, 0.09, 0.055), 0, 0.235, 0, 0.45);
-    } else if (i === 4) { // AGENT - the "A", four brand dots, harness lead
+    } else if (k === "agent") { // AGENT - the "A", four brand dots, harness lead
       const legL = holo(p, new THREE.BoxGeometry(0.12, 0.62, 0.12), -0.15, 0, 0, 0.35);
       legL.rotation.z = 0.38;
       const legR = holo(p, new THREE.BoxGeometry(0.12, 0.62, 0.12), 0.15, 0, 0, 0.35);
@@ -404,7 +416,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
       lead.rotation.z = Math.PI;
       g.add(lead);
       p.mats.push(lead.material);
-    } else if (i === 5) { // ONE JOB - harness plug + the job file, through the Policy Gate
+    } else if (k === "job") { // ONE JOB - harness plug + the job file, through the Policy Gate
       const sheet = holo(p, new THREE.BoxGeometry(0.36, 0.46, 0.03), -0.1, 0.05, -0.1, 0.35);
       sheet.rotation.z = 0.08;
       holo(p, new THREE.BoxGeometry(0.3, 0.24, 0.24), 0.08, -0.05, 0.1, 0.35);
@@ -436,7 +448,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
     world.add(g);
     return p;
   };
-  for (let i = 0; i < 7; i++) pieces.push(buildPiece(i));
+  for (let i = 0; i < STEPS.length; i++) pieces.push(buildPiece(i));
 
   // Ghost rings: flat rings marking the empty slots of the stack.
   const ghosts = pieces.map((p, i) => {
@@ -602,7 +614,7 @@ export function start({ canvas, tags, isPaused, onStack }) {
     updateHighlight();
     emitStack("landed");
     if (playing) {
-      if (assembledCount < 7) playTimer = setTimeout(() => { if (playing) stepTo(assembledCount + 1, { viaPlay: true }); }, isPaused() ? 80 : 700);
+      if (assembledCount < STEPS.length) playTimer = setTimeout(() => { if (playing) stepTo(assembledCount + 1, { viaPlay: true }); }, isPaused() ? 80 : 700);
       else { playing = false; emitStack("play-end"); }
     }
   }

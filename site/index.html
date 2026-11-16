@@ -228,7 +228,7 @@
 
         <li class="step" data-step="3" data-focus="repo">
           <h3>Clone the repo and run setup</h3>
-          <p>One command runs five stages: ENVIRONMENT (a private Python folder for this project, plus the packages), SERVER (checks Ollama), MODEL (a short menu, where Enter takes the pick for your PC), CONTEXT (checks the 64k context window coding agents need) and LAUNCH. Then a LEVEL CLEAR box sums up the model, the agent and the log file. A better model that fits shows up as a recommended upgrade row in the same numbered list, and your current model is marked with a <code>*</code>. If no model is installed, it asks before it downloads one (about 9 GB for the 14B model).</p>
+          <p>One command runs five stages: ENVIRONMENT (a private Python folder for this project, plus the packages), SERVER (checks Ollama), MODEL (one numbered list, where Enter keeps your model and a typo just asks again), CONTEXT (checks the 64k context window coding agents need and prints the fix if it's short) and LAUNCH. Then a LEVEL CLEAR box sums up the model, the agent and the log file. A better model that fits shows up as a recommended upgrade row in the same numbered list, and your current model is marked with a <code>*</code>. If no model is installed, it asks before it downloads one (about 9 GB for the 14B model).</p>
           <div class="code"><pre><code>git clone https://github.com/veeresh-bikkaneti/antigravity-local.git
 cd antigravity-local
 python run.py</code></pre><button class="copy" type="button" aria-label="Copy the three setup commands">Copy</button></div>
@@ -237,7 +237,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
           <p class="check">A common error: <code>Connection refused</code> on <code>:11434</code> means Ollama is not running, so start the app or run <code>ollama serve</code>.</p>
         </li>
 
-        <li class="step" data-step="4" data-focus="agent">
+        <li class="step" data-step="4" data-focus="app">
           <h3>Use your model in a coding app</h3>
           <p>Your pick is saved as <code>LOCAL_LLM_MODEL</code> in <code>.env</code>, so every app uses the same model. Choose the app with <code>--agent</code>: <code>pi</code>, <code>opencode</code>, <code>codex</code> or <code>claude</code>. It adds only an Ollama entry to that app's config, and it asks before it installs anything. Coding apps want a 64k context window. If stage 4 says yours is smaller, set <code>OLLAMA_CONTEXT_LENGTH=65536</code> and restart Ollama. The README covers this route and Ollama's own <code>ollama launch</code>.</p>
           <div class="code"><pre><code>python run.py --agent opencode</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --agent opencode">Copy</button></div>
