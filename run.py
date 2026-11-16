@@ -1090,8 +1090,10 @@ async def run_agent(model, base_url="http://localhost:11434/v1"):
             raise
         if leave["left"]:
             return  # the goodbye is already printed
-        if isinstance(exc.__context__, KeyboardInterrupt):
-            print("\n\n👋 Goodbye!\n")  # Ctrl+C during the demo, and the SDK failed while closing
+        import asyncio
+        if isinstance(exc.__context__, (KeyboardInterrupt, asyncio.CancelledError)):
+            # Ctrl+C during the demo (on Python 3.11+ it can arrive as a task cancel), and the SDK failed while closing
+            print("\n\n👋 Goodbye!\n")
             return
         log = runlog.log_path(os.path.join(PROJECT_DIR, "logs"))
         print(f"\n⚠️ The agent backend stopped unexpectedly. Log: {log}\n")
@@ -1405,8 +1407,19 @@ def _main(argv=None):
     check_or_update_memory()
 
     # Step 4: Run agent via asyncio
+    _run_shell(model, base_api)
+
+
+def _run_shell(model, base_api):
+    """Run the agent. On Python 3.11+ asyncio.run turns the first Ctrl+C into a task cancel and re-raises
+    KeyboardInterrupt once the task ends, outside run_agent, so it is caught here: Goodbye and exit 0."""
     import asyncio
-    asyncio.run(run_agent(model, base_api))
+    try:
+        asyncio.run(run_agent(model, base_api))
+    except KeyboardInterrupt:
+        print("\n\n👋 Goodbye!\n")
+        sys.exit(0)
+
 
 if __name__ == "__main__":
     main()

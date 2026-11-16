@@ -154,5 +154,27 @@ class HeaderOnce(unittest.TestCase):
         self.assertIn("Google Antigravity Local", self._header({}))
 
 
+class RealSigint(unittest.TestCase):
+    @unittest.skipIf(sys.platform == "win32", "SIGINT to our own process is not deliverable this way on Windows")
+    def test_sigint_as_a_cancel_exits_zero_with_goodbye(self):
+        import signal
+        import threading
+
+        async def stand_in(model, base_url):
+            await asyncio.sleep(5)  # a real SIGINT arrives while this waits
+
+        buf = io.StringIO()
+        timer = threading.Timer(0.3, os.kill, (os.getpid(), signal.SIGINT))
+        with mock.patch.object(run, "run_agent", stand_in), contextlib.redirect_stdout(buf):
+            timer.start()
+            try:
+                with self.assertRaises(SystemExit) as done:
+                    run._run_shell("m", "http://localhost:11434/v1")
+            finally:
+                timer.cancel()
+        self.assertEqual(done.exception.code, 0)
+        self.assertIn("Goodbye", buf.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()
