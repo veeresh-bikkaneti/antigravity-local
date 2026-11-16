@@ -353,16 +353,20 @@ def _search_pick(results, input_fn, out):
     return None
 
 
-def _gave_up(out, fallback, default_tag):
-    """One line after three bad tries: which model we use instead, and why we stopped asking."""
+def _gave_up(out, fallback, default_tag, default_label=None):
+    """One line after three bad tries: which model we use instead, and why we stopped asking.
+    `default_label` says what the default is ("current model" or "recommended pick"); the caller knows, we don't."""
     if not fallback:
         out("       No valid pick after 3 tries, using the automatic pick.")
         return
-    label = "current model" if fallback == default_tag else "first option"
+    if fallback == default_tag:
+        label = default_label or "current model"
+    else:
+        label = "first option"
     out(f"       No valid pick after 3 tries, using {fallback} ({label}).")
 
 
-def _ask_hf_tag(input_fn, out, fallback, search_fn=None, validate_fn=None, default_tag=None):
+def _ask_hf_tag(input_fn, out, fallback, search_fn=None, validate_fn=None, default_tag=None, default_label=None):
     """The Hugging Face row was picked: ask for a tag, or for words to search for. Blank returns the fallback.
     A tag that validate_fn rejects prints why and asks again. Three bad tries print one line and give the fallback."""
     prompt = "       hf.co tag (hf.co/user/repo:quant)" + (", or words to search for > " if search_fn else " > ")
@@ -392,18 +396,22 @@ def _ask_hf_tag(input_fn, out, fallback, search_fn=None, validate_fn=None, defau
                 out(problem)
             continue
         out("       That is not a Hugging Face tag. Use the form hf.co/user/repo:quant.")
-    _gave_up(out, fallback, default_tag)
+    _gave_up(out, fallback, default_tag, default_label)
     return fallback
 
 
 YES_NO = {"y", "yes", "n", "no"}
 
 
-def choose(menu, default_tag, input_fn=None, out=print, backend="ollama", search_fn=None, validate_fn=None):
+def choose(menu, default_tag, input_fn=None, out=print, backend="ollama", search_fn=None, validate_fn=None,
+           default_label=None, result=None):
     """Return the chosen tag. Bad input re-asks, up to 3 tries. After 3 bad tries the default is used and one line
-    says so. `validate_fn(tag)` vets a typed tag or a numbered pick: None when it is fine, else the line to print
-    that says why not (for example "not on the registry"). Without it every tag passes, as before."""
+    says so, naming it with `default_label`. `validate_fn(tag)` vets a typed tag or a numbered pick: None when it is
+    fine, else the line to print that says why not (for example "not on the registry"). Without it every tag passes.
+    Pass a dict as `result` to learn how it ended: result["how"] is "enter", "pick", "gave_up" or "eof"."""
     input_fn = input_fn or input  # looked up now, not at import, so a terminal or a test can swap it
+    how = result if isinstance(result, dict) else {}
+    how["how"] = "pick"
     fallback = default_tag or next((m["tag"] for m in menu if not m.get("hf") and not m.get("media")), None)
     for line in render(menu, default_tag, backend):
         out(line)
@@ -411,8 +419,10 @@ def choose(menu, default_tag, input_fn=None, out=print, backend="ollama", search
         try:
             raw = input_fn("       > ").strip()
         except EOFError:  # input closed (piped, CI): same as Enter. Ctrl+C is NOT caught: the caller must stop.
+            how["how"] = "eof"
             return fallback
         if not raw:
+            how["how"] = "enter"
             return fallback
         if raw.lower() in YES_NO:  # "y" is a valid-looking tag, but nobody means it as one
             out(f"       That looks like a yes/no answer. Type a number, a model tag, or press Enter for {fallback}.")
@@ -421,7 +431,7 @@ def choose(menu, default_tag, input_fn=None, out=print, backend="ollama", search
             n = int(raw) if len(raw) <= MAX_PICK_DIGITS else 0  # int() refuses 4300+ digits; no menu is that long
             if 1 <= n <= len(menu):
                 if menu[n - 1].get("hf"):
-                    return _ask_hf_tag(input_fn, out, fallback, search_fn, validate_fn, default_tag)
+                    return _ask_hf_tag(input_fn, out, fallback, search_fn, validate_fn, default_tag, default_label)
                 if menu[n - 1].get("media"):  # never a pick: say how to run it, then ask again
                     out(f"       {menu[n - 1].get('hint') or 'Media models are not used by coding agents.'}")
                     continue
@@ -439,7 +449,8 @@ def choose(menu, default_tag, input_fn=None, out=print, backend="ollama", search
             out(problem)
             continue
         out("       That is not a tag. Use a number, or something like qwen3.6:27b.")
-    _gave_up(out, fallback, default_tag)
+    _gave_up(out, fallback, default_tag, default_label)
+    how["how"] = "gave_up"
     return fallback
 
 

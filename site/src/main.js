@@ -136,14 +136,14 @@ ScrollTrigger.create({ trigger: "#architecture", start: "top 85%", end: "bottom 
 /* ---- hero hologram controls + stack readout: the buttons drive the scene
    directly, in place - they never scroll the page. Page scroll still syncs
    the hologram through the triggers above; the two share the scene's goTo. ---- */
-const LAYER_SHORT = ["Ollama", "Qwen model", "Repo · run.bat", ".venv terminal", "Agent", "One job · Gate", "Editor"];
-const LAYER_NAMES = ["Install Ollama", "Choose a model", "Clone the repo and run setup", "Activate the virtual environment", "Chat with your agent", "Give it one job", "Use it from your editor or the browser"];
+const LAYER_SHORT = ["Ollama", "Qwen model", "Repo · run.bat", "Coding app", ".venv terminal", "Agent", "One job · Gate", "Editor"];
+const LAYER_NAMES = ["Install Ollama", "Choose a model", "Clone the repo and run setup", "Use your model in a coding app", "Activate the virtual environment", "Chat with your agent", "Give it one job", "Use it from your editor or the browser"];
 const stackList = $("#stack-list");
 const stackCount = $("#stack-count");
 const stackJust = $("#stack-just");
 function updateStack({ count, top, landing, playing, event }) {
   if (!stackList) return;
-  stackCount.textContent = `${count} / 7`;
+  stackCount.textContent = `${count} / ${LAYER_NAMES.length}`;
   if (landing >= 0) stackJust.innerHTML = `Now adding <b>layer ${landing + 1} · ${LAYER_SHORT[landing]}</b>…`;
   else if (top >= 0) stackJust.innerHTML = `Just added: <b>layer ${top + 1} · ${LAYER_SHORT[top]}</b>`;
   else stackJust.textContent = "Nothing stacked yet - layer 1 is the base.";
@@ -157,10 +157,10 @@ function updateStack({ count, top, landing, playing, event }) {
     else st.textContent = "";
   }
   $("#hero-prev").disabled = count === 0;
-  $("#hero-next").disabled = count >= 7;
+  $("#hero-next").disabled = count >= LAYER_NAMES.length;
   $("#hero-replay").disabled = count === 0;
   $("#hero-play").textContent = playing ? "⏸ Playing - tap to stop" : "▶ Play the assembly";
-  if (event === "landed" && top >= 0) say(`Layer ${top + 1} of 7 landed: ${LAYER_NAMES[top]}. ${count} layers stacked so far.`);
+  if (event === "landed" && top >= 0) say(`Layer ${top + 1} of ${LAYER_NAMES.length} landed: ${LAYER_NAMES[top]}. ${count} layers stacked so far.`);
 }
 function wireHeroControls() {
   $("#hero-prev").addEventListener("click", () => scene?.stepTo(scene.getCount() - 1));

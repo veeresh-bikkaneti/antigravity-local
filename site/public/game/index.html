@@ -491,7 +491,8 @@ body.motion-off .blockcursor,body.motion-off .bulb,body.motion-off .bob-anim,bod
             </div>
             <div class="ide-promptline"><span class="prompt">CodeAgent [You] &gt;</span> say hello to the world</div>
             <div class="ide-hello"><span id="ideHello"></span><span class="blockcursor" aria-hidden="true"></span></div>
-            <p class="ide-note">The payoff: everything Muse collected on the run — the CLI, Ollama, the model, the server, the endpoint plug, the Agent, the file, memory — is in the pocket and loaded here, ready. This is what the whole level was for. Want the same brain in a real coding app? One command sets it up: <code>python run.py --agent opencode</code>, and your pick stays saved as <code>LOCAL_LLM_MODEL</code> in <code>.env</code>.</p>
+            <p class="ide-note">The payoff: everything Muse collected on the run — the CLI, Ollama, the model, the server, the endpoint plug, the Agent, the file, memory — is in the pocket and loaded here, ready. This is what the whole level was for.</p>
+            <p class="ide-note"><strong>Use your model in a coding app:</strong> <code>python run.py --agent &lt;app&gt;</code> (pi, opencode, codex or claude), or Ollama's own <code>ollama launch &lt;app&gt; --model &lt;your model&gt;</code>. Your pick stays saved as <code>LOCAL_LLM_MODEL</code> in <code>.env</code>.</p>
           </div>
         </div>
         <!-- GAME SCREENS: title (with the first-play tutorial), pause, settings, results -->
@@ -629,7 +630,7 @@ var HOPS=[
  {short:'Endpoint config',hoop:'ENDPOINT CONFIG',sub:'wired to the harness',head:['Plug in the','harness.'],
   kicker:'Checkpoint 5 · Configure the endpoint — for the Antigravity harness',
   arrow:'set the base URL → the harness plugs into :11434/v1 → health check 200',
-  body:'A listening server nobody talks to is a hoop half-jumped. This is the wiring hoop: the Antigravity harness is configured with Ollama\u2019s endpoint — base URL, port and all — the plug clicks into the harness box, and the health check answers 200. The wizard also checks the context window: coding agents need 64k (OLLAMA_CONTEXT_LENGTH=65536), and if the server is smaller it says so and offers the command to raise it. It never changes Ollama itself. Engine, brain, network, wiring: the machine side is done.',
+  body:'A listening server nobody talks to is a hoop half-jumped. This is the wiring hoop: the Antigravity harness is configured with Ollama\u2019s endpoint — base URL, port and all — the plug clicks into the harness box, and the health check answers 200. The wizard also checks the context window: coding agents need 64k (OLLAMA_CONTEXT_LENGTH=65536), and if the server is smaller it says so and prints the command to raise it. It never changes Ollama itself. Engine, brain, network, wiring: the machine side is done.',
   cmd:'LOCAL_LLM_BASE_URL=http://localhost:11434/v1',where:'in .env, set by run.py',result:'✓ Harness connected — GET /api/tags → 200 through the configured endpoint. Next hoop: the Agent.'},
  {short:'Agent start',hoop:'AGENT START',sub:'the Agent wakes',head:['Wake the','agent.'],
   kicker:'Checkpoint 6 · Start the Agent — the harness brings its worker online',

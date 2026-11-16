@@ -82,13 +82,14 @@
           <button id="hero-reset" class="btn btn-hero" type="button">Reset</button>
         </div>
         <section class="stack-readout" aria-label="Stack readout - what the assembly is made of so far">
-          <div class="stack-head"><b>THE STACK</b><span id="stack-count">0 / 7</span></div>
+          <div class="stack-head"><b>THE STACK</b><span id="stack-count">0 / 8</span></div>
           <p class="stack-just" id="stack-just">Nothing stacked yet - layer 1 is the base.</p>
           <ol class="stack-list" id="stack-list">
-            <li class="stack-item" data-layer="7"><span class="lnum">7</span><span class="lname">Editor</span><span class="lstate"></span></li>
-            <li class="stack-item" data-layer="6"><span class="lnum">6</span><span class="lname">One job · Gate</span><span class="lstate"></span></li>
-            <li class="stack-item" data-layer="5"><span class="lnum">5</span><span class="lname">Agent</span><span class="lstate"></span></li>
-            <li class="stack-item" data-layer="4"><span class="lnum">4</span><span class="lname">.venv terminal</span><span class="lstate"></span></li>
+            <li class="stack-item" data-layer="8"><span class="lnum">8</span><span class="lname">Editor</span><span class="lstate"></span></li>
+            <li class="stack-item" data-layer="7"><span class="lnum">7</span><span class="lname">One job · Gate</span><span class="lstate"></span></li>
+            <li class="stack-item" data-layer="6"><span class="lnum">6</span><span class="lname">Agent</span><span class="lstate"></span></li>
+            <li class="stack-item" data-layer="5"><span class="lnum">5</span><span class="lname">.venv terminal</span><span class="lstate"></span></li>
+            <li class="stack-item" data-layer="4"><span class="lnum">4</span><span class="lname">Coding app</span><span class="lstate"></span></li>
             <li class="stack-item" data-layer="3"><span class="lnum">3</span><span class="lname">Repo · run.bat</span><span class="lstate"></span></li>
             <li class="stack-item" data-layer="2"><span class="lnum">2</span><span class="lname">Qwen model</span><span class="lstate"></span></li>
             <li class="stack-item" data-layer="1"><span class="lnum">1</span><span class="lname">Ollama</span><span class="lstate"></span></li>
@@ -122,33 +123,41 @@
         <polygon class="ha-left" points="80,332 200,378 200,392 80,346"/><polygon class="ha-right" points="200,378 320,332 320,346 200,392"/><polygon class="ha-face" points="80,332 200,286 320,332 200,378"/>
         <text class="ha-num" x="200" y="337" text-anchor="middle">4</text>
         <path class="ha-lead" d="M314 339 H340"/>
+        <text class="ha-label" x="348" y="344">Coding app</text>
+        </g>
+        <g transform="translate(0,-46)"><!-- layers 5-8 sit one slot (46px) higher since the coding-app layer joined -->
+        <g class="ha-layer" style="--i:4">
+        <polygon class="ha-left" points="80,332 200,378 200,392 80,346"/><polygon class="ha-right" points="200,378 320,332 320,346 200,392"/><polygon class="ha-face" points="80,332 200,286 320,332 200,378"/>
+        <text class="ha-num" x="200" y="337" text-anchor="middle">5</text>
+        <path class="ha-lead" d="M314 339 H340"/>
         <text class="ha-label" x="348" y="344">.venv terminal</text>
         </g>
-        <g class="ha-layer" style="--i:4">
+        <g class="ha-layer" style="--i:5">
         <polygon class="ha-left" points="80,286 200,332 200,346 80,300"/><polygon class="ha-right" points="200,332 320,286 320,300 200,346"/><polygon class="ha-face" points="80,286 200,240 320,286 200,332"/>
-        <text class="ha-num" x="200" y="291" text-anchor="middle">5</text>
+        <text class="ha-num" x="200" y="291" text-anchor="middle">6</text>
         <path class="ha-lead" d="M314 293 H340"/>
         <text class="ha-label" x="348" y="298">Agent</text>
         </g>
-        <g class="ha-layer" style="--i:5">
+        <g class="ha-layer" style="--i:6">
         <polygon class="ha-left" points="80,240 200,286 200,300 80,254"/><polygon class="ha-right" points="200,286 320,240 320,254 200,300"/><polygon class="ha-face" points="80,240 200,194 320,240 200,286"/>
-        <text class="ha-num" x="200" y="245" text-anchor="middle">6</text>
+        <text class="ha-num" x="200" y="245" text-anchor="middle">7</text>
         <path class="ha-lead" d="M314 247 H340"/>
         <text class="ha-label" x="348" y="252">One job · Gate</text>
         </g>
-        <g class="ha-layer is-top" style="--i:6">
+        <g class="ha-layer is-top" style="--i:7">
         <polygon class="ha-left" points="80,194 200,240 200,254 80,208"/><polygon class="ha-right" points="200,240 320,194 320,208 200,254"/><polygon class="ha-face" points="80,194 200,148 320,194 200,240"/>
-        <text class="ha-num" x="200" y="199" text-anchor="middle">7</text>
+        <text class="ha-num" x="200" y="199" text-anchor="middle">8</text>
         <path class="ha-lead" d="M314 201 H340"/>
         <text class="ha-label" x="348" y="206">Editor</text>
+        </g>
         </g>
         <g class="ha-cloud">
         <path d="M402 92c-4-22 18-38 38-30 8-18 36-20 46 0 20-2 30 18 22 32 10 10 2 28-14 28h-86c-20 0-26-24-6-30z"/>
         <path class="ha-cut" d="M392 140 L506 52"/>
         <text class="ha-cloud-label" x="452" y="158" text-anchor="middle">cloud: not used</text>
         </g>
-        <path class="ha-signal" d="M62 200 V478"/>
-        <circle class="ha-dot" cx="62" cy="200" r="5"/>
+        <path class="ha-signal" d="M62 154 V478"/>
+        <circle class="ha-dot" cx="62" cy="154" r="5"/>
         <text class="ha-side" x="50" y="332" text-anchor="middle" transform="rotate(-90 50 332)">localhost:11434</text>
         </svg>
       </figure>
@@ -205,7 +214,7 @@
     <section class="guide" id="guide" aria-labelledby="guide-title">
       <div class="guide-head">
         <h2 id="guide-title">From zero to your first file</h2>
-        <p>Seven steps, in order. The drawing shows where each one happens on your machine.</p>
+        <p>Eight steps, in order. The drawing shows where each one happens on your machine.</p>
       </div>
 
       <ol class="steps">
@@ -228,7 +237,7 @@
 
         <li class="step" data-step="3" data-focus="repo">
           <h3>Clone the repo and run setup</h3>
-          <p>One command runs five stages: ENVIRONMENT (a private Python folder for this project, plus the packages), SERVER (checks Ollama), MODEL (a short menu, where Enter takes the pick for your PC), CONTEXT (checks the 64k context window coding agents need) and LAUNCH. Then a LEVEL CLEAR box sums up the model, the agent and the log file. A better model that fits shows up as a recommended upgrade row in the same numbered list, and your current model is marked with a <code>*</code>. If no model is installed, it asks before it downloads one (about 9 GB for the 14B model).</p>
+          <p>One command runs five stages: ENVIRONMENT (a private Python folder for this project, plus the packages), SERVER (checks Ollama), MODEL (one numbered list, where Enter keeps your model and a typo just asks again), CONTEXT (checks the 64k context window coding agents need and prints the fix if it's short) and LAUNCH. Then a LEVEL CLEAR box sums up the model, the agent and the log file. A better model that fits shows up as a recommended upgrade row in the same numbered list, and your current model is marked with a <code>*</code>. If no model is installed, it asks before it downloads one (about 9 GB for the 14B model).</p>
           <div class="code"><pre><code>git clone https://github.com/veeresh-bikkaneti/antigravity-local.git
 cd antigravity-local
 python run.py</code></pre><button class="copy" type="button" aria-label="Copy the three setup commands">Copy</button></div>
@@ -237,7 +246,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
           <p class="check">A common error: <code>Connection refused</code> on <code>:11434</code> means Ollama is not running, so start the app or run <code>ollama serve</code>.</p>
         </li>
 
-        <li class="step" data-step="4" data-focus="agent">
+        <li class="step" data-step="4" data-focus="app">
           <h3>Use your model in a coding app</h3>
           <p>Your pick is saved as <code>LOCAL_LLM_MODEL</code> in <code>.env</code>, so every app uses the same model. Choose the app with <code>--agent</code>: <code>pi</code>, <code>opencode</code>, <code>codex</code> or <code>claude</code>. It adds only an Ollama entry to that app's config, and it asks before it installs anything. Coding apps want a 64k context window. If stage 4 says yours is smaller, set <code>OLLAMA_CONTEXT_LENGTH=65536</code> and restart Ollama. The README covers this route and Ollama's own <code>ollama launch</code>.</p>
           <div class="code"><pre><code>python run.py --agent opencode</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --agent opencode">Copy</button></div>

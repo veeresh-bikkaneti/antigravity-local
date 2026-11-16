@@ -1039,22 +1039,24 @@ class WizardD2(unittest.TestCase):
         for call in printed.call_args_list:
             self.assertTrue(call.kwargs.get("flush"), call)
 
-    def test_context_unset_and_interactive_asks_then_y_prints_the_powershell_line(self):
-        asked, out = [], []
+    # v1.2.3: stage 4 never asks; it prints the warning, then the command for this OS.
+    def test_context_unset_and_interactive_prints_the_powershell_line_without_asking(self):
+        out = []
         with mock.patch.dict(run.os.environ, {}, clear=True), mock.patch.object(run.sys, "platform", "win32"):
-            run.context_check(True, ask=lambda p: asked.append(p) or "y", out=out.append)
-        self.assertTrue(asked)
-        self.assertIn("OLLAMA_CONTEXT_LENGTH is not set", "\n".join(out))
-        self.assertIn("$env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve", "\n".join(out))
+            run.context_check(True, ask=lambda p: self.fail("stage 4 asked a question"), out=out.append)
+        self.assertEqual(len(out), 2)
+        self.assertIn("OLLAMA_CONTEXT_LENGTH is not set", out[0])
+        self.assertIn("$env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve", out[1])
 
-    def test_context_on_a_yes_run_prints_one_line_and_asks_nothing(self):
+    def test_context_on_a_yes_run_prints_the_shell_line_and_asks_nothing(self):
         out = []
         def no_question(prompt):
             raise AssertionError("asked a question on a --yes run")
-        with mock.patch.dict(run.os.environ, {}, clear=True):
+        with mock.patch.dict(run.os.environ, {}, clear=True), mock.patch.object(run.sys, "platform", "linux"):
             run.context_check(False, ask=no_question, out=out.append)
-        self.assertEqual(len(out), 1)
+        self.assertEqual(len(out), 2)
         self.assertIn("OLLAMA_CONTEXT_LENGTH is not set", out[0])
+        self.assertEqual(out[1].strip(), "OLLAMA_CONTEXT_LENGTH=65536 ollama serve")
 
     def test_context_is_skipped_for_an_openai_compatible_server(self):
         out = []
