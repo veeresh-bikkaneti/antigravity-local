@@ -68,7 +68,7 @@ If a better model fits your PC, it shows up as a row marked **recommended upgrad
 
 ### What you see while it sets up
 
-Setup runs in five stages: ENVIRONMENT, SERVER, MODEL, CONTEXT and LAUNCH. Each one prints a banner such as `STAGE 2/5  SERVER`, a short progress bar and a `next:` line, then the facts it found. The CONTEXT stage checks that Ollama's context window is at least 64k, the size coding agents need. If it is smaller, it says so once and, on an interactive run, asks whether to show the command that raises it. It never changes your Ollama settings. When it finishes, a `LEVEL CLEAR` box shows the model, where it came from, the agent, and the log file under `logs/`.
+Setup runs in five stages: ENVIRONMENT, SERVER, MODEL, CONTEXT and LAUNCH. Each one prints a banner such as `STAGE 2/5  SERVER`, a short progress bar and a `next:` line, then the facts it found. The CONTEXT stage checks that Ollama's context window is at least 64k, the size coding agents need. If it is smaller, it says so once and prints the command that raises it (the PowerShell form on Windows, the shell form elsewhere). No question, so it never holds up the run, and it never changes your Ollama settings. When it finishes, a `LEVEL CLEAR` box shows the model, where it came from, the agent, and the log file under `logs/`.
 
 - `--plain` (or `NO_COLOR=1`) turns off the art and the bar blocks, and keeps the output to plain ASCII.
 - A run with no terminal (`--yes`, piped input or CI) stops after setup. The box ends with a `Ready:` line, and it never starts the chat or the demo.
@@ -334,7 +334,7 @@ ollama launch claude --model qwen2.5-coder:14b
 
 Add `--config` to set an app up without starting it, for example `ollama launch opencode --config`. Ollama's docs list OpenCode, Claude Code, Codex and Droid as apps it can launch, and they ask for Ollama 0.15 or newer. Run `ollama launch` with no app name to see the full picker.
 
-**The 64k context note.** Coding apps want a context window of 64k tokens. Stage 4 of the run checks it. If Ollama's window is smaller, set `OLLAMA_CONTEXT_LENGTH=65536` and restart Ollama. On an interactive run the launcher can show you the command. It never changes your Ollama settings for you.
+**The 64k context note.** Coding apps want a context window of 64k tokens. Stage 4 of the run checks it. If Ollama's window is smaller, set `OLLAMA_CONTEXT_LENGTH=65536` and restart Ollama. Stage 4 prints that command for you. It never changes your Ollama settings for you.
 
 ## Table of contents
 0. [Serve it: search UI + API on a free port](#serve-it-search-ui--api-on-a-free-port-local-or-docker)
