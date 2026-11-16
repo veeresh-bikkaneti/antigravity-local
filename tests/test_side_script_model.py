@@ -3,6 +3,7 @@
 Each script runs from a copy in its own temp folder, from another working folder, with LOCAL_LLM_MODEL removed
 from the environment. That way the answer can only come from the .env beside the script.
 """
+import importlib.util
 import os
 import shutil
 import subprocess
@@ -47,6 +48,7 @@ class SideScriptModel(unittest.TestCase):
                 r = run_script(self.scripts.name, self.work.name, name)
                 self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
 
+    @unittest.skipUnless(importlib.util.find_spec("dotenv"), "python-dotenv not installed")
     def test_the_env_file_next_to_the_script_supplies_the_model(self):
         (Path(self.scripts.name) / ".env").write_text("LOCAL_LLM_MODEL=saved-by-run-py\n", encoding="utf-8")
         for name in SCRIPTS:
