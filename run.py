@@ -141,7 +141,11 @@ def context_check(interactive, ask=None, out=print):
         out("       OLLAMA_CONTEXT_LENGTH=65536 ollama serve")
 
 
+HEADER_FLAG = "ANTIGRAVITY_HEADER_SHOWN"  # set by the parent just before the venv relaunch
+
 def print_header():
+    if os.environ.get(HEADER_FLAG) == "1":
+        return  # the parent already printed the banner; the relaunched child stays quiet
     print("""
 =============================================================================
     🚀 Google Antigravity Local - Plug & Play Auto-Bootstrap
@@ -202,6 +206,7 @@ def bootstrap_venv():
     sys.stdout.flush()  # the venv child writes next; our buffered lines must reach the log and screen first
     sys.stderr.flush()
     script_path = os.path.abspath(__file__)
+    os.environ[HEADER_FLAG] = "1"  # inherited by both relaunch paths below (execv and the Windows subprocess)
     if IS_WIN:
         try:
             sys.exit(subprocess.call([VENV_PYTHON, script_path] + sys.argv[1:]))
@@ -1069,7 +1074,29 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
     print(f"\n📥 Model '{target_to_pull}' is not installed on this machine.")
     return _pull_with_gate(target_to_pull, interactive, hw, res)
 
+def _is_harness_error(exc):
+    """True for the SDK's execution error. Matched by class name, so an SDK module move cannot break the CLI."""
+    return any(cls.__name__ == "AntigravityExecutionError" for cls in type(exc).__mro__)
+
 async def run_agent(model, base_url="http://localhost:11434/v1"):
+    """Run the demo and the shell. Leaving (exit word or Ctrl+C) ends quietly; the SDK's close-time error is not shown."""
+    leave = {"left": False}  # set once the user chose to leave; Agent.__aexit__ may fail after that
+    try:
+        await _run_agent_session(model, base_url, leave)
+    except KeyboardInterrupt:
+        print("\n\n👋 Goodbye!\n")
+    except Exception as exc:
+        if not _is_harness_error(exc):
+            raise
+        if leave["left"]:
+            return  # the goodbye is already printed
+        if isinstance(exc.__context__, KeyboardInterrupt):
+            print("\n\n👋 Goodbye!\n")  # Ctrl+C during the demo, and the SDK failed while closing
+            return
+        log = runlog.log_path(os.path.join(PROJECT_DIR, "logs"))
+        print(f"\n⚠️ The agent backend stopped unexpectedly. Log: {log}\n")
+
+async def _run_agent_session(model, base_url, leave):
     """Run autonomous demonstration and interactive shell."""
     if _SETUP_ONLY:
         stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
@@ -1150,6 +1177,7 @@ async def run_agent(model, base_url="http://localhost:11434/v1"):
                     continue
                 if user_input.lower() in ["exit", "quit", "q"]:
                     print("\n👋 Goodbye! Happy agent coding.\n")
+                    leave["left"] = True
                     break
 
                 print("\nAgent > ", end="", flush=True)
@@ -1160,6 +1188,7 @@ async def run_agent(model, base_url="http://localhost:11434/v1"):
                 failures = 0
             except (KeyboardInterrupt, EOFError):
                 print("\n\n👋 Goodbye!\n")
+                leave["left"] = True
                 break
             except Exception as exc:
                 print(f"\n❌ Error during response: {exc}\n")
