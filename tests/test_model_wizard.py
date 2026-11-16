@@ -149,7 +149,7 @@ class HuggingFace(unittest.TestCase):
 
     def check(self, tag, reply):
         effect = reply if isinstance(reply, BaseException) else None
-        with mock.patch.object(mw.urllib.request, "urlopen", side_effect=effect, return_value=None if effect else reply):
+        with mock.patch.object(mw._HF_OPENER, "open", side_effect=effect, return_value=None if effect else reply):
             return mw.hf_check(tag)
 
     def test_tag_shapes(self):
@@ -184,11 +184,11 @@ class HuggingFace(unittest.TestCase):
         self.assertEqual(self.check("hf.co/x/y:q4_k_m", _hub_reply(["model.safetensors"])), ("no_quant", []))
 
     def test_bad_shape_never_touches_the_network(self):
-        with mock.patch.object(mw.urllib.request, "urlopen", side_effect=AssertionError("no network")):
+        with mock.patch.object(mw._HF_OPENER, "open", side_effect=AssertionError("no network")):
             self.assertEqual(mw.hf_check("hf.co/justone"), ("bad_tag", None))
 
     def test_the_hub_check_only_sends_the_repo_name(self):
-        with mock.patch.object(mw.urllib.request, "urlopen", return_value=_hub_reply(self.FILES)) as call:
+        with mock.patch.object(mw._HF_OPENER, "open", return_value=_hub_reply(self.FILES)) as call:
             mw.hf_check("hf.co/x/y:q4_k_m")
         self.assertEqual(call.call_args.args[0], "https://huggingface.co/api/models/x/y")
 
@@ -234,19 +234,19 @@ class HuggingFaceMenu(unittest.TestCase):
 class TagExists(unittest.TestCase):
     def test_other_registry_is_unknown_and_never_asks_ollama(self):
         # tag_exists swallows exceptions, so a raising mock would pass vacuously; assert on calls instead.
-        with mock.patch("urllib.request.urlopen") as opened:
+        with mock.patch.object(mw._REGISTRY_OPENER, "open") as opened:
             self.assertIsNone(mw.tag_exists("hf.co/a/b:q4"))
             self.assertIsNone(mw.tag_exists("registry.example.com/team/model:1"))
         opened.assert_not_called()
 
     def test_plain_and_namespaced_ollama_tags_still_hit_the_registry(self):
-        with mock.patch("urllib.request.urlopen") as opened:
+        with mock.patch.object(mw._REGISTRY_OPENER, "open") as opened:
             self.assertTrue(mw.tag_exists("qwen3.6:27b"))
             self.assertTrue(mw.tag_exists("someuser/mymodel:1"))
         self.assertEqual(opened.call_count, 2)
 
     def test_offline_is_unknown_not_false(self):
-        with mock.patch("urllib.request.urlopen", side_effect=OSError("offline")):
+        with mock.patch.object(mw._REGISTRY_OPENER, "open", side_effect=OSError("offline")):
             self.assertIsNone(mw.tag_exists("qwen3.6:27b"))
 
 

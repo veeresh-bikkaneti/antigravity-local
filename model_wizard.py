@@ -14,14 +14,18 @@ import capabilities
 # Re-check this list when you touch it: `curl -I https://registry.ollama.ai/v2/library/<name>/manifests/<tag>`
 # must return 200, and sizes come from the manifest layers. Nothing here has been run through this
 # project's agent loop yet, so the notes say what is reported, not what we measured.
-CATALOG_VERIFIED = "2026-11-14"
+CATALOG_VERIFIED = "2026-11-15"
+# Sizes were read on each Ollama tag page: https://ollama.com/library/<model>/tags (checked 2026-11-15).
+# devstral-small-2:24b is the family tag; its exact q4_K_M tag is devstral-small-2:24b-instruct-2512-q4_K_M (15GB).
 CATALOG = [
     # (tag, size_gb, note)
-    ("devstral-small-2:24b", 15.2, "Built for agentic coding and multi-file edits (Mistral)"),
-    ("gpt-oss:20b", 13.8, "OpenAI open-weight model, native tool calling"),
+    ("devstral-small-2:24b", 15.0, "Built for agentic coding and multi-file edits (Mistral)"),
+    ("gpt-oss:20b", 14.0, "OpenAI open-weight model, native tool calling"),
     ("qwen3.6:27b", 17.8, "Qwen3 line with native tool calling, the established pick"),
     ("qwen3.8:27b", 17.7, "Newest Qwen; strongest reported coding, but tool calling is new and unproven"),
-    ("qwen3-coder:30b", 18.6, "Coding-tuned mixture-of-experts, fast for its size"),
+    ("qwen3-coder:30b", 19.0, "Coding-tuned mixture-of-experts, fast for its size"),
+    ("glm-4.7-flash:q4_K_M", 19.0, "GLM-4.7 Flash, a quick agentic coder from Zhipu (q4_K_M quant)"),
+    ("qwen3-coder-next:q4_K_M", 52.0, "Large coding model; at 52GB it only fits big machines"),
     ("laguna-xs.2:latest", 23.1, "Long-horizon agent model; reported by third-party guides only"),
     # Not on Ollama's library (registry 404), so it comes from Hugging Face. Verified 2026-11-14: the Hub API lists
     # a Q4_K_M .gguf in mradermacher/Nanbeige4.1-3B-GGUF (2.44 GB), and `ollama pull` of this tag succeeded (2.4 GB).
@@ -68,6 +72,22 @@ def parse_hf_tag(tag):
     return parts[0], parts[1], (quant or None)
 
 
+def _hf_api_model(user, repo, timeout=4):
+    """The Hub's model record for user/repo, fetched through the same-host opener. Returns (status, data):
+    'ok' with a dict, 'missing' (a 404), or 'unknown' (offline, private or gated, odd reply; data None).
+    Sends only the repo name. Both hf_check and hf_repo_info read through here."""
+    try:
+        with _HF_OPENER.open(f"https://huggingface.co/api/models/{user}/{repo}", timeout=timeout) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        return ("missing", None) if e.code == 404 else ("unknown", None)
+    except Exception:
+        return "unknown", None
+    if not isinstance(data, dict):
+        return "unknown", None
+    return "ok", data
+
+
 def hf_check(tag, timeout=4):
     """Ask the Hugging Face API about an hf.co tag. Returns (status, detail), status one of:
     'ok'       the repo is there (and has a .gguf for the quant, when one was given)
@@ -80,15 +100,9 @@ def hf_check(tag, timeout=4):
     if not parsed:
         return "bad_tag", None
     user, repo, quant = parsed
-    try:
-        with urllib.request.urlopen(f"https://huggingface.co/api/models/{user}/{repo}", timeout=timeout) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        return ("missing", None) if e.code == 404 else ("unknown", None)
-    except Exception:
-        return "unknown", None
-    if not isinstance(data, dict):
-        return "unknown", None
+    status, data = _hf_api_model(user, repo, timeout=timeout)
+    if status != "ok":
+        return status, None
     if not quant:
         return "ok", None
     files = [s.get("rfilename", "") for s in (data.get("siblings") or []) if s.get("rfilename", "").lower().endswith(".gguf")]
@@ -125,15 +139,9 @@ FIT_TEXT = {"gpu": "fits your GPU", "split": "runs, part on CPU (slow)", "too bi
 def hf_repo_info(user, repo, timeout=4):
     """{'status': 'ok'|'missing'|'unknown', 'gated': bool, 'license': str|None} for a Hugging Face repo.
     Sends only the repo name. gated can be False, True, 'auto' or 'manual' on the Hub: anything truthy counts."""
-    try:
-        with urllib.request.urlopen(f"https://huggingface.co/api/models/{user}/{repo}", timeout=timeout) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        return {"status": "missing" if e.code == 404 else "unknown", "gated": False, "license": None}
-    except Exception:
-        return {"status": "unknown", "gated": False, "license": None}
-    if not isinstance(data, dict):
-        return {"status": "unknown", "gated": False, "license": None}
+    status, data = _hf_api_model(user, repo, timeout=timeout)
+    if status != "ok":
+        return {"status": status, "gated": False, "license": None}
     card = data.get("cardData") if isinstance(data.get("cardData"), dict) else {}
     lic = card.get("license")
     if not lic:
@@ -152,6 +160,7 @@ class _SameHostOnly(urllib.request.HTTPRedirectHandler):
 
 
 _HF_OPENER = urllib.request.build_opener(_SameHostOnly)
+_REGISTRY_OPENER = urllib.request.build_opener(_SameHostOnly)  # registry.ollama.ai: a cross-host redirect is not followed
 _STATE = {"offline": False}  # set when the Hub cannot be reached; later calls in the run stop asking
 
 
@@ -409,9 +418,22 @@ def tag_exists(tag, timeout=4):
         f"https://registry.ollama.ai/v2/{name}/manifests/{version}", method="HEAD",
         headers={"Accept": "application/vnd.docker.distribution.manifest.v2+json"})
     try:
-        with urllib.request.urlopen(req, timeout=timeout):
+        with _REGISTRY_OPENER.open(req, timeout=timeout):
             return True
     except urllib.error.HTTPError as e:
-        return False if e.code == 404 else None
+        return False if e.code == 404 else None  # a refused cross-host redirect lands here as a 3xx: unknown
     except Exception:
         return None
+
+
+def registry_reachable(timeout=3):
+    """True when registry.ollama.ai answers at all (any HTTP reply, even a 401), False when we cannot reach it.
+    Used by --check-upgrades to say "couldn't check" instead of guessing. Sends no model name."""
+    req = urllib.request.Request("https://registry.ollama.ai/v2/", method="HEAD")
+    try:
+        with _REGISTRY_OPENER.open(req, timeout=timeout):
+            return True
+    except urllib.error.HTTPError:
+        return True
+    except Exception:
+        return False

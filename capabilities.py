@@ -124,6 +124,8 @@ CATALOG_BADGES = {
     "qwen3.6:27b": ("tools", "thinking?"),
     "qwen3.8:27b": ("tools?", "thinking?"),
     "qwen3-coder:30b": ("tools?", "coding"),
+    "glm-4.7-flash:q4_k_m": ("tools", "thinking"),  # ollama.com/library/glm-4.7-flash, checked 2026-11-15
+    "qwen3-coder-next:q4_k_m": ("tools", "coding"),  # ollama.com/library/qwen3-coder-next, checked 2026-11-15
     "laguna-xs.2:latest": ("tools?",),
     "hf.co/mradermacher/nanbeige4.1-3b-gguf:q4_k_m": ("tools?",),
 }
