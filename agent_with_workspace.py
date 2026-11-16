@@ -16,13 +16,16 @@ if sys.platform == "win32":
 # Load environment variables from .env file if available
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))  # next to this script, not the cwd
 except ImportError:
     pass
 
 _parser = argparse.ArgumentParser(description="Local agent demo: creates index.html in the workspace.")
-_parser.add_argument("model", nargs="?", default=None, help="Model name (default: $LOCAL_LLM_MODEL or qwen2.5:14b).")
+_parser.add_argument("model", nargs="?", default=None, help="Model name (default: $LOCAL_LLM_MODEL, saved by run.py).")
 ARGS = _parser.parse_args()  # before the SDK import so --help works without it
+if not (ARGS.model or os.environ.get("LOCAL_LLM_MODEL")):
+    print("No model chosen yet. Run python run.py first, or pass --model.")
+    sys.exit(2)
 
 # Verify dependencies
 try:
@@ -35,7 +38,7 @@ except ImportError:
 
 async def main():
     base_url = os.environ.get("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1")
-    model = ARGS.model or os.environ.get("LOCAL_LLM_MODEL", "qwen2.5:14b")
+    model = ARGS.model or os.environ.get("LOCAL_LLM_MODEL")
     workspace_dir = os.environ.get(
         "WORKSPACE_DIR",
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "workspace"),

@@ -448,7 +448,7 @@ Copy the example environment configuration:
   ```bash
   cp .env.example .env
   ```
-*By default, the `.env` points to `http://localhost:11434/v1` with model `qwen2.5:14b`. No edits needed if you use the defaults.*
+*The `.env` points to `http://localhost:11434/v1`. `python run.py` writes the model you chose into that file, and the scripts read it from the `.env` next to them. If no model is set and you pass none, a script prints `No model chosen yet. Run python run.py first, or pass --model.` and exits with code 2.*
 
 ### Step 6: test your agent!
 
