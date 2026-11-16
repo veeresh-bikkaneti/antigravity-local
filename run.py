@@ -529,8 +529,8 @@ def update_env_model(model_name: str):
                 content += f"\nLOCAL_LLM_MODEL={model_name}\n"
             with open(env_file, "w", encoding="utf-8") as f:
                 f.write(content)
-        except Exception:
-            pass
+        except Exception as exc:
+            print(f"Couldn't update .env: {exc}")  # the model still runs; only the saved default is lost
 
 _WARNED = set()
 
@@ -1075,8 +1075,8 @@ def check_or_update_memory():
         stats = indexer.index_all(force=False)
         if stats["indexed"] > 0:
             print(f"[*] Memory Fabric auto-indexed {stats['indexed']} updated files ({stats['chunks']} chunks).")
-    except Exception:
-        pass
+    except Exception as exc:
+        print(f"Memory index skipped: {exc}")  # the run goes on without the index
 
 
 def run_probe_command(args):
@@ -1243,6 +1243,7 @@ def _main(argv=None):
 
     # Step 3.2: --agent pi/opencode/codex/claude: configure that agent for this model and hand over (SDK shell stays default)
     if args.agent != "shell":
+        check_or_update_memory()  # index first, so the hand-off agent starts on current memory
         import agent_setup
         try:
             workspace = agent_setup.resolve_workspace(args.workspace, os.getcwd(), PROJECT_DIR)

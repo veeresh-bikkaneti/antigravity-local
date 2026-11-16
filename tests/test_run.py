@@ -895,5 +895,38 @@ class CatalogRefresh(unittest.TestCase):
         self.assertEqual(sizes["qwen3-coder-next:q4_K_M"], 52.0)
 
 
+class SharedMemory(unittest.TestCase):
+    def test_pi_hand_off_indexes_memory_before_the_agent_starts(self):
+        import agent_setup
+        order = []
+        with tempfile.TemporaryDirectory() as d,                 mock.patch.object(run, "PROJECT_DIR", d),                 mock.patch.object(run, "is_in_venv", return_value=True),                 mock.patch.object(run, "check_ollama_service", return_value=True),                 mock.patch.object(run, "detect_backend", return_value="ollama"),                 mock.patch.object(run, "select_and_pull_model", return_value="m"),                 mock.patch.object(run, "check_or_update_memory", side_effect=lambda: order.append("index")),                 mock.patch.object(agent_setup, "run", side_effect=lambda *a, **k: order.append("agent") or 0),                 contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                run.main(["--agent", "pi", "--yes"])
+        self.assertEqual(order, ["index", "agent"])
+
+    def test_a_raising_indexer_prints_the_skip_line(self):
+        fake = types.SimpleNamespace(MemoryDatabase=mock.Mock(side_effect=RuntimeError("no sqlite")),
+                                     EmbeddingProvider=mock.Mock(), MemoryIndexer=mock.Mock())
+        buf = io.StringIO()
+        with mock.patch.dict(sys.modules, {"memory": fake}), contextlib.redirect_stdout(buf):
+            run.check_or_update_memory()  # must not raise
+        self.assertIn("Memory index skipped: no sqlite", buf.getvalue())
+
+    def test_a_failed_env_write_prints_one_line_and_does_not_raise(self):
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, ".env").write_text("LOCAL_LLM_MODEL=old\n", encoding="utf-8")
+            buf = io.StringIO()
+            with mock.patch.object(run, "PROJECT_DIR", d),                     mock.patch("builtins.open", side_effect=PermissionError("locked")),                     contextlib.redirect_stdout(buf):
+                run.update_env_model("new")  # must not raise
+        self.assertIn("Couldn't update .env: locked", buf.getvalue())
+
+    def test_hand_off_prompt_has_project_memory_and_stays_small(self):
+        import agent_setup
+        prompt = agent_setup.CONTINUE_PROMPT
+        self.assertIn("Project memory", prompt)
+        self.assertIn("memory.py search", prompt)
+        self.assertLess(len(prompt), 6000)
+
+
 if __name__ == "__main__":
     unittest.main()

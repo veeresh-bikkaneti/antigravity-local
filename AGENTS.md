@@ -17,7 +17,7 @@ Start every session by reading `CONTEXT_MEMORY.md` (rule R1). Python/Docker repo
 | R8 | Open a PR when a remote exists. No remote: say so and stop at a clean branch with the diff reviewed. | `gh pr list --head <branch>` returns one row | none |
 | R9 | Merge only after the user says the merge word for that exact head SHA (see Merge-word gate). | judgment: user, in the chat transcript | none |
 | R10 | After merge, delete the local and remote branch. | `git branch -a` shows no topic branch | none |
-| R11 | Tests pass before "done": `python -m unittest tests.test_memory_integrity tests.test_memory_determinism tests.test_serve` | run that command; CI reruns it | CI: `.github/workflows/docker.yml` |
+| R11 | Tests pass before "done": `python -m unittest discover -s tests` | run that command; CI reruns it | CI: `.github/workflows/docker.yml` |
 | R12 | Touching `serve.py`, `Dockerfile` or run scripts also needs `python tests/e2e.py local` and `python tests/e2e.py docker` green. | run both; CI runs the docker one | CI: `.github/workflows/docker.yml` (docker only) |
 | R13 | Tests ship in the same PR as the code. Never weaken, skip or rewrite an assertion to go green. | `git diff main...HEAD -- tests` read by reviewer agent | none |
 | R14 | "Done" needs evidence: the command run and its result, quoted in the report. | judgment: reviewer agent rejects any report without it | none |
