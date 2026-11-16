@@ -173,8 +173,8 @@
         <p>Clone the repo and run <code>run.bat</code>.</p>
         <p>It checks your hardware, then picks a model that fits. Already have one? It reuses it, with no second download.</p>
         <p>If Ollama isn't already running, it starts it for you, and sets up a virtual environment, so your Python stays tidy.</p>
-        <p>Then the agent proves itself. It writes a <code>workspace/index.html</code> file with its own tool calling. Small models sometimes skip the write. If so, run it again.</p>
-        <p>Finally, you land at a chat prompt. Ask for code, or ask it to read your files.</p>
+        <p>In a real terminal, the agent then proves itself. It writes a <code>workspace/index.html</code> file with its own tool calling. Small models sometimes skip the write. If so, run it again.</p>
+        <p>Finally, you land at a chat prompt. Ask for code, or ask it to read your files. With <code>--yes</code>, piped input or CI, setup stops before the demo and prints a <code>Ready:</code> line instead.</p>
         <p>Prefer a browser? Run <code>python run.py --serve</code>. You get a search page and an API, on a free port.</p>
         <p>Your code and prompts go only to a model on your own hardware. Install Ollama first if you don't have it. Then setup downloads the Python packages, and a model if you need one. Give it a few minutes.</p>
       </details>
@@ -228,11 +228,11 @@
 
         <li class="step" data-step="3" data-focus="repo">
           <h3>Clone the repo and run setup</h3>
-          <p>One command builds a virtual environment (a private Python folder for this project), installs the packages, and runs a short demo. At stage 3 a short model menu appears. Press Enter to take the pick for your PC. If no model is installed, it downloads one now (about 9 GB for the 14B model).</p>
+          <p>One command runs five stages: ENVIRONMENT (a private Python folder for this project, plus the packages), SERVER (checks Ollama), MODEL (a short menu, where Enter takes the pick for your PC), CONTEXT (checks the 64k context window coding agents need) and LAUNCH. Then a LEVEL CLEAR box sums up the model, the agent and the log file. A better model that fits can be offered as an upgrade: upgrade now, pick another, or stay. If no model is installed, it asks before it downloads one (about 9 GB for the 14B model).</p>
           <div class="code"><pre><code>git clone https://github.com/veeresh-bikkaneti/antigravity-local.git
 cd antigravity-local
 python run.py</code></pre><button class="copy" type="button" aria-label="Copy the three setup commands">Copy</button></div>
-          <p class="check">You should see four numbered stages and then a <code>You&nbsp;&gt;</code> prompt. Type <code>exit</code> for now. On macOS and Linux, use <code>python3</code>. On Windows you can also run <code>.\run.ps1</code> or <code>run.bat</code>.</p>
+          <p class="check">You should see five stages (<code>STAGE 1/5</code> to <code>5/5</code>), a LEVEL CLEAR box, and then a <code>You&nbsp;&gt;</code> prompt. Type <code>exit</code> for now. On macOS and Linux, use <code>python3</code>. On Windows you can also run <code>.\run.ps1</code> or <code>run.bat</code>.</p>
           <p class="time">About 3 minutes the first time, not counting a model download. It goes quiet in the middle while packages install, and that is normal.</p>
           <p class="check">A common error: <code>Connection refused</code> on <code>:11434</code> means Ollama is not running, so start the app or run <code>ollama serve</code>.</p>
         </li>

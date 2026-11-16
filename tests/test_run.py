@@ -1039,6 +1039,13 @@ class WizardD2(unittest.TestCase):
         self.assertEqual(len(out), 1)
         self.assertIn("OLLAMA_CONTEXT_LENGTH is not set", out[0])
 
+    def test_context_is_skipped_for_an_openai_compatible_server(self):
+        out = []
+        env = {"LOCAL_LLM_BACKEND": "openai"}  # LM Studio, llama.cpp, vLLM: OLLAMA_CONTEXT_LENGTH does not apply
+        with mock.patch.dict(run.os.environ, env, clear=True):
+            run.context_check(True, ask=lambda p: self.fail("asked on an openai server"), out=out.append)
+        self.assertEqual(out, [])
+
     def test_context_at_or_above_65536_prints_nothing(self):
         out = []
         with mock.patch.dict(run.os.environ, {"OLLAMA_CONTEXT_LENGTH": "65536"}, clear=True):

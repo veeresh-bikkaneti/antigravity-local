@@ -123,9 +123,12 @@ def context_check(interactive, ask=None, out=print):
     check = getattr(agent_setup, "claude_context", None)  # a test may stub the module without it
     if check is None:
         return
+    if os.environ.get("LOCAL_LLM_BACKEND") == "openai":
+        return  # LM Studio, llama.cpp and vLLM do not read OLLAMA_CONTEXT_LENGTH
     warning = check(os.environ)[1]
     if warning is None:
         return
+    warning = warning.replace("Claude Code", "the coding agent")
     out(f"       {warning}")
     if not interactive:
         return
