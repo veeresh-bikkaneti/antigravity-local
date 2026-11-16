@@ -928,5 +928,57 @@ class SharedMemory(unittest.TestCase):
         self.assertLess(len(prompt), 6000)
 
 
+class StageWizard(unittest.TestCase):
+    def test_stage_banner_has_number_name_and_next_line(self):
+        buf = io.StringIO()
+        with mock.patch.dict(run.os.environ, {}, clear=False), contextlib.redirect_stdout(buf):
+            run.stage(2, 4, "SERVER", "make sure Ollama is answering")
+        out = buf.getvalue()
+        self.assertIn("STAGE 2/4  SERVER", out)
+        self.assertIn("next: make sure Ollama is answering", out)
+
+    def test_no_colour_or_block_art_when_no_color_is_set(self):
+        buf = io.StringIO()
+        with mock.patch.dict(run.os.environ, {"NO_COLOR": "1"}), contextlib.redirect_stdout(buf):
+            run.stage(1, 4, "ENVIRONMENT", "x")
+        out = buf.getvalue()
+        self.assertIn("STAGE 1/4  ENVIRONMENT", out)
+        self.assertNotIn("[", out)
+        self.assertNotIn("█", out)
+        out.encode("ascii")  # plain output is ASCII only
+
+    def test_a_cp1252_console_does_not_raise(self):
+        raw = io.BytesIO()
+        stream = io.TextIOWrapper(raw, encoding="cp1252", write_through=True)
+        with contextlib.redirect_stdout(stream):
+            run._safe_print("✅ Model pulled")  # a check mark cp1252 cannot encode
+            run.stage(3, 4, "MODEL", "pick a model")
+        stream.flush()
+        self.assertIn(b"Model pulled", raw.getvalue())
+
+    def test_level_clear_names_model_agent_and_log_and_keeps_the_ready_line(self):
+        ready = "Ready: m at http://x/v1. Run python run.py in a terminal to chat."
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            run.level_clear("m", "built-in shell", ready=ready)
+        out = buf.getvalue()
+        self.assertIn("LEVEL CLEAR", out)
+        self.assertIn("built-in shell", out)
+        self.assertIn("logs", out)
+        self.assertIn(ready, out)
+
+    def test_yes_run_never_builds_the_agent_and_prints_ready_inside_the_summary(self):
+        fake_agent = mock.Mock(side_effect=AssertionError("agent built on a --yes run"))
+        mods, _ = fake_sdk(writes_file=True)
+        mods["google.antigravity"].Agent = fake_agent
+        out = io.StringIO()
+        with tempfile.TemporaryDirectory() as d,                 mock.patch.dict(sys.modules, mods),                 mock.patch.object(run, "PROJECT_DIR", d),                 mock.patch.object(run, "is_in_venv", return_value=True),                 mock.patch.object(run, "check_ollama_service", return_value=True),                 mock.patch.object(run, "detect_backend", return_value="ollama"),                 mock.patch.object(run, "select_and_pull_model", return_value="m"),                 mock.patch.object(run, "check_or_update_memory"),                 mock.patch.object(run.sys, "stdin", io.StringIO("")),                 contextlib.redirect_stdout(out):
+            run.main(["--yes"])
+        text = out.getvalue()
+        self.assertIn("Ready: m at", text)
+        self.assertIn("LEVEL CLEAR", text)
+        fake_agent.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()

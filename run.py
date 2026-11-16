@@ -67,6 +67,53 @@ VENV_PYTHON = os.path.join(VENV_DIR, "Scripts" if IS_WIN else "bin", "python.exe
 MAX_SHELL_FAILURES = 3
 _SETUP_ONLY = False  # set by main() when there is no terminal (--yes, piped, CI): stop after setup
 
+_FACTS = {"source": "installed"}  # set to "pulled" when this run downloads the model
+
+
+def _plain():
+    """--plain or NO_COLOR: no art, no emoji, no bar blocks."""
+    return "--plain" in sys.argv or bool(os.environ.get("NO_COLOR"))
+
+
+def _safe_print(text):
+    """print() that never raises on a console that cannot encode the text (cp1252, for example)."""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        enc = getattr(sys.stdout, "encoding", None) or "ascii"
+        print(text.encode(enc, "replace").decode(enc, "replace"))
+
+
+def stage(n, total, name, next_line):
+    """One stage banner: 'STAGE 2/4  SERVER', a short progress bar and a plain 'next:' line."""
+    ascii_only = _plain()
+    if not ascii_only:
+        try:
+            "█░".encode(getattr(sys.stdout, "encoding", None) or "ascii")
+        except (UnicodeEncodeError, LookupError):
+            ascii_only = True
+    full, empty = ("#", "-") if ascii_only else ("█", "░")
+    filled = round(20 * n / total)
+    _safe_print("")
+    _safe_print(f"STAGE {n}/{total}  {name}   [{full * filled}{empty * (20 - filled)}]")
+    _safe_print(f"       next: {next_line}")
+
+
+def level_clear(model, agent, ready=None):
+    """The short summary at the end of setup: what was picked, where it came from, and the log file."""
+    size = next((s for t, s, _ in model_wizard.CATALOG if t == model), None)
+    rows = [("model", model), ("size", f"{size:.1f} GB (catalog)" if size else "unknown"),
+            ("source", _FACTS["source"]), ("agent", agent),
+            ("log", runlog.log_path(os.path.join(PROJECT_DIR, "logs")))]
+    width = max(len(k) for k, _ in rows)
+    bar = "=" * 60
+    lines = ["", bar, "  LEVEL CLEAR"] + [f"  {k.ljust(width)}  {v}" for k, v in rows]
+    if ready:
+        lines.append(f"  {ready}")
+    lines.append(bar)
+    _safe_print("\n".join(lines))
+
+
 def print_header():
     print("""
 =============================================================================
@@ -98,7 +145,7 @@ def _free_for_fit(hw, res):
 
 def bootstrap_venv():
     """Create virtual environment and install requirements if not inside one."""
-    print("📦 [1/4] Checking Python Virtual Environment...")
+    stage(1, 4, "ENVIRONMENT", "check the Python environment, then find Ollama")
     if not os.path.exists(VENV_DIR) or not os.path.exists(VENV_PYTHON):
         print(f"       Creating virtual environment at: {VENV_DIR}")
         subprocess.check_call([sys.executable, "-m", "venv", VENV_DIR])
@@ -146,7 +193,7 @@ LOOPBACK_OLLAMA_HOST = "127.0.0.1:11434"
 
 def check_ollama_service(base_url="http://localhost:11434"):
     """Check if Ollama is running; if not, attempt to start it."""
-    print("🤖 [2/4] Verifying Ollama Local LLM Server...")
+    stage(2, 4, "SERVER", "make sure Ollama is answering")
     tags_url = f"{base_url}/api/tags"
     
     # 1. Test if already responsive
@@ -744,7 +791,7 @@ def select_openai_model(base_url, requested_model=None, interactive=False):
     """Pick a model from an OpenAI-compatible server (LM Studio, llama.cpp, vLLM). We never download here:
     the server owns its models. Order: --model, then LOCAL_LLM_MODEL if the server lists it, then the menu
     (real terminal) or the top-ranked loaded model (--yes, piped, CI). Returns the id, or None."""
-    print("🧠 [3/4] Checking which models your server has loaded...")
+    stage(3, 4, "MODEL", "pick the model your server already has loaded")
     _load_env()
     ids = list_openai_models(base_url)
     if not ids:
@@ -849,6 +896,7 @@ def _pull_with_gate(tag, interactive, hw, res):
             print(f"\n❌ Failed to pull model: {exc}")
             print(f"   You can manually pull it via: ollama pull {plan['tag']}\n")
             return None
+        _FACTS["source"] = "pulled"
         print(f"✅ Model '{plan['tag']}' successfully pulled!\n")
         update_env_model(plan["tag"])  # so the next run's menu default and --yes start from this pick
         return plan["tag"]
@@ -867,7 +915,7 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
     4. Only if the machine has ZERO models installed, evaluate the PC build (RAM, GPU, VRAM)
        and recommend/pull the optimal cutting-edge model tailored to the hardware.
     """
-    print("🧠 [3/4] Evaluating Hardware & Model Inventory for Highest Capability...")
+    stage(3, 4, "MODEL", "match a model to this machine's memory")
     
     # Load .env if present
     _load_env()
@@ -975,9 +1023,10 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
 async def run_agent(model, base_url="http://localhost:11434/v1"):
     """Run autonomous demonstration and interactive shell."""
     if _SETUP_ONLY:
-        print(f"Ready: {model} at {base_url}. Run python run.py in a terminal to chat.")
+        level_clear(model, "built-in shell", ready=f"Ready: {model} at {base_url}. Run python run.py in a terminal to chat.")
         return
-    print("🎯 [4/4] Launching Google Antigravity Local Agent...")
+    stage(4, 4, "LAUNCH", "start the agent")
+    level_clear(model, "built-in shell")
     
     from google.antigravity import Agent, LocalOpenAIAgentConfig
     from google.antigravity.types import CapabilitiesConfig
@@ -1130,6 +1179,7 @@ def parse_args(argv=None):
                     help="also list models read off ollama.com/library (reads HTML, so it can break; the curated list stays)")
     ap.add_argument("-y", "--yes", action="store_true", help="skip the menu and every question: use the best installed model, or exit 1 and print the ollama pull command. Never downloads")
     ap.add_argument("--sync-memory", action="store_true", help="re-index the memory fabric and exit")
+    ap.add_argument("--plain", action="store_true", help="no colour, no art, ASCII only (NO_COLOR does the same)")
     ap.add_argument("--agent", choices=["shell", "pi", "opencode", "codex", "claude"], default="shell",
                     help="coding agent to land in: shell (default, Antigravity SDK), or pi / opencode / codex / "
                          "claude pre-configured for your local model")
@@ -1218,7 +1268,8 @@ def _main(argv=None):
     global _SETUP_ONLY
     _SETUP_ONLY = not interactive
     if backend == "openai":
-        print(f"🤖 [2/4] Found an OpenAI-compatible server at {base_api} (not Ollama). Nothing will be downloaded.")
+        stage(2, 4, "SERVER", "use the OpenAI-compatible server you already run")
+        print(f"       Found an OpenAI-compatible server at {base_api} (not Ollama). Nothing will be downloaded.")
         os.environ["LOCAL_LLM_BACKEND"] = "openai"  # memory.py and --agent claude read this
     else:
         os.environ.pop("LOCAL_LLM_BACKEND", None)

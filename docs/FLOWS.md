@@ -421,3 +421,7 @@ The GitHub Pages site (`site/`, Vite) is documentation, not a runtime path. It i
 The game walks the same nine steps as Flow 1, as a side-scroller: run the launcher, pull Ollama, pull `qwen2.5-coder:14b`, serve on `:11434`, wire the endpoint for the Antigravity Harness, start the Agent, watch the Agent call Ollama and receive a `tool_call`, write a file through the Policy Gate, and land in Memory + Editor with a Hello World in the IDE. Each station is guarded by the system it sets up, and clearing it collects that system's tool into a pocket that fills to POCKET FULL. The game runs no Ollama, pulls no model, and writes no files. To actually set up, follow Flow 1.
 
 One publishing rule to remember: Vite copies `site/public/` verbatim into `site/dist`. A page placed directly under `site/` is not published. That is why the game 404'd when it was first added at `site/game/index.html`, and why it lives in `site/public/game/` now.
+
+## Setup stages and the LEVEL CLEAR summary
+
+Setup prints four stages: ENVIRONMENT, SERVER, MODEL and LAUNCH. Each stage has a banner (`STAGE 2/4  SERVER`), a progress bar and a `next:` line. When setup finishes, a LEVEL CLEAR box shows the model, its size, where it came from (installed or pulled), the agent and the log path. A run with no terminal (`--yes`, piped input or CI) ends the box with the `Ready:` line and never starts the agent. `--plain` or `NO_COLOR` turns off the art and the bar blocks.
