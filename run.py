@@ -555,9 +555,10 @@ def offer_upgrade(installed, hw, free_vram, free_ram, now=None):
     if not current:
         return None  # nothing installed yet: the normal path already offers the hardware pick
     now = time.time() if now is None else now
-    stay_until = _read_upgrade_state().get("stay_until")
+    stays = _read_upgrade_state().get("stay_until")
+    stay_until = stays.get(current) if isinstance(stays, dict) else None  # old bare-number files mean no stay
     if isinstance(stay_until, (int, float)) and stay_until > now:
-        return None  # a recent "stay": say nothing for the rest of the week
+        return None  # a recent "stay" on this model: say nothing for the rest of the week
     rows = _upgrade_candidates(installed, hw, free_vram, free_ram)
     if not rows:
         return None
@@ -572,8 +573,11 @@ def offer_upgrade(installed, hw, free_vram, free_ram, now=None):
     if answer.startswith("p"):
         return None
     try:
+        stays = _read_upgrade_state().get("stay_until")
+        stays = dict(stays) if isinstance(stays, dict) else {}
+        stays[current] = now + UPGRADE_STAY_SECONDS
         with open(UPGRADE_STATE_FILE, "w", encoding="utf-8") as f:
-            json.dump({"stay_until": now + UPGRADE_STAY_SECONDS}, f, indent=2)
+            json.dump({"stay_until": stays}, f, indent=2)
     except OSError:
         pass  # the answer still counts for this run; we just cannot remember it
     return None

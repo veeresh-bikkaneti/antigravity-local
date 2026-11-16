@@ -26,7 +26,7 @@ class TestEntrypointHelp(unittest.TestCase):
                 self.assertIn("usage", r.stdout.lower())
 
     def test_missing_sdk_is_friendly(self):
-        code = ("import sys, runpy; sys.modules['google']=None; sys.argv=['code_agent.py']; "
+        code = ("import sys, runpy; sys.modules['google']=None; sys.argv=['code_agent.py','--model','x']; "
                 "runpy.run_path('code_agent.py', run_name='__main__')")
         r = subprocess.run([sys.executable, "-c", code], cwd=ROOT,
                            capture_output=True, text=True, encoding="utf-8", errors="replace")

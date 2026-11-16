@@ -34,7 +34,7 @@ import task_report
 # Load environment variables from .env if available
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))  # next to this script, not the cwd
 except ImportError:
     pass
 
@@ -304,7 +304,7 @@ def main():
     )
     parser.add_argument(
         "--model", "-m",
-        default=os.environ.get("LOCAL_LLM_MODEL", "qwen2.5:14b"),
+        default=os.environ.get("LOCAL_LLM_MODEL"),
         help="Model name (e.g., qwen2.5:14b, llama3.1:8b, mistral-nemo).",
     )
     parser.add_argument(
@@ -319,6 +319,9 @@ def main():
     )
 
     args = parser.parse_args()
+    if not args.model:
+        print("No model chosen yet. Run python run.py first, or pass --model.")
+        sys.exit(2)
 
     if args.task:
         asyncio.run(run_one_shot(args.base_url, args.model, args.workspace, args.task, with_memory=args.with_memory))
