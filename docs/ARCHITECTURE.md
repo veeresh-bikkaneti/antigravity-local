@@ -86,7 +86,7 @@ graph TB
 2. Bootstrap engine (`run.py`):
    - A Python orchestrator that uses only the standard library, so it has no external dependencies.
    - Performs hardware inspection (CPU cores, RAM size, disk capacity).
-   - Manages virtual environments and installs packages defensively. It also checks the Ollama daemon, checks which models are already installed, and runs the setup demo.
+   - Manages virtual environments and installs packages defensively. It also checks the Ollama daemon, checks which models are already installed, and runs the 5 setup stages (ENVIRONMENT, SERVER, MODEL, CONTEXT, LAUNCH). Then it runs the demo in a real terminal. With `--yes`, piped input or CI, it stops after setup and prints the `Ready:` line.
 4. Memory web app (`serve.py`):
    - A standard-library HTTP server started with `python run.py --serve` or the Docker image. It serves a search page, `GET /api/search`, `GET /healthz`, and the diagrams.
    - It has no authentication. Locally it binds to `127.0.0.1`. The Docker image sets `HOST=0.0.0.0`, so publish the port to `127.0.0.1` only unless you want the LAN to reach it.

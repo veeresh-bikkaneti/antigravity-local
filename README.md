@@ -20,7 +20,7 @@
 
 ## Run it with one command
 
-No manual environment creation or dependency hunting. Clone the repo and run one command. The bootstrap script sets up your environment, starts Ollama, downloads the best model for your hardware if you have none, runs a demo, and opens an interactive agent chat:
+No manual environment creation or dependency hunting. Clone the repo and run one command. The bootstrap script sets up your environment, starts Ollama, offers the best model for your hardware if you have none (it downloads only after you type y), and, in a real terminal, runs a demo and opens an interactive agent chat. Without a terminal it stops after setup:
 
 ### Windows (CMD or PowerShell):
 ```cmd
@@ -55,10 +55,14 @@ chmod +x run.sh && ./run.sh
 2. Model Matching: Shows a short menu of installed and newer candidate models (see "Pick your model" above), or with `--yes` (which never downloads) ranks your installed models (Qwen3, Devstral, gpt-oss, Nanbeige, DeepSeek, Qwen 2.5 Coder, Command-R, Codestral, GLM-4 and friends) and picks the most capable one your hardware can run.
 3. Virtual Environment Setup: Creates isolated `venv`, installs `requirements.txt`, and generates `.env` if missing.
 4. Ollama auto-start: Pings `http://localhost:11434`. If down, launches `ollama serve` in the background.
-5. Autonomous Verification: Asks the local agent to create `workspace/index.html` with its built-in tool calling.
-6. Interactive Shell: Drops you into an interactive terminal where you can ask your local agent to write code or inspect files.
+5. Autonomous Verification (real terminal only): Asks the local agent to create `workspace/index.html` with its built-in tool calling.
+6. Interactive Shell (real terminal only): Drops you into a `You >` chat where you can ask your local agent to write code or inspect files.
+
+With `--yes`, piped input or CI, setup stops after the five stages and prints a `Ready:` line inside the LEVEL CLEAR box. It never runs the demo or the chat.
 
 The demo in step 5 checks whether the file was actually written. If the agent answers without writing anything, it prints a warning instead of claiming success. The same check runs for one-shot tasks in `code_agent.py`.
+
+If a better model fits your PC, a terminal run offers one line before the menu: **upgrade now**, **pick another**, or **stay** (Enter, the default). A stay is remembered for 7 days. `python run.py --check-upgrades` only reports: it lists the better models that fit, with real sizes, and never pulls anything.
 
 ---
 

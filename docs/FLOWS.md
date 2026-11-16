@@ -54,7 +54,9 @@ flowchart TD
     ModelFound -- No --> PullModel["Auto-pull the pick or the model for your hardware<br/>(e.g., qwen2.5-coder:14b)<br/>A new download is saved to .env"]
     PullModel --> ReUseModel
 
-    ReUseModel --> WorkspaceDemo["Phase 5: Autonomous Verification Test<br/>Execute agent_with_workspace.py<br/>Generates workspace/index.html"]
+    ReUseModel --> TermAgain{"Real terminal?<br/>(no --yes, piped or CI)"}
+    TermAgain -- No --> ReadyLine["Stage 5 LAUNCH is skipped: LEVEL CLEAR box<br/>ends with the Ready: line, then exit. No demo, no chat"]
+    TermAgain -- Yes --> WorkspaceDemo["Phase 5: Autonomous Verification Test<br/>Execute agent_with_workspace.py<br/>Generates workspace/index.html"]
     WorkspaceDemo --> LaunchShell["Phase 6: Developer Coding Agent Shell<br/>Interactive REPL via code_agent.py"]
     LaunchShell --> Ready(["Ready to code!"])
 
