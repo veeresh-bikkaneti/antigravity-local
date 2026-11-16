@@ -103,3 +103,6 @@ workspace/*
 
 # Local git worktrees for parallel branches
 /.worktrees/
+
+# Upgrade-check memory ("stay" answers, 7 days)
+.antigravity_upgrade_state.json

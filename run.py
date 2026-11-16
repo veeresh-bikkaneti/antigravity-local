@@ -52,6 +52,15 @@ if sys.platform == "win32":
 
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 VENV_DIR = os.path.join(PROJECT_DIR, "venv")
+
+
+def _load_env():
+    """Load PROJECT_DIR/.env into os.environ when python-dotenv is installed. Without it, .env is simply skipped."""
+    try:
+        from dotenv import load_dotenv
+    except ImportError:
+        return
+    load_dotenv(os.path.join(PROJECT_DIR, ".env"))
 IS_WIN = sys.platform == "win32"
 VENV_PYTHON = os.path.join(VENV_DIR, "Scripts" if IS_WIN else "bin", "python.exe" if IS_WIN else "python")
 
@@ -390,6 +399,110 @@ def hardware_tier_model(vram_gb: float, ram_gb: float) -> str:
         return "qwen2.5-coder:7b"
     return "llama3.2:3b"
 
+UPGRADE_STATE_FILE = os.path.join(PROJECT_DIR, ".antigravity_upgrade_state.json")
+UPGRADE_STAY_SECONDS = 7 * 24 * 3600  # a "stay" answer quiets that one model for a week
+
+
+def _best_installed(installed):
+    """Highest-scoring installed chat-style tag (embedding and namespaced junk ignored), or None."""
+    names = [m for m in installed if ":" in m or "/" in m]
+    return max(names, key=get_model_capability_score, default=None)
+
+
+def _upgrade_candidates(installed, hw, free_vram, free_ram):
+    """Catalog picks plus the hardware tier pick that beat the best installed model and fit this PC right now.
+    Each row: {'tag', 'gb', 'label' (where the size came from), 'note', 'fit'}. Report only: nothing is pulled."""
+    best = _best_installed(installed)
+    best_score = get_model_capability_score(best) if best else 0.0
+    have = {model_wizard._norm(m) for m in installed}
+    options = [(tag, size, note) for tag, size, note in model_wizard.CATALOG]
+    tier = hardware_tier_model(hw["vram_gb"], hw["ram_gb"])
+    if tier not in {t for t, _, _ in options}:
+        options.append((tier, None, "the pick for this PC's hardware"))
+    rows, seen = [], set()
+    for tag, size, note in options:
+        key = model_wizard._norm(tag)
+        if key in have or key in seen or get_model_capability_score(tag) <= best_score:
+            continue
+        seen.add(key)
+        info = download_size.resolve(tag, list_gb=size)
+        if info and info.get("gb"):
+            gb, label = float(info["gb"]), info["source"]
+        elif size:
+            gb, label = size, "catalog"
+        else:
+            continue
+        fit = model_wizard.fit_label(gb, free_vram, free_ram, headroom=model_wizard.FIT_HEADROOM)
+        if fit != "too big":
+            rows.append({"tag": tag, "gb": gb, "label": label, "note": note, "fit": fit})
+    return rows
+
+
+def run_check_upgrades(base_url=None):
+    """`python run.py --check-upgrades`: one line per better model that fits this PC. Never pulls. Always returns 0."""
+    _load_env()
+    base_api = base_url or os.environ.get("LOCAL_LLM_BASE_URL", DEFAULT_BASE_URL)
+    ollama_host = base_api.replace("/v1", "").rstrip("/")
+    try:
+        if not model_wizard.registry_reachable():
+            print("couldn't check: registry.ollama.ai did not answer, so there is no upgrade list. Nothing was changed.")
+            return 0
+        hw = get_hardware_profile()
+        free_vram, free_ram = _free_for_fit(hw, get_free_resources())
+        installed = get_installed_ollama_models(ollama_host)
+        best = _best_installed(installed)
+        print(f"Best installed model: {best or 'none'}")
+        rows = _upgrade_candidates(installed, hw, free_vram, free_ram)
+        if not rows:
+            print("No upgrade found: nothing in the catalog beats your best installed model and fits this PC.")
+        for r in rows:
+            print(f"  {r['tag']}  {r['gb']:.1f} GB ({r['label']})  {r['note']}  [{model_wizard.FIT_TEXT[r['fit']]}]")
+        print("Report only. To pull one, run: python run.py <tag>")
+    except Exception as exc:
+        print(f"couldn't check: {exc}. Nothing was changed.")
+    return 0
+
+
+def _read_upgrade_state():
+    try:
+        with open(UPGRADE_STATE_FILE, encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def offer_upgrade(installed, hw, free_vram, free_ram, now=None):
+    """Interactive runs only: one line offering a better fitting model. Returns the tag for 'upgrade now',
+    or None (pick another, or stay). Enter is stay, and a stay is remembered for UPGRADE_STAY_SECONDS per tag."""
+    current = _best_installed(installed)
+    if not current:
+        return None  # nothing installed yet: the normal path already offers the hardware pick
+    now = time.time() if now is None else now
+    stay_until = _read_upgrade_state().get("stay_until")
+    if isinstance(stay_until, (int, float)) and stay_until > now:
+        return None  # a recent "stay": say nothing for the rest of the week
+    rows = _upgrade_candidates(installed, hw, free_vram, free_ram)
+    if not rows:
+        return None
+    top = rows[0]
+    print(f"       Upgrade available: {top['tag']} ({top['gb']:.1f} GB, {model_wizard.FIT_TEXT[top['fit']]}).")
+    try:
+        answer = input(f"       upgrade now / pick another / stay on {current} [Enter = stay] > ").strip().lower()
+    except EOFError:
+        return None
+    if answer.startswith("u"):
+        return top["tag"]
+    if answer.startswith("p"):
+        return None
+    try:
+        with open(UPGRADE_STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump({"stay_until": now + UPGRADE_STAY_SECONDS}, f, indent=2)
+    except OSError:
+        pass  # the answer still counts for this run; we just cannot remember it
+    return None
+
+
 def _with_tag(name):
     """'qwen2.5-coder' -> 'qwen2.5-coder:latest' (Ollama's implicit tag). '' stays ''."""
     name = name.strip().lower()
@@ -632,11 +745,7 @@ def select_openai_model(base_url, requested_model=None, interactive=False):
     the server owns its models. Order: --model, then LOCAL_LLM_MODEL if the server lists it, then the menu
     (real terminal) or the top-ranked loaded model (--yes, piped, CI). Returns the id, or None."""
     print("🧠 [3/4] Checking which models your server has loaded...")
-    try:
-        from dotenv import load_dotenv
-        load_dotenv(os.path.join(PROJECT_DIR, ".env"))
-    except ImportError:
-        pass
+    _load_env()
     ids = list_openai_models(base_url)
     if not ids:
         print("       The server answered but lists no models. Load a model in your server, then re-run.")
@@ -761,11 +870,7 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
     print("🧠 [3/4] Evaluating Hardware & Model Inventory for Highest Capability...")
     
     # Load .env if present
-    try:
-        from dotenv import load_dotenv
-        load_dotenv(os.path.join(PROJECT_DIR, ".env"))
-    except ImportError:
-        pass
+    _load_env()
 
     # Inspect hardware profile
     hw = get_hardware_profile()
@@ -790,6 +895,10 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
     entries = get_ledger_entries()
     pool = _installed_candidates(display_names, details, hw, entries)
     best = ranking.best_for_agent(pool)  # None when nothing installed can drive a coding agent
+
+    # 1a. A better model that fits this PC: offer it once (interactive only). "upgrade now" becomes the requested pull.
+    if interactive and not requested_model:
+        requested_model = offer_upgrade(installed_models, hw, free_vram, free_ram)
 
     # 1. Did the user explicitly pass a model via CLI command-line?
     cli_requested_model = requested_model
@@ -973,11 +1082,7 @@ def check_or_update_memory():
 def run_probe_command(args):
     """`python run.py --probe [model]`: one live tool call, recorded in the local ledger. Returns the exit code.
     It runs before the venv step and never starts or pulls anything: it only talks to a server that is already up."""
-    try:
-        from dotenv import load_dotenv
-        load_dotenv(os.path.join(PROJECT_DIR, ".env"))
-    except ImportError:
-        pass
+    _load_env()
     base_api = os.environ.get("LOCAL_LLM_BASE_URL", DEFAULT_BASE_URL)
     backend = detect_backend(base_api)
     if backend is None:
@@ -1017,6 +1122,8 @@ def parse_args(argv=None):
     ap.add_argument("--serve", action="store_true", help="start the web UI + API (needs no Ollama)")
     ap.add_argument("--host", help="with --serve: bind address")
     ap.add_argument("--port", type=int, help="with --serve: port (default: a free one)")
+    ap.add_argument("--check-upgrades", action="store_true",
+                    help="list catalog models that beat your best installed one and fit this PC; report only, never pulls")
     ap.add_argument("--probe", action="store_true",
                     help="run one live tool call against the model and record pass or fail in the local ledger, then exit")
     ap.add_argument("--scan-library", action="store_true",
@@ -1074,6 +1181,8 @@ def _main(argv=None):
         return
     if args.probe:  # stdlib only, no venv: talks to a model server that is already running
         sys.exit(run_probe_command(args))
+    if args.check_upgrades:  # report only: reads the local list and the registry, never pulls, exits 0
+        sys.exit(run_check_upgrades())
     print_header()
 
     if args.sync_memory:
