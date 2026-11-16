@@ -130,11 +130,8 @@ def context_check(interactive, ask=None, out=print):
         return
     warning = warning.replace("Claude Code", "the coding agent")
     out(f"       {warning}")
-    if not interactive:
-        return
-    ask = ask or input  # looked up at call time, so a test can replace input()
-    if ask("       Show the command to raise it? [y/N] ").strip().lower() != "y":
-        return
+    # No question here (it blocked runs): the command to raise the window always follows the warning.
+    # `interactive` and `ask` stay in the signature so callers don't change.
     if sys.platform == "win32":
         out("       $env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve")
     else:
