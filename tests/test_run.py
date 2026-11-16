@@ -233,7 +233,9 @@ class ModelWizardInRun(unittest.TestCase):
         check.assert_called_once_with(self.HF)
 
     def test_typed_hf_tag_that_is_a_404_is_refused_and_nothing_is_pulled(self):
-        got, pulls, _, _ = self.sel_hf("missing")
+        # v1.2.2: a refused tag re-asks; Enter then keeps the current model
+        with mock.patch.object(run.model_wizard, "hf_check", return_value=("missing", None)):
+            got, pulls, _ = self.sel(self.INSTALLED, [self.HF, ""])
         self.assertEqual((got, pulls), ("qwen2.5:14b", []))
         self.assertIn("not found on Hugging Face", self.printed)
 
@@ -257,8 +259,10 @@ class ModelWizardInRun(unittest.TestCase):
         self.assertIn(self.HF, self.printed)
 
     def test_typed_tag_missing_from_registry_falls_back_without_pulling(self):
-        got, pulls, _ = self.sel(self.INSTALLED, ["nanbeige4.1:3b"], registry=False)
+        # v1.2.2: the missing tag re-asks; Enter then keeps the current model
+        got, pulls, _ = self.sel(self.INSTALLED, ["nanbeige4.1:3b", ""], registry=False)
         self.assertEqual((got, pulls), ("qwen2.5:14b", []))
+        self.assertIn("is not on the Ollama registry", self.printed)
 
     def test_offline_registry_check_does_not_block_a_typed_tag(self):
         got, pulls, _ = self.sel(self.INSTALLED, ["some-new:9b"], registry=None)
@@ -834,50 +838,45 @@ class InteractiveOffer(unittest.TestCase):
         self.addCleanup(patch.stop)
         self.now = 1_800_000_000.0
 
-    def offer(self, answer=None, now=None, installed=("llama3.2:3b",)):
-        ask = (mock.MagicMock(return_value=answer) if answer is not None
-               else mock.MagicMock(side_effect=AssertionError("must not prompt")))
-        with mock.patch.object(builtins, "input", ask), \
+    # v1.2.2: offer_upgrade never prompts. It returns the menu row (or None); a stay is written by
+    # _remember_upgrade_stay when Enter keeps the model while that row is shown.
+    def offer(self, now=None, installed=("llama3.2:3b",)):
+        with mock.patch.object(builtins, "input", side_effect=AssertionError("must not prompt")), \
                 contextlib.redirect_stdout(io.StringIO()):
-            tag = run.offer_upgrade(set(installed), HW, 24.0, 64.0, now=self.now if now is None else now)
-        return tag, ask
+            return run.offer_upgrade(set(installed), HW, 24.0, 64.0, now=self.now if now is None else now)
 
-    def test_enter_stays_and_never_returns_a_pull(self):
-        tag, ask = self.offer(answer="")
-        self.assertIsNone(tag)
-        self.assertEqual(ask.call_count, 1)
+    def stay(self, current="llama3.2:3b"):
+        run._remember_upgrade_stay(current, now=self.now)
+
+    def test_offer_is_a_catalog_row_and_never_prompts(self):
+        row = self.offer()
+        self.assertIn(row["tag"], [t for t, _, _ in model_wizard.CATALOG])
+        self.assertEqual(row["current"], "llama3.2:3b")
+
+    def test_a_stay_is_written_for_seven_days(self):
+        self.stay()
         with open(self.state, encoding="utf-8") as f:
             self.assertAlmostEqual(json.load(f)["stay_until"]["llama3.2:3b"], self.now + 7 * DAY)
 
-    def test_upgrade_now_returns_the_top_pick(self):
-        tag, _ = self.offer(answer="upgrade now")
-        self.assertIn(tag, [t for t, _, _ in model_wizard.CATALOG])
+    def test_stay_hides_the_row_for_seven_days(self):
+        self.stay()
+        self.assertIsNone(self.offer(now=self.now + 6 * DAY))
 
-    def test_stay_is_remembered_for_seven_days(self):
-        self.offer(answer="")
-        tag, ask = self.offer(answer=None, now=self.now + 6 * DAY)
-        self.assertIsNone(tag)
-        ask.assert_not_called()
-
-    def test_the_prompt_returns_after_seven_days(self):
-        self.offer(answer="")
-        tag, ask = self.offer(answer="", now=self.now + 8 * DAY)
-        self.assertIsNone(tag)
-        self.assertEqual(ask.call_count, 1)
+    def test_the_row_returns_after_seven_days(self):
+        self.stay()
+        self.assertIsNotNone(self.offer(now=self.now + 8 * DAY))
 
     def test_a_stay_on_one_model_still_offers_when_another_model_is_current(self):
-        self.offer(answer="")  # stay on llama3.2:3b
-        _, ask = self.offer(answer="", installed=("tinyllama:1b",))
-        self.assertEqual(ask.call_count, 1)
+        self.stay()  # stay on llama3.2:3b
+        self.assertIsNotNone(self.offer(installed=("tinyllama:1b",)))
         with open(self.state, encoding="utf-8") as f:
             self.assertIn("llama3.2:3b", json.load(f)["stay_until"])
 
     def test_an_old_bare_number_state_file_is_no_stay_and_does_not_crash(self):
         with open(self.state, "w", encoding="utf-8") as f:
             json.dump({"stay_until": self.now + 7 * DAY}, f)
-        tag, ask = self.offer(answer="")
-        self.assertIsNone(tag)
-        self.assertEqual(ask.call_count, 1)
+        self.assertIsNotNone(self.offer())
+        self.stay()
         with open(self.state, encoding="utf-8") as f:
             self.assertEqual(list(json.load(f)["stay_until"]), ["llama3.2:3b"])
 

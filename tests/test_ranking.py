@@ -36,17 +36,20 @@ TABLE = [
     ("tools? beats known no tools",
      dict(badges=("tools?",), installed=False),
      dict(badges=("vision",), installed=True, ledger="pass")),
+    ("4 GB or more beats a small model",
+     dict(size_gb=4.0, installed=False),
+     dict(size_gb=2.4, installed=True, ledger="pass", last_modified="2026-11-01T00:00:00Z", name_score=99.0)),
     ("installed beats not installed",
-     dict(installed=True, ledger="unproven", last_modified=None, downloads=0, size_gb=1.0),
+     dict(installed=True, ledger="unproven", last_modified=None, downloads=0, size_gb=4.0),
      dict(installed=False, ledger="pass", last_modified="2026-11-01T00:00:00Z", downloads=999, size_gb=70.0)),
     ("probe pass beats unproven",
-     dict(ledger="pass", last_modified=None, downloads=0, size_gb=1.0),
+     dict(ledger="pass", last_modified=None, downloads=0, size_gb=4.0),
      dict(ledger="unproven", last_modified="2026-11-01T00:00:00Z", downloads=999, size_gb=70.0, name_score=99.0)),
     ("newer last_modified beats older",
-     dict(last_modified="2026-06-01T00:00:00Z", downloads=1, size_gb=1.0),
+     dict(last_modified="2026-06-01T00:00:00Z", downloads=1, size_gb=4.0),
      dict(last_modified="2026-05-01T00:00:00Z", downloads=999, size_gb=70.0, name_score=99.0)),
     ("same date: more downloads wins",
-     dict(downloads=500, size_gb=1.0),
+     dict(downloads=500, size_gb=4.0),
      dict(downloads=100, size_gb=70.0, name_score=99.0)),
     ("same date and downloads: larger size wins",
      dict(size_gb=30.0),
@@ -168,7 +171,7 @@ class Robustness(unittest.TestCase):
         self.assertEqual(ranking.epoch("2026-11-01T00:00:00z"), ranking.epoch("2026-11-01T00:00:00Z"))
 
     def test_the_exact_default_key_for_an_empty_candidate(self):
-        self.assertEqual(ranking.rank_key({}), (1, 1, 1, 0, 0, (0, 0, 0), 0))
+        self.assertEqual(ranking.rank_key({}), (1, 1, 1, 1, 0, 0, (0, 0, 0), 0))
 
     def test_full_tie_first_in_input_order_wins(self):
         a, b, c = cand("a"), cand("b"), cand("c")
