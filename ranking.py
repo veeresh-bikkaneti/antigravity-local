@@ -34,6 +34,15 @@ def _num(value):
     return value if ok else 0
 
 
+SMALL_GB = 4.0  # under this a model is "small" and ranks below any "big" one that also fits
+
+
+def size_class(c):
+    """1 = big (4.0 GB or more, or size unknown), 0 = small (a known size under 4.0 GB). Unknown counts as big."""
+    size = _num(c.get("size_gb"))  # 0 when missing or not a number
+    return 0 if 0 < size < SMALL_GB else 1
+
+
 def rank_key(c):
     """Tuple where HIGHER is better, in the spec order. Missing keys count as unknown or zero."""
     fit_name = c.get("fit")
@@ -43,7 +52,7 @@ def rank_key(c):
     installed = 1 if c.get("installed") else 0
     passed = 1 if c.get("ledger") == "pass" else 0
     freshness = (epoch(c.get("last_modified")), _num(c.get("downloads")), _num(c.get("size_gb")))
-    return (fit, not_failed, tools, installed, passed, freshness, _num(c.get("name_score")))
+    return (fit, not_failed, tools, size_class(c), installed, passed, freshness, _num(c.get("name_score")))
 
 
 def agent_candidates(cands):

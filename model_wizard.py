@@ -231,9 +231,12 @@ def _sized(tag, list_gb, size_of):
 
 
 def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, backend="ollama",
-               badges=None, library=None, media=None, size_of=None):
-    """Installed models first (no download), then the hardware pick if given, then catalog models that can run here,
-    then one row that explains how to type a Hugging Face model.
+               badges=None, library=None, media=None, size_of=None, upgrade=None):
+    """Installed models first (no download), then the upgrade row if given, then the hardware pick if given, then
+    catalog models that can run here, then one row that explains how to type a Hugging Face model.
+
+    `upgrade` is a better model that fits this PC ({"tag", "gb", "label", "fit"}, from run._upgrade_candidates).
+    It is one row marked "recommended upgrade", so the menu stays one list with one prompt.
 
     `recommended` is the tier pick for this PC (run.hardware_tier_model). Its size is not known without a
     registry call, so the row says so instead of guessing.
@@ -250,6 +253,11 @@ def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, ba
             for m in sorted(installed)]
     if backend == "openai":
         return menu
+    if upgrade and _norm(upgrade["tag"]) not in have:
+        menu.append({"tag": upgrade["tag"], "installed": False, "size_gb": upgrade["gb"],
+                     "size_source": upgrade.get("label"), "fit": upgrade.get("fit"),
+                     "badges": _badges(upgrade["tag"]), "note": "recommended upgrade"})
+        have.add(_norm(upgrade["tag"]))
     if recommended and _norm(recommended) not in have:
         gb, src = _sized(recommended, None, size_of)
         menu.append({"tag": recommended, "installed": False, "size_gb": gb, "size_source": src,
@@ -345,9 +353,18 @@ def _search_pick(results, input_fn, out):
     return None
 
 
-def _ask_hf_tag(input_fn, out, fallback, search_fn=None):
-    """The Hugging Face row was picked: ask for a tag, or for words to search for. Blank or three bad tries gives
-    the fallback."""
+def _gave_up(out, fallback, default_tag):
+    """One line after three bad tries: which model we use instead, and why we stopped asking."""
+    if not fallback:
+        out("       No valid pick after 3 tries, using the automatic pick.")
+        return
+    label = "current model" if fallback == default_tag else "first option"
+    out(f"       No valid pick after 3 tries, using {fallback} ({label}).")
+
+
+def _ask_hf_tag(input_fn, out, fallback, search_fn=None, validate_fn=None, default_tag=None):
+    """The Hugging Face row was picked: ask for a tag, or for words to search for. Blank returns the fallback.
+    A tag that validate_fn rejects prints why and asks again. Three bad tries print one line and give the fallback."""
     prompt = "       hf.co tag (hf.co/user/repo:quant)" + (", or words to search for > " if search_fn else " > ")
     for _ in range(3):
         try:
@@ -357,7 +374,11 @@ def _ask_hf_tag(input_fn, out, fallback, search_fn=None):
         if not raw:
             return fallback
         if is_hf_tag(raw) and TAG_RE.match(raw):
-            return raw
+            problem = validate_fn(raw) if validate_fn else None
+            if problem is None:
+                return raw
+            out(problem)
+            continue
         if search_fn and not is_hf_tag(raw) and raw not in YES_NO:
             results = search_fn(raw)
             if not results:
@@ -365,17 +386,23 @@ def _ask_hf_tag(input_fn, out, fallback, search_fn=None):
                 continue
             picked = _search_pick(results, input_fn, out)
             if picked:
-                return picked
+                problem = validate_fn(picked) if validate_fn else None
+                if problem is None:
+                    return picked
+                out(problem)
             continue
         out("       That is not a Hugging Face tag. Use the form hf.co/user/repo:quant.")
+    _gave_up(out, fallback, default_tag)
     return fallback
 
 
 YES_NO = {"y", "yes", "n", "no"}
 
 
-def choose(menu, default_tag, input_fn=None, out=print, backend="ollama", search_fn=None):
-    """Return the chosen tag. Bad input re-asks up to 3 times, then falls back to the default."""
+def choose(menu, default_tag, input_fn=None, out=print, backend="ollama", search_fn=None, validate_fn=None):
+    """Return the chosen tag. Bad input re-asks, up to 3 tries. After 3 bad tries the default is used and one line
+    says so. `validate_fn(tag)` vets a typed tag or a numbered pick: None when it is fine, else the line to print
+    that says why not (for example "not on the registry"). Without it every tag passes, as before."""
     input_fn = input_fn or input  # looked up now, not at import, so a terminal or a test can swap it
     fallback = default_tag or next((m["tag"] for m in menu if not m.get("hf") and not m.get("media")), None)
     for line in render(menu, default_tag, backend):
@@ -394,16 +421,25 @@ def choose(menu, default_tag, input_fn=None, out=print, backend="ollama", search
             n = int(raw) if len(raw) <= MAX_PICK_DIGITS else 0  # int() refuses 4300+ digits; no menu is that long
             if 1 <= n <= len(menu):
                 if menu[n - 1].get("hf"):
-                    return _ask_hf_tag(input_fn, out, fallback, search_fn)
+                    return _ask_hf_tag(input_fn, out, fallback, search_fn, validate_fn, default_tag)
                 if menu[n - 1].get("media"):  # never a pick: say how to run it, then ask again
                     out(f"       {menu[n - 1].get('hint') or 'Media models are not used by coding agents.'}")
                     continue
-                return menu[n - 1]["tag"]
+                problem = validate_fn(menu[n - 1]["tag"]) if validate_fn else None
+                if problem is None:
+                    return menu[n - 1]["tag"]
+                out(problem)
+                continue
             out(f"       Pick 1 to {len(menu)}, or type a tag.")
             continue
         if TAG_RE.match(raw.lower()):
-            return raw.lower()
+            problem = validate_fn(raw.lower()) if validate_fn else None
+            if problem is None:
+                return raw.lower()
+            out(problem)
+            continue
         out("       That is not a tag. Use a number, or something like qwen3.6:27b.")
+    _gave_up(out, fallback, default_tag)
     return fallback
 
 

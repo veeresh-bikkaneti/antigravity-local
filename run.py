@@ -141,7 +141,11 @@ def context_check(interactive, ask=None, out=print):
         out("       OLLAMA_CONTEXT_LENGTH=65536 ollama serve")
 
 
+HEADER_FLAG = "ANTIGRAVITY_HEADER_SHOWN"  # set by the parent just before the venv relaunch
+
 def print_header():
+    if os.environ.get(HEADER_FLAG) == "1":
+        return  # the parent already printed the banner; the relaunched child stays quiet
     print("""
 =============================================================================
     🚀 Google Antigravity Local - Plug & Play Auto-Bootstrap
@@ -202,6 +206,7 @@ def bootstrap_venv():
     sys.stdout.flush()  # the venv child writes next; our buffered lines must reach the log and screen first
     sys.stderr.flush()
     script_path = os.path.abspath(__file__)
+    os.environ[HEADER_FLAG] = "1"  # inherited by both relaunch paths below (execv and the Windows subprocess)
     if IS_WIN:
         try:
             sys.exit(subprocess.call([VENV_PYTHON, script_path] + sys.argv[1:]))
@@ -549,8 +554,10 @@ def _read_upgrade_state():
 
 
 def offer_upgrade(installed, hw, free_vram, free_ram, now=None):
-    """Interactive runs only: one line offering a better fitting model. Returns the tag for 'upgrade now',
-    or None (pick another, or stay). Enter is stay, and a stay is remembered for UPGRADE_STAY_SECONDS per tag."""
+    """Interactive runs only. Returns the best fitting upgrade as a menu row ({"tag", "gb", "label", "fit"}) plus
+    "current" (the installed model it would replace), or None. It never prompts: the model menu shows the row as
+    "recommended upgrade", so there is one list and one question. Enter on that menu is a stay, remembered by
+    _remember_upgrade_stay for UPGRADE_STAY_SECONDS per model."""
     current = _best_installed(installed)
     if not current:
         return None  # nothing installed yet: the normal path already offers the hardware pick
@@ -558,20 +565,16 @@ def offer_upgrade(installed, hw, free_vram, free_ram, now=None):
     stays = _read_upgrade_state().get("stay_until")
     stay_until = stays.get(current) if isinstance(stays, dict) else None  # old bare-number files mean no stay
     if isinstance(stay_until, (int, float)) and stay_until > now:
-        return None  # a recent "stay" on this model: say nothing for the rest of the week
+        return None  # a recent "stay" on this model: no upgrade row for the rest of the week
     rows = _upgrade_candidates(installed, hw, free_vram, free_ram)
     if not rows:
         return None
-    top = rows[0]
-    print(f"       Upgrade available: {top['tag']} ({top['gb']:.1f} GB, {model_wizard.FIT_TEXT[top['fit']]}).")
-    try:
-        answer = input(f"       upgrade now / pick another / stay on {current} [Enter = stay] > ").strip().lower()
-    except EOFError:
-        return None
-    if answer.startswith("u"):
-        return top["tag"]
-    if answer.startswith("p"):
-        return None
+    return dict(rows[0], current=current)
+
+
+def _remember_upgrade_stay(current, now=None):
+    """Enter on the model menu while the upgrade row was shown: that model's upgrade stays quiet for a week."""
+    now = time.time() if now is None else now
     try:
         stays = _read_upgrade_state().get("stay_until")
         stays = dict(stays) if isinstance(stays, dict) else {}
@@ -580,7 +583,6 @@ def offer_upgrade(installed, hw, free_vram, free_ram, now=None):
             json.dump({"stay_until": stays}, f, indent=2)
     except OSError:
         pass  # the answer still counts for this run; we just cannot remember it
-    return None
 
 
 def _with_tag(name):
@@ -763,8 +765,25 @@ def _refuse_non_chat(tag, pool):
     return False
 
 
-def _ask_which_model(display_names, installed_models, vram_gb, ram_gb, free_vram=None, free_ram=None, pool=None, scan_library=False):
-    """Run the wizard. Returns the chosen tag, or None to continue with the automatic pick."""
+def _typed_tag_problem(tag, installed_models):
+    """None when a tag can be pulled or used, else the line that says why not (choose prints it and asks again).
+    An installed tag always passes. A Hugging Face tag gets the Hugging Face check; any other tag gets the Ollama
+    registry check. Offline the registry cannot say, so the tag passes, same as before."""
+    if is_model_installed(tag, installed_models):
+        return None
+    if model_wizard.is_hf_tag(tag):
+        return _hf_tag_problem(tag)
+    if model_wizard.tag_exists(tag) is False:
+        return f"       '{tag}' is not on the Ollama registry. Type another tag, or a number from the list."
+    return None
+
+
+def _ask_which_model(display_names, installed_models, vram_gb, ram_gb, free_vram=None, free_ram=None, pool=None,
+                     scan_library=False, upgrade=None):
+    """Run the wizard. Returns the chosen tag, or None to keep the installed model (the automatic path handles it).
+    `upgrade` is offer_upgrade's row: it becomes a "recommended upgrade" row. Enter on the menu while it is shown is
+    remembered as a stay, the same as the old "stay" answer. A bad typed tag re-asks inside the wizard, so this
+    never gets a bad tag back."""
     configured = os.environ.get("LOCAL_LLM_MODEL")
     if pool is None:
         pool = _installed_candidates(display_names, {}, {"vram_gb": vram_gb, "ram_gb": ram_gb}, [])
@@ -783,40 +802,42 @@ def _ask_which_model(display_names, installed_models, vram_gb, ram_gb, free_vram
                                    recommended=None if best else tier,
                                    badges={model_wizard._norm(c["tag"]): c["badges"] for c in pool},
                                    library=get_library_rows(scan_library), media=get_media_rows(),
-                                   size_of=download_size.resolve)
+                                   size_of=download_size.resolve, upgrade=upgrade)
     if not default:
         default = tier  # no usable model installed: Enter means exactly what the automatic path would offer
     fv = vram_gb if free_vram is None else free_vram
     fr = ram_gb if free_ram is None else free_ram
-    chosen = model_wizard.choose(menu, default, search_fn=lambda words: hf_menu_search_sized(words, fv, fr))
+    chosen = model_wizard.choose(menu, default, search_fn=lambda words: hf_menu_search_sized(words, fv, fr),
+                                 validate_fn=lambda tag: _typed_tag_problem(tag, installed_models))
+    if upgrade and chosen and model_wizard._norm(chosen) == model_wizard._norm(default or ""):
+        _remember_upgrade_stay(upgrade["current"])  # Enter kept the model while the upgrade row was on screen
     if not chosen or model_wizard._norm(chosen) == model_wizard._norm(default or ""):
         # Kept the default: for an installed model the automatic path handles it; otherwise pull it.
         return None if chosen and is_model_installed(chosen, installed_models) else chosen
-    if not is_model_installed(chosen, installed_models):
-        if model_wizard.is_hf_tag(chosen):
-            if not _hf_tag_ok(chosen):
-                print("       Continuing with the automatic pick.")
-                return None
-        elif model_wizard.tag_exists(chosen) is False:
-            print(f"       '{chosen}' is not on the Ollama registry. Continuing with the automatic pick.")
-            return None
     return chosen
 
 
-def _hf_tag_ok(tag):
-    """Vet a typed hf.co tag against the Hugging Face API. False (with a reason) only when it is clearly wrong:
-    not a repo, or not the hf.co/user/repo[:quant] shape. A quant with no matching .gguf is a warning, because
-    Ollama is the final judge. Offline or private repos are allowed, same rule as the Ollama registry check."""
+def _hf_tag_problem(tag):
+    """The reason a typed hf.co tag is clearly wrong, or None. Not a repo, or not the hf.co/user/repo[:quant] shape,
+    or a 404. A quant with no matching .gguf is only a warning (printed), because Ollama is the final judge.
+    Offline or private repos are allowed, same rule as the Ollama registry check."""
     status, detail = model_wizard.hf_check(tag)
     if status == "bad_tag":
-        print(f"       '{tag}' is not a Hugging Face tag. Use hf.co/{{username}}/{{repository}}:{{quantization}}.")
-        return False
+        return f"       '{tag}' is not a Hugging Face tag. Use hf.co/{{username}}/{{repository}}:{{quantization}}."
     if status == "missing":
-        print(f"       '{tag}' was not found on Hugging Face (404). Check the user and repo name.")
-        return False
+        return f"       '{tag}' was not found on Hugging Face (404). Check the user and repo name."
     if status == "no_quant":
         have = ", ".join(detail) if detail else "none (no .gguf files in that repo)"
         print(f"       Warning: no .gguf file in that repo matches the quant in '{tag}'. Quants it has: {have}.")
+    return None
+
+
+def _hf_tag_ok(tag):
+    """Vet a typed hf.co tag against the Hugging Face API. False (with a reason printed) only when it is clearly wrong."""
+    problem = _hf_tag_problem(tag)
+    if problem:
+        print(problem)
+        return False
     return True
 
 
@@ -977,9 +998,9 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
     pool = _installed_candidates(display_names, details, hw, entries)
     best = ranking.best_for_agent(pool)  # None when nothing installed can drive a coding agent
 
-    # 1a. A better model that fits this PC: offer it once (interactive only). "upgrade now" becomes the requested pull.
-    if interactive and not requested_model:
-        requested_model = offer_upgrade(installed_models, hw, free_vram, free_ram)
+    # 1a. A better model that fits this PC (interactive only). It is a "recommended upgrade" row in the menu below,
+    #     not a separate question, so there is one list and one prompt.
+    upgrade = offer_upgrade(installed_models, hw, free_vram, free_ram) if interactive and not requested_model else None
 
     # 1. Did the user explicitly pass a model via CLI command-line?
     cli_requested_model = requested_model
@@ -989,7 +1010,7 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
     from_menu = False
     if interactive and not cli_requested_model:
         cli_requested_model = _ask_which_model(display_names, installed_models, vram_gb, ram_gb, free_vram, free_ram,
-                                               pool=pool, scan_library=scan_library)
+                                               pool=pool, scan_library=scan_library, upgrade=upgrade)
         from_menu = True  # the menu already vetted a typed tag
 
     if cli_requested_model:
@@ -1053,7 +1074,31 @@ def select_and_pull_model(base_url="http://localhost:11434", requested_model=Non
     print(f"\n📥 Model '{target_to_pull}' is not installed on this machine.")
     return _pull_with_gate(target_to_pull, interactive, hw, res)
 
+def _is_harness_error(exc):
+    """True for the SDK's execution error. Matched by class name, so an SDK module move cannot break the CLI."""
+    return any(cls.__name__ == "AntigravityExecutionError" for cls in type(exc).__mro__)
+
 async def run_agent(model, base_url="http://localhost:11434/v1"):
+    """Run the demo and the shell. Leaving (exit word or Ctrl+C) ends quietly; the SDK's close-time error is not shown."""
+    leave = {"left": False}  # set once the user chose to leave; Agent.__aexit__ may fail after that
+    try:
+        await _run_agent_session(model, base_url, leave)
+    except KeyboardInterrupt:
+        print("\n\n👋 Goodbye!\n")
+    except Exception as exc:
+        if not _is_harness_error(exc):
+            raise
+        if leave["left"]:
+            return  # the goodbye is already printed
+        import asyncio
+        if isinstance(exc.__context__, (KeyboardInterrupt, asyncio.CancelledError)):
+            # Ctrl+C during the demo (on Python 3.11+ it can arrive as a task cancel), and the SDK failed while closing
+            print("\n\n👋 Goodbye!\n")
+            return
+        log = runlog.log_path(os.path.join(PROJECT_DIR, "logs"))
+        print(f"\n⚠️ The agent backend stopped unexpectedly. Log: {log}\n")
+
+async def _run_agent_session(model, base_url, leave):
     """Run autonomous demonstration and interactive shell."""
     if _SETUP_ONLY:
         stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
@@ -1134,6 +1179,7 @@ async def run_agent(model, base_url="http://localhost:11434/v1"):
                     continue
                 if user_input.lower() in ["exit", "quit", "q"]:
                     print("\n👋 Goodbye! Happy agent coding.\n")
+                    leave["left"] = True
                     break
 
                 print("\nAgent > ", end="", flush=True)
@@ -1144,6 +1190,7 @@ async def run_agent(model, base_url="http://localhost:11434/v1"):
                 failures = 0
             except (KeyboardInterrupt, EOFError):
                 print("\n\n👋 Goodbye!\n")
+                leave["left"] = True
                 break
             except Exception as exc:
                 print(f"\n❌ Error during response: {exc}\n")
@@ -1360,8 +1407,19 @@ def _main(argv=None):
     check_or_update_memory()
 
     # Step 4: Run agent via asyncio
+    _run_shell(model, base_api)
+
+
+def _run_shell(model, base_api):
+    """Run the agent. On Python 3.11+ asyncio.run turns the first Ctrl+C into a task cancel and re-raises
+    KeyboardInterrupt once the task ends, outside run_agent, so it is caught here: Goodbye and exit 0."""
     import asyncio
-    asyncio.run(run_agent(model, base_api))
+    try:
+        asyncio.run(run_agent(model, base_api))
+    except KeyboardInterrupt:
+        print("\n\n👋 Goodbye!\n")
+        sys.exit(0)
+
 
 if __name__ == "__main__":
     main()

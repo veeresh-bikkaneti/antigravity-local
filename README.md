@@ -62,7 +62,7 @@ With `--yes`, piped input or CI, setup stops after the five stages and prints a 
 
 The demo in step 5 checks whether the file was actually written. If the agent answers without writing anything, it prints a warning instead of claiming success. The same check runs for one-shot tasks in `code_agent.py`.
 
-If a better model fits your PC, a terminal run offers one line before the menu: **upgrade now**, **pick another**, or **stay** (Enter, the default). A stay is remembered for 7 days. `python run.py --check-upgrades` only reports: it lists the better models that fit, with real sizes, and never pulls anything.
+If a better model fits your PC, it shows up as a row marked **recommended upgrade** inside the same numbered model list. Your current model has a `*` next to it, and Enter keeps it. If you keep your current model while an upgrade is on the list, that upgrade stays hidden for 7 days. `python run.py --check-upgrades` only reports: it lists the better models that fit, with real sizes, and never pulls anything.
 
 ---
 
@@ -309,22 +309,50 @@ Good to know:
 
 ---
 
+## Use your model in a coding app
+
+Your pick is saved as `LOCAL_LLM_MODEL` in `.env`, so every coding app below uses the same model. Change the pick there, and the next launch follows.
+
+There are two ways in. Pick the one that feels friendlier.
+
+**Option 1: our launcher.** Run one of these, and it writes that app's config for your model and starts the app in your project:
+
+```bash
+python run.py --agent pi
+python run.py --agent opencode
+python run.py --agent codex
+python run.py --agent claude
+```
+
+It asks before it installs anything. The details for each route are in [Pick a coding agent](#pick-a-coding-agent) and [Claude Code with your local model](#claude-code-with-your-local-model), so we are not repeating them here.
+
+**Option 2: Ollama's launcher.** Ollama can set up coding apps too. This time the model comes from `--model`, not from `.env`:
+
+```bash
+ollama launch claude --model qwen2.5-coder:14b
+```
+
+Add `--config` to set an app up without starting it, for example `ollama launch opencode --config`. Ollama's docs list OpenCode, Claude Code, Codex and Droid as apps it can launch, and they ask for Ollama 0.15 or newer. Run `ollama launch` with no app name to see the full picker.
+
+**The 64k context note.** Coding apps want a context window of 64k tokens. Stage 4 of the run checks it. If Ollama's window is smaller, set `OLLAMA_CONTEXT_LENGTH=65536` and restart Ollama. On an interactive run the launcher can show you the command. It never changes your Ollama settings for you.
+
 ## Table of contents
 0. [Serve it: search UI + API on a free port](#serve-it-search-ui--api-on-a-free-port-local-or-docker)
 0. [Play the setup as a game](#play-the-setup-as-a-game)
 1. [Use your local model from Antigravity or VS Code](#use-your-local-model-from-antigravity-or-vs-code)
-2. [Run it with one command](#run-it-with-one-command)
-3. [What is Antigravity Local?](#what-is-this)
-4. [Prerequisites & model selection](#prerequisites-checklist)
-5. [Developer coding agent (`code_agent.py`)](#mode-3-developer-pair-programming-shell-code_agentpy)
-6. [3-tier zero-token memory fabric](#3-tier-zero-token-memory-fabric-graphify--llmwiki--sqlite-hybrid)
-7. [Architecture & interactive diagrams](#system-architecture--design-diagrams)
-8. [1-command Docker clean-room test drive](#1-command-docker-clean-room-test-drive)
-9. [Project structure](#project-structure)
-10. [Common gotchas & troubleshooting](#common-gotchas--troubleshooting)
-11. [Advanced: custom harnesses & backends](#advanced-using-custom-research-harnesses--servers)
-12. [Credits, toolchain heritage & specifications](#credits-toolchain-heritage--specifications)
-13. [License & contributing](#license--contributing)
+2. [Use your model in a coding app](#use-your-model-in-a-coding-app)
+3. [Run it with one command](#run-it-with-one-command)
+4. [What is Antigravity Local?](#what-is-this)
+5. [Prerequisites & model selection](#prerequisites-checklist)
+6. [Developer coding agent (`code_agent.py`)](#mode-3-developer-pair-programming-shell-code_agentpy)
+7. [3-tier zero-token memory fabric](#3-tier-zero-token-memory-fabric-graphify--llmwiki--sqlite-hybrid)
+8. [Architecture & interactive diagrams](#system-architecture--design-diagrams)
+9. [1-command Docker clean-room test drive](#1-command-docker-clean-room-test-drive)
+10. [Project structure](#project-structure)
+11. [Common gotchas & troubleshooting](#common-gotchas--troubleshooting)
+12. [Advanced: custom harnesses & backends](#advanced-using-custom-research-harnesses--servers)
+13. [Credits, toolchain heritage & specifications](#credits-toolchain-heritage--specifications)
+14. [License & contributing](#license--contributing)
 
 ---
 
