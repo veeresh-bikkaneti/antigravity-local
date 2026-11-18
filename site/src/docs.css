@@ -1,7 +1,7 @@
 /* Rendered guide pages (docs/*.html). Reuses the home page tokens; adds reading layout only. */
 .docs-page { overflow-x: hidden; }
-.doc-wrap { display: grid; grid-template-columns: minmax(0, 15rem) minmax(0, 1fr); gap: 2.5rem; max-width: 74rem; margin: 0 auto; padding: 2rem var(--gutter) 4rem; }
-.toc { position: sticky; top: 1rem; align-self: start; max-height: calc(100vh - 2rem); overflow-y: auto; font-size: 0.9rem; }
+.doc-wrap { display: grid; grid-template-columns: minmax(0, 15rem) minmax(0, 1fr); gap: 2.5rem; max-width: 74rem; margin: 0 auto; padding: 6rem var(--gutter) 4rem; } /* top padding clears the fixed bar */
+.toc { position: sticky; top: 5rem; align-self: start; max-height: calc(100vh - 6rem); overflow-y: auto; font-size: 0.9rem; }
 .toc summary { cursor: pointer; font-weight: 700; color: var(--chalk); min-height: 44px; display: flex; align-items: center; }
 .toc ol { list-style: none; margin: 0; padding: 0; }
 .toc li.d3 { padding-left: 1rem; }
@@ -19,6 +19,6 @@
 .doc-foot { max-width: 74rem; margin: 0 auto; padding: 1rem var(--gutter) 3rem; border-top: 1px solid var(--rule); }
 .bar nav a[aria-current="page"] { color: var(--signal); }
 @media (max-width: 52rem) {
-  .doc-wrap { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+  .doc-wrap { grid-template-columns: minmax(0, 1fr); gap: 1rem; padding-top: 8.5rem; } /* the bar is two rows tall on a phone */
   .toc { position: static; max-height: none; }
 }

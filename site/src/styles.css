@@ -436,6 +436,8 @@ html.motion-off.reveal [data-reveal] { opacity: 1; transform: none; transition: 
 .agent-card p { margin: 0 0 0.5rem; }
 .agent-card .code { margin-bottom: 0; }
 .apps p, .apps ol { max-width: 46rem; }
+/* The paragraph after the last open details sat 18px under its box, so its first line could not be clicked. */
+.apps > p { position: relative; margin-top: 1.5rem; }
 .apps details > :not(summary) { max-width: 46rem; }
 .apps details[open] { padding-bottom: 1rem; }
 .zero-cta { max-width: 62ch; margin-top: 1.5rem; }
