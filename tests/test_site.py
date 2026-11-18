@@ -179,6 +179,20 @@ class SitePage(unittest.TestCase):
         game = (SITE / "public" / "game" / "index.html").read_text(encoding="utf-8")
         self.assertIn("#coding-apps", game)
 
+    def test_game_checkpoints_are_the_eight_home_steps_in_order(self):
+        home = []
+        for n in range(1, 9):
+            start = HTML.index(f'data-step="{n}"')
+            home.append(re.search(r"<h3>(.*?)</h3>", HTML[start:]).group(1))
+            self.assertIn(f'id="step-{n}"', HTML)
+        game = (SITE / "public" / "game" / "index.html").read_text(encoding="utf-8")
+        block = game[game.index("var HOPS=["):game.index("var ORDER=")]
+        shorts = re.findall(r"\{short:'([^']*)'", block)
+        self.assertEqual(shorts, home)
+        self.assertEqual(re.findall(r"step:(\d)", block), [str(n) for n in range(1, 9)])
+        self.assertNotIn("of 9", game)
+        self.assertIn("../#step-", game)
+
 
 if __name__ == "__main__":
     unittest.main()

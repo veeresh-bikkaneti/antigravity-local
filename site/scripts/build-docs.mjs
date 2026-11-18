@@ -41,6 +41,9 @@ export function slugger() {
 
 // Where a link in the markdown should go on the site.
 export function rewriteHref(href) {
+  // Diagrams are copied into the site (see copyDiagrams in vite.config.js), so they stay on Pages.
+  const diagram = (href || "").replace(`${REPO}/blob/main/`, "").replace(/^(\.\/)+/, "");
+  if (diagram.startsWith("docs/diagrams/")) return `../diagrams/${diagram.slice("docs/diagrams/".length)}`;
   if (!href || /^([a-z][a-z0-9+.-]*:|\/\/|#)/i.test(href)) return href; // absolute URL, mailto, same-page anchor
   const [path, hash] = href.replace(/^(\.\/)+/, "").split("#");
   const page = PAGE_OF.get(path);
