@@ -104,6 +104,12 @@ body.dim-stage #labels { opacity: 0; }
 .bar nav a:hover { color: var(--signal); }
 
 main, footer { position: relative; z-index: 2; }
+/* Empty space lets pointer input through to the drawing (drag to orbit, Ctrl + scroll to zoom);
+   anything you can read, click or select keeps its own pointer events. */
+main, footer { pointer-events: none; }
+main :is(a, button, summary, input, details, p, li, h1, h2, h3, h4, pre, code, label, dt, dd, iframe, video, img, svg, table, .stack-readout, .preflight),
+footer :is(a, p, li, code) { pointer-events: auto; }
+.guide, .arch, .limits, .faq { pointer-events: auto; }
 
 /* Text-heavy sections sit on a solid sheet, and the drawing dims behind them (body.dim-stage),
    so no sentence is ever read over lines or labels. Hero, game and pillars keep the open drawing. */

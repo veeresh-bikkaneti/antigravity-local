@@ -232,6 +232,18 @@ class TextOverDrawing(unittest.TestCase):
         self.assertIn("slide(-0.24)", hero)
 
 
+class OrbitHint(unittest.TestCase):
+    def test_hint_matches_the_pass_through_behaviour(self):
+        css = (SITE / "src" / "styles.css").read_text(encoding="utf-8")
+        scene = (SITE / "src" / "scene.js").read_text(encoding="utf-8")
+        hint = re.search(r'class="stack-note">([^<]*)', HTML).group(1)
+        self.assertIn("empty space", hint)
+        self.assertRegex(css, r"main, footer \{ pointer-events: none; \}")  # wrappers let drags through
+        self.assertIn("main :is(a, button, summary", css)  # things you can click keep their pointer events
+        self.assertIn('canvas.addEventListener("pointerdown"', scene)  # the handler the hint promises
+        self.assertIn("ctrlKey", scene)
+
+
 class SiteFacts(unittest.TestCase):
     def home_steps(self):
         return len(re.findall(r'<li class="step"[^>]*\sdata-step="\d+"', HTML))
