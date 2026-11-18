@@ -326,7 +326,7 @@ def _row_line(i, m, default_tag, width):
     """One numbered row: tag, then what it can do (or how big it is), then `current` on the default."""
     current = _norm(m["tag"]) == _norm(default_tag or "")
     star = "*" if current else " "
-    badges = [b for b in (m.get("badges") or ()) if isinstance(b, str)]
+    badges = [b for b in (m.get("badges") or ()) if isinstance(b, str) and b != "completion"]  # every model completes: not news
     if m["installed"]:
         info = ", ".join(badges if _has_tools(badges) else (["chat only"] + badges if badges else []))
         if current:

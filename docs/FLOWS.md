@@ -377,7 +377,7 @@ Every transition and the test that covers it:
 | Cache fresh for 24 hours, then expired | `tests.test_hf_search.Cache.test_second_call_inside_24h_never_touches_the_network`, `test_cache_expires_at_24h` |
 | Busy Hub (429) waited out, then give up | `tests.test_hf_search.Backoff` |
 | Offline gives one warning line | `tests.test_pick_badges.Offline.test_hugging_face_unreachable_warns_exactly_once_for_the_whole_run` |
-| Media rows listed, never picked | `tests.test_model_wizard.MediaSection.test_picking_a_media_row_shows_how_to_run_it_and_asks_again_never_returning_it`, `tests.test_pick_badges.MediaAndLibrary` |
+| Media rows behind their own row, never picked, never a bad try | `tests.test_model_wizard.MediaSection.test_media_pick_then_a_number_then_enter_keeps_the_default_with_no_bad_try`, `tests.test_pick_badges.MediaAndLibrary` |
 | Badge mapping per source | `tests.test_capabilities.OllamaBadges`, `HfBadges`, `Catalog` |
 
 ## Summary of flow triggers
@@ -426,4 +426,4 @@ One publishing rule to remember: Vite copies `site/public/` verbatim into `site/
 
 ## Setup stages and the LEVEL CLEAR summary
 
-Setup prints five stages: ENVIRONMENT, SERVER, MODEL, CONTEXT and LAUNCH. Each stage has a banner (`STAGE 2/5  SERVER`), a progress bar and a `next:` line. The CONTEXT stage checks `OLLAMA_CONTEXT_LENGTH` (65536 or more) and prints one line when it is smaller. It never changes Ollama. When setup finishes, a LEVEL CLEAR box shows the model, its size, where it came from (installed or pulled), the agent and the log path. A run with no terminal (`--yes`, piped input or CI) ends the box with the `Ready:` line and never starts the agent. `--plain` or `NO_COLOR` turns off the art and the bar blocks.
+Setup prints five stages: ENVIRONMENT, SERVER, MODEL, CONTEXT and LAUNCH. Each stage has a banner (`STAGE 2/5  SERVER`), a progress bar and what happens next, all on one line. When setup finishes, the LEVEL CLEAR box is followed by a short "Use <model> in a coding app" block (`python run.py --coding-apps` prints it alone; steps are in `docs/coding-apps.md`). The CONTEXT stage checks `OLLAMA_CONTEXT_LENGTH` (65536 or more) and prints one line when it is smaller. It never changes Ollama. When setup finishes, a LEVEL CLEAR box shows the model, its size, where it came from (installed or pulled), the agent and the log path. A run with no terminal (`--yes`, piped input or CI) ends the box with the `Ready:` line and never starts the agent. `--plain` or `NO_COLOR` turns off the art and the bar blocks.

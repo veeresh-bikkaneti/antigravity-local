@@ -252,6 +252,16 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
           <div class="code"><pre><code>python run.py --agent opencode</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --agent opencode">Copy</button></div>
           <p class="check">The app opens in your project, already pointed at your local model. Your other settings are left alone.</p>
           <p class="time">A minute, plus the app install if you say yes. <a href="https://github.com/veeresh-bikkaneti/antigravity-local#use-your-model-in-a-coding-app">Setup in the README</a></p>
+          <h4 id="connect-apps">Connect your coding app</h4>
+          <ul>
+            <li><strong>VS Code:</strong> install the Ollama extension (<code>Ollama.ollama</code>), then pick your model under Ollama in Chat.</li>
+            <li><strong>Continue:</strong> set <code>provider: ollama</code>, your model tag and <code>apiBase: http://localhost:11434</code> in <code>config.yaml</code>.</li>
+            <li><strong>Terminal agents:</strong> <code>python run.py --agent pi</code>, or <code>opencode</code>, <code>codex</code>, <code>claude</code>.</li>
+            <li><strong>Antigravity:</strong> no documented local-model setting in the app. Run the terminal line in its built-in terminal.</li>
+            <li><strong>Gemini CLI:</strong> no local models. Only a LiteLLM proxy gets there, and that is experimental and untested by us.</li>
+            <li><strong>Your own code:</strong> base URL <code>http://localhost:11434/v1</code> and your model tag.</li>
+          </ul>
+          <p class="time">Short version any time: <code>python run.py --coding-apps</code>. <a href="https://github.com/veeresh-bikkaneti/antigravity-local/blob/main/docs/coding-apps.md">All the steps, with sources</a></p>
         </li>
 
         <li class="step" data-step="5" data-focus="venv">
@@ -331,7 +341,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
         <li>Editing an existing file does not work reliably. With the default model, <code>qwen2.5:14b</code>, none of 14 attempts to edit a file, or to read one and write a new one, gave a correct result. Creating a new file from a plain prompt mostly works. Commit first and check <code>git diff</code>. A larger model may do better, and we have not tested one.</li>
         <li>The Antigravity app and its IDE chat panel have no setting for a local model, and Google's plans page says bring-your-own-endpoint is not supported. Google's local-model support covers the SDK, which this project uses. In the IDE's built-in terminal, run <code>python &lt;path-to&gt;/antigravity-local/run.py --agent pi</code> from your project, or use our shell. The Antigravity and Gemini command-line tools can reach a local model only through a translating proxy. That route is experimental and we have not tested it.</li>
         <li>The extra coding agents (pi, OpenCode, Codex) are set up and tested offline. We have not yet measured how well they edit an existing file with your model, and all three want a context window of 64k tokens or more, which is larger than Ollama's default on most PCs.</li>
-        <li>Only Windows 11 was tested. Native macOS and Linux, and the VS Code extension steps, are not tested yet.</li>
+        <li>Only Windows 11 was tested. Native macOS and Linux, and the VS Code extension steps, are not tested yet. VS Code's built-in Ollama provider is deprecated, so the steps use the Ollama extension.</li>
       </ul>
       <p><a href="https://github.com/veeresh-bikkaneti/antigravity-local/releases/tag/v1.0.0">Read the v1.0.0 release notes</a></p>
     </section>
@@ -351,7 +361,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
       </details>
       <details>
         <summary>Can I use it from VS Code?</summary>
-        <p>Yes, four ways. The README lists them: our shell in the built-in terminal, the Ollama extension, Continue, and Cline. The extension steps come from their official guides, and we have not run them in VS Code ourselves.</p>
+        <p>Yes, four ways. The README lists them: our shell in the built-in terminal, the Ollama extension, Continue, and Cline. VS Code's built-in Ollama provider is deprecated, so use the official Ollama extension (<code>Ollama.ollama</code>). The extension steps come from their official guides, and we have not run them in VS Code ourselves. <a href="https://github.com/veeresh-bikkaneti/antigravity-local/blob/main/docs/coding-apps.md">Steps for each app</a></p>
       </details>
       <details>
         <summary>Can I use a better coding agent than the built-in shell?</summary>

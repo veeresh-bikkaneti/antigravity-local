@@ -151,6 +151,16 @@ class SitePage(unittest.TestCase):
         rule = css[css.index(".stack-item {"):css.index("}", css.index(".stack-item {"))]
         self.assertNotIn("opacity: 0.45", rule)  # 0.45 opacity text fell below 4.5:1 contrast
 
+    def test_connect_your_coding_app_section_and_docs_link_exist(self):
+        self.assertIn('id="connect-apps"', HTML)
+        for app in ("VS Code", "Continue", "Terminal agents", "Antigravity", "Gemini CLI", "Your own code"):
+            self.assertIn(f"<strong>{app}:</strong>", HTML, app)
+        self.assertIn("docs/coding-apps.md", HTML)
+        self.assertIn("built-in Ollama provider is deprecated", HTML)
+        game = (SITE / "public" / "game" / "index.html").read_text(encoding="utf-8")
+        self.assertIn("docs/coding-apps.md", game)
+        self.assertTrue((SITE.parent / "docs" / "coding-apps.md").is_file())
+
 
 if __name__ == "__main__":
     unittest.main()
