@@ -66,6 +66,20 @@ The demo in step 5 checks whether the file was actually written. If the agent an
 
 If a better model fits your PC, it shows up as a row marked **recommended upgrade** inside the same numbered model list. Your current model has a `*` next to it, and Enter keeps it. If you keep your current model while an upgrade is on the list, that upgrade stays hidden for 7 days. `python run.py --check-upgrades` only reports: it lists the better models that fit, with real sizes, and never pulls anything.
 
+**Reading the model menu.** Every row carries one speed word, so you can see at a glance what will feel quick on your PC:
+
+```
+On this PC, no download
+   1. gemma2:27b          Moderate    15.6 GB  chat only
+ * 2. qwen2.5:14b         Fast         9.0 GB  tools      current
+Worth downloading
+   3. qwen3-coder:30b     Moderate    19.0 GB  tools
+
+Fast = fits in your graphics card · Moderate = part on CPU · Slow = mostly CPU (estimate from size and memory)
+```
+
+Fast, Moderate and Slow are estimates from the model's size and your free memory, not a stopwatch. `tools` means the model can edit files; `chat only` means it can talk but not touch your files. If we can't read a model's size, its row skips the speed word instead of guessing. Same model installed under two names (a Hugging Face one, say)? One row if Ollama says it is the same file, two rows with a note if it says otherwise.
+
 ---
 
 ### What you see while it sets up

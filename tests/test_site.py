@@ -261,6 +261,12 @@ class StepLinksToGuide(unittest.TestCase):
                 self.assertIn('id="%s"' % slug, built, slug)
 
 
+class WizardCopy(unittest.TestCase):
+    def test_step_2_says_rows_show_fast_moderate_slow(self):
+        step = HTML[HTML.index('id="step-2"'):HTML.index('id="step-3"')]
+        self.assertIn("Fast, Moderate or Slow", step)
+
+
 class SiteFacts(unittest.TestCase):
     def home_steps(self):
         return len(re.findall(r'<li class="step"[^>]*\sdata-step="\d+"', HTML))

@@ -134,6 +134,21 @@ def fit_label(size_gb, vram_gb, ram_gb, headroom=LEGACY_HEADROOM):
 
 
 FIT_TEXT = {"gpu": "fits in GPU", "split": "part on CPU", "too big": "too big"}
+LEGEND = "Fast = fits in your graphics card · Moderate = part on CPU · Slow = mostly CPU (estimate from size and memory)"
+
+
+def speed_label(size_gb, vram_gb, ram_gb, headroom=FIT_HEADROOM):
+    """How fast tokens should come: 'Fast' when the model sits in VRAM, 'Moderate' when it splits with at least half
+    in VRAM, 'Slow' when it splits with less (or there is no GPU at all). None when it is too big to run, or the
+    size is unknown. An estimate from size and memory, not a measurement."""
+    if not size_gb or size_gb <= 0:
+        return None
+    fit = fit_label(size_gb, vram_gb, ram_gb, headroom=headroom)
+    if fit == "gpu":
+        return "Fast"
+    if fit == "split":
+        return "Moderate" if vram_gb >= size_gb * headroom / 2 else "Slow"
+    return None
 TOP_DOWNLOADS = 3  # catalog rows shown on the main list; the rest sit behind "More downloads"
 MORE_ROW_TAG = "More downloads"
 MEDIA_ROW_TAG = "Image and video models"
@@ -234,7 +249,7 @@ def _sized(tag, list_gb, size_of):
 
 
 def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, backend="ollama",
-               badges=None, library=None, media=None, size_of=None, upgrade=None):
+               badges=None, library=None, media=None, size_of=None, upgrade=None, installed_info=None):
     """Installed models first (no download), then the upgrade row if given, then the hardware pick if given, then
     catalog models that can run here, then one row that explains how to type a Hugging Face model.
 
@@ -249,22 +264,36 @@ def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, ba
     `badges` maps a normalised installed tag to its badges (from /api/show); `library` is extra scanned rows
     ({"tag", "badges", "note"}); `media` are image/video/audio rows that are listed but never picked for an agent
     ({"tag", "badges", "note", "hint"}): choosing one only shows its hint.
+
+    `installed_info` maps a normalised installed tag to {"size_gb", "digest"} (Ollama /api/tags). With it, installed
+    rows get a size and a speed badge; a tag with no entry gets neither (never a guess). Two tags with the same
+    digest are one file, so only one row is shown; if either digest is missing both stay and say so.
     """
     have = {_norm(m) for m in installed}
-    menu = [{"tag": m, "installed": True, "size_gb": None, "fit": None, "badges": _badges(m, badges),
-             "note": "already on this machine" if backend != "openai" else "loaded on your server"}
-            for m in sorted(installed)]
+    info = {_norm(k): v for k, v in (installed_info or {}).items() if isinstance(v, dict)}
+    tags = _one_row_per_file(sorted(installed), info)
+    menu = []
+    for m in tags:
+        i = info.get(_norm(m)) or {}
+        gb = i.get("size_gb") if isinstance(i.get("size_gb"), (int, float)) and i.get("size_gb") > 0 else None
+        speed = (speed_label(gb, vram_gb, ram_gb, headroom=FIT_HEADROOM) or "Slow") if gb else None
+        menu.append({"tag": m, "installed": True, "size_gb": gb, "size_source": "installed" if gb else None,
+                     "fit": None, "speed": speed, "badges": _badges(m, badges),
+                     "note": "already on this machine" if backend != "openai" else "loaded on your server",
+                     "twin": _has_twin(m, tags, info)})
     if backend == "openai":
         return menu
     if upgrade and _norm(upgrade["tag"]) not in have:
         menu.append({"tag": upgrade["tag"], "installed": False, "size_gb": upgrade["gb"],
                      "size_source": upgrade.get("label"), "fit": upgrade.get("fit"),
+                     "speed": speed_label(upgrade["gb"], vram_gb, ram_gb, headroom=FIT_HEADROOM),
                      "badges": _badges(upgrade["tag"]), "note": "recommended upgrade"})
         have.add(_norm(upgrade["tag"]))
     if recommended and _norm(recommended) not in have:
         gb, src = _sized(recommended, None, size_of)
         menu.append({"tag": recommended, "installed": False, "size_gb": gb, "size_source": src,
                      "fit": fit_label(gb, vram_gb, ram_gb, headroom=FIT_HEADROOM) if gb else None,
+                     "speed": speed_label(gb, vram_gb, ram_gb, headroom=FIT_HEADROOM) if gb else None,
                      "badges": _badges(recommended), "note": "recommended for this PC"})
         have.add(_norm(recommended))
     shown = 0
@@ -276,6 +305,7 @@ def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, ba
         if fit == "too big":
             continue
         menu.append({"tag": tag, "installed": False, "size_gb": gb, "size_source": src, "fit": fit,
+                     "speed": speed_label(gb, vram_gb, ram_gb, headroom=FIT_HEADROOM) if gb else None,
                      "badges": _badges(tag), "note": note, "hidden": shown >= TOP_DOWNLOADS})
         shown += 1
         have.add(_norm(tag))
@@ -285,6 +315,7 @@ def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, ba
             gb, src = _sized(row["tag"], None, size_of)
             menu.append({"tag": row["tag"], "installed": False, "size_gb": gb, "size_source": src,
                          "fit": fit_label(gb, vram_gb, ram_gb, headroom=FIT_HEADROOM) if gb else None,
+                         "speed": speed_label(gb, vram_gb, ram_gb, headroom=FIT_HEADROOM) if gb else None,
                          "badges": _badge_list(row.get("badges")), "note": row.get("note", "from the Ollama library page"),
                          "hidden": True})
     loader = media if callable(media) else None  # a callable is asked only when the media row is picked
@@ -301,6 +332,30 @@ def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, ba
     menu.append({"tag": HF_ROW_TAG, "installed": False, "size_gb": None, "fit": None, "hf": True,
                  "note": "A Hugging Face model (type hf.co/user/repo:quant)"})
     return menu
+
+
+def _one_row_per_file(tags, info):
+    """Drop a tag whose digest equals another installed tag's (the same file under two names). Keep the longer,
+    fuller name (hf.co/user/repo:quant over repo:quant). No digest on either side: keep both."""
+    out = []
+    for t in sorted(tags, key=lambda x: (-len(x), x)):
+        d = (info.get(_norm(t)) or {}).get("digest")
+        if d and any((info.get(_norm(o)) or {}).get("digest") == d for o in out):
+            continue
+        out.append(t)
+    return sorted(out)
+
+
+def _has_twin(tag, tags, info):
+    """A short note when another shown row has the same repo:quant name: 'different file, same name' when both
+    digests are known and differ, else 'may be the same file as <other>'. '' when there is no look-alike."""
+    short = _norm(tag).split("/")[-1]
+    for o in tags:
+        if o == tag or _norm(o).split("/")[-1] != short:
+            continue
+        a, b = (info.get(_norm(tag)) or {}).get("digest"), (info.get(_norm(o)) or {}).get("digest")
+        return "different file, same name" if a and b else "may be the same file as " + o
+    return ""
 
 
 def _media_row(row):
@@ -322,23 +377,31 @@ def _has_tools(badges):
     return any(isinstance(b, str) and b.startswith("tools") for b in (badges or ()))
 
 
+def _word(m):
+    """One word on what the model can do. 'tools' only when confirmed; 'chat only' for an installed model with no
+    tool badge at all. A guessed 'tools?' shows nothing on the main list (the Hugging Face list keeps it)."""
+    badges = [b for b in (m.get("badges") or ()) if isinstance(b, str)]
+    if "tools" in badges:
+        return "tools"
+    if any(b.startswith("tools") for b in badges):
+        return ""
+    return "chat only" if m.get("installed") else ""
+
+
 def _row_line(i, m, default_tag, width):
-    """One numbered row: tag, then what it can do (or how big it is), then `current` on the default."""
+    """One numbered row: number, name, speed, size, one word, then `current` or a short recommendation."""
     current = _norm(m["tag"]) == _norm(default_tag or "")
     star = "*" if current else " "
-    badges = [b for b in (m.get("badges") or ()) if isinstance(b, str) and b != "completion"]  # every model completes: not news
-    if m["installed"]:
-        info = ", ".join(badges if _has_tools(badges) else (["chat only"] + badges if badges else []))
-        if current:
-            info = f"{info}  current" if info else "current"
+    if m.get("size_gb") is None:
+        size = "size unknown" if not m.get("installed") else ""
     else:
-        if m["size_gb"] is None:
-            size = "size unknown"
-        else:
-            size = f"~{m['size_gb']:.1f} GB est." if m.get('size_source') == 'estimate' else f"{m['size_gb']:.1f} GB"
-        fit = FIT_TEXT[m["fit"]] if m.get("fit") else ""
-        info = f"{size:<12} {fit:<12} {', '.join(badges):<20} {m.get('note') or ''}".rstrip()
-    return f"       {star}{i:>2}. {m['tag']:<{width}}  {info}".rstrip()
+        size = f"~{m['size_gb']:.1f} GB est." if m.get("size_source") == "estimate" else f"{m['size_gb']:.1f} GB"
+    note = m.get("note") or ""
+    suffix = "  ".join(x for x in ("current" if current else "", note if note.startswith("recommended") else "") if x)
+    if m.get("twin"):
+        suffix = (suffix + "  " if suffix else "") + m["twin"]
+    cols = f"{m.get('speed') or '':<8}  {size:>12}  {_word(m):<9}  {suffix}"
+    return f"       {star}{i:>2}. {m['tag']:<{width}}  {cols}".rstrip()
 
 
 def render(menu, default_tag, backend="ollama"):
@@ -369,7 +432,8 @@ def render(menu, default_tag, backend="ollama"):
         lines.append(_row_line(i, m, default_tag, width))
     if lines:
         lines.append("")
-    lines.append(f"       tools = can edit files.  ? = not confirmed yet.  Download list checked {CATALOG_VERIFIED}, not yet run through this project's agent loop.")
+    lines.append(f"       {LEGEND}")
+    lines.append(f"       tools = can edit files. Download list checked {CATALOG_VERIFIED}, not yet run through this project's agent loop.")
     keep = (f"Enter keeps {default_tag}" if default_tag
             else "Enter picks 1" if rows else "Enter continues with the automatic pick")
     what = "a model id your server lists" if backend == "openai" else "any Ollama tag"
