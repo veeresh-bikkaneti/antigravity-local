@@ -1,5 +1,7 @@
 # Local Google Antigravity agent (open-source edition)
 
+Read this guide on the website: https://veeresh-bikkaneti.github.io/antigravity-local/docs/
+
 > **From zero to coding with one bootstrapped command and a setup wizard.**
 >
 > - **Goal:** one command takes you from nothing to a local coding agent you chose, on your own model, with your project context, so work keeps going when a cloud limit hits.

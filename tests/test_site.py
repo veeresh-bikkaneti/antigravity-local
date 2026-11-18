@@ -155,10 +155,10 @@ class SitePage(unittest.TestCase):
         self.assertIn('id="connect-apps"', HTML)
         for app in ("VS Code", "Continue", "Terminal agents", "Antigravity", "Gemini CLI", "Your own code"):
             self.assertIn(f"<strong>{app}:</strong>", HTML, app)
-        self.assertIn("docs/coding-apps.md", HTML)
+        self.assertIn("docs/coding-apps.html", HTML)
         self.assertIn("built-in Ollama provider is deprecated", HTML)
         game = (SITE / "public" / "game" / "index.html").read_text(encoding="utf-8")
-        self.assertIn("docs/coding-apps.md", game)
+        self.assertIn("docs/coding-apps.html", game)
         self.assertTrue((SITE.parent / "docs" / "coding-apps.md").is_file())
 
     def test_coding_apps_are_taught_on_the_page_itself(self):
@@ -174,7 +174,7 @@ class SitePage(unittest.TestCase):
         step8 = HTML[HTML.index('data-step="8"'):HTML.index('id="coding-apps"')]
         self.assertIn("Continue", step8)
         self.assertIn("Cline", step8)
-        self.assertGreaterEqual(HTML.count("ZERO_TO_CODING.md"), 2)
+        self.assertGreaterEqual(HTML.count("docs/zero-to-coding.html"), 2)  # v1.2.5: the guide is rendered on Pages, not linked on GitHub
         self.assertIn("litert-lm", HTML)
         game = (SITE / "public" / "game" / "index.html").read_text(encoding="utf-8")
         self.assertIn("#coding-apps", game)
