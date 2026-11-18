@@ -254,7 +254,8 @@ class ModelWizardInRun(unittest.TestCase):
         self.assertEqual((got, pulls), (None, []))
 
     def test_the_ollama_menu_offers_the_hf_row_and_nanbeige(self):
-        self.sel(self.INSTALLED, [""], env="qwen2.5:14b")
+        # 2 installed + 3 top downloads, so row 6 is "More downloads" (nanbeige sits behind it); Enter goes back
+        self.sel(self.INSTALLED, ["6", "", ""], env="qwen2.5:14b")
         self.assertIn("Hugging Face model (type hf.co/user/repo:quant)", self.printed)
         self.assertIn(self.HF, self.printed)
 
@@ -383,7 +384,7 @@ class ModelWizardInRun(unittest.TestCase):
         rows = [ln for ln in lines if "qwen2.5-coder:7b" in ln]
         self.assertTrue(rows, self.printed)
         self.assertIn("recommended for this PC", rows[0])
-        self.assertIn("~3.9 GB download (estimate)", rows[0])  # 7b x 4.5 bits: sized, and labelled as an estimate
+        self.assertIn("~3.9 GB est.", rows[0])  # 7b x 4.5 bits: sized, and labelled as an estimate
         self.assertIn("*", rows[0])
         self.assertRegex(rows[0].strip(), r"^\* 1\. qwen2\.5-coder:7b")  # row 1, and it carries the default mark
 
@@ -472,7 +473,7 @@ class ModelWizardInRun(unittest.TestCase):
                 run.main([])
         self.assertEqual(cm.exception.code, 130)
         self.assertEqual(pulls, [])
-        self.assertIn("Cancelled", out.getvalue())
+        self.assertIn("Stopped with Ctrl+C. Nothing was saved. Run python run.py to start again.", out.getvalue())
 
     def test_ranking_prefers_newer_families_but_leaves_the_old_order_alone(self):
         score = run.get_model_capability_score
@@ -645,7 +646,7 @@ class AnyBackend(unittest.TestCase):
         self.assertEqual(got, "gemma-2-27b")
         for gone in ("Hugging Face", "GB download", "Ollama tag", "nanbeige"):
             self.assertNotIn(gone, self.printed)
-        self.assertIn("loaded, no download", self.printed)
+        self.assertIn("Loaded on your server", self.printed)
 
     def test_interactive_typed_id_the_server_does_not_have_keeps_the_default(self):
         got, _ = self.pick(self.IDS, interactive=True, answers=["hf.co/user/repo:q4_k_m"])
@@ -813,7 +814,7 @@ class CheckUpgradesCommand(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("Best installed model: llama3.2:3b", text)
         self.assertIn("gpt-oss:20b  14.0 GB (catalog)", text)
-        self.assertIn("fits your GPU", text)
+        self.assertIn("fits in GPU", text)
         self.assertIn("Report only", text)
 
     def test_offline_prints_couldnt_check_and_exits_0(self):
@@ -956,7 +957,14 @@ class StageWizard(unittest.TestCase):
             run.stage(2, 4, "SERVER", "make sure Ollama is answering")
         out = buf.getvalue()
         self.assertIn("STAGE 2/4  SERVER", out)
-        self.assertIn("next: make sure Ollama is answering", out)
+        self.assertIn("]  make sure Ollama is answering", out)
+        self.assertEqual(len(out.strip().splitlines()), 1)  # v1.2.4: one line per banner
+
+    def test_coding_apps_flag_prints_the_block_with_the_model_and_exits_cleanly(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            run.main(["--coding-apps", "qwen2.5:14b"])  # returns: no venv, no Ollama, exit 0
+        self.assertIn("Use qwen2.5:14b in a coding app", buf.getvalue())
 
     def test_no_colour_or_block_art_when_no_color_is_set(self):
         buf = io.StringIO()

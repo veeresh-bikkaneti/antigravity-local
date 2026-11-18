@@ -682,19 +682,19 @@ class Menu(unittest.TestCase):
         for hint in ("", None):
             media = [{"tag": "x/m", "badges": ("image",), "note": "n", "hint": hint}]
             menu = model_wizard.build_menu(["a:1"], 16, 128, media=media)
-            n = [m["tag"] for m in menu].index("x/m") + 1
+            n = [m["tag"] for m in model_wizard._visible(menu)].index(model_wizard.MEDIA_ROW_TAG) + 1
             out = []
-            got = model_wizard.choose(menu, "a:1", input_fn=_feed([str(n), ""]), out=out.append)
+            got = model_wizard.choose(menu, "a:1", input_fn=_feed([str(n), "1", "", ""]), out=out.append)
             self.assertEqual(got, "a:1")
-            self.assertTrue(any("edia" in l for l in out[-2:]), (hint, out[-2:]))
+            self.assertTrue(any("Media models are not used" in l for l in out), (hint, out))
 
     def test_a_whitespace_hint_prints_something_readable(self):
         media = [{"tag": "x/m", "badges": ("image",), "note": "n", "hint": "   "}]
         menu = model_wizard.build_menu(["a:1"], 16, 128, media=media)
-        n = [m["tag"] for m in menu].index("x/m") + 1
+        n = [m["tag"] for m in model_wizard._visible(menu)].index(model_wizard.MEDIA_ROW_TAG) + 1
         out = []
-        model_wizard.choose(menu, "a:1", input_fn=_feed([str(n), ""]), out=out.append)
-        self.assertTrue(out[-1].strip(), "an all-blank line was printed as the explanation")
+        model_wizard.choose(menu, "a:1", input_fn=_feed([str(n), "1", "", ""]), out=out.append)
+        self.assertTrue(any("Media models are not used" in l for l in out), "an all-blank line was printed as the explanation")
 
     def test_a_media_tag_that_is_also_installed_is_not_listed_twice(self):
         media = [{"tag": "x/img", "badges": ("image",), "note": "n", "hint": "h"}]

@@ -133,7 +133,10 @@ def fit_label(size_gb, vram_gb, ram_gb, headroom=LEGACY_HEADROOM):
     return "too big"
 
 
-FIT_TEXT = {"gpu": "fits your GPU", "split": "runs, part on CPU (slow)", "too big": "too big for this PC"}
+FIT_TEXT = {"gpu": "fits in GPU", "split": "part on CPU", "too big": "too big"}
+TOP_DOWNLOADS = 3  # catalog rows shown on the main list; the rest sit behind "More downloads"
+MORE_ROW_TAG = "More downloads"
+MEDIA_ROW_TAG = "Image and video models"
 
 
 def hf_repo_info(user, repo, timeout=4):
@@ -264,6 +267,7 @@ def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, ba
                      "fit": fit_label(gb, vram_gb, ram_gb, headroom=FIT_HEADROOM) if gb else None,
                      "badges": _badges(recommended), "note": "recommended for this PC"})
         have.add(_norm(recommended))
+    shown = 0
     for tag, size, note in catalog:
         if _norm(tag) in have:
             continue
@@ -272,7 +276,8 @@ def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, ba
         if fit == "too big":
             continue
         menu.append({"tag": tag, "installed": False, "size_gb": gb, "size_source": src, "fit": fit,
-                     "badges": _badges(tag), "note": note})
+                     "badges": _badges(tag), "note": note, "hidden": shown >= TOP_DOWNLOADS})
+        shown += 1
         have.add(_norm(tag))
     for row in library or []:
         if _norm(row["tag"]) not in have:
@@ -280,49 +285,95 @@ def build_menu(installed, vram_gb, ram_gb, catalog=CATALOG, recommended=None, ba
             gb, src = _sized(row["tag"], None, size_of)
             menu.append({"tag": row["tag"], "installed": False, "size_gb": gb, "size_source": src,
                          "fit": fit_label(gb, vram_gb, ram_gb, headroom=FIT_HEADROOM) if gb else None,
-                         "badges": _badge_list(row.get("badges")), "note": row.get("note", "from the Ollama library page")})
-    for row in media or []:
+                         "badges": _badge_list(row.get("badges")), "note": row.get("note", "from the Ollama library page"),
+                         "hidden": True})
+    loader = media if callable(media) else None  # a callable is asked only when the media row is picked
+    for row in ([] if loader else media or []):
         if _norm(row["tag"]) in have:  # already listed (installed, catalog or library): one row per model
             continue
         have.add(_norm(row["tag"]))
-        menu.append({"tag": row["tag"], "installed": False, "size_gb": None, "fit": None, "media": True,
-                     "badges": _badge_list(row.get("badges")), "note": _text(row.get("note")), "hint": _text(row.get("hint"))})
+        menu.append(_media_row(row))
+    if any(m.get("hidden") and not m.get("media") for m in menu):
+        menu.append({"tag": MORE_ROW_TAG, "installed": False, "size_gb": None, "fit": None, "more": True})
+    if loader or any(m.get("media") for m in menu):
+        menu.append({"tag": MEDIA_ROW_TAG, "installed": False, "size_gb": None, "fit": None, "media_row": True,
+                     "loader": loader, "known": sorted(have)})
     menu.append({"tag": HF_ROW_TAG, "installed": False, "size_gb": None, "fit": None, "hf": True,
-                 "note": "Hugging Face model (type hf.co/user/repo:quant)"})
+                 "note": "A Hugging Face model (type hf.co/user/repo:quant)"})
     return menu
 
 
-def render(menu, default_tag, backend="ollama"):
-    lines = [f"       Pick a model (list checked {CATALOG_VERIFIED}; not yet run through this project's agent loop):"]
-    seen_media = False
-    for i, m in enumerate(menu, 1):
-        star = "*" if _norm(m["tag"]) == _norm(default_tag or "") else " "
-        if m.get("media"):
-            if not seen_media:
-                seen_media = True
-                lines.append("       Media models (for pictures, video or sound: not coding agents, never picked automatically):")
-            badge_text = f"  ({capabilities.format_badges(m.get('badges'))})" if m.get("badges") else ""
-            lines.append(f"       {star}{i:>2}. {m['tag']}  [media]{badge_text}  {m['note']}")
-            continue
-        if m.get("hf"):
-            lines.append(f"       {star}{i:>2}. {m['note']}")
-            continue
-        if m["installed"]:
-            detail = "loaded, no download" if backend == "openai" else "installed, no download"
+def _media_row(row):
+    return {"tag": row["tag"], "installed": False, "size_gb": None, "fit": None, "media": True, "hidden": True,
+            "badges": _badge_list(row.get("badges")), "note": _text(row.get("note")), "hint": _text(row.get("hint"))}
+
+
+def _visible(menu):
+    """The rows on the main list, in order. Their position here is the number the user types."""
+    return [m for m in menu if not m.get("hidden")]
+
+
+def _is_pick(m):
+    """A row that is a real model the user can choose (not a section row, not media)."""
+    return not any(m.get(k) for k in ("hf", "media", "more", "media_row"))
+
+
+def _has_tools(badges):
+    return any(isinstance(b, str) and b.startswith("tools") for b in (badges or ()))
+
+
+def _row_line(i, m, default_tag, width):
+    """One numbered row: tag, then what it can do (or how big it is), then `current` on the default."""
+    current = _norm(m["tag"]) == _norm(default_tag or "")
+    star = "*" if current else " "
+    badges = [b for b in (m.get("badges") or ()) if isinstance(b, str)]
+    if m["installed"]:
+        info = ", ".join(badges if _has_tools(badges) else (["chat only"] + badges if badges else []))
+        if current:
+            info = f"{info}  current" if info else "current"
+    else:
+        if m["size_gb"] is None:
+            size = "size unknown"
         else:
-            if m["size_gb"] is None:
-                size = "size unknown"
-            elif m.get("size_source") == "estimate":
-                size = f"~{m['size_gb']:.1f} GB download (estimate)"
+            size = f"~{m['size_gb']:.1f} GB est." if m.get('size_source') == 'estimate' else f"{m['size_gb']:.1f} GB"
+        fit = FIT_TEXT[m["fit"]] if m.get("fit") else ""
+        info = f"{size:<12} {fit:<12} {', '.join(badges):<20} {m.get('note') or ''}".rstrip()
+    return f"       {star}{i:>2}. {m['tag']:<{width}}  {info}".rstrip()
+
+
+def render(menu, default_tag, backend="ollama"):
+    rows = _visible(menu)
+    width = min(50, max([len(m["tag"]) for m in rows if _is_pick(m)] or [0]))
+    lines = []
+    section = None
+    for i, m in enumerate(rows, 1):
+        if not _is_pick(m):
+            if section != "special":
+                section = "special"
+                lines.append("")
+            if m.get("more"):
+                n = sum(1 for r in menu if r.get("hidden") and not r.get("media"))
+                lines.append(f"        {i:>2}. {MORE_ROW_TAG} ({n} more)")
+            elif m.get("media_row"):
+                lines.append(f"        {i:>2}. {MEDIA_ROW_TAG} (not for coding)")
             else:
-                size = f"{m['size_gb']:.1f} GB download"
-            detail = size + (f", {FIT_TEXT[m['fit']]}" if m["fit"] else "")
-        badge_text = f"  ({capabilities.format_badges(m.get('badges'))})" if m.get("badges") else ""
-        lines.append(f"       {star}{i:>2}. {m['tag']}  [{detail}]{badge_text}  {m['note']}")
+                lines.append(f"        {i:>2}. {m['note']}")
+            continue
+        want = "installed" if m["installed"] else "download"
+        if want != section:
+            if section:
+                lines.append("")
+            section = want
+            lines.append("       " + (("Loaded on your server" if backend == "openai" else "On this PC, no download")
+                                       if want == "installed" else "Worth downloading"))
+        lines.append(_row_line(i, m, default_tag, width))
+    if lines:
+        lines.append("")
+    lines.append(f"       tools = can edit files.  ? = not confirmed yet.  Download list checked {CATALOG_VERIFIED}, not yet run through this project's agent loop.")
     keep = (f"Enter keeps {default_tag}" if default_tag
-            else "Enter picks 1" if menu else "Enter continues with the automatic pick")
-    what = "a model id your server lists" if backend == "openai" else "any other Ollama tag"
-    lines.append(f"       Type a number, or {what}. {keep}. (* = current)")
+            else "Enter picks 1" if rows else "Enter continues with the automatic pick")
+    what = "a model id your server lists" if backend == "openai" else "any Ollama tag"
+    lines.append(f"       {keep}. Or type a number, or {what}.")
     return lines
 
 
@@ -403,19 +454,97 @@ def _ask_hf_tag(input_fn, out, fallback, search_fn=None, validate_fn=None, defau
 YES_NO = {"y", "yes", "n", "no"}
 
 
+def _sub_list(rows, out):
+    """Print a numbered side list (more downloads, or media). The numbers restart at 1 inside it."""
+    width = min(50, max([len(m["tag"]) for m in rows] or [0]))
+    for i, m in enumerate(rows, 1):
+        if m.get("media"):
+            b = capabilities.format_badges(m.get("badges"))
+            out(f"       {i:>2}. {m['tag']:<{width}}  {b + '  ' if b else ''}{m.get('note') or ''}".rstrip())
+        else:
+            out(_row_line(i, m, None, width))
+
+
+def _more_pick(menu, input_fn, out, validate_fn):
+    """The 'More downloads' side list. Returns a tag, or None for 'go back to the main list'."""
+    rows = [m for m in menu if m.get("hidden") and not m.get("media")]
+    _sub_list(rows, out)
+    for _ in range(3):
+        try:
+            raw = input_fn("       Pick a number, or Enter to go back > ").strip()
+        except EOFError:
+            return None
+        if not raw:
+            return None
+        if raw.isascii() and raw.isdigit() and len(raw) <= MAX_PICK_DIGITS and 1 <= int(raw) <= len(rows):
+            problem = validate_fn(rows[int(raw) - 1]["tag"]) if validate_fn else None
+            if problem is None:
+                return rows[int(raw) - 1]["tag"]
+            out(problem)
+            continue
+        out(f"       Pick 1 to {len(rows)}, or press Enter to go back.")
+    return None
+
+
+def _media_rows(row, menu):
+    """Media rows for the side list: the ones already in the menu plus whatever the lazy loader finds now."""
+    rows = [m for m in menu if m.get("media")]
+    if row.get("loader"):
+        known = set(row.get("known") or ())
+        try:
+            found = row["loader"]() or []
+        except Exception:  # noqa: BLE001 - a failed lookup is an empty list, never a crash
+            found = []
+        for r in found:
+            if isinstance(r, dict) and r.get("tag") and _norm(r["tag"]) not in known:
+                known.add(_norm(r["tag"]))
+                rows.append(_media_row(r))
+    return rows
+
+
+def _media_loop(row, menu, input_fn, out):
+    """The 'Image and video models' side list. A number prints how to run that model and stays here.
+    Enter goes back to the main list. None of this is a bad try."""
+    rows = _media_rows(row, menu)
+    if not rows:
+        out("       No image or video models found (or Hugging Face could not be reached).")
+        return
+    out("       Image and video models. This tool does not run them, so none of these can be picked.")
+    _sub_list(rows, out)
+    wrong = 0
+    while wrong < 3:
+        try:
+            raw = input_fn("       Type a number to see how to run it, or Enter to go back > ").strip()
+        except EOFError:
+            return
+        if not raw:
+            return
+        if raw.isascii() and raw.isdigit() and len(raw) <= MAX_PICK_DIGITS and 1 <= int(raw) <= len(rows):
+            out(f"       {rows[int(raw) - 1].get('hint') or 'Media models are not used by coding agents.'}")
+            continue
+        wrong += 1
+        out(f"       Pick 1 to {len(rows)}, or press Enter to go back.")
+
+
 def choose(menu, default_tag, input_fn=None, out=print, backend="ollama", search_fn=None, validate_fn=None,
            default_label=None, result=None):
     """Return the chosen tag. Bad input re-asks, up to 3 tries. After 3 bad tries the default is used and one line
     says so, naming it with `default_label`. `validate_fn(tag)` vets a typed tag or a numbered pick: None when it is
     fine, else the line to print that says why not (for example "not on the registry"). Without it every tag passes.
+    The main list shows only the rows not marked hidden. "More downloads" and "Image and video models" open side
+    lists; looking at those is never a bad try, and Enter in them goes back to the main list.
     Pass a dict as `result` to learn how it ended: result["how"] is "enter", "pick", "gave_up" or "eof"."""
     input_fn = input_fn or input  # looked up now, not at import, so a terminal or a test can swap it
     how = result if isinstance(result, dict) else {}
     how["how"] = "pick"
-    fallback = default_tag or next((m["tag"] for m in menu if not m.get("hf") and not m.get("media")), None)
-    for line in render(menu, default_tag, backend):
-        out(line)
-    for _ in range(3):
+    fallback = default_tag or next((m["tag"] for m in menu if _is_pick(m) and not m.get("hidden")), None)
+    tries = 0
+    show = True
+    while tries < 3:
+        if show:
+            for line in render(menu, default_tag, backend):
+                out(line)
+            show = False
         try:
             raw = input_fn("       > ").strip()
         except EOFError:  # input closed (piped, CI): same as Enter. Ctrl+C is NOT caught: the caller must stop.
@@ -426,29 +555,43 @@ def choose(menu, default_tag, input_fn=None, out=print, backend="ollama", search
             return fallback
         if raw.lower() in YES_NO:  # "y" is a valid-looking tag, but nobody means it as one
             out(f"       That looks like a yes/no answer. Type a number, a model tag, or press Enter for {fallback}.")
+            tries += 1
             continue
         if raw.isascii() and raw.isdigit():
+            rows = _visible(menu)
             n = int(raw) if len(raw) <= MAX_PICK_DIGITS else 0  # int() refuses 4300+ digits; no menu is that long
-            if 1 <= n <= len(menu):
-                if menu[n - 1].get("hf"):
+            if 1 <= n <= len(rows):
+                row = rows[n - 1]
+                if row.get("hf"):
                     return _ask_hf_tag(input_fn, out, fallback, search_fn, validate_fn, default_tag, default_label)
-                if menu[n - 1].get("media"):  # never a pick: say how to run it, then ask again
-                    out(f"       {menu[n - 1].get('hint') or 'Media models are not used by coding agents.'}")
+                if row.get("more"):
+                    picked = _more_pick(menu, input_fn, out, validate_fn)
+                    if picked:
+                        return picked
+                    show = True
                     continue
-                problem = validate_fn(menu[n - 1]["tag"]) if validate_fn else None
+                if row.get("media_row"):
+                    _media_loop(row, menu, input_fn, out)
+                    show = True
+                    continue
+                problem = validate_fn(row["tag"]) if validate_fn else None
                 if problem is None:
-                    return menu[n - 1]["tag"]
+                    return row["tag"]
                 out(problem)
+                tries += 1
                 continue
-            out(f"       Pick 1 to {len(menu)}, or type a tag.")
+            out(f"       Pick 1 to {len(rows)}, or type a tag.")
+            tries += 1
             continue
         if TAG_RE.match(raw.lower()):
             problem = validate_fn(raw.lower()) if validate_fn else None
             if problem is None:
                 return raw.lower()
             out(problem)
+            tries += 1
             continue
         out("       That is not a tag. Use a number, or something like qwen3.6:27b.")
+        tries += 1
     _gave_up(out, fallback, default_tag, default_label)
     how["how"] = "gave_up"
     return fallback
