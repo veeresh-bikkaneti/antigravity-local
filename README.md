@@ -140,6 +140,8 @@ Forgot the container name? `docker ps` lists running ones, then `docker stop <id
 
 ## Use your local model from Antigravity or VS Code
 
+Short on time? [docs/coding-apps.md](docs/coding-apps.md) has one section per app, and `python run.py --coding-apps` prints a summary.
+
 Ollama holds the model. Every tool below just knocks on its door at `http://localhost:11434` (the OpenAI-style address is `http://localhost:11434/v1`). So the order is always the same: start Ollama, run `ollama list`, and copy the model name exactly as it prints, for example `qwen2.5:14b`. Then pick your editor.
 
 *Agent facts checked on Nov. 14, 2026, editor extension routes on Nov. 4, 2026. These tools rename their settings often. If a label differs from what you see, follow the linked guide.*
@@ -285,7 +287,7 @@ python run.py --agent pi --continue-local   # start a local agent on the task (p
 Four ways, easiest first. All of them use the same Ollama on `http://localhost:11434`.
 
 1. **Our shell in the built-in terminal.** Open Terminal, then New Terminal. Activate the venv and run `python code_agent.py --workspace .`. No extension needed.
-2. **The Ollama extension** ([Ollama's guide](https://docs.ollama.com/integrations/vscode)). Install the extension with the ID `Ollama.ollama`, open Chat, open the model picker at the bottom of the chat box, and choose your model from the **Ollama** section. It needs VS Code 1.127 or newer. For local models, set the context length to at least 64k in Ollama's Settings, then reload the VS Code window. If your model is missing, run **Ollama: Refresh Models** or **Ollama: Diagnose Models** from the Command Palette.
+2. **The Ollama extension** ([Ollama's guide](https://docs.ollama.com/integrations/vscode)). VS Code's built-in Ollama provider is deprecated, so use this extension instead. Install the extension with the ID `Ollama.ollama`, open Chat, open the model picker at the bottom of the chat box, and choose your model from the **Ollama** section. It needs VS Code 1.127 or newer. For local models, set the context length to at least 64k in Ollama's Settings, then reload the VS Code window. If your model is missing, run **Ollama: Refresh Models** or **Ollama: Diagnose Models** from the Command Palette.
 3. **Continue** ([Continue's guide](https://docs.continue.dev/guides/ollama-guide)). Add this model to Continue's `config.yaml`:
    ```yaml
    models:
@@ -310,6 +312,8 @@ Good to know:
 ---
 
 ## Use your model in a coding app
+
+Step-by-step for VS Code, Continue, terminal agents, Antigravity and Gemini CLI: [docs/coding-apps.md](docs/coding-apps.md).
 
 Your pick is saved as `LOCAL_LLM_MODEL` in `.env`, so every coding app below uses the same model. Change the pick there, and the next launch follows.
 
@@ -872,6 +876,8 @@ docker run --rm --add-host=host.docker.internal:host-gateway \
 ---
 
 ## Common gotchas & troubleshooting
+
+Short on VRAM? The LiteRT route (`litert-lm`) needs 24 GB or more of VRAM for models over 16 GB and fails on 16 GB laptop cards. See [.wiki/hardware-matrix.md](.wiki/hardware-matrix.md). The Ollama route in this project is built for 8 to 16 GB machines.
 
 ### 1. PowerShell: "Running scripts is disabled on this system"
 **Cause**: Windows restricts PowerShell script execution by default.  

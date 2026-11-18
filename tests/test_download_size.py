@@ -100,14 +100,17 @@ class MenuRows(_Net):
                                        library=[{"tag": "llama3.1:70b", "badges": ()}],
                                        size_of=download_size.resolve)
         text = "\n".join(model_wizard.render(menu, "qwen3.6:27b"))
-        self.assertIn("12.3 GB download", text)
+        lib = next(m for m in menu if m["tag"] == "llama3.1:70b")  # hidden behind "More downloads"
+        text += "\n" + model_wizard._row_line(2, lib, None, 12)
+        self.assertIn("12.3 GB", text)
         self.assertIn("~", text)  # llama3.1:70b has no registry answer here, so it is an estimate
-        self.assertIn("(estimate)", text)
+        self.assertIn("est.", text)
         self.assertNotIn("size unknown", text)
 
     def test_no_size_source_still_says_unknown(self):
         menu = model_wizard.build_menu([], 24.0, 32.0, catalog=[], library=[{"tag": "mystery", "badges": ()}])
-        self.assertIn("size unknown", "\n".join(model_wizard.render(menu, None)))
+        row = next(m for m in menu if m["tag"] == "mystery")  # library rows sit behind "More downloads"
+        self.assertIn("size unknown", model_wizard._row_line(1, row, None, 10))
 
     def test_without_size_of_nothing_is_fetched(self):
         model_wizard.build_menu([], 24.0, 32.0, recommended="qwen3.6:27b")

@@ -40,6 +40,7 @@
       <a href="game/">Game</a>
       <a href="#watch">Watch</a>
       <a href="#guide">Guide</a>
+      <a href="#coding-apps">Coding apps</a>
       <a href="#architecture">Architecture</a>
       <a href="#limits">Limits</a>
       <a href="#faq">Questions</a>
@@ -60,6 +61,7 @@
         <p class="lede">Local Antigravity runs the Google Antigravity SDK against a model on your computer, served by Ollama. Setup needs no cloud account and no API key.</p>
         <p class="actions">
           <a class="btn btn-primary" href="#guide">Start the guide</a>
+          <a class="btn" href="https://github.com/veeresh-bikkaneti/antigravity-local/blob/main/ZERO_TO_CODING.md">Zero to coding guide</a>
           <a class="btn btn-game" href="game/">▶ Play the zero-to-coding game</a>
           <a class="btn" href="https://github.com/veeresh-bikkaneti/antigravity-local">See the code on GitHub</a>
         </p>
@@ -229,7 +231,7 @@
 
         <li class="step" data-step="2" data-focus="model">
           <h3>Choose a model (optional)</h3>
-          <p>Step 3 picks a model that fits your machine, so you can skip this. On a normal terminal it shows a short menu and Enter takes the pick for your machine; <code>--yes</code> skips the menu and never downloads. Not on Ollama? LM Studio, llama.cpp and vLLM work too: point <code>LOCAL_LLM_BASE_URL</code> at them and nothing gets downloaded. Want a model from Hugging Face? Type <code>hf.co/user/repo:quant</code> in the menu. To choose one yourself, pull the model <code>run.py</code> would pick: <code>qwen2.5-coder:14b</code> with 15 GB or more of VRAM (your graphics card's own memory), <code>qwen2.5-coder:7b</code> with 8 GB of VRAM or 16 GB of RAM, and <code>llama3.2:3b</code> otherwise.</p>
+          <p>Step 3 picks a model that fits your machine, so you can skip this. On a normal terminal it shows a short menu and Enter takes the pick for your machine; <code>--yes</code> skips the menu and never downloads. Not on Ollama? LM Studio, llama.cpp and vLLM work too: point <code>LOCAL_LLM_BASE_URL</code> at them and nothing gets downloaded. Want a model from Hugging Face? Type <code>hf.co/user/repo:quant</code> in the menu. To choose one yourself, pull the model <code>run.py</code> would pick: <code>qwen2.5-coder:14b</code> with 15 GB or more of VRAM (your graphics card's own memory), <code>qwen2.5-coder:7b</code> with 8 GB of VRAM or 16 GB of RAM, and <code>llama3.2:3b</code> otherwise. If you pick a Gemma model, tool calling is off, so it can chat but not edit files.</p>
           <div class="code"><pre><code>ollama pull qwen2.5-coder:7b</code></pre><button class="copy" type="button" aria-label="Copy command: ollama pull qwen2.5-coder:7b">Copy</button></div>
           <p class="check">You should see the model in <code>ollama list</code>.</p>
           <p class="time">Depends on your connection</p>
@@ -248,10 +250,41 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
 
         <li class="step" data-step="4" data-focus="app">
           <h3>Use your model in a coding app</h3>
-          <p>Your pick is saved as <code>LOCAL_LLM_MODEL</code> in <code>.env</code>, so every app uses the same model. Choose the app with <code>--agent</code>: <code>pi</code>, <code>opencode</code>, <code>codex</code> or <code>claude</code>. It adds only an Ollama entry to that app's config, and it asks before it installs anything. Coding apps want a 64k context window. If stage 4 says yours is smaller, set <code>OLLAMA_CONTEXT_LENGTH=65536</code> and restart Ollama. The README covers this route and Ollama's own <code>ollama launch</code>.</p>
-          <div class="code"><pre><code>python run.py --agent opencode</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --agent opencode">Copy</button></div>
-          <p class="check">The app opens in your project, already pointed at your local model. Your other settings are left alone.</p>
-          <p class="time">A minute, plus the app install if you say yes. <a href="https://github.com/veeresh-bikkaneti/antigravity-local#use-your-model-in-a-coding-app">Setup in the README</a></p>
+          <p>Your pick is saved as <code>LOCAL_LLM_MODEL</code> in <code>.env</code>, so every app uses the same model. Pick one agent below. Each command adds only an Ollama entry to that app's config, and it asks before it installs anything. Coding apps want a 64k context window. If stage 4 says yours is smaller, set <code>OLLAMA_CONTEXT_LENGTH=65536</code> and restart Ollama.</p>
+          <div class="agent-cards">
+            <div class="agent-card">
+              <h4>Built-in shell</h4>
+              <p>Our own pair-programmer shell. Nothing extra to install.</p>
+              <div class="code"><pre><code>python code_agent.py --workspace .</code></pre><button class="copy" type="button" aria-label="Copy command: python code_agent.py --workspace .">Copy</button></div>
+            </div>
+            <div class="agent-card">
+              <h4>pi</h4>
+              <p>A minimal agent with four tools and a short system prompt. Best for small local models, because there is less prompt to get lost in.</p>
+              <div class="code"><pre><code>python run.py --agent pi</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --agent pi">Copy</button></div>
+            </div>
+            <div class="agent-card">
+              <h4>opencode</h4>
+              <p>A fuller agent with MCP, LSP and sub-agents. More features, and a better fit for bigger models.</p>
+              <div class="code"><pre><code>python run.py --agent opencode</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --agent opencode">Copy</button></div>
+            </div>
+            <div class="agent-card">
+              <h4>codex</h4>
+              <p>OpenAI's terminal agent, pointed at Ollama with <code>--oss</code>. Zero config files to manage.</p>
+              <div class="code"><pre><code>python run.py --agent codex</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --agent codex">Copy</button></div>
+            </div>
+          </div>
+          <p class="check">The app opens in your project, already pointed at your local model. Your other settings are left alone. Claude Code has its own route in the README.</p>
+          <p class="time">A minute, plus the app install if you say yes. <a href="https://github.com/veeresh-bikkaneti/antigravity-local#use-your-model-in-a-coding-app">Full details in the README</a></p>
+          <h4 id="connect-apps">Connect your coding app</h4>
+          <ul>
+            <li><strong>VS Code:</strong> install the Ollama extension (<code>Ollama.ollama</code>), then pick your model under Ollama in Chat.</li>
+            <li><strong>Continue:</strong> set <code>provider: ollama</code>, your model tag and <code>apiBase: http://localhost:11434</code> in <code>config.yaml</code>.</li>
+            <li><strong>Terminal agents:</strong> <code>python run.py --agent pi</code>, or <code>opencode</code>, <code>codex</code>, <code>claude</code>.</li>
+            <li><strong>Antigravity:</strong> no documented local-model setting in the app. Run the terminal line in its built-in terminal.</li>
+            <li><strong>Gemini CLI:</strong> no local models. Only a LiteLLM proxy gets there, and that is experimental and untested by us.</li>
+            <li><strong>Your own code:</strong> base URL <code>http://localhost:11434/v1</code> and your model tag. <a href="#coding-apps">Steps for every app are in the Coding apps section below.</a></li>
+          </ul>
+          <p class="time">Short version any time: <code>python run.py --coding-apps</code>.</p>
         </li>
 
         <li class="step" data-step="5" data-focus="venv">
@@ -284,12 +317,102 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
 
         <li class="step" data-step="8" data-focus="editor">
           <h3>Use it from your editor or the browser</h3>
-          <p>Start a search page on a free port, or run it in Docker (the <a href="https://github.com/veeresh-bikkaneti/antigravity-local#serve-it-search-ui--api-on-a-free-port-local-or-docker">README has the three Docker commands</a>). For VS Code, the README lists four routes: our shell in the terminal, the Ollama extension, Continue, and Cline. Want a sturdier terminal agent? <code>python run.py --agent pi</code> (or <code>opencode</code>, or <code>codex</code>) sets one up for your local model and asks before it installs anything.</p>
+          <p>Start a search page on a free port, or run it in Docker (the <a href="https://github.com/veeresh-bikkaneti/antigravity-local#serve-it-search-ui--api-on-a-free-port-local-or-docker">README has the three Docker commands</a>). For VS Code there are four routes:</p>
+          <ul>
+            <li><strong>Our shell in the built-in terminal.</strong> Open Terminal, then New Terminal, activate the venv and run <code>python code_agent.py --workspace .</code>. No extension needed.</li>
+            <li><strong>The Ollama extension</strong> (<code>Ollama.ollama</code>). Pick your model under Ollama in Chat. <a href="#app-vscode">Steps</a></li>
+            <li><strong>Continue.</strong> Add your model to its <code>config.yaml</code>. <a href="#app-continue">Steps</a></li>
+            <li><strong>Cline.</strong> The README has the steps. We did not re-check them on 2026-11-18.</li>
+          </ul>
+          <p>Want a sturdier terminal agent? <code>python run.py --agent pi</code> (or <code>opencode</code>, or <code>codex</code>) sets one up for your local model and asks before it installs anything. <a href="#app-terminal">Steps</a></p>
           <div class="code"><pre><code>python run.py --serve</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --serve">Copy</button></div>
           <p class="check">You should see <code>Serving on http://127.0.0.1:</code> followed by a port number. Open that address. A port is just a numbered door on your computer, and this command picks one that is free. The page has no login, so keep it on your machine.</p>
-          <p class="time">Under a minute. <a href="https://github.com/veeresh-bikkaneti/antigravity-local#use-your-local-model-from-antigravity-or-vs-code">Editor setup in the README</a></p>
+          <p class="time">Under a minute. <a href="https://github.com/veeresh-bikkaneti/antigravity-local#use-your-local-model-from-antigravity-or-vs-code">Full details in the README</a></p>
         </li>
       </ol>
+      <p class="zero-cta">Want something to build now? The <a href="https://github.com/veeresh-bikkaneti/antigravity-local/blob/main/ZERO_TO_CODING.md">Zero to coding guide</a> walks through 3 end-to-end coding recipes: a FastAPI backend, unit tests for existing code, and a legacy-code refactor.</p>
+    </section>
+
+    <section class="faq apps" id="coding-apps" aria-labelledby="apps-title">
+      <h2 id="apps-title">Connect your coding app</h2>
+      <p>Ollama holds the model, and every app below knocks on its door at <code>http://localhost:11434</code>. Apps that speak the OpenAI style use <code>http://localhost:11434/v1</code>. Start Ollama first, and check your model with <code>ollama list</code>. Checked 2026-11-18. Confidence tags: High means three or more primary sources agree, Moderate means two sources or one primary source, Low means secondary or conflicting.</p>
+      <p>Coding tools want a 64k context window, and Ollama's default is 4k on a PC with under 24 GB of VRAM. On Windows, run this, or use the context slider in the Ollama app, then check with <code>ollama ps</code>. Source: Ollama's context length docs [Moderate].</p>
+      <div class="code"><pre><code>$env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve</code></pre><button class="copy" type="button" aria-label="Copy command: set the Ollama context length to 65536 and start Ollama">Copy</button></div>
+
+      <details id="app-vscode">
+        <summary>VS Code: use the Ollama extension</summary>
+        <p>VS Code's built-in Ollama provider is deprecated. Use the official Ollama extension instead.</p>
+        <ol>
+          <li>Update VS Code (1.127 or newer) and Ollama (0.17.6 or newer recommended).</li>
+          <li>Install the extension with the ID <code>Ollama.ollama</code>.</li>
+          <li>Open Chat, open the model picker, and choose your model under <strong>Ollama</strong>.</li>
+          <li>If the model is missing, run <strong>Ollama: Refresh Models</strong> from the command palette. <strong>Ollama: Diagnose Models</strong> says what it sees.</li>
+        </ol>
+        <p>Local models work without a GitHub sign-in or a Copilot plan. Completions and semantic search still need GitHub. Agent mode hides any model that does not support tool calling, so pick one with the <code>tools</code> badge.</p>
+        <p class="time">Sources: VS Code language models docs, Ollama VS Code guide, GitHub changelog 2026-04-22 [Moderate]. Checked 2026-11-18.</p>
+      </details>
+
+      <details id="app-continue">
+        <summary>Continue: edit config.yaml</summary>
+        <ol>
+          <li>Install Continue and open its settings.</li>
+          <li>Open <code>config.yaml</code> from there.</li>
+          <li>Add your model. The <code>model</code> value must match <code>ollama list</code> exactly.</li>
+          <li>Pick the model in Continue's chat box.</li>
+        </ol>
+        <div class="code"><pre><code>models:
+  - name: My local model
+    provider: ollama
+    model: qwen2.5:14b
+    apiBase: http://localhost:11434
+    roles: [chat, edit]
+    capabilities: [tool_use]   # needed for agent mode</code></pre><button class="copy" type="button" aria-label="Copy the Continue config.yaml model entry">Copy</button></div>
+        <p class="time">Source: Continue's Ollama guide [Moderate, one primary source, written for Continue 1.1.x]. Checked 2026-11-18.</p>
+      </details>
+
+      <details id="app-terminal">
+        <summary>Terminal agents: one command</summary>
+        <ol>
+          <li>Run <code>python run.py --agent pi</code> from your project. Swap <code>pi</code> for <code>opencode</code>, <code>codex</code> or <code>claude</code>.</li>
+          <li>Say <code>y</code> if it offers to install the agent. It adds only an Ollama entry to that agent's own config.</li>
+          <li>Prefer Ollama's own helper? <code>ollama launch pi</code> does a similar job.</li>
+        </ol>
+        <p class="time">Sources: this repo's <code>agent_setup.py</code> (covered by the offline tests) and Ollama's pi guide [Moderate]. The README's <code>ollama launch</code> app list was checked on 2026-11-14 and not re-checked. Checked 2026-11-18.</p>
+      </details>
+
+      <details id="app-antigravity">
+        <summary>Antigravity app: no documented setting</summary>
+        <p>The Antigravity app and its agent window have no documented setting for a local model. The plans page says it has no support for "Bring-your-own-key (BYOK) or bring-your-own-endpoint for additional rate limits". That wording is about rate limits, so read it as "no documented setting", not "impossible". Google's local-model page covers the SDK only.</p>
+        <ol>
+          <li>Open the app's built-in terminal in your project.</li>
+          <li>Run <code>python &lt;path&gt;\antigravity-local\run.py --agent pi</code>, using the full path to where you cloned this repo.</li>
+        </ol>
+        <p>For your own SDK code, <code>LocalOpenAIAgentConfig(model="&lt;tag&gt;", base_url="http://localhost:11434/v1")</code> is the local option, and <code>LiteRTAgentConfig</code> is the other. This repo's code uses the first one.</p>
+        <p class="time">Sources: Antigravity plans page and SDK local-models page [Moderate]. Checked 2026-11-18.</p>
+      </details>
+
+      <details id="app-gemini">
+        <summary>Gemini CLI: proxy only, experimental</summary>
+        <p>Gemini CLI has no native local-model support. A feature request (#24166, 2026-03-29) has no maintainer reply, and #23385 was closed as a possible duplicate [Moderate]. The only route we know is a LiteLLM proxy. It is experimental and <strong>not tested by us</strong>.</p>
+        <ol>
+          <li>Run a LiteLLM proxy in front of Ollama, with a <code>model_group_alias</code> that maps the Gemini model name to your Ollama model.</li>
+          <li>Set <code>GOOGLE_GEMINI_BASE_URL=http://localhost:4000</code>.</li>
+          <li>Set <code>GEMINI_API_KEY</code> to your LiteLLM key.</li>
+        </ol>
+        <p class="time">One report says the CLI ignores <code>GOOGLE_GEMINI_BASE_URL</code> when cached Google credentials exist (#15430) [Low]. Source for the route: the LiteLLM Gemini CLI tutorial [Moderate]. Checked 2026-11-18.</p>
+      </details>
+
+      <details id="app-own-code">
+        <summary>Your own code: any OpenAI client</summary>
+        <ol>
+          <li>Set the base URL to <code>http://localhost:11434/v1</code>.</li>
+          <li>Set the model to your tag, for example <code>qwen2.5:14b</code>.</li>
+          <li>Use any non-empty string as the API key. Ollama ignores it.</li>
+        </ol>
+        <p class="time">Sources: Antigravity SDK local-models page, Ollama pi guide, Ollama VS Code guide [High]. Checked 2026-11-18.</p>
+      </details>
+
+      <p>Short version with your model filled in: <code>python run.py --coding-apps</code>. <a href="https://github.com/veeresh-bikkaneti/antigravity-local/blob/main/docs/coding-apps.md">Full doc with every source link</a>. Not covered: Cline steps (not re-checked today), Claude Desktop, and an Antigravity command-line tool called <code>agy</code> (we found nothing).</p>
     </section>
 
     <section class="arch" id="architecture" aria-labelledby="arch-title">
@@ -331,7 +454,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
         <li>Editing an existing file does not work reliably. With the default model, <code>qwen2.5:14b</code>, none of 14 attempts to edit a file, or to read one and write a new one, gave a correct result. Creating a new file from a plain prompt mostly works. Commit first and check <code>git diff</code>. A larger model may do better, and we have not tested one.</li>
         <li>The Antigravity app and its IDE chat panel have no setting for a local model, and Google's plans page says bring-your-own-endpoint is not supported. Google's local-model support covers the SDK, which this project uses. In the IDE's built-in terminal, run <code>python &lt;path-to&gt;/antigravity-local/run.py --agent pi</code> from your project, or use our shell. The Antigravity and Gemini command-line tools can reach a local model only through a translating proxy. That route is experimental and we have not tested it.</li>
         <li>The extra coding agents (pi, OpenCode, Codex) are set up and tested offline. We have not yet measured how well they edit an existing file with your model, and all three want a context window of 64k tokens or more, which is larger than Ollama's default on most PCs.</li>
-        <li>Only Windows 11 was tested. Native macOS and Linux, and the VS Code extension steps, are not tested yet.</li>
+        <li>Only Windows 11 was tested. Native macOS and Linux, and the VS Code extension steps, are not tested yet. VS Code's built-in Ollama provider is deprecated, so the steps use the Ollama extension.</li>
       </ul>
       <p><a href="https://github.com/veeresh-bikkaneti/antigravity-local/releases/tag/v1.0.0">Read the v1.0.0 release notes</a></p>
     </section>
@@ -350,8 +473,12 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
         <p>The model answered without calling its file tool. Small local models do this now and then. The tool prints a warning instead of "Task completed". Run the same command again, or name the file in your task.</p>
       </details>
       <details>
+        <summary>Do I need a 24 GB graphics card?</summary>
+        <p>No. This project targets 8 to 16 GB machines and CPU-only laptops. It goes through Ollama and the SDK's <code>LocalOpenAIAgentConfig</code> route. The other local route, <code>litert-lm</code>, needs 24 GB or more of VRAM for models over 16 GB, and it fails on 16 GB laptop cards (see the project's hardware matrix).</p>
+      </details>
+      <details>
         <summary>Can I use it from VS Code?</summary>
-        <p>Yes, four ways. The README lists them: our shell in the built-in terminal, the Ollama extension, Continue, and Cline. The extension steps come from their official guides, and we have not run them in VS Code ourselves.</p>
+        <p>Yes, four ways. The README lists them: our shell in the built-in terminal, the Ollama extension, Continue, and Cline. VS Code's built-in Ollama provider is deprecated, so use the official Ollama extension (<code>Ollama.ollama</code>). The extension steps come from their official guides, and we have not run them in VS Code ourselves. <a href="https://github.com/veeresh-bikkaneti/antigravity-local/blob/main/docs/coding-apps.md">Steps for each app</a></p>
       </details>
       <details>
         <summary>Can I use a better coding agent than the built-in shell?</summary>

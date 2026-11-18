@@ -124,8 +124,8 @@ class MenuRows(PickBase):
     def test_installed_rows_show_badges_after_the_bracket(self):
         det = details(d("qwen2.5:14b", ["completion", "tools", "thinking"]))
         got, _, _ = self.sel({"qwen2.5:14b"}, [""], details=det)
-        row = next(l for l in self.printed.splitlines() if "qwen2.5:14b" in l and "installed, no download" in l)
-        self.assertIn("(tools, thinking)", row)
+        row = next(l for l in self.printed.splitlines() if "qwen2.5:14b" in l and "tools" in l)
+        self.assertIn("tools, thinking", row)
 
     def test_media_models_are_listed_in_their_own_section_and_never_picked(self):
         media = [{"tag": "x/z-image-turbo", "badges": ("image",), "note": "text to image",
@@ -135,16 +135,16 @@ class MenuRows(PickBase):
         # find the media row number from a first dry render, then pick it and press Enter
         with contextlib.redirect_stdout(io.StringIO()):
             rows = run.model_wizard.build_menu(["qwen2.5:14b"], 16, 128, media=media)
-        n = [m["tag"] for m in rows].index("x/z-image-turbo") + 1
-        got, pulls, _ = self.sel({"qwen2.5:14b"}, [str(n), ""], details=det, media=media)
+        n = [m["tag"] for m in run.model_wizard._visible(rows)].index(run.model_wizard.MEDIA_ROW_TAG) + 1
+        got, pulls, _ = self.sel({"qwen2.5:14b"}, [str(n), "1", "", ""], details=det, media=media)
         self.assertEqual((got, pulls), ("qwen2.5:14b", []))
-        self.assertIn("Media models (for pictures, video or sound", self.printed)
+        self.assertIn("Image and video models", self.printed)
         self.assertIn('ollama run x/z-image-turbo "your prompt"', self.printed)
 
     def test_typing_words_at_the_hf_row_searches_and_a_pick_goes_through_the_download_gate(self):
         rows = [{"repo": "Org/Fast-GGUF", "badges": ("tools?",), "downloads": 5000}]
-        menu = run.model_wizard.build_menu([], 16, 128, recommended=run.hardware_tier_model(16.0, 128.0))
-        n = len(menu)  # the HF row is last (an empty machine also shows the "recommended for this PC" row)
+        menu = run.model_wizard.build_menu([], 16, 128, recommended=run.hardware_tier_model(16.0, 128.0), media=lambda: [])  # run.py passes the lazy loader
+        n = len(run.model_wizard._visible(menu))  # the HF row is last on the main list (an empty machine also shows the "recommended for this PC" row)
         with mock.patch.object(run, "hf_menu_search", return_value=rows):
             got, pulls, _ = self.sel(set(), [str(n), "fast coder", "1"], gate="y")
         self.assertEqual((got, pulls), ("hf.co/org/fast-gguf", [["ollama", "pull", "hf.co/org/fast-gguf"]]))

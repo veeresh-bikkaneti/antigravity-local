@@ -27,6 +27,7 @@ import urllib.error
 import argparse
 
 import capabilities
+import coding_apps
 import download_size
 import hardware
 import hf_search
@@ -88,7 +89,7 @@ def _safe_print(text):
 
 
 def stage(n, total, name, next_line):
-    """One stage banner: 'STAGE 2/4  SERVER', a short progress bar and a plain 'next:' line."""
+    """One stage banner on one line: 'STAGE 2/4  SERVER  [bar]  what happens next'."""
     ascii_only = _plain()
     if not ascii_only:
         try:
@@ -98,8 +99,7 @@ def stage(n, total, name, next_line):
     full, empty = ("#", "-") if ascii_only else ("█", "░")
     filled = round(20 * n / total)
     _safe_print("")
-    _safe_print(f"STAGE {n}/{total}  {name}   [{full * filled}{empty * (20 - filled)}]")
-    _safe_print(f"       next: {next_line}")
+    _safe_print(f"STAGE {n}/{total}  {name}  [{full * filled}{empty * (20 - filled)}]  {next_line}")
 
 
 def level_clear(model, agent, ready=None):
@@ -115,6 +115,8 @@ def level_clear(model, agent, ready=None):
         lines.append(f"  {ready}")
     lines.append(bar)
     _safe_print("\n".join(lines))
+    backend = "openai" if os.environ.get("LOCAL_LLM_BACKEND") == "openai" else "ollama"
+    _safe_print("\n" + "\n".join(coding_apps.lines(model, os.environ.get("LOCAL_LLM_BASE_URL", DEFAULT_BASE_URL), backend)))
 
 
 def context_check(interactive, ask=None, out=print):
@@ -174,24 +176,27 @@ def _free_for_fit(hw, res):
 def bootstrap_venv():
     """Create virtual environment and install requirements if not inside one."""
     stage(1, 5, "ENVIRONMENT", "check the Python environment, then find Ollama")
+    healthy = True  # a healthy run prints one line; anything we have to create or install prints its own
     if not os.path.exists(VENV_DIR) or not os.path.exists(VENV_PYTHON):
+        healthy = False
         print(f"       Creating virtual environment at: {VENV_DIR}")
         subprocess.check_call([sys.executable, "-m", "venv", VENV_DIR])
-    else:
-        print("       Existing virtual environment verified.")
 
     # Copy .env.example to .env if missing
     env_file = os.path.join(PROJECT_DIR, ".env")
     env_example = os.path.join(PROJECT_DIR, ".env.example")
     if not os.path.exists(env_file) and os.path.exists(env_example):
+        healthy = False
         print("       Generating default .env from .env.example...")
         shutil.copyfile(env_example, env_file)
 
     # Check if google-antigravity is installed in venv
     try:
         subprocess.check_call([VENV_PYTHON, "-c", "import google.antigravity"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        print("       Dependencies verified: 'google-antigravity' is ready.")
+        print("       Python environment ready (google-antigravity installed)" if healthy
+              else "       Dependencies verified: 'google-antigravity' is ready.")
     except subprocess.CalledProcessError:
+        healthy = False
         print("       Installing dependencies from requirements.txt (first run only)...")
         req_file = os.path.join(PROJECT_DIR, "requirements.txt")
         subprocess.check_call([VENV_PYTHON, "-m", "pip", "install", "--upgrade", "pip", "--quiet"])  # not pip.exe: Windows cannot self-replace it
@@ -199,7 +204,8 @@ def bootstrap_venv():
         print("       Dependencies successfully installed.")
 
     # Relaunch script using the venv python
-    print("       Switching execution to managed environment...\n")
+    if not healthy:
+        print("       Switching execution to managed environment...")
     sys.stdout.flush()  # the venv child writes next; our buffered lines must reach the log and screen first
     sys.stderr.flush()
     script_path = os.path.abspath(__file__)
@@ -798,7 +804,7 @@ def _ask_which_model(display_names, installed_models, vram_gb, ram_gb, free_vram
                                    ram_gb if free_ram is None else free_ram,
                                    recommended=None if best else tier,
                                    badges={model_wizard._norm(c["tag"]): c["badges"] for c in pool},
-                                   library=get_library_rows(scan_library), media=get_media_rows(),
+                                   library=get_library_rows(scan_library), media=get_media_rows,
                                    size_of=download_size.resolve, upgrade=upgrade)
     label = "current model"
     if not default:
@@ -1276,6 +1282,8 @@ def parse_args(argv=None):
                          "from, or this repo's workspace/ folder when you run it from here)")
     ap.add_argument("--continue-local", action="store_true",
                     help="with --agent: start with the prompt that makes the agent read HANDOFF.md and carry on")
+    ap.add_argument("--coding-apps", action="store_true",
+                    help="print how to connect VS Code, Continue, terminal agents, Antigravity and Gemini CLI to your model, then exit")
     ap.add_argument("--doctor", action="store_true",
                     help="with --agent claude: read-only check for settings that send normal Claude Code sessions "
                          "to a local model")
@@ -1312,6 +1320,11 @@ def _main(argv=None):
         sys.exit(handoff.main(raw[1:]))
     args = parse_args(argv)  # before bootstrap_venv: --help / bad flags must not touch pip
     _PLAIN["on"] = bool(args.plain)
+    if args.coding_apps:  # text only: needs neither the venv nor Ollama
+        backend = "openai" if os.environ.get("LOCAL_LLM_BACKEND") == "openai" else "ollama"
+        _safe_print("\n".join(coding_apps.lines(args.model or os.environ.get("LOCAL_LLM_MODEL") or "<your-model>",
+                                                os.environ.get("LOCAL_LLM_BASE_URL", DEFAULT_BASE_URL), backend)))
+        return
     if args.doctor:  # read-only and stdlib: needs neither the venv nor Ollama
         import agent_setup
         agent_setup.claude_doctor()
@@ -1374,7 +1387,7 @@ def _main(argv=None):
         else:
             model = select_and_pull_model(ollama_host, args.model, interactive=interactive, scan_library=args.scan_library)
     except KeyboardInterrupt:
-        print("\nCancelled. Nothing was saved.")
+        print("\nStopped with Ctrl+C. Nothing was saved. Run python run.py to start again.")
         sys.exit(130)
     if not model:
         sys.exit(1)

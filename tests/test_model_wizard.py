@@ -98,7 +98,7 @@ class Choose(unittest.TestCase):
     def test_menu_text_says_it_is_untested_and_shows_sizes(self):
         text = "\n".join(mw.render(self.MENU, "qwen2.5:14b"))
         self.assertIn("not yet run through this project", text)
-        self.assertIn("GB download", text)
+        self.assertIn(" GB ", text)
 
 
 class Recommended(unittest.TestCase):
@@ -220,7 +220,7 @@ class HuggingFaceMenu(unittest.TestCase):
 
     def test_hf_row_with_a_blank_or_wrong_answer_keeps_the_default(self):
         menu = mw.build_menu(["qwen2.5:14b"], 16, 128)
-        row = str(len(menu))
+        row = str(len(mw._visible(menu)))  # the HF row is last on the main list
         for typed in ("", "not-a-hf-tag", "qwen3.6:27b"):
             answers = iter([row, typed, typed, typed])
             got = mw.choose(menu, "qwen2.5:14b", input_fn=lambda _="": next(answers), out=lambda *_: None)
@@ -260,7 +260,7 @@ class MenuBadges(unittest.TestCase):
         menu = mw.build_menu(["qwen3:8b"], 16, 128, badges={"qwen3:8b": ("tools", "thinking")})
         self.assertEqual(menu[0]["badges"], ("tools", "thinking"))
         line = next(l for l in self.rows(menu) if "qwen3:8b" in l)
-        self.assertRegex(line.strip(), r"^1\. qwen3:8b  \[installed, no download\]  \(tools, thinking\)  already on this machine$")
+        self.assertRegex(line.strip(), r"^1\. qwen3:8b\s+tools, thinking$")
 
     def test_unknown_badges_show_nothing_rather_than_a_guess(self):
         menu = mw.build_menu(["old:1b"], 16, 128, badges={})
@@ -271,8 +271,8 @@ class MenuBadges(unittest.TestCase):
         menu = {m["tag"]: m for m in mw.build_menu([], 16, 128)}
         self.assertIn("tools", menu["gpt-oss:20b"]["badges"])
         self.assertIn("tools?", menu["qwen3.8:27b"]["badges"])
-        text = "\n".join(self.rows(list(menu.values())))
-        self.assertIn("(tools?, thinking?)", text)
+        row = mw._row_line(1, menu["qwen3.8:27b"], None, 20)  # hidden behind "More downloads", so format it directly
+        self.assertIn("tools?, thinking?", row)
 
     def test_a_coding_name_gets_a_coding_badge_once(self):
         menu = mw.build_menu(["qwen2.5-coder:7b"], 16, 128, badges={"qwen2.5-coder:7b": ("tools", "coding")})
@@ -296,25 +296,40 @@ class MediaSection(unittest.TestCase):
     def menu(self):
         return mw.build_menu(["qwen3:8b"], 16, 128, media=self.MEDIA)
 
-    def test_media_rows_come_before_the_hf_row_which_stays_last(self):
-        menu = self.menu()
+    def media_n(self, menu):
+        return str([m["tag"] for m in mw._visible(menu)].index(mw.MEDIA_ROW_TAG) + 1)
+
+    def test_media_row_comes_before_the_hf_row_which_stays_last(self):
+        menu = mw._visible(self.menu())
         self.assertTrue(menu[-1].get("hf"))
-        self.assertTrue(menu[-2].get("media"))
+        self.assertTrue(menu[-2].get("media_row"))
 
-    def test_render_prints_a_section_header_once_and_marks_the_row(self):
-        menu = mw.build_menu([], 16, 128, media=self.MEDIA * 2)
-        lines = mw.render(menu, None)
-        self.assertEqual(sum("Media models" in l for l in lines), 1)
-        row = next(l for l in lines if "x/z-image-turbo" in l)
-        self.assertIn("[media]  (image)", row)
+    def test_media_rows_never_show_in_the_main_render(self):
+        lines = mw.render(mw.build_menu([], 16, 128, media=self.MEDIA * 2), None)
+        text = "\n".join(lines)
+        self.assertNotIn("x/z-image-turbo", text)
+        self.assertEqual(sum(mw.MEDIA_ROW_TAG in l for l in lines), 1)
 
-    def test_picking_a_media_row_shows_how_to_run_it_and_asks_again_never_returning_it(self):
+    def test_media_pick_then_a_number_then_enter_keeps_the_default_with_no_bad_try(self):
         menu = self.menu()
-        n = str([m["tag"] for m in menu].index("x/z-image-turbo") + 1)
-        feed, out = iter([n, ""]), []
-        got = mw.choose(menu, "qwen3:8b", input_fn=lambda _="": next(feed), out=out.append)
-        self.assertEqual(got, "qwen3:8b")
+        n = self.media_n(menu)
+        feed, out, res = iter([n, "1", ""]), [], {}
+        feed = iter([n, "1", "", ""])  # media row, media number, back to the main list, Enter keeps
+        got = mw.choose(menu, "qwen3:8b", input_fn=lambda _="": next(feed), out=out.append, result=res)
+        self.assertEqual((got, res["how"]), ("qwen3:8b", "enter"))
         self.assertTrue(any('ollama run x/z-image-turbo "a red fox"' in l for l in out))
+        self.assertFalse(any("Pick 1 to" in l or "No valid pick" in l for l in out))
+        self.assertGreaterEqual(sum("On this PC, no download" in l for l in out), 2)  # the main list was reprinted
+
+    def test_loader_is_not_called_until_the_media_row_is_picked(self):
+        calls = []
+        menu = mw.build_menu(["qwen3:8b"], 16, 128, media=lambda: calls.append(1) or self.MEDIA)
+        feed = iter([""])
+        mw.choose(menu, "qwen3:8b", input_fn=lambda _="": next(feed), out=lambda *_: None)
+        self.assertEqual(calls, [])
+        feed = iter([self.media_n(menu), "", ""])
+        mw.choose(menu, "qwen3:8b", input_fn=lambda _="": next(feed), out=lambda *_: None)
+        self.assertEqual(calls, [1])
 
     def test_a_media_row_is_never_the_fallback_when_there_is_no_default(self):
         menu = mw.build_menu([], 16, 128, media=self.MEDIA, catalog=[])
@@ -322,11 +337,32 @@ class MediaSection(unittest.TestCase):
         got = mw.choose(menu, None, input_fn=lambda _="": "", out=out.append)
         self.assertIsNone(got)  # nothing but a media row and the HF placeholder: no pick, never the media row
 
-    def test_three_media_picks_in_a_row_fall_back_to_the_default(self):
+    def test_many_media_picks_are_not_bad_tries(self):
         menu = self.menu()
-        n = str([m["tag"] for m in menu].index("x/z-image-turbo") + 1)
-        feed = iter([n, n, n])
-        self.assertEqual(mw.choose(menu, "qwen3:8b", input_fn=lambda _="": next(feed), out=lambda l: None), "qwen3:8b")
+        feed = iter([self.media_n(menu), "1", "1", "1", "1", "", ""])
+        res = {}
+        got = mw.choose(menu, "qwen3:8b", input_fn=lambda _="": next(feed), out=lambda l: None, result=res)
+        self.assertEqual((got, res["how"]), ("qwen3:8b", "enter"))
+
+    def test_installed_rows_do_not_repeat_already_on_this_machine(self):
+        text = "\n".join(mw.render(mw.build_menu(["a:1", "b:2", "c:3"], 16, 128), "a:1"))
+        self.assertNotIn("already on this machine", text)
+        self.assertEqual(text.count("no download"), 1)
+
+    def test_more_downloads_hides_catalog_rows_past_three_and_lists_them_on_request(self):
+        menu = mw.build_menu([], 24, 128)
+        shown = [m for m in mw._visible(menu) if mw._is_pick(m)]
+        self.assertEqual(len(shown), mw.TOP_DOWNLOADS)
+        hidden = [m["tag"] for m in menu if m.get("hidden")]
+        self.assertTrue(hidden)
+        main = "\n".join(mw.render(menu, None))
+        self.assertIn(f"More downloads ({len(hidden)} more)", main)
+        self.assertNotIn(hidden[0], main)
+        more_n = str([m.get("more") for m in mw._visible(menu)].index(True) + 1)
+        out = []
+        feed = iter([more_n, "1"])
+        got = mw.choose(menu, None, input_fn=lambda _="": next(feed), out=out.append)
+        self.assertEqual(got, hidden[0])
 
 
 class HfSearchAtTheMenu(unittest.TestCase):
@@ -431,7 +467,7 @@ class FitFree(unittest.TestCase):
 
     def test_cpu_only_split_fit_is_labelled_slow(self):
         self.assertEqual(self.fit(15.2, 0, 128), "split")  # 18.2 <= 0.7 x 128
-        self.assertIn("slow", mw.FIT_TEXT["split"])
+        self.assertIn("CPU", mw.FIT_TEXT["split"])  # v1.2.4: "part on CPU", short on purpose
 
     def test_nothing_free_fits_nothing(self):
         self.assertEqual(self.fit(1.0, 0, 0), "too big")
