@@ -877,6 +877,8 @@ docker run --rm --add-host=host.docker.internal:host-gateway \
 
 ## Common gotchas & troubleshooting
 
+Short on VRAM? The LiteRT route (`litert-lm`) needs 24 GB or more of VRAM for models over 16 GB and fails on 16 GB laptop cards. See [.wiki/hardware-matrix.md](.wiki/hardware-matrix.md). The Ollama route in this project is built for 8 to 16 GB machines.
+
 ### 1. PowerShell: "Running scripts is disabled on this system"
 **Cause**: Windows restricts PowerShell script execution by default.  
 **Fix**: In your PowerShell window, run:

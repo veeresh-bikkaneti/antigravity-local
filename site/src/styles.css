@@ -418,3 +418,14 @@ html.motion-off .ha-layer, html.motion-off .ha-dot, html.motion-off .ha-signal, 
 html.motion-off .btn:hover, html.motion-off .sheet:hover { transform: none; }
 html.motion-off.reveal [data-reveal] { opacity: 1; transform: none; transition: none; }
 @media print { .progress, .hero-art { display: none; } }
+
+/* Coding-app cards (step 4) and the #coding-apps section */
+.agent-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: 1rem; margin: 1rem 0; }
+.agent-card { border: 1px solid var(--rule); padding: 0.9rem 1rem; min-width: 0; }
+.agent-card h4 { margin: 0 0 0.4rem; color: var(--chalk); }
+.agent-card p { margin: 0 0 0.5rem; }
+.agent-card .code { margin-bottom: 0; }
+.apps p, .apps ol { max-width: 46rem; }
+.apps details > :not(summary) { max-width: 46rem; }
+.apps details[open] { padding-bottom: 1rem; }
+.zero-cta { max-width: 62ch; margin-top: 1.5rem; }
