@@ -42,5 +42,23 @@ class HowItEnded(unittest.TestCase):
         self.assertEqual((got, how), ("qwen2.5:14b", "gave_up"))
 
 
+class CodingAppsBlock(unittest.TestCase):
+    def test_every_app_row_carries_the_real_model_and_url(self):
+        import coding_apps
+        text = "\n".join(coding_apps.lines("qwen2.5:14b", "http://localhost:11434/v1"))
+        for app in ("VS Code", "Continue", "Terminal", "Antigravity", "Gemini CLI", "Your code"):
+            self.assertIn(app, text)
+        self.assertIn("model qwen2.5:14b, apiBase http://localhost:11434\n", text)
+        self.assertIn("base_url http://localhost:11434/v1, model qwen2.5:14b", text)
+        self.assertIn("docs/coding-apps.md", text)
+
+    def test_an_openai_server_drops_the_ollama_only_rows(self):
+        import coding_apps
+        text = "\n".join(coding_apps.lines("m", "http://box:1234/v1", backend="openai"))
+        self.assertNotIn("Ollama.ollama", text)
+        self.assertNotIn("provider ollama", text)
+        self.assertIn("base_url http://box:1234/v1, model m", text)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -151,6 +151,34 @@ class SitePage(unittest.TestCase):
         rule = css[css.index(".stack-item {"):css.index("}", css.index(".stack-item {"))]
         self.assertNotIn("opacity: 0.45", rule)  # 0.45 opacity text fell below 4.5:1 contrast
 
+    def test_connect_your_coding_app_section_and_docs_link_exist(self):
+        self.assertIn('id="connect-apps"', HTML)
+        for app in ("VS Code", "Continue", "Terminal agents", "Antigravity", "Gemini CLI", "Your own code"):
+            self.assertIn(f"<strong>{app}:</strong>", HTML, app)
+        self.assertIn("docs/coding-apps.md", HTML)
+        self.assertIn("built-in Ollama provider is deprecated", HTML)
+        game = (SITE / "public" / "game" / "index.html").read_text(encoding="utf-8")
+        self.assertIn("docs/coding-apps.md", game)
+        self.assertTrue((SITE.parent / "docs" / "coding-apps.md").is_file())
+
+    def test_coding_apps_are_taught_on_the_page_itself(self):
+        self.assertIn('id="coding-apps"', HTML)
+        self.assertIn('<a href="#coding-apps">Coding apps</a>', HTML)
+        section = HTML[HTML.index('id="coding-apps"'):HTML.index('id="architecture"')]
+        self.assertEqual(section.count("<details"), 6)
+        for needle in ("Ollama.ollama", "apiBase: http://localhost:11434", "LiteLLM", "localhost:11434/v1"):
+            self.assertIn(needle, section, needle)
+        step4 = HTML[HTML.index('data-step="4"'):HTML.index('data-step="5"')]
+        for agent in ("--agent pi", "--agent opencode", "--agent codex"):
+            self.assertIn(agent, step4, agent)
+        step8 = HTML[HTML.index('data-step="8"'):HTML.index('id="coding-apps"')]
+        self.assertIn("Continue", step8)
+        self.assertIn("Cline", step8)
+        self.assertGreaterEqual(HTML.count("ZERO_TO_CODING.md"), 2)
+        self.assertIn("litert-lm", HTML)
+        game = (SITE / "public" / "game" / "index.html").read_text(encoding="utf-8")
+        self.assertIn("#coding-apps", game)
+
 
 if __name__ == "__main__":
     unittest.main()
