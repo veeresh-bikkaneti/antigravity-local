@@ -105,6 +105,10 @@ body.dim-stage #labels { opacity: 0; }
 
 main, footer { position: relative; z-index: 2; }
 
+/* Text-heavy sections sit on a solid sheet, and the drawing dims behind them (body.dim-stage),
+   so no sentence is ever read over lines or labels. Hero, game and pillars keep the open drawing. */
+.guide, .arch, .limits, .faq { background: var(--sheet); border-block: 1px solid var(--rule); }
+
 .hero { min-height: 100svh; display: grid; align-items: center; padding: 7rem var(--gutter) 5rem; }
 .hero-copy { max-width: 38rem; }
 .lede { font-size: clamp(1.1rem, 1rem + 0.5vw, 1.35rem); color: var(--chalk); }

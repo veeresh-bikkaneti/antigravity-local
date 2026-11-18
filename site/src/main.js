@@ -130,8 +130,20 @@ for (const [sel, focusName, ox] of sectionFocus) {
   ScrollTrigger.create({ trigger: sel, start: "top 55%", onEnter: zoom, onEnterBack: zoom });
 }
 ScrollTrigger.create({ trigger: ".hero", start: "top top", end: "bottom 55%", onToggle: (self) => { if (self.isActive) { activate(null); slide(-0.24); } } });
-ScrollTrigger.create({ trigger: ".guide", start: "top 70%", end: "bottom 30%", onToggle: (self) => { if (self.isActive) slide(0.2); } });
-ScrollTrigger.create({ trigger: "#architecture", start: "top 85%", end: "bottom 30%", onToggle: (self) => { document.body.classList.toggle("dim-stage", self.isActive); if (self.isActive) { $$(".step.is-active").forEach((s) => s.classList.remove("is-active")); scene?.focus("assembly"); slide(0); } } });
+/* Text sections dim the drawing (never fully hidden) while any of them is in view; only the hero slides it sideways. */
+const dimmers = new Set();
+function dimWhile(sel, start, onEnter) {
+  ScrollTrigger.create({ trigger: sel, start, end: "bottom 30%", onToggle: (self) => {
+    self.isActive ? dimmers.add(sel) : dimmers.delete(sel);
+    document.body.classList.toggle("dim-stage", dimmers.size > 0);
+    if (self.isActive && onEnter) onEnter();
+  } });
+}
+dimWhile(".guide", "top 70%", () => slide(0));
+dimWhile("#coding-apps", "top 85%", () => slide(0));
+dimWhile("#architecture", "top 85%", () => { $$(".step.is-active").forEach((s) => s.classList.remove("is-active")); scene?.focus("assembly"); slide(0); });
+dimWhile("#limits", "top 85%");
+dimWhile("#faq", "top 85%");
 
 /* ---- hero hologram controls + stack readout: the buttons drive the scene
    directly, in place - they never scroll the page. Page scroll still syncs

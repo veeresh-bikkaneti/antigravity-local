@@ -209,6 +209,29 @@ def latest_tag():
     return out.stdout.strip()
 
 
+class TextOverDrawing(unittest.TestCase):
+    css = (SITE / "src" / "styles.css").read_text(encoding="utf-8")
+    js = (SITE / "src" / "main.js").read_text(encoding="utf-8")
+
+    def test_text_sections_sit_on_a_solid_sheet(self):
+        rule = re.search(r"([^{}]*)\{\s*background: var\(--sheet\)[^}]*\}", self.css[self.css.index("Text-heavy sections"):])
+        for sel in (".guide", ".arch", ".faq"):  # .faq also covers #coding-apps
+            self.assertIn(sel, rule.group(1))
+
+    def test_stage_dims_for_every_text_section_but_is_never_hidden(self):
+        for sel in ('".guide"', '"#coding-apps"', '"#architecture"'):
+            self.assertIn("dimWhile(" + sel, self.js)
+        self.assertRegex(self.css, r"body\.dim-stage #stage \{ opacity: 0\.[1-9]")
+
+    def test_only_the_hero_slides_the_drawing_sideways(self):
+        self.assertNotIn("slide(0.2)", self.js)  # the old guide slide
+        for sel in ('dimWhile(".guide"', 'dimWhile("#coding-apps"', 'dimWhile("#architecture"'):
+            line = next(l for l in self.js.splitlines() if sel in l)
+            self.assertNotRegex(line, r"slide\(-?0\.[1-9]")
+        hero = next(l for l in self.js.splitlines() if 'trigger: ".hero"' in l)
+        self.assertIn("slide(-0.24)", hero)
+
+
 class SiteFacts(unittest.TestCase):
     def home_steps(self):
         return len(re.findall(r'<li class="step"[^>]*\sdata-step="\d+"', HTML))
