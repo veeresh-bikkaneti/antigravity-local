@@ -244,6 +244,23 @@ class OrbitHint(unittest.TestCase):
         self.assertIn("ctrlKey", scene)
 
 
+class StepLinksToGuide(unittest.TestCase):
+    DOCS = (SITE / "docs" / "index.html")
+
+    def test_claude_in_the_terminal_agents_line_points_at_the_claude_card(self):
+        self.assertIn('<a href="#agent-claude"><code>claude</code></a>', HTML)
+        self.assertEqual(HTML.count('id="agent-claude"'), 1)
+
+    def test_each_step_links_a_guide_section_that_exists_in_the_built_hub(self):
+        for topic in ("manual-setup-optional-alternative", "common-gotchas--troubleshooting", "unicodeencodeerror",
+                      "step-6-test-your-agent", "serve-it-search-ui", "advanced-using-custom-research-harnesses", "stop--clean-up-teardown"):
+            self.assertRegex(HTML, r'docs/#[a-z0-9-]*' + topic, topic)
+        if self.DOCS.is_file():  # built by `npm run docs`; CI builds it before this runs where it matters
+            built = self.DOCS.read_text(encoding="utf-8")
+            for slug in set(re.findall(r'docs/#([a-z0-9-]+)', HTML)):
+                self.assertIn('id="%s"' % slug, built, slug)
+
+
 class SiteFacts(unittest.TestCase):
     def home_steps(self):
         return len(re.findall(r'<li class="step"[^>]*\sdata-step="\d+"', HTML))

@@ -246,6 +246,7 @@ cd antigravity-local
 python run.py</code></pre><button class="copy" type="button" aria-label="Copy the three setup commands">Copy</button></div>
           <p class="check">You should see five stages (<code>STAGE 1/5</code> to <code>5/5</code>), a LEVEL CLEAR box, and then a <code>You&nbsp;&gt;</code> prompt. Type <code>exit</code> for now. On macOS and Linux, use <code>python3</code>. On Windows you can also run <code>.\run.ps1</code> or <code>run.bat</code>.</p>
           <p class="time">About 3 minutes the first time, not counting a model download. It goes quiet in the middle while packages install, and that is normal.</p>
+          <p class="time">Prefer to do it by hand? <a href="docs/#step-by-step-manual-setup-optional-alternative">Manual setup</a>. Script blocked on Windows? See <a href="docs/#common-gotchas--troubleshooting">Set-ExecutionPolicy</a>.</p>
           <p class="check">A common error: <code>Connection refused</code> on <code>:11434</code> means Ollama is not running, so start the app or run <code>ollama serve</code>.</p>
         </li>
 
@@ -273,7 +274,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
               <p>OpenAI's terminal agent, pointed at Ollama with <code>--oss</code>. Zero config files to manage.</p>
               <div class="code"><pre><code>python run.py --agent codex</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --agent codex">Copy</button></div>
             </div>
-            <div class="agent-card">
+            <div class="agent-card" id="agent-claude">
               <h4>claude</h4>
               <p>Claude Code, pointed at your local model for one session. Run the read-only settings check first if you already use Claude Code.</p>
               <div class="code"><pre><code>python run.py --agent claude</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --agent claude">Copy</button></div>
@@ -286,7 +287,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
           <ul>
             <li><strong>VS Code:</strong> install the Ollama extension (<code>Ollama.ollama</code>), then pick your model under Ollama in Chat.</li>
             <li><strong>Continue:</strong> set <code>provider: ollama</code>, your model tag and <code>apiBase: http://localhost:11434</code> in <code>config.yaml</code>.</li>
-            <li><strong>Terminal agents:</strong> <code>python run.py --agent pi</code>, or <code>opencode</code>, <code>codex</code>, <code>claude</code>.</li>
+            <li><strong>Terminal agents:</strong> <code>python run.py --agent pi</code>, or <code>opencode</code>, <code>codex</code>, or <a href="#agent-claude"><code>claude</code></a> (see the claude card above).</li>
             <li><strong>Antigravity:</strong> no documented local-model setting in the app. Run the terminal line in its built-in terminal.</li>
             <li><strong>Gemini CLI:</strong> no local models. Only a LiteLLM proxy gets there, and that is experimental and untested by us.</li>
             <li><strong>Your own code:</strong> base URL <code>http://localhost:11434/v1</code> and your model tag. <a href="#coding-apps">Steps for every app are in the Coding apps section below.</a></li>
@@ -303,6 +304,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
           <div class="code"><pre><code>source venv/bin/activate</code></pre><button class="copy" type="button" aria-label="Copy the macOS and Linux activation command">Copy</button></div>
           <p class="check">Your prompt now starts with <code>(venv)</code>. If PowerShell blocks the script, <a href="docs/zero-to-coding.html#before-you-start-activate-the-virtual-environment">the guide has the one-line fix</a>.</p>
           <p class="time">10 seconds</p>
+          <p class="time">Activation blocked by PowerShell? <a href="docs/#common-gotchas--troubleshooting">Set-ExecutionPolicy fix</a>.</p>
         </li>
 
         <li class="step" id="step-6" data-step="6" data-focus="agent">
@@ -312,6 +314,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
           <p class="check">A banner shows your model and workspace, then a <code>CodeAgent [You] &gt;</code> prompt. Try <code>/files</code>, then <code>/wiki</code>, then <code>exit</code>. <code>/clear</code> starts a fresh session.</p>
           <p class="check">If you see <code>No module named 'google'</code>, you are outside the virtual environment, so activate it (step 5) and try again.</p>
           <p class="time">1 minute</p>
+          <p class="time">Odd characters crash it on Windows? <a href="docs/#4-windows-unicodeencodeerror-charmap-codec-cant-encode-character">UnicodeEncodeError fix</a>. Want to check the pieces one by one? <a href="docs/#step-6-test-your-agent">Test scripts</a>.</p>
         </li>
 
         <li class="step" id="step-7" data-step="7" data-focus="job">
@@ -320,6 +323,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
           <div class="code"><pre><code>python code_agent.py --workspace ./my-project --task "Create hello.py that prints hi"</code></pre><button class="copy" type="button" aria-label="Copy the one-shot task command">Copy</button></div>
           <p class="check">You should see <code>Task completed. Created 1, changed 0.</code> and the new file listed. If you see a warning instead, the model answered without writing a file. Run the command again.</p>
           <p class="time">Under a minute</p>
+          <p class="time">Want a search UI and API instead? <a href="docs/#serve-it-search-ui--api-on-a-free-port-local-or-docker">Serve it, local or Docker</a>.</p>
         </li>
 
         <li class="step" id="step-8" data-step="8" data-focus="editor">
@@ -335,6 +339,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
           <div class="code"><pre><code>python run.py --serve</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --serve">Copy</button></div>
           <p class="check">You should see <code>Serving on http://127.0.0.1:</code> followed by a port number. Open that address. A port is just a numbered door on your computer, and this command picks one that is free. The page has no login, so keep it on your machine.</p>
           <p class="time">Under a minute. <a href="docs/#use-your-local-model-from-antigravity-or-vs-code">Full details in the full guide</a></p>
+          <p class="time">Using LM Studio or vLLM? <a href="docs/#advanced-using-custom-research-harnesses--servers">Other backends</a>. Done for the day? <a href="docs/#stop--clean-up-teardown">Stop and clean up</a>.</p>
         </li>
       </ol>
       <p class="zero-cta">Want something to build now? The <a href="docs/zero-to-coding.html">Zero to coding guide</a> walks through 3 end-to-end coding recipes: a FastAPI backend, unit tests for existing code, and a legacy-code refactor.</p>
