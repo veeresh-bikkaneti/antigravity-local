@@ -1,6 +1,7 @@
 """Static checks on the GitHub Pages front page: accessibility basics, links, and wiring.
 These read the source files, so they run in CI without Node or a browser."""
 import re
+import subprocess
 import unittest
 from html.parser import HTMLParser
 from pathlib import Path
@@ -8,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 HTML = (SITE / "index.html").read_text(encoding="utf-8")
+GAME = (SITE / "public" / "game" / "index.html").read_text(encoding="utf-8")
 
 
 class Page(HTMLParser):
@@ -192,6 +194,56 @@ class SitePage(unittest.TestCase):
         self.assertEqual(re.findall(r"step:(\d)", block), [str(n) for n in range(1, 9)])
         self.assertNotIn("of 9", game)
         self.assertIn("../#step-", game)
+
+
+WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
+         "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12}
+
+
+def latest_tag():
+    try:
+        out = subprocess.run(["git", "describe", "--tags", "--abbrev=0"], cwd=ROOT,
+                             capture_output=True, text=True, check=True)
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return out.stdout.strip()
+
+
+class SiteFacts(unittest.TestCase):
+    def home_steps(self):
+        return len(re.findall(r'<li class="step"[^>]*\sdata-step="\d+"', HTML))
+
+    def game_hops(self):
+        body = GAME[GAME.index("var HOPS=["):]
+        body = body[:body.index("\n];")]
+        return len(re.findall(r"\bscene:'", body))
+
+    def test_home_steps_equal_game_hops(self):
+        self.assertGreater(self.home_steps(), 0)
+        self.assertEqual(self.home_steps(), self.game_hops())
+
+    def test_same_n_steps_sentence_names_the_real_count(self):
+        found = re.findall(r"walks the same (\w+) steps", HTML)
+        self.assertEqual(len(found), 1, "expected exactly one 'same N steps' sentence")
+        self.assertIn(found[0], WORDS, "write the number as a word")
+        self.assertEqual(WORDS[found[0]], self.home_steps())
+
+    def test_no_other_step_count_word_disagrees_with_the_page(self):
+        # "Eight steps, in order." style claims in the home page must match too.
+        for word in re.findall(r"\b(" + "|".join(w.capitalize() for w in WORDS) + r") steps,", HTML):
+            self.assertEqual(WORDS[word.lower()], self.home_steps(), word)
+
+    def test_version_label_is_the_latest_git_tag_and_no_stale_1_0_0(self):
+        tag = latest_tag()
+        if not tag:
+            self.skipTest("no git tags in this checkout (shallow clone?); fetch tags to run this check")
+        version = tag.lstrip("v")
+        labels = re.findall(r"Version (\d+\.\d+\.\d+)\.|Local Antigravity (\d+\.\d+\.\d+),|releases/tag/v(\d+\.\d+\.\d+)", HTML)
+        flat = [v for row in labels for v in row if v]
+        self.assertGreaterEqual(len(flat), 3, "version label, release link and footer should all be found")
+        for v in flat:
+            self.assertEqual(v, version)
+        self.assertNotIn("1.0.0", HTML)
 
 
 if __name__ == "__main__":
