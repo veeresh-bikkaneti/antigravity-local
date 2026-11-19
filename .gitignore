@@ -94,6 +94,8 @@ workspace/*
 # Front page build output and scratch
 /site/node_modules/
 /site/dist/
+/site/gate-shots/
+/site/docs/
 /.gstack/
 /site/.claude-flow/
 /site/.ai-context/

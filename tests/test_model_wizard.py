@@ -260,7 +260,8 @@ class MenuBadges(unittest.TestCase):
         menu = mw.build_menu(["qwen3:8b"], 16, 128, badges={"qwen3:8b": ("tools", "thinking")})
         self.assertEqual(menu[0]["badges"], ("tools", "thinking"))
         line = next(l for l in self.rows(menu) if "qwen3:8b" in l)
-        self.assertRegex(line.strip(), r"^1\. qwen3:8b\s+tools, thinking$")
+        # v1.2.5: one word per row (tools or chat only); the model keeps all its badges, the menu shows one.
+        self.assertRegex(line.strip(), r"^1\. qwen3:8b\s+tools$")
 
     def test_unknown_badges_show_nothing_rather_than_a_guess(self):
         menu = mw.build_menu(["old:1b"], 16, 128, badges={})
@@ -272,7 +273,9 @@ class MenuBadges(unittest.TestCase):
         self.assertIn("tools", menu["gpt-oss:20b"]["badges"])
         self.assertIn("tools?", menu["qwen3.8:27b"]["badges"])
         row = mw._row_line(1, menu["qwen3.8:27b"], None, 20)  # hidden behind "More downloads", so format it directly
-        self.assertIn("tools?, thinking?", row)
+        # v1.2.5: the main list drops guessed "?" badges (the Hugging Face list keeps them), so the row says nothing.
+        self.assertNotIn("?", row)
+        self.assertNotIn("tools", row)
 
     def test_a_coding_name_gets_a_coding_badge_once(self):
         menu = mw.build_menu(["qwen2.5-coder:7b"], 16, 128, badges={"qwen2.5-coder:7b": ("tools", "coding")})

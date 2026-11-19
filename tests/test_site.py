@@ -1,6 +1,7 @@
 """Static checks on the GitHub Pages front page: accessibility basics, links, and wiring.
 These read the source files, so they run in CI without Node or a browser."""
 import re
+import subprocess
 import unittest
 from html.parser import HTMLParser
 from pathlib import Path
@@ -8,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SITE = ROOT / "site"
 HTML = (SITE / "index.html").read_text(encoding="utf-8")
+GAME = (SITE / "public" / "game" / "index.html").read_text(encoding="utf-8")
 
 
 class Page(HTMLParser):
@@ -155,10 +157,10 @@ class SitePage(unittest.TestCase):
         self.assertIn('id="connect-apps"', HTML)
         for app in ("VS Code", "Continue", "Terminal agents", "Antigravity", "Gemini CLI", "Your own code"):
             self.assertIn(f"<strong>{app}:</strong>", HTML, app)
-        self.assertIn("docs/coding-apps.md", HTML)
+        self.assertIn("docs/coding-apps.html", HTML)
         self.assertIn("built-in Ollama provider is deprecated", HTML)
         game = (SITE / "public" / "game" / "index.html").read_text(encoding="utf-8")
-        self.assertIn("docs/coding-apps.md", game)
+        self.assertIn("docs/coding-apps.html", game)
         self.assertTrue((SITE.parent / "docs" / "coding-apps.md").is_file())
 
     def test_coding_apps_are_taught_on_the_page_itself(self):
@@ -174,10 +176,132 @@ class SitePage(unittest.TestCase):
         step8 = HTML[HTML.index('data-step="8"'):HTML.index('id="coding-apps"')]
         self.assertIn("Continue", step8)
         self.assertIn("Cline", step8)
-        self.assertGreaterEqual(HTML.count("ZERO_TO_CODING.md"), 2)
+        self.assertGreaterEqual(HTML.count("docs/zero-to-coding.html"), 2)  # v1.2.5: the guide is rendered on Pages, not linked on GitHub
         self.assertIn("litert-lm", HTML)
         game = (SITE / "public" / "game" / "index.html").read_text(encoding="utf-8")
         self.assertIn("#coding-apps", game)
+
+    def test_game_checkpoints_are_the_eight_home_steps_in_order(self):
+        home = []
+        for n in range(1, 9):
+            start = HTML.index(f'data-step="{n}"')
+            home.append(re.search(r"<h3>(.*?)</h3>", HTML[start:]).group(1))
+            self.assertIn(f'id="step-{n}"', HTML)
+        game = (SITE / "public" / "game" / "index.html").read_text(encoding="utf-8")
+        block = game[game.index("var HOPS=["):game.index("var ORDER=")]
+        shorts = re.findall(r"\{short:'([^']*)'", block)
+        self.assertEqual(shorts, home)
+        self.assertEqual(re.findall(r"step:(\d)", block), [str(n) for n in range(1, 9)])
+        self.assertNotIn("of 9", game)
+        self.assertIn("../#step-", game)
+
+
+WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
+         "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12}
+
+
+def latest_tag():
+    try:
+        out = subprocess.run(["git", "describe", "--tags", "--abbrev=0"], cwd=ROOT,
+                             capture_output=True, text=True, check=True)
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return out.stdout.strip()
+
+
+class TextOverDrawing(unittest.TestCase):
+    css = (SITE / "src" / "styles.css").read_text(encoding="utf-8")
+    js = (SITE / "src" / "main.js").read_text(encoding="utf-8")
+
+    def test_text_sections_sit_on_a_solid_sheet(self):
+        rule = re.search(r"([^{}]*)\{\s*background: var\(--sheet\)[^}]*\}", self.css[self.css.index("Text-heavy sections"):])
+        for sel in (".guide", ".arch", ".faq"):  # .faq also covers #coding-apps
+            self.assertIn(sel, rule.group(1))
+
+    def test_stage_dims_for_every_text_section_but_is_never_hidden(self):
+        for sel in ('".guide"', '"#coding-apps"', '"#architecture"'):
+            self.assertIn("dimWhile(" + sel, self.js)
+        self.assertRegex(self.css, r"body\.dim-stage #stage \{ opacity: 0\.[1-9]")
+
+    def test_only_the_hero_slides_the_drawing_sideways(self):
+        self.assertNotIn("slide(0.2)", self.js)  # the old guide slide
+        for sel in ('dimWhile(".guide"', 'dimWhile("#coding-apps"', 'dimWhile("#architecture"'):
+            line = next(l for l in self.js.splitlines() if sel in l)
+            self.assertNotRegex(line, r"slide\(-?0\.[1-9]")
+        hero = next(l for l in self.js.splitlines() if 'trigger: ".hero"' in l)
+        self.assertIn("slide(-0.24)", hero)
+
+
+class OrbitHint(unittest.TestCase):
+    def test_hint_matches_the_pass_through_behaviour(self):
+        css = (SITE / "src" / "styles.css").read_text(encoding="utf-8")
+        scene = (SITE / "src" / "scene.js").read_text(encoding="utf-8")
+        hint = re.search(r'class="stack-note">([^<]*)', HTML).group(1)
+        self.assertIn("empty space", hint)
+        self.assertRegex(css, r"main, footer \{ pointer-events: none; \}")  # wrappers let drags through
+        self.assertIn("main :is(a, button, summary", css)  # things you can click keep their pointer events
+        self.assertIn('canvas.addEventListener("pointerdown"', scene)  # the handler the hint promises
+        self.assertIn("ctrlKey", scene)
+
+
+class StepLinksToGuide(unittest.TestCase):
+    DOCS = (SITE / "docs" / "index.html")
+
+    def test_claude_in_the_terminal_agents_line_points_at_the_claude_card(self):
+        self.assertIn('<a href="#agent-claude"><code>claude</code></a>', HTML)
+        self.assertEqual(HTML.count('id="agent-claude"'), 1)
+
+    def test_each_step_links_a_guide_section_that_exists_in_the_built_hub(self):
+        for topic in ("manual-setup-optional-alternative", "common-gotchas--troubleshooting", "unicodeencodeerror",
+                      "step-6-test-your-agent", "serve-it-search-ui", "advanced-using-custom-research-harnesses", "stop--clean-up-teardown"):
+            self.assertRegex(HTML, r'docs/#[a-z0-9-]*' + topic, topic)
+        if self.DOCS.is_file():  # built by `npm run docs`; CI builds it before this runs where it matters
+            built = self.DOCS.read_text(encoding="utf-8")
+            for slug in set(re.findall(r'docs/#([a-z0-9-]+)', HTML)):
+                self.assertIn('id="%s"' % slug, built, slug)
+
+
+class WizardCopy(unittest.TestCase):
+    def test_step_2_says_rows_show_fast_moderate_slow(self):
+        step = HTML[HTML.index('id="step-2"'):HTML.index('id="step-3"')]
+        self.assertIn("Fast, Moderate or Slow", step)
+
+
+class SiteFacts(unittest.TestCase):
+    def home_steps(self):
+        return len(re.findall(r'<li class="step"[^>]*\sdata-step="\d+"', HTML))
+
+    def game_hops(self):
+        body = GAME[GAME.index("var HOPS=["):]
+        body = body[:body.index("\n];")]
+        return len(re.findall(r"\bscene:'", body))
+
+    def test_home_steps_equal_game_hops(self):
+        self.assertGreater(self.home_steps(), 0)
+        self.assertEqual(self.home_steps(), self.game_hops())
+
+    def test_same_n_steps_sentence_names_the_real_count(self):
+        found = re.findall(r"walks the same (\w+) steps", HTML)
+        self.assertEqual(len(found), 1, "expected exactly one 'same N steps' sentence")
+        self.assertIn(found[0], WORDS, "write the number as a word")
+        self.assertEqual(WORDS[found[0]], self.home_steps())
+
+    def test_no_other_step_count_word_disagrees_with_the_page(self):
+        # "Eight steps, in order." style claims in the home page must match too.
+        for word in re.findall(r"\b(" + "|".join(w.capitalize() for w in WORDS) + r") steps,", HTML):
+            self.assertEqual(WORDS[word.lower()], self.home_steps(), word)
+
+    def test_version_label_is_the_latest_git_tag_and_no_stale_1_0_0(self):
+        tag = latest_tag()
+        if not tag:
+            self.skipTest("no git tags in this checkout (shallow clone?); fetch tags to run this check")
+        version = tag.lstrip("v")
+        labels = re.findall(r"Version (\d+\.\d+\.\d+)\.|Local Antigravity (\d+\.\d+\.\d+),|releases/tag/v(\d+\.\d+\.\d+)", HTML)
+        flat = [v for row in labels for v in row if v]
+        self.assertGreaterEqual(len(flat), 3, "version label, release link and footer should all be found")
+        for v in flat:
+            self.assertEqual(v, version)
+        self.assertNotIn("1.0.0", HTML)
 
 
 if __name__ == "__main__":

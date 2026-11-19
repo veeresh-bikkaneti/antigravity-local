@@ -399,6 +399,28 @@ def get_installed_ollama_models(base_url="http://localhost:11434"):
 
     return models
 
+def get_installed_info(base_url="http://localhost:11434"):
+    """{normalised tag: {"size_gb", "digest"}} from Ollama's /api/tags (size is in bytes). Each model is listed under
+    its full name and its short name (after the last slash), the same two names get_installed_ollama_models returns.
+    {} when Ollama does not answer: a size we were not told is left out, never guessed."""
+    try:
+        with urllib.request.urlopen(f"{base_url}/api/tags", timeout=3) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except Exception:
+        return {}
+    out = {}
+    for m in data.get("models", []) if isinstance(data, dict) else []:
+        name = (m.get("name") or "").strip().lower() if isinstance(m, dict) else ""
+        size = m.get("size") if isinstance(m, dict) else None
+        if not name:
+            continue
+        row = {"size_gb": size / 1e9 if isinstance(size, (int, float)) and size > 0 else None,
+               "digest": m.get("digest") if isinstance(m.get("digest"), str) else None}
+        out[name] = row
+        out.setdefault(name.split("/")[-1], row)
+    return out
+
+
 def _raw_capability_score(model_name: str) -> float:
     """
     Computes an agentic capability score to automatically select the MOST CAPABLE model:
@@ -782,7 +804,7 @@ def _typed_tag_problem(tag, installed_models):
 
 
 def _ask_which_model(display_names, installed_models, vram_gb, ram_gb, free_vram=None, free_ram=None, pool=None,
-                     scan_library=False, upgrade=None):
+                     scan_library=False, upgrade=None, installed_info=None):
     """Run the wizard. Returns the chosen tag, or None to keep the installed model (the automatic path handles it).
     `upgrade` is offer_upgrade's row: it becomes a "recommended upgrade" row. Enter on the menu while it is shown is
     remembered as a stay, the same as the old "stay" answer. A bad typed tag re-asks inside the wizard, so this
@@ -805,7 +827,8 @@ def _ask_which_model(display_names, installed_models, vram_gb, ram_gb, free_vram
                                    recommended=None if best else tier,
                                    badges={model_wizard._norm(c["tag"]): c["badges"] for c in pool},
                                    library=get_library_rows(scan_library), media=get_media_rows,
-                                   size_of=download_size.resolve, upgrade=upgrade)
+                                   size_of=download_size.resolve, upgrade=upgrade,
+                                   installed_info=get_installed_info() if installed_info is None else installed_info)
     label = "current model"
     if not default:
         default = tier  # no usable model installed: Enter means exactly what the automatic path would offer

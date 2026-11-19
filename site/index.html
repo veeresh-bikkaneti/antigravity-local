@@ -41,6 +41,7 @@
       <a href="#watch">Watch</a>
       <a href="#guide">Guide</a>
       <a href="#coding-apps">Coding apps</a>
+      <a href="docs/">Full guide</a>
       <a href="#architecture">Architecture</a>
       <a href="#limits">Limits</a>
       <a href="#faq">Questions</a>
@@ -61,11 +62,11 @@
         <p class="lede">Local Antigravity runs the Google Antigravity SDK against a model on your computer, served by Ollama. Setup needs no cloud account and no API key.</p>
         <p class="actions">
           <a class="btn btn-primary" href="#guide">Start the guide</a>
-          <a class="btn" href="https://github.com/veeresh-bikkaneti/antigravity-local/blob/main/ZERO_TO_CODING.md">Zero to coding guide</a>
+          <a class="btn" href="docs/zero-to-coding.html">Zero to coding guide</a>
           <a class="btn btn-game" href="game/">▶ Play the zero-to-coding game</a>
           <a class="btn" href="https://github.com/veeresh-bikkaneti/antigravity-local">See the code on GitHub</a>
         </p>
-        <p class="fine">Version 1.0.0. Tested on Windows 11. macOS and Linux are not tested yet.</p>
+        <p class="fine">Version 1.2.3. Tested on Windows 11. macOS and Linux are not tested yet.</p>
         <div class="preflight">
           <h2 class="preflight-title">Before you start</h2>
           <ul>
@@ -96,7 +97,7 @@
             <li class="stack-item" data-layer="2"><span class="lnum">2</span><span class="lname">Qwen model</span><span class="lstate"></span></li>
             <li class="stack-item" data-layer="1"><span class="lnum">1</span><span class="lname">Ollama</span><span class="lstate"></span></li>
           </ol>
-          <p class="stack-note">Drag the drawing to orbit · Ctrl + scroll to zoom · Scrolling the guide builds the stack too. The cloud stays out of it - it is never connected.</p>
+          <p class="stack-note">Drag the empty space around the drawing to orbit · Ctrl + scroll there to zoom · Scrolling the guide builds the stack too. The cloud stays out of it - it is never connected.</p>
         </section>
       </div>
       <figure class="hero-art" aria-hidden="true">
@@ -167,7 +168,7 @@
 
     <section class="game" id="game" aria-labelledby="game-title">
       <h2 id="game-title">Play the setup as a game</h2>
-      <p>Prefer to watch it happen? The zero-to-coding game walks the same nine steps as the guide as a side-scroller: run the launcher, pull Ollama, pull the model, serve it, wire the endpoint, start the agent, watch it call the model, write a file, and land in the editor. You collect each tool into a pocket as you clear its station, and it ends with the local model saying Hello World in the IDE.</p>
+      <p>Prefer to watch it happen? The zero-to-coding game walks the same eight steps as the guide as a side-scroller: install Ollama, pull the model, run the launcher, wire the coding-app endpoint, set up the virtual environment, chat with your agent, give it one job, and land in the editor. You collect each tool into a pocket as you clear its station, and it ends with the local model saying Hello World in the IDE.</p>
       <p><a class="btn btn-game" href="game/">▶ Play the zero-to-coding game</a></p>
     </section>
 
@@ -220,7 +221,7 @@
       </div>
 
       <ol class="steps">
-        <li class="step" data-step="1" data-focus="ollama">
+        <li class="step" id="step-1" data-step="1" data-focus="ollama">
           <h3>Install Python, Git and Ollama</h3>
           <p>Open PowerShell (Start menu, type PowerShell) and run each command on this page there. First install Python 3.12 from <a href="https://www.python.org/downloads/">python.org</a> (tick "Add python.exe to PATH") and Git from <a href="https://git-scm.com/downloads">git-scm.com</a>. Then open a new PowerShell window. <code>python --version</code> and <code>git --version</code> should each print a version.</p>
           <p>Ollama is the program that holds the model and answers requests. Download it from <a href="https://ollama.com/download">ollama.com/download</a>, then check it works.</p>
@@ -229,15 +230,15 @@
           <p class="time">About 3 minutes</p>
         </li>
 
-        <li class="step" data-step="2" data-focus="model">
+        <li class="step" id="step-2" data-step="2" data-focus="model">
           <h3>Choose a model (optional)</h3>
-          <p>Step 3 picks a model that fits your machine, so you can skip this. On a normal terminal it shows a short menu and Enter takes the pick for your machine; <code>--yes</code> skips the menu and never downloads. Not on Ollama? LM Studio, llama.cpp and vLLM work too: point <code>LOCAL_LLM_BASE_URL</code> at them and nothing gets downloaded. Want a model from Hugging Face? Type <code>hf.co/user/repo:quant</code> in the menu. To choose one yourself, pull the model <code>run.py</code> would pick: <code>qwen2.5-coder:14b</code> with 15 GB or more of VRAM (your graphics card's own memory), <code>qwen2.5-coder:7b</code> with 8 GB of VRAM or 16 GB of RAM, and <code>llama3.2:3b</code> otherwise. If you pick a Gemma model, tool calling is off, so it can chat but not edit files.</p>
+          <p>Step 3 picks a model that fits your machine, so you can skip this. On a normal terminal it shows a short menu where every row says Fast, Moderate or Slow (an estimate from the model's size and your memory) and Enter takes the pick for your machine; <code>--yes</code> skips the menu and never downloads. Not on Ollama? LM Studio, llama.cpp and vLLM work too: point <code>LOCAL_LLM_BASE_URL</code> at them and nothing gets downloaded. Want a model from Hugging Face? Type <code>hf.co/user/repo:quant</code> in the menu. To choose one yourself, pull the model <code>run.py</code> would pick: <code>qwen2.5-coder:14b</code> with 15 GB or more of VRAM (your graphics card's own memory), <code>qwen2.5-coder:7b</code> with 8 GB of VRAM or 16 GB of RAM, and <code>llama3.2:3b</code> otherwise. If you pick a Gemma model, tool calling is off, so it can chat but not edit files.</p>
           <div class="code"><pre><code>ollama pull qwen2.5-coder:7b</code></pre><button class="copy" type="button" aria-label="Copy command: ollama pull qwen2.5-coder:7b">Copy</button></div>
           <p class="check">You should see the model in <code>ollama list</code>.</p>
           <p class="time">Depends on your connection</p>
         </li>
 
-        <li class="step" data-step="3" data-focus="repo">
+        <li class="step" id="step-3" data-step="3" data-focus="repo">
           <h3>Clone the repo and run setup</h3>
           <p>One command runs five stages: ENVIRONMENT (a private Python folder for this project, plus the packages), SERVER (checks Ollama), MODEL (one numbered list, where Enter keeps your model and a typo just asks again), CONTEXT (checks the 64k context window coding agents need and prints the fix if it's short) and LAUNCH. Then a LEVEL CLEAR box sums up the model, the agent and the log file. A better model that fits shows up as a recommended upgrade row in the same numbered list, and your current model is marked with a <code>*</code>. If no model is installed, it asks before it downloads one (about 9 GB for the 14B model).</p>
           <div class="code"><pre><code>git clone https://github.com/veeresh-bikkaneti/antigravity-local.git
@@ -245,10 +246,11 @@ cd antigravity-local
 python run.py</code></pre><button class="copy" type="button" aria-label="Copy the three setup commands">Copy</button></div>
           <p class="check">You should see five stages (<code>STAGE 1/5</code> to <code>5/5</code>), a LEVEL CLEAR box, and then a <code>You&nbsp;&gt;</code> prompt. Type <code>exit</code> for now. On macOS and Linux, use <code>python3</code>. On Windows you can also run <code>.\run.ps1</code> or <code>run.bat</code>.</p>
           <p class="time">About 3 minutes the first time, not counting a model download. It goes quiet in the middle while packages install, and that is normal.</p>
+          <p class="time">Prefer to do it by hand? <a href="docs/#step-by-step-manual-setup-optional-alternative">Manual setup</a>. Script blocked on Windows? See <a href="docs/#common-gotchas--troubleshooting">Set-ExecutionPolicy</a>.</p>
           <p class="check">A common error: <code>Connection refused</code> on <code>:11434</code> means Ollama is not running, so start the app or run <code>ollama serve</code>.</p>
         </li>
 
-        <li class="step" data-step="4" data-focus="app">
+        <li class="step" id="step-4" data-step="4" data-focus="app">
           <h3>Use your model in a coding app</h3>
           <p>Your pick is saved as <code>LOCAL_LLM_MODEL</code> in <code>.env</code>, so every app uses the same model. Pick one agent below. Each command adds only an Ollama entry to that app's config, and it asks before it installs anything. Coding apps want a 64k context window. If stage 4 says yours is smaller, set <code>OLLAMA_CONTEXT_LENGTH=65536</code> and restart Ollama.</p>
           <div class="agent-cards">
@@ -272,14 +274,20 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
               <p>OpenAI's terminal agent, pointed at Ollama with <code>--oss</code>. Zero config files to manage.</p>
               <div class="code"><pre><code>python run.py --agent codex</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --agent codex">Copy</button></div>
             </div>
+            <div class="agent-card" id="agent-claude">
+              <h4>claude</h4>
+              <p>Claude Code, pointed at your local model for one session. Run the read-only settings check first if you already use Claude Code.</p>
+              <div class="code"><pre><code>python run.py --agent claude</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --agent claude">Copy</button></div>
+              <div class="code"><pre><code>python run.py --agent claude --doctor</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --agent claude --doctor">Copy</button></div>
+            </div>
           </div>
-          <p class="check">The app opens in your project, already pointed at your local model. Your other settings are left alone. Claude Code has its own route in the README.</p>
-          <p class="time">A minute, plus the app install if you say yes. <a href="https://github.com/veeresh-bikkaneti/antigravity-local#use-your-model-in-a-coding-app">Full details in the README</a></p>
+          <p class="check">The app opens in your project, already pointed at your local model. Your other settings are left alone. The Claude Code route, including context-size settings and shell wrappers, is in the <a href="docs/#claude-code-with-your-local-model">full guide</a>.</p>
+          <p class="time">A minute, plus the app install if you say yes. <a href="docs/#use-your-model-in-a-coding-app">Full details in the full guide</a></p>
           <h4 id="connect-apps">Connect your coding app</h4>
           <ul>
             <li><strong>VS Code:</strong> install the Ollama extension (<code>Ollama.ollama</code>), then pick your model under Ollama in Chat.</li>
             <li><strong>Continue:</strong> set <code>provider: ollama</code>, your model tag and <code>apiBase: http://localhost:11434</code> in <code>config.yaml</code>.</li>
-            <li><strong>Terminal agents:</strong> <code>python run.py --agent pi</code>, or <code>opencode</code>, <code>codex</code>, <code>claude</code>.</li>
+            <li><strong>Terminal agents:</strong> <code>python run.py --agent pi</code>, or <code>opencode</code>, <code>codex</code>, or <a href="#agent-claude"><code>claude</code></a> (see the claude card above).</li>
             <li><strong>Antigravity:</strong> no documented local-model setting in the app. Run the terminal line in its built-in terminal.</li>
             <li><strong>Gemini CLI:</strong> no local models. Only a LiteLLM proxy gets there, and that is experimental and untested by us.</li>
             <li><strong>Your own code:</strong> base URL <code>http://localhost:11434/v1</code> and your model tag. <a href="#coding-apps">Steps for every app are in the Coding apps section below.</a></li>
@@ -287,50 +295,54 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
           <p class="time">Short version any time: <code>python run.py --coding-apps</code>.</p>
         </li>
 
-        <li class="step" data-step="5" data-focus="venv">
+        <li class="step" id="step-5" data-step="5" data-focus="venv">
           <h3>Activate the virtual environment</h3>
           <p>Do this once per terminal window, from inside the <code>antigravity-local</code> folder.</p>
           <p class="shell">Windows PowerShell</p>
           <div class="code"><pre><code>.\venv\Scripts\Activate.ps1</code></pre><button class="copy" type="button" aria-label="Copy the PowerShell activation command">Copy</button></div>
           <p class="shell">macOS and Linux</p>
           <div class="code"><pre><code>source venv/bin/activate</code></pre><button class="copy" type="button" aria-label="Copy the macOS and Linux activation command">Copy</button></div>
-          <p class="check">Your prompt now starts with <code>(venv)</code>. If PowerShell blocks the script, <a href="https://github.com/veeresh-bikkaneti/antigravity-local/blob/main/ZERO_TO_CODING.md#before-you-start-activate-the-virtual-environment">the guide has the one-line fix</a>.</p>
+          <p class="check">Your prompt now starts with <code>(venv)</code>. If PowerShell blocks the script, <a href="docs/zero-to-coding.html#before-you-start-activate-the-virtual-environment">the guide has the one-line fix</a>.</p>
           <p class="time">10 seconds</p>
+          <p class="time">Activation blocked by PowerShell? <a href="docs/#common-gotchas--troubleshooting">Set-ExecutionPolicy fix</a>.</p>
         </li>
 
-        <li class="step" data-step="6" data-focus="agent">
+        <li class="step" id="step-6" data-step="6" data-focus="agent">
           <h3>Chat with your agent</h3>
           <p>Open the coding shell on a workspace folder. Type a request in plain English. Creating a new file works most of the time. Editing an existing file does not, so read <a href="#limits">the limits below</a> before you point it at real code.</p>
           <div class="code"><pre><code>python code_agent.py --workspace ./workspace</code></pre><button class="copy" type="button" aria-label="Copy command: python code_agent.py --workspace ./workspace">Copy</button></div>
           <p class="check">A banner shows your model and workspace, then a <code>CodeAgent [You] &gt;</code> prompt. Try <code>/files</code>, then <code>/wiki</code>, then <code>exit</code>. <code>/clear</code> starts a fresh session.</p>
           <p class="check">If you see <code>No module named 'google'</code>, you are outside the virtual environment, so activate it (step 5) and try again.</p>
           <p class="time">1 minute</p>
+          <p class="time">Odd characters crash it on Windows? <a href="docs/#4-windows-unicodeencodeerror-charmap-codec-cant-encode-character">UnicodeEncodeError fix</a>. Want to check the pieces one by one? <a href="docs/#step-6-test-your-agent">Test scripts</a>.</p>
         </li>
 
-        <li class="step" data-step="7" data-focus="job">
+        <li class="step" id="step-7" data-step="7" data-focus="job">
           <h3>Give it one job</h3>
           <p>Hand the agent a single task and let it finish without chatting.</p>
           <div class="code"><pre><code>python code_agent.py --workspace ./my-project --task "Create hello.py that prints hi"</code></pre><button class="copy" type="button" aria-label="Copy the one-shot task command">Copy</button></div>
           <p class="check">You should see <code>Task completed. Created 1, changed 0.</code> and the new file listed. If you see a warning instead, the model answered without writing a file. Run the command again.</p>
           <p class="time">Under a minute</p>
+          <p class="time">Want a search UI and API instead? <a href="docs/#serve-it-search-ui--api-on-a-free-port-local-or-docker">Serve it, local or Docker</a>.</p>
         </li>
 
-        <li class="step" data-step="8" data-focus="editor">
+        <li class="step" id="step-8" data-step="8" data-focus="editor">
           <h3>Use it from your editor or the browser</h3>
-          <p>Start a search page on a free port, or run it in Docker (the <a href="https://github.com/veeresh-bikkaneti/antigravity-local#serve-it-search-ui--api-on-a-free-port-local-or-docker">README has the three Docker commands</a>). For VS Code there are four routes:</p>
+          <p>Start a search page on a free port, or run it in Docker (the <a href="docs/#serve-it-search-ui--api-on-a-free-port-local-or-docker">full guide has the three Docker commands</a>). For VS Code there are four routes:</p>
           <ul>
             <li><strong>Our shell in the built-in terminal.</strong> Open Terminal, then New Terminal, activate the venv and run <code>python code_agent.py --workspace .</code>. No extension needed.</li>
             <li><strong>The Ollama extension</strong> (<code>Ollama.ollama</code>). Pick your model under Ollama in Chat. <a href="#app-vscode">Steps</a></li>
             <li><strong>Continue.</strong> Add your model to its <code>config.yaml</code>. <a href="#app-continue">Steps</a></li>
-            <li><strong>Cline.</strong> The README has the steps. We did not re-check them on 2026-11-18.</li>
+            <li><strong>Cline.</strong> The <a href="docs/#use-your-local-model-from-antigravity-or-vs-code">full guide</a> has the steps. We did not re-check them on 2026-11-18.</li>
           </ul>
           <p>Want a sturdier terminal agent? <code>python run.py --agent pi</code> (or <code>opencode</code>, or <code>codex</code>) sets one up for your local model and asks before it installs anything. <a href="#app-terminal">Steps</a></p>
           <div class="code"><pre><code>python run.py --serve</code></pre><button class="copy" type="button" aria-label="Copy command: python run.py --serve">Copy</button></div>
           <p class="check">You should see <code>Serving on http://127.0.0.1:</code> followed by a port number. Open that address. A port is just a numbered door on your computer, and this command picks one that is free. The page has no login, so keep it on your machine.</p>
-          <p class="time">Under a minute. <a href="https://github.com/veeresh-bikkaneti/antigravity-local#use-your-local-model-from-antigravity-or-vs-code">Full details in the README</a></p>
+          <p class="time">Under a minute. <a href="docs/#use-your-local-model-from-antigravity-or-vs-code">Full details in the full guide</a></p>
+          <p class="time">Using LM Studio or vLLM? <a href="docs/#advanced-using-custom-research-harnesses--servers">Other backends</a>. Done for the day? <a href="docs/#stop--clean-up-teardown">Stop and clean up</a>.</p>
         </li>
       </ol>
-      <p class="zero-cta">Want something to build now? The <a href="https://github.com/veeresh-bikkaneti/antigravity-local/blob/main/ZERO_TO_CODING.md">Zero to coding guide</a> walks through 3 end-to-end coding recipes: a FastAPI backend, unit tests for existing code, and a legacy-code refactor.</p>
+      <p class="zero-cta">Want something to build now? The <a href="docs/zero-to-coding.html">Zero to coding guide</a> walks through 3 end-to-end coding recipes: a FastAPI backend, unit tests for existing code, and a legacy-code refactor.</p>
     </section>
 
     <section class="faq apps" id="coding-apps" aria-labelledby="apps-title">
@@ -377,7 +389,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
           <li>Say <code>y</code> if it offers to install the agent. It adds only an Ollama entry to that agent's own config.</li>
           <li>Prefer Ollama's own helper? <code>ollama launch pi</code> does a similar job.</li>
         </ol>
-        <p class="time">Sources: this repo's <code>agent_setup.py</code> (covered by the offline tests) and Ollama's pi guide [Moderate]. The README's <code>ollama launch</code> app list was checked on 2026-11-14 and not re-checked. Checked 2026-11-18.</p>
+        <p class="time">Sources: this repo's <code>agent_setup.py</code> (covered by the offline tests) and Ollama's pi guide [Moderate]. The full guide's <code>ollama launch</code> app list was checked on 2026-11-14 and not re-checked. Checked 2026-11-18.</p>
       </details>
 
       <details id="app-antigravity">
@@ -412,7 +424,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
         <p class="time">Sources: Antigravity SDK local-models page, Ollama pi guide, Ollama VS Code guide [High]. Checked 2026-11-18.</p>
       </details>
 
-      <p>Short version with your model filled in: <code>python run.py --coding-apps</code>. <a href="https://github.com/veeresh-bikkaneti/antigravity-local/blob/main/docs/coding-apps.md">Full doc with every source link</a>. Not covered: Cline steps (not re-checked today), Claude Desktop, and an Antigravity command-line tool called <code>agy</code> (we found nothing).</p>
+      <p>Short version with your model filled in: <code>python run.py --coding-apps</code>. <a href="docs/coding-apps.html">Full doc with every source link</a>. Not covered: Cline steps (not re-checked today), Claude Desktop, and an Antigravity command-line tool called <code>agy</code> (we found nothing).</p>
     </section>
 
     <section class="arch" id="architecture" aria-labelledby="arch-title">
@@ -456,13 +468,13 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
         <li>The extra coding agents (pi, OpenCode, Codex) are set up and tested offline. We have not yet measured how well they edit an existing file with your model, and all three want a context window of 64k tokens or more, which is larger than Ollama's default on most PCs.</li>
         <li>Only Windows 11 was tested. Native macOS and Linux, and the VS Code extension steps, are not tested yet. VS Code's built-in Ollama provider is deprecated, so the steps use the Ollama extension.</li>
       </ul>
-      <p><a href="https://github.com/veeresh-bikkaneti/antigravity-local/releases/tag/v1.0.0">Read the v1.0.0 release notes</a></p>
+      <p><a href="https://github.com/veeresh-bikkaneti/antigravity-local/releases/tag/v1.2.3">Read the v1.2.3 release notes</a></p>
     </section>
     <section class="faq" id="faq" aria-labelledby="faq-title">
       <h2 id="faq-title">Questions people ask</h2>
       <details>
         <summary>Do I need a GPU?</summary>
-        <p>No. Small models run on a CPU, just slowly. A GPU with 16 GB of video memory runs the default model comfortably. The README has a table that matches models to hardware.</p>
+        <p>No. Small models run on a CPU, just slowly. A GPU with 16 GB of video memory runs the default model comfortably. The <a href="docs/">full guide</a> has a table that matches models to hardware.</p>
       </details>
       <details>
         <summary>Does it send my code anywhere?</summary>
@@ -473,12 +485,16 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
         <p>The model answered without calling its file tool. Small local models do this now and then. The tool prints a warning instead of "Task completed". Run the same command again, or name the file in your task.</p>
       </details>
       <details>
+        <summary>Something broke. Where do I look?</summary>
+        <p>The <a href="docs/#common-gotchas--troubleshooting">troubleshooting section of the full guide</a> lists the common ones, starting with the PowerShell "Running scripts is disabled" error.</p>
+      </details>
+      <details>
         <summary>Do I need a 24 GB graphics card?</summary>
         <p>No. This project targets 8 to 16 GB machines and CPU-only laptops. It goes through Ollama and the SDK's <code>LocalOpenAIAgentConfig</code> route. The other local route, <code>litert-lm</code>, needs 24 GB or more of VRAM for models over 16 GB, and it fails on 16 GB laptop cards (see the project's hardware matrix).</p>
       </details>
       <details>
         <summary>Can I use it from VS Code?</summary>
-        <p>Yes, four ways. The README lists them: our shell in the built-in terminal, the Ollama extension, Continue, and Cline. VS Code's built-in Ollama provider is deprecated, so use the official Ollama extension (<code>Ollama.ollama</code>). The extension steps come from their official guides, and we have not run them in VS Code ourselves. <a href="https://github.com/veeresh-bikkaneti/antigravity-local/blob/main/docs/coding-apps.md">Steps for each app</a></p>
+        <p>Yes, four ways. The full guide lists them: our shell in the built-in terminal, the Ollama extension, Continue, and Cline. VS Code's built-in Ollama provider is deprecated, so use the official Ollama extension (<code>Ollama.ollama</code>). The extension steps come from their official guides, and we have not run them in VS Code ourselves. <a href="docs/coding-apps.html">Steps for each app</a></p>
       </details>
       <details>
         <summary>Can I use a better coding agent than the built-in shell?</summary>
@@ -486,7 +502,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
       </details>
       <details>
         <summary>Can I use Claude Code with my local model?</summary>
-        <p>Yes, with one command: <code>python run.py --agent claude</code>. Ollama speaks a subset of the Anthropic API, and we hand Claude Code the endpoint, a placeholder token and your local model for that one session only. It gets its own config folder (<code>~/.claude-local</code>) and we never write your <code>~/.claude</code> settings, so your normal sessions stay on your subscription. <code>python run.py --agent claude --doctor</code> checks, read-only, that nothing else is rerouting them. The offline tests pass, but we have not yet run a long live session. The README has the details and the gotchas.</p>
+        <p>Yes, with one command: <code>python run.py --agent claude</code>. Ollama speaks a subset of the Anthropic API, and we hand Claude Code the endpoint, a placeholder token and your local model for that one session only. It gets its own config folder (<code>~/.claude-local</code>) and we never write your <code>~/.claude</code> settings, so your normal sessions stay on your subscription. <code>python run.py --agent claude --doctor</code> checks, read-only, that nothing else is rerouting them. The offline tests pass, but we have not yet run a long live session. The <a href="docs/#common-gotchas--troubleshooting">full guide has the details and the gotchas</a>.</p>
       </details>
       <details>
         <summary>Does it work on macOS or Linux?</summary>
@@ -496,7 +512,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
   </main>
 
   <footer>
-    <p>Local Antigravity 1.0.0, MIT license. Built on <a href="https://ollama.com">Ollama</a> and the <a href="https://github.com/google-antigravity/antigravity-sdk-python">Google Antigravity SDK</a>. Diagrams by <a href="https://github.com/tt-a1i/archify">Archify</a>. This page uses <a href="https://threejs.org">Three.js</a> and <a href="https://gsap.com">GSAP</a>. <a href="game/">Play the zero-to-coding game</a>.</p>
+    <p>Local Antigravity 1.2.3, MIT license. Built on <a href="https://ollama.com">Ollama</a> and the <a href="https://github.com/google-antigravity/antigravity-sdk-python">Google Antigravity SDK</a>. Diagrams by <a href="https://github.com/tt-a1i/archify">Archify</a>. This page uses <a href="https://threejs.org">Three.js</a> and <a href="https://gsap.com">GSAP</a>. <a href="game/">Play the zero-to-coding game</a>.</p>
   </footer>
 
   <div id="status" class="sr" role="status" aria-live="polite"></div>

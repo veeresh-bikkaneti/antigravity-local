@@ -104,6 +104,16 @@ body.dim-stage #labels { opacity: 0; }
 .bar nav a:hover { color: var(--signal); }
 
 main, footer { position: relative; z-index: 2; }
+/* Empty space lets pointer input through to the drawing (drag to orbit, Ctrl + scroll to zoom);
+   anything you can read, click or select keeps its own pointer events. */
+main, footer { pointer-events: none; }
+main :is(a, button, summary, input, details, p, li, h1, h2, h3, h4, pre, code, label, dt, dd, iframe, video, img, svg, table, .stack-readout, .preflight),
+footer :is(a, p, li, code) { pointer-events: auto; }
+.guide, .arch, .limits, .faq { pointer-events: auto; }
+
+/* Text-heavy sections sit on a solid sheet, and the drawing dims behind them (body.dim-stage),
+   so no sentence is ever read over lines or labels. Hero, game and pillars keep the open drawing. */
+.guide, .arch, .limits, .faq { background: var(--sheet); border-block: 1px solid var(--rule); }
 
 .hero { min-height: 100svh; display: grid; align-items: center; padding: 7rem var(--gutter) 5rem; }
 .hero-copy { max-width: 38rem; }
@@ -426,6 +436,8 @@ html.motion-off.reveal [data-reveal] { opacity: 1; transform: none; transition: 
 .agent-card p { margin: 0 0 0.5rem; }
 .agent-card .code { margin-bottom: 0; }
 .apps p, .apps ol { max-width: 46rem; }
+/* The paragraph after the last open details sat 18px under its box, so its first line could not be clicked. */
+.apps > p { position: relative; margin-top: 1.5rem; }
 .apps details > :not(summary) { max-width: 46rem; }
 .apps details[open] { padding-bottom: 1rem; }
 .zero-cta { max-width: 62ch; margin-top: 1.5rem; }

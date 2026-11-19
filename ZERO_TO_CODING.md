@@ -145,6 +145,8 @@ The bootstrap takes about 3 minutes the first time, not counting any model downl
 
 The bootstrap creates your Python virtual environment, installs dependencies, configures `.env`, checks that Ollama answers, and runs a short demo that writes `workspace/index.html`. You should see four numbered stages, `[1/4]` to `[4/4]`, and `System Online: Autonomous Agent Ready!` near the end. A lot of HTML scrolls past while the model writes the demo page, and that is normal. You then land at a `You >` chat prompt. Type `exit` for now. Section 4 shows how to use it properly.
 
+When the model menu shows up, each row has a speed word: Fast (fits in your graphics card), Moderate (part runs on the CPU) or Slow (mostly CPU). It is an estimate from size and memory, and `tools` or `chat only` tells you whether the model can edit files. Enter keeps the model marked `current`. The README has a sample menu.
+
 If Ollama isn't installed, the bootstrap says so. Go back to Step 1.
 
 Prefer a browser? `python run.py --serve` starts a memory search page on a free port. On its first run it builds its own virtual environment and installs packages, so expect a wait. It has no login, so keep it on your own machine.

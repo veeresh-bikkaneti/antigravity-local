@@ -100,6 +100,7 @@ a.cbtn{display:inline-flex;align-items:center;justify-content:center;text-decora
 .farc{fill:none;stroke:#4c4433;stroke-width:7;stroke-linecap:round;transition:stroke .4s}
 .farc.lit{stroke:var(--amber-dim)}
 .farc.current{stroke:var(--amber);filter:drop-shadow(0 0 9px rgba(255,161,31,.65))}
+.fullstep{display:inline-block;margin-top:6px;font-size:12px;color:var(--amber)}
 #startWheel{transform-box:fill-box;transform-origin:center}
 #startWheel.spinning{animation:wheelSpin 1.9s cubic-bezier(.15,.65,.25,1) both}
 @keyframes wheelSpin{from{transform:rotate(0)}to{transform:rotate(720deg)}}
@@ -363,12 +364,13 @@ body.motion-off .blockcursor,body.motion-off .bulb,body.motion-off .bob-anim,bod
     <a class="tb-link exit-link" href="../#guide">Guide</a>
     <span class="tb-current" aria-current="page">Game</span>
   </nav>
-  <div class="stage" id="stage" tabindex="0" role="application" aria-label="You are the player, over a person's shoulder at his desk. His computer is projected on the big screen in front of him, which fills the frame: a Mario-style level with a start line, nine hoops in order, and a finish flag at the Editor. The runner on the screen is Muse — a rounded cream plush character with a smooth face plate, glossy black eyes, pink blush cheeks, stubby arms and short legs with rounded feet. Each hoop shows the big symbol of the system it touches, and clearing a hoop collects that tool into the pocket under the screen. At the finish the view switches to the IDE, with all nine tools ready and the local model saying Hello, World. One Play button runs the whole level.">
+  <div class="stage" id="stage" tabindex="0" role="application" aria-label="You are the player, over a person's shoulder at his desk. His computer is projected on the big screen in front of him, which fills the frame: a Mario-style level with a start line, eight hoops in order, and a finish flag at the Editor. The runner on the screen is Muse — a rounded cream plush character with a smooth face plate, glossy black eyes, pink blush cheeks, stubby arms and short legs with rounded feet. Each hoop shows the big symbol of the system it touches, and clearing a hoop collects that tool into the pocket under the screen. At the finish the view switches to the IDE, with all eight tools ready and the local model saying Hello, World. One Play button runs the whole level.">
     <div class="slide-text">
       <p class="kicker" id="stKicker"></p>
       <h1 class="pixel" id="stHead"></h1>
       <p class="arrowline"><span id="stTyped"></span><span class="blockcursor" aria-hidden="true"></span></p>
       <p class="bodyline" id="stBody" aria-live="polite"></p>
+      <a class="fullstep" id="fullStep" href="../#step-1">Full step</a>
     </div>
 
     <!-- every command, BIG and readable, with its result -->
@@ -492,7 +494,7 @@ body.motion-off .blockcursor,body.motion-off .bulb,body.motion-off .bob-anim,bod
             <div class="ide-promptline"><span class="prompt">CodeAgent [You] &gt;</span> say hello to the world</div>
             <div class="ide-hello"><span id="ideHello"></span><span class="blockcursor" aria-hidden="true"></span></div>
             <p class="ide-note">The payoff: everything Muse collected on the run — the CLI, Ollama, the model, the server, the endpoint plug, the Agent, the file, memory — is in the pocket and loaded here, ready. This is what the whole level was for.</p>
-            <p class="ide-note"><strong>Use your model in a coding app:</strong> <code>python run.py --agent &lt;app&gt;</code> (pi, opencode, codex or claude), or Ollama's own <code>ollama launch &lt;app&gt; --model &lt;your model&gt;</code>. Your pick stays saved as <code>LOCAL_LLM_MODEL</code> in <code>.env</code>. VS Code uses the Ollama extension, Antigravity has no documented local-model setting (use its terminal), and Gemini CLI needs a LiteLLM proxy. <a href="../#coding-apps">Steps on the guide page</a>, or the <a href="https://github.com/veeresh-bikkaneti/antigravity-local/blob/main/docs/coding-apps.md" target="_blank" rel="noopener">doc on GitHub</a></p>
+            <p class="ide-note"><strong>Use your model in a coding app:</strong> <code>python run.py --agent &lt;app&gt;</code> (pi, opencode, codex or claude), or Ollama's own <code>ollama launch &lt;app&gt; --model &lt;your model&gt;</code>. Your pick stays saved as <code>LOCAL_LLM_MODEL</code> in <code>.env</code>. VS Code uses the Ollama extension, Antigravity has no documented local-model setting (use its terminal), and Gemini CLI needs a LiteLLM proxy. <a href="../#coding-apps">Steps on the guide page</a>, or the <a href="../docs/coding-apps.html" target="_blank" rel="noopener">doc on GitHub</a></p>
           </div>
         </div>
         <!-- GAME SCREENS: title (with the first-play tutorial), pause, settings, results -->
@@ -552,7 +554,7 @@ body.motion-off .blockcursor,body.motion-off .bulb,body.motion-off .bob-anim,bod
           <h2 class="gtitle">LEVEL CLEAR!</h2>
           <div class="gstats">
             <div>FINAL SCORE&nbsp;&nbsp;<b id="resScore">0000</b></div>
-            <div>TOOLS IN POCKET&nbsp;&nbsp;<b id="resTools">0 / 9</b></div>
+            <div>TOOLS IN POCKET&nbsp;&nbsp;<b id="resTools">0 / 8</b></div>
             <div>RUN TIME&nbsp;&nbsp;<b id="resTime">0:00</b></div>
             <div>RANK&nbsp;&nbsp;<span class="grank" id="resRank">—</span></div>
           </div>
@@ -570,7 +572,7 @@ body.motion-off .blockcursor,body.motion-off .bulb,body.motion-off .bob-anim,bod
 
       <!-- THE POCKET: a visible inventory that fills as each tool is collected -->
       <div class="inventory" id="inventory" aria-label="Muse's pocket — the tools collected along the run">
-        <div class="inv-head"><span>Muse's <b>pocket</b> — tools collected on the run</span><span class="inv-count" id="invCount">TOOLS 0 / 9</span></div>
+        <div class="inv-head"><span>Muse's <b>pocket</b> — tools collected on the run</span><span class="inv-count" id="invCount">TOOLS 0 / 8</span></div>
         <div class="inv-slots" id="invSlots"></div>
       </div>
     </div>
@@ -590,7 +592,7 @@ body.motion-off .blockcursor,body.motion-off .bulb,body.motion-off .bob-anim,bod
       <button type="button" class="cbtn" id="btnSettings">⚙ Settings</button>
       <p class="play-status" id="status" role="status"></p>
     </div>
-    <div class="steplist" id="steplist" aria-label="The nine checkpoints"></div>
+    <div class="steplist" id="steplist" aria-label="The eight checkpoints"></div>
   </div>
 </div>
 
@@ -603,56 +605,54 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 function pad(n){return (n<10?'0':'')+n;}
 function pad4(n){var s=String(n);while(s.length<4)s='0'+s;return s;}
 var WORLD_W=2700, GROUND_FEET=142; /* avatar bottom offset: feet rest on the y=238 surface */
-function hx(i){ return 170+i*300; }
+function hx(i){ return 170+i*343; }
 
 /* ================= the level: nine hoops, start to destination ================= */
 var HOPS=[
- {short:'The Command',hoop:'THE COMMAND',sub:'run.bat · run.sh · run.ps1',head:['Spin the','wheel.'],
-  kicker:'Checkpoint 1 · The Command — run.bat / run.sh / run.ps1 at the start line',
-  arrow:'he types his start command → the wheel spins → the level starts',
-  body:'One level, start to finish — and it begins the way the real setup begins: with a command. He types his OS\u2019s start command at his desk — run.bat on Windows, run.sh on Mac/Linux, run.ps1 in PowerShell; on the big screen the start-line wheel spins, the lights chase, and Muse — the cream plush, face set and determined — steps up to the line. The big terminal in the hoop is the system he is touching: the CLI. Clearing the hoop collects it — tool number one drops into the pocket under the screen, and every hoop after this one adds its own tool the same way. Ollama, Python and the repo are already in place (guide steps 1 to 3).',
-  cmd:'run.bat  ·  run.sh  ·  run.ps1',where:'his terminal — one launcher per OS',result:'✓ WHEEL SPUN — GAME START! Whichever name his OS uses, the launcher (python run.py) is live and the run begins.'},
- {short:'Ollama install',hoop:'OLLAMA INSTALL',sub:'the engine comes down',head:['Pull the','engine down.'],
-  kicker:'Checkpoint 2 · Ollama install — the engine comes down',
-  arrow:'download Ollama → install it on this PC → the engine is in',
-  body:'First hoop: before anything can be served, the engine itself has to land on this machine. The command pulls Ollama down from the sky in a shower of glowing points — the big llama in the hoop is the system he is touching — and the plush strains with effort, jumps the hoop, and catches the llama as it lands: collected, into the pocket. No engine, no game; this is the hoop everything else stands on.',
-  cmd:'irm https://ollama.com/install.ps1 | iex',where:'PowerShell · installs Ollama',result:'✓ Ollama installed on this PC — the engine is in. Next hoop: the brain.'},
- {short:'Model pull',hoop:'MODEL PULL',sub:'the pick for this PC',head:['Pull the','9 GB brain.'],
-  kicker:'Checkpoint 3 · Model pull — the pick for this PC',
-  arrow:'ollama pull → the 9 GB crate comes down the conveyor → model on the shelf',
-  body:'An engine with no model is an empty arcade cabinet. This hoop pulls the one brain the whole show runs on — the pick for this PC (qwen2.5-coder:14b, about 9 GB, on a big GPU) — and the crate drops in from the branch overhead in a burst of glowing points; the plush catches it as it falls and pockets it. Already there from a previous run? The plush rolls straight through, wide-eyed at the size of the crate: it is reused, not re-downloaded. If a better model fits this PC, the wizard lists it as a recommended upgrade in the same numbered model list, and your current model is marked with a *. Enter keeps the one you have. Nothing downloads without a yes.',
-  cmd:'ollama pull qwen2.5-coder:14b',where:'only if the shelf is empty; a menu comes first, and Enter takes the pick',result:'✓ Model on the shelf — qwen2.5-coder:14b ready. Next hoop: bring it to life.'},
- {short:'Serve network',hoop:'SERVE NETWORK',sub:'listening on :11434',head:['Light the','network.'],
-  kicker:'Checkpoint 4 · Serve the network — ollama serve',
-  arrow:'ollama serve → the mast lights up → listening on localhost:11434',
-  body:'Installed and downloaded is still asleep. ollama serve wakes the engine up and puts it on the network — the mast at this hoop lights up with signal rings, and from this moment there is an address where the brain can be reached: port 11434.',
-  cmd:'ollama serve',where:'starts the Ollama server',result:'✓ Serving — http://localhost:11434 is listening. Next hoop: point the harness at it.'},
- {short:'Endpoint config',hoop:'ENDPOINT CONFIG',sub:'wired to the harness',head:['Plug in the','harness.'],
-  kicker:'Checkpoint 5 · Configure the endpoint — for the Antigravity harness',
-  arrow:'set the base URL → the harness plugs into :11434/v1 → health check 200',
-  body:'A listening server nobody talks to is a hoop half-jumped. This is the wiring hoop: the Antigravity harness is configured with Ollama\u2019s endpoint — base URL, port and all — the plug clicks into the harness box, and the health check answers 200. The wizard also checks the context window: coding agents need 64k (OLLAMA_CONTEXT_LENGTH=65536), and if the server is smaller it says so and prints the command to raise it. It never changes Ollama itself. Engine, brain, network, wiring: the machine side is done.',
-  cmd:'LOCAL_LLM_BASE_URL=http://localhost:11434/v1',where:'in .env, set by run.py',result:'✓ Harness connected — GET /api/tags → 200 through the configured endpoint. Next hoop: the Agent.'},
- {short:'Agent start',hoop:'AGENT START',sub:'the Agent wakes',head:['Wake the','agent.'],
-  kicker:'Checkpoint 6 · Start the Agent — the harness brings its worker online',
-  arrow:'start the Agent → it loads the endpoint + its tools → ready for orders',
-  body:'Everything so far was plumbing; this station wakes the worker. The Agent starts inside the Antigravity harness already knowing the endpoint hoop five wired up and the tools it is allowed to use. At its desk it hangs as a loose wisp of uncompiled words — Muse grapples it together into a working agent, and the run stops being setup and starts being work.',
-  cmd:'agent = CodeAgent(endpoint, tools)',where:'started by the Antigravity harness',result:'✓ Agent online — endpoint loaded, tools registered, waiting for a prompt. Next station: it makes the call.'},
- {short:'Agent calls Ollama',hoop:'THE CALL',sub:'packet → core → tool_call',head:['The agent','calls home.'],
-  kicker:'Checkpoint 7 · Agent calls Ollama — through the endpoint, to this PC',
-  arrow:'the packet flies the wire → the model answers → a tool_call rides back',
-  body:'He types "Fix the login bug". The Agent compiles it — prompt plus tools — wraps it in the very packet Muse has carried the whole run, and sends it through the configured endpoint to the model on this PC. The Firewall Imp on the wire is grappled aside, the packet arcs to the Ollama Core and comes back changed: no longer a question — a decision, tool_call: write_to_file("index.html", …). Nothing left the machine: the call went from the harness to localhost:11434 and back.',
-  cmd:'POST http://localhost:11434/v1/chat/completions',where:'the Agent → Ollama, via the endpoint',result:'✓ 200 OK — tool_call back: write_to_file("index.html", …). The model decided. Next station: the write itself.'},
- {short:'Workspace write',hoop:'WORKSPACE WRITE',sub:'index.html lands',head:['The file','lands.'],
-  kicker:'Checkpoint 8 · Workspace write — the file lands',
-  arrow:'policy check → write ./workspace/index.html → a real page exists',
-  body:'The Policy Gate lets exactly one kind of run through: a write scoped to the workspace. Muse shows the guard the tool_call, the stamp comes down — APPROVED — and the harness writes ./workspace/index.html: a real page, not a promise, sitting in the folder as the plush heaves it through and clears the station.',
-  cmd:'write_to_file("./workspace/index.html")',where:'run by the harness, through the Policy Gate',result:'✓ policy.allow_all() APPROVED — index.html written to the workspace. Last station: bank the run, then the Editor.'},
- {short:'Memory + Editor',hoop:'MEMORY + EDITOR',sub:'FINISH · banked & open',head:['Bank it.','Code it.'],
-  kicker:'Checkpoint 9 · Memory + Editor — the destination',
-  arrow:'bank the run in memory → blast the Editor door → CodeAgent [You] >',
-  body:'Last station, two jobs. First the run is banked into memory — the command, the endpoint, the model\u2019s answer, the file it produced — dropped into the vault so the next run starts from knowledge, not from zero. Then the showdown: the Warden guards the Editor door, and every tool in the full pocket is the argument that opens it. Three hits, the door bursts wide, the POV leaves the level for the IDE, and the local model says its first words: "Hello, World!" Start line to finish — command, engine, brain, network, wiring, agent, call, file, memory — every station in order. LEVEL CLEAR.',
-  cmd:'memory.save(run_log)  →  CodeAgent [You] >',where:'memory, written by the harness · then the Editor',result:'✓ LEVEL CLEAR — +9,000. Run banked to memory; pocket full: all nine tools collected. The POV switches to the IDE and the local model says "Hello, World!"'}
+ {short:'Install Python, Git and Ollama',step:1,scene:'install',hoop:'INSTALL',sub:'the engine comes down',head:['Pull the','engine down.'],
+  kicker:'Checkpoint 1 · Install Python, Git and Ollama',
+  arrow:'install Ollama → check the version → the engine is in',
+  body:'Before anything can be served, the engine has to land on this machine. Ollama comes down from the sky in a shower of glowing points, and the big llama in the hoop is the system he is touching. Python and Git come first on a bare PC; the check below proves Ollama answers.',
+  cmd:'ollama --version',where:'PowerShell · prints the Ollama version',result:'✓ Ollama is installed on this PC. Next: choose the brain.'},
+ {short:'Choose a model (optional)',step:2,scene:'model',hoop:'CHOOSE MODEL',sub:'the pick for this PC',head:['Pull the','9 GB brain.'],
+  kicker:'Checkpoint 2 · Choose a model (optional)',
+  arrow:'ollama pull → the crate comes down the conveyor → model on the shelf',
+  body:'An engine with no model is an empty arcade cabinet. Setup picks a model that fits this PC, so this step is optional. To choose one yourself, pull it: a crate of weights drops in from the branch overhead and lands on the shelf.',
+  cmd:'ollama pull qwen2.5-coder:7b',where:'optional; setup shows a menu and Enter takes the pick for your machine',result:'✓ Model on the shelf. Next: clone the repo and run setup.'},
+ {short:'Clone the repo and run setup',step:3,scene:'command',hoop:'RUN SETUP',sub:'ollama serve · listening on :11434',head:['Spin the','wheel.'],
+  kicker:'Checkpoint 3 · Clone the repo and run setup',
+  arrow:'clone the repo → run.py spins the wheel → the server is up and the level starts',
+  body:'One command runs five stages: environment, server, model, context and launch. The wheel spins and the game starts. Along the way the Ollama server wakes up and listens on localhost:11434, and the harness learns that address. Then a LEVEL CLEAR box sums up the model, the agent and the log file.',
+  cmd:'git clone https://github.com/veeresh-bikkaneti/antigravity-local.git  ·  cd antigravity-local  ·  python run.py',where:'your terminal · on macOS and Linux use python3',result:'✓ WHEEL SPUN: setup ran and the server is listening. Next: plug in a coding app.'},
+ {short:'Use your model in a coding app',step:4,scene:'app',hoop:'CODING APP',sub:'wired to your model',head:['Plug in the','coding app.'],
+  kicker:'Checkpoint 4 · Use your model in a coding app',
+  arrow:'pick an agent → its config gets an Ollama entry → the plug clicks in',
+  body:'Your pick is saved as LOCAL_LLM_MODEL, so every app uses the same model. Pick one agent: pi, opencode, codex or claude. The command adds only an Ollama entry to that app’s config, and it asks before it installs anything.',
+  cmd:'python run.py --agent pi',where:'also opencode, codex or claude; asks before installing',result:'✓ The app is wired to your local model. Next: activate the virtual environment.'},
+ {short:'Activate the virtual environment',step:5,scene:'venv',hoop:'VENV',sub:'a private Python folder',head:['Light the','terminal.'],
+  kicker:'Checkpoint 5 · Activate the virtual environment',
+  arrow:'activate the venv → the prompt shows (venv) → the packages are in reach',
+  body:'Do this once per terminal window, from inside the antigravity-local folder. The mast lights up with signal rings: from now on this terminal can see the packages the project installed for itself.',
+  cmd:'.\\venv\\Scripts\\Activate.ps1  ·  source venv/bin/activate',where:'PowerShell on Windows · the second line is for macOS and Linux',result:'✓ The venv is active. Next: chat with your agent.'},
+ {short:'Chat with your agent',step:6,scene:'chat',hoop:'CHAT',sub:'endpoint :11434/v1',head:['Wake the','agent.'],
+  kicker:'Checkpoint 6 · Chat with your agent',
+  arrow:'start the agent → it loads the endpoint and its tools → ready for orders',
+  body:'The agent starts inside the harness already knowing the endpoint (http://localhost:11434/v1) and the tools it may use. At its desk it waits for a prompt. Type exit when you are done.',
+  cmd:'python code_agent.py --workspace ./workspace',where:'the built-in pair-programmer shell',result:'✓ Agent online: endpoint loaded, tools registered, waiting for a prompt. Next: give it one job.'},
+ {short:'Give it one job',step:7,scene:'job',hoop:'ONE JOB',sub:'agent calls Ollama · tool_call',head:['The file','lands.'],
+  kicker:'Checkpoint 7 · Give it one job',
+  arrow:'the agent calls Ollama → a tool_call comes back → policy check → the file is written',
+  body:'He gives the agent one task. It sends the prompt and its tools to the model on this PC, and a tool_call rides back. The Policy Gate lets exactly one kind of run through: a write scoped to the workspace. The stamp comes down, APPROVED, and the file lands.',
+  cmd:'python code_agent.py --workspace ./my-project --task "Create hello.py that prints hi"',where:'one-shot task mode',result:'✓ APPROVED: the file was written to the workspace. Last: the editor or the browser.'},
+ {short:'Use it from your editor or the browser',step:8,scene:'editor',hoop:'EDITOR',sub:'FINISH · banked & open',head:['Bank it.','Code it.'],
+  kicker:'Checkpoint 8 · Use it from your editor or the browser',
+  arrow:'bank the run in memory → serve the search page → CodeAgent [You] >',
+  body:'Last station, two jobs. The run is banked into memory so the next run starts from knowledge, not from zero. Then the search page opens on a free port, and the Editor door blasts open with the local model ready to code.',
+  cmd:'python run.py --serve',where:'starts a search page on a free port',result:'✓ LEVEL CLEAR — +8,000. Run banked; pocket full: all eight tools collected. The POV switches to the IDE and the local model says "Hello, World!"'}
 ];
+/* the scene art below was drawn in the old nine-hoop order; ORDER maps each new checkpoint to its old art */
+var ORDER=[1,2,0,4,3,5,7,8];
+var WHEEL_AT=HOPS.findIndex(function(h){ return h.scene==='command'; });
 
 /* checkpoint props, drawn behind each hoop (local coords, ground surface y=238) */
 var PROPS=[
@@ -722,8 +722,8 @@ var SYMBOLS=[
 /* sky-drops for the two pulls: glowing points + the item itself fall in from the sky
    when the hoop becomes current, and the plush collects them as he jumps through. */
 var DROPITEMS={
- 1:'<g class="dropitem"><g fill="#ffb84d"><circle cx="-26" cy="104" r="2.6"/><circle cx="-10" cy="92" r="2"/><circle cx="8" cy="98" r="2.8"/><circle cx="24" cy="108" r="2.2"/><circle cx="0" cy="116" r="2"/><circle cx="-18" cy="124" r="2.2"/><circle cx="17" cy="130" r="2.4"/></g><rect x="-18" y="140" width="36" height="27" rx="3" fill="#1a1406" stroke="#ffa11f" stroke-width="2.2"/><text x="0" y="157" text-anchor="middle" font-size="8" font-weight="700" fill="#ffa11f" font-family="monospace">OLLAMA</text></g>',
- 2:'<g class="dropitem"><g fill="#ffb84d"><circle cx="-24" cy="100" r="2.4"/><circle cx="-6" cy="90" r="2"/><circle cx="12" cy="96" r="2.6"/><circle cx="26" cy="106" r="2.2"/><circle cx="-14" cy="118" r="2"/></g><rect x="-17" y="132" width="34" height="26" rx="3" fill="#1a1406" stroke="#ffa11f" stroke-width="2.2"/><text x="0" y="149" text-anchor="middle" font-size="8.5" font-weight="700" fill="#ffa11f" font-family="monospace">9 GB</text></g>'
+ 0:'<g class="dropitem"><g fill="#ffb84d"><circle cx="-26" cy="104" r="2.6"/><circle cx="-10" cy="92" r="2"/><circle cx="8" cy="98" r="2.8"/><circle cx="24" cy="108" r="2.2"/><circle cx="0" cy="116" r="2"/><circle cx="-18" cy="124" r="2.2"/><circle cx="17" cy="130" r="2.4"/></g><rect x="-18" y="140" width="36" height="27" rx="3" fill="#1a1406" stroke="#ffa11f" stroke-width="2.2"/><text x="0" y="157" text-anchor="middle" font-size="8" font-weight="700" fill="#ffa11f" font-family="monospace">OLLAMA</text></g>',
+ 1:'<g class="dropitem"><g fill="#ffb84d"><circle cx="-24" cy="100" r="2.4"/><circle cx="-6" cy="90" r="2"/><circle cx="12" cy="96" r="2.6"/><circle cx="26" cy="106" r="2.2"/><circle cx="-14" cy="118" r="2"/></g><rect x="-17" y="132" width="34" height="26" rx="3" fill="#1a1406" stroke="#ffa11f" stroke-width="2.2"/><text x="0" y="149" text-anchor="middle" font-size="8.5" font-weight="700" fill="#ffa11f" font-family="monospace">9 GB</text></g>'
 };
 
 /* ================= the guards: one enemy per station, built from that station's system =================
@@ -753,8 +753,11 @@ var ENEMIES=[
  /* 8 · THE WARDEN — the Editor door's miniboss. Three tells, then it goes down. */
  '<g class="enemy">'+tele(98,92)+eshadow(98)+'<path d="M76 128 l-12 -14 M120 128 l12 -14" stroke="#ffa11f" stroke-width="4.4" stroke-linecap="round"/><rect x="66" y="126" width="64" height="72" rx="10" fill="#171204" stroke="#ffa11f" stroke-width="3"/><circle cx="86" cy="152" r="4.6" fill="#ff5347"/><circle cx="110" cy="152" r="4.6" fill="#ff5347"/><path d="M82 172 l10 -6 l8 6 l8 -6 l6 6" fill="none" stroke="#ff5347" stroke-width="3" stroke-linejoin="round"/><rect x="84" y="182" width="28" height="9" fill="#0d0800" stroke="#7a5410"/><path d="M66 150 L44 178 M130 150 L152 178" stroke="#171204" stroke-width="11" stroke-linecap="round"/><rect x="76" y="198" width="13" height="13" fill="#26241f"/><rect x="107" y="198" width="13" height="13" fill="#26241f"/></g>'
 ];
-var ACTIONS=['grapple','grapple','blast','throw','grapple','grapple','packet','stamp','blast'];
-var CARRY=['run.bat','the launcher, live','Ollama — the engine','qwen2.5-coder:14b',':11434, listening','the endpoint, wired','prompt + tools','tool_call → write_to_file','index.html + the run log'];
+PROPS=ORDER.map(function(k){ return PROPS[k]; });
+SYMBOLS=ORDER.map(function(k){ return SYMBOLS[k]; });
+ENEMIES=ORDER.map(function(k){ return ENEMIES[k]; });
+var ACTIONS=['grapple','blast','grapple','grapple','throw','grapple','stamp','blast'];
+var CARRY=['the install command','Ollama — the engine','qwen2.5-coder:14b','the launcher, live','the endpoint, wired',':11434, listening','tool_call → write_to_file','index.html + the run log'];
 
 /* build hoops + front arcs */
 var hoopsG=document.getElementById('hoops'), farcsG=document.getElementById('farcs');
@@ -794,7 +797,7 @@ farcsG.appendChild(ropeHook);
    the body blob, so nothing can detach: face stays on top, legs stay at the bottom, and
    each foot's sole ends at y≈96 — the bottom of the avatar box, i.e. the ground line.
    The face swaps per hoop via data-expr: determined, surprised, effort, relief, celebration. */
-var EXPR=['determined','effort','surprised','relief','determined','determined','surprised','effort','celebration'];
+var EXPR=['effort','surprised','determined','determined','relief','determined','effort','celebration'];
 var BODY_D='M40 4 C57 4 67 17 67 36 C67 55 61 74 40 74 C19 74 13 55 13 36 C13 17 23 4 40 4Z';
 function eyePair(r){
   return '<circle cx="31.5" cy="32" r="'+r+'" fill="#141210"/><circle cx="48.5" cy="32" r="'+r+'" fill="#141210"/>'+
@@ -860,13 +863,13 @@ HOPS.forEach(function(h,i){
   dotsBox.appendChild(d); dotEls.push(d);
   var c=document.createElement('button'); c.type='button'; c.className='stepchip';
   c.innerHTML='<span class="n">'+pad(i+1)+'</span>'+esc(h.short);
-  c.setAttribute('aria-label','Checkpoint '+(i+1)+' of 9: '+h.short);
+  c.setAttribute('aria-label','Checkpoint '+(i+1)+' of '+HOPS.length+': '+h.short);
   c.addEventListener('click',function(){ stopPlay(); replayLeg(i); });
   listBox.appendChild(c); chipEls.push(c);
 });
 
 /* ================= the pocket: tools, icons, collecting ================= */
-var TOOLS=['CLI · run.bat','Ollama llama','Model · 9 GB','Server :11434','Endpoint plug','The Agent','The Call · tool_call','index.html file','Memory + Editor'];
+var TOOLS=['Ollama llama','Model · 9 GB','CLI · run.bat','Endpoint plug','Server :11434','The Agent','index.html file','Memory + Editor'];
 function iconSVG(i){
   var inner=[
    '<rect x="3" y="5" width="18" height="14" rx="2" fill="#0d0800" stroke="#ffa11f" stroke-width="1.7"/><text x="12" y="15.5" text-anchor="middle" font-size="8" font-weight="700" fill="#7fe0b2" font-family="monospace">&gt;_</text>',
@@ -878,7 +881,7 @@ function iconSVG(i){
    '<path d="M5.5 10 a6.8 6.8 0 0 1 10 -4.4" fill="none" stroke="#ffa11f" stroke-width="1.7"/><path d="M16 2.8 v3.2 h-3.2" fill="#ffa11f"/><path d="M18.5 14 a6.8 6.8 0 0 1 -10 4.4" fill="none" stroke="#7fe0b2" stroke-width="1.7"/><path d="M8 21.2 v-3.2 h3.2" fill="#7fe0b2"/>',
    '<path d="M7 3.5 h6.5 L18 8 v12.5 H7 Z" fill="#f3e9d2"/><path d="M13.5 3.5 V8 H18" fill="#d9cdb2"/><path d="M9.5 12 H15.5 M9.5 15 H15.5" stroke="#8a7f6c" stroke-width="1.4"/>',
    '<rect x="3.5" y="5" width="17" height="14" rx="2" fill="#101010" stroke="#7fe0b2" stroke-width="1.6"/><text x="12" y="15.5" text-anchor="middle" font-size="7" font-weight="700" fill="#7fe0b2" font-family="monospace">&lt;/&gt;</text>'
-  ][i];
+  ][ORDER[i]];
   return '<svg viewBox="0 0 24 24" aria-hidden="true">'+inner+'</svg>';
 }
 var invSlots=[], invCountEl=document.getElementById('invCount'), povBox=document.getElementById('povBox');
@@ -889,7 +892,7 @@ HOPS.forEach(function(h,i){
 });
 function invUpdate(){
   var n=0; invSlots.forEach(function(s){ if(s.classList.contains('got')) n++; });
-  invCountEl.textContent='TOOLS '+n+' / 9'+(n===9?' — POCKET FULL · ALL READY':'');
+  invCountEl.textContent='TOOLS '+n+' / '+HOPS.length+(n===HOPS.length?' — POCKET FULL · ALL READY':'');
   invCountEl.classList.toggle('full',n===9);
 }
 function markGot(i){
@@ -1046,9 +1049,10 @@ function renderText(){
   elKicker.textContent='// '+h.kicker;
   elHead.innerHTML=esc(h.head[0])+'<br/>'+esc(h.head[1]);
   elBody.textContent=h.body;
+  document.getElementById('fullStep').href='../#step-'+h.step;
   elCounter.textContent=pad(cur+1)+' / '+pad(HOPS.length);
   elCmdWhere.textContent=h.where;
-  document.getElementById('cmdLabel').innerHTML=cur<2?'He types — <b>the command</b>':'run.py does this — <b>the step</b>';
+  document.getElementById('cmdLabel').innerHTML='You type — <b>the command</b>';
   elCmdResult.textContent='';
   if(resultTimer)clearTimeout(resultTimer);
   typeInto(elTyped,h.arrow,22);
@@ -1062,10 +1066,10 @@ function renderText(){
     c.querySelector('.n').textContent=(i<=visited&&i!==cur)?'✓':pad(i+1);
   });
   var ps=document.getElementById('packetStat'); if(ps)ps.innerHTML='PACKET · <b>'+esc(CARRY[cur])+'</b>';
-  if(typeof packetEl!=='undefined'&&packetEl)packetEl.classList.toggle('mint',cur>=7);
-  elStatus.innerHTML='<b>Checkpoint '+(cur+1)+' of 9 — '+esc(HOPS[cur].short)+'.</b> '+
+  if(typeof packetEl!=='undefined'&&packetEl)packetEl.classList.toggle('mint',cur>=HOPS.length-2);
+  elStatus.innerHTML='<b>Checkpoint '+(cur+1)+' of '+HOPS.length+' — '+esc(HOPS[cur].short)+'.</b> '+
     (playing?'Playing the whole run — he types each command, and Muse, the cream plush, sprints station to station, clearing each station\u2019s guard and pocketing its tool.':
-     'Muse, the cream plush, is at station '+(cur+1)+' of 9, packet in hand; cleared stations stay changed behind, and the lit road is the run so far. Click any dot or station name to replay just that leg.');
+     'Muse, the cream plush, is at station '+(cur+1)+' of '+HOPS.length+', packet in hand; cleared stations stay changed behind, and the lit road is the run so far. Click any dot or station name to replay just that leg.');
 }
 
 function hoopPass(i){
@@ -1139,7 +1143,7 @@ function arrive(i,fromIdx,onDone){
   povFrame.classList.remove('typing'); void povFrame.offsetWidth;
   if(!REDUCED&&!MOTION_OFF){ povFrame.classList.add('typing'); later(function(){ povFrame.classList.remove('typing'); },2500); }
   /* checkpoint 1: run.bat spins the wheel and starts the game show */
-  if(i===0 && !REDUCED && !MOTION_OFF){
+  if(i===WHEEL_AT && !REDUCED && !MOTION_OFF){
     wheelG.classList.remove('spinning'); void wheelG.getBoundingClientRect; wheelG.classList.add('spinning');
     gameStart.classList.remove('show'); void gameStart.offsetWidth; gameStart.classList.add('show');
   }
@@ -1251,7 +1255,7 @@ window.addEventListener('pagehide',function(){ try{ if(playing)stopPlay(); }catc
 var booted=false, encounterArmed=false;
 var SOUND_ON=true, SPEED_FAST=false, FX_ON=true;
 var runStart=Date.now(), replaysUsed=0;
-var ENEMY_X=[88,88,0,90,94,88,90,92,98];
+var ENEMY_X=[88,0,88,94,90,88,92,98];
 var packetEl=document.createElement('div');
 packetEl.className='packet'; packetEl.setAttribute('aria-hidden','true');
 document.getElementById('mavatar').appendChild(packetEl);
@@ -1304,7 +1308,7 @@ function shakeFrame(){
 function hoopHitFx(i,el){
   var hoop=hoopEls[i];
   hoop.classList.add('hitflash'); sfxHit(); shakeFrame();
-  burstAtEl(el||hoop.querySelector('.destruct')||hoop, i===8?16:10, ACTIONS[i]==='stamp');
+  burstAtEl(el||hoop.querySelector('.destruct')||hoop, i===HOPS.length-1?16:10, ACTIONS[i]==='stamp');
   later(function(){ hoop.classList.remove('hitflash'); },210);
 }
 
@@ -1372,7 +1376,7 @@ function packetRoundTrip(cb){
 function defeatStation(i,enemy,act,finish){
   if(enemy)enemy.classList.add('defeated');
   if(act==='packet'){ packetRoundTrip(finish); }
-  else { if(i===8)sfxFanfare(); finish(); }
+  else { if(i===HOPS.length-1)sfxFanfare(); finish(); }
 }
 function runEncounter(i,done){
   var hoop=hoopEls[i], enemy=hoop.querySelector('.enemy'), act=ACTIONS[i];
@@ -1391,7 +1395,7 @@ function runEncounter(i,done){
     if(act==='grapple'||act==='packet'){ grappleHit(i,enemy,function(){ defeatStation(i,enemy,act,finish); }); }
     else if(act==='stamp'){ stampHit(i,enemy,function(){ defeatStation(i,enemy,act,finish); }); }
     else {
-      var hits=act==='blast'?(i===8?3:2):1, n=0;
+      var hits=act==='blast'?(i===HOPS.length-1?3:2):1, n=0;
       (function nextHit(){
         n++;
         throwHit(i,enemy,function(){
@@ -1425,8 +1429,8 @@ function fmtTime(ms){ var s=Math.floor(ms/1000); return Math.floor(s/60)+':'+('0
 function showResults(){
   if(!resultsScreen) return;
   var got=0; invSlots.forEach(function(s){ if(s.classList.contains('got'))got++; });
-  document.getElementById('resScore').textContent=pad4(Math.min(9000,(visited+1)*1000));
-  document.getElementById('resTools').textContent=got+' / 9'+(got===9?' — POCKET FULL':'');
+  document.getElementById('resScore').textContent=pad4(Math.min(8000,(visited+1)*1000));
+  document.getElementById('resTools').textContent=got+' / '+HOPS.length+(got===HOPS.length?' — POCKET FULL':'');
   document.getElementById('resTime').textContent=fmtTime(Date.now()-runStart);
   document.getElementById('resRank').textContent=replaysUsed===0?'S':(replaysUsed<=2?'A':'B');
   openScreen(resultsScreen);
@@ -1435,7 +1439,7 @@ function togglePauseScreen(){
   if(pauseScreen.classList.contains('open')){ closeScreens(); if(paused)play(); return; }
   if(playing)stopPlay();
   saveCheckpoint(); /* pausing is a checkpoint too */
-  document.getElementById('pauseWhere').textContent='The run is holding at checkpoint '+(cur+1)+' of 9 — '+HOPS[cur].short+'. The packet is still in Muse\u2019s hands.';
+  document.getElementById('pauseWhere').textContent='The run is holding at checkpoint '+(cur+1)+' of '+HOPS.length+' — '+HOPS[cur].short+'. The packet is still in Muse\u2019s hands.';
   openScreen(pauseScreen);
 }
 function refreshSetLabels(){
@@ -1476,7 +1480,7 @@ if(savedCp){
   booted=true;
   restoreCheckpoint(savedCp);
   var rb=document.getElementById('resumeBox');
-  rb.innerHTML='Saved checkpoint: <b>station '+(savedCp.visited+1)+' of 9 — '+esc(HOPS[savedCp.visited].short)+' cleared</b> · score '+pad4(savedCp.score||0)+'. ';
+  rb.innerHTML='Saved checkpoint: <b>station '+(savedCp.visited+1)+' of '+HOPS.length+' — '+esc(HOPS[savedCp.visited].short)+' cleared</b> · score '+pad4(savedCp.score||0)+'. ';
   var rbBtn=document.createElement('button'); rbBtn.type='button'; rbBtn.className='cbtn primary'; rbBtn.id='btnResumeRun'; rbBtn.textContent='▶ Resume at checkpoint '+(savedCp.visited+1);
   rbBtn.addEventListener('click',function(){ resumeFromCheckpoint(); });
   var fbBtn=document.createElement('button'); fbBtn.type='button'; fbBtn.className='cbtn'; fbBtn.id='btnFreshRun'; fbBtn.textContent='Start fresh';

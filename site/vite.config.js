@@ -22,6 +22,17 @@ function copyDiagrams() {
 export default defineConfig({
   // Relative base: the site is served from /antigravity-local/ on GitHub Pages.
   base: "./",
-  build: { outDir: "dist", emptyOutDir: true, target: "es2022", chunkSizeWarningLimit: 700 },
+  build: {
+    outDir: "dist", emptyOutDir: true, target: "es2022", chunkSizeWarningLimit: 700,
+    // docs/*.html are written by scripts/build-docs.mjs (the "build" script runs it first). A missing page fails the build.
+    rollupOptions: {
+      input: {
+        main: resolve(here, "index.html"),
+        docs: resolve(here, "docs/index.html"),
+        zero: resolve(here, "docs/zero-to-coding.html"),
+        apps: resolve(here, "docs/coding-apps.html"),
+      },
+    },
+  },
   plugins: [copyDiagrams()],
 });

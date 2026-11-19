@@ -125,7 +125,8 @@ class MenuRows(PickBase):
         det = details(d("qwen2.5:14b", ["completion", "tools", "thinking"]))
         got, _, _ = self.sel({"qwen2.5:14b"}, [""], details=det)
         row = next(l for l in self.printed.splitlines() if "qwen2.5:14b" in l and "tools" in l)
-        self.assertIn("tools, thinking", row)
+        self.assertIn("tools", row)  # v1.2.5: one word per row; the thinking badge no longer clutters the main list
+        self.assertNotIn("thinking", row)
 
     def test_media_models_are_listed_in_their_own_section_and_never_picked(self):
         media = [{"tag": "x/z-image-turbo", "badges": ("image",), "note": "text to image",
