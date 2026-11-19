@@ -357,10 +357,21 @@ html.no-3d .hero-controls, html.no-3d .stack-note { display: none; }
   .hero { grid-template-columns: minmax(0, 38rem) minmax(0, 1fr); gap: 3rem; }
   html.has-3d .hero-art { opacity: 0; visibility: hidden; }
 }
+/* The 38rem copy column is fixed while the 3D drawing scales with the window,
+   so between 62em and 75em the two collide: the drawing's left edge lands under
+   the text. Here the copy narrows first, so the text stops left of the drawing
+   and wraps around it at every width that shows the 3D. */
+@media (min-width: 62em) and (max-width: 74.99em) {
+  .hero { grid-template-columns: minmax(0, 30rem) minmax(0, 1fr); gap: 2rem; }
+}
+/* On phones and small tablets the flat drawing is the visible hero asset; the
+   3D scene stays a faint backdrop underneath it, as the hero-art note above
+   says, so the text reads clearly and the layering never turns into noise. */
 @media (max-width: 61.99em) {
+  #stage { opacity: 0.5; }
+  body.dim-stage #stage { opacity: 0.45; }
   .hero-art { order: -1; margin-bottom: 0.5rem; }
   .hero-art-svg { max-width: 340px; }
-
 }
 
 /* The guide rail: a dashed line joins the step numbers, and a maple line
