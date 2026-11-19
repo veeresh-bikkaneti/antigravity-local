@@ -1,0 +1,4 @@
+# Dev-only tools (CI installs this for the arch guardrail step). Runtime deps stay in requirements.txt.
+# Pins checked on PyPI on 2026-11-19.
+ruff==0.17.3
+import-linter==2.15

@@ -181,3 +181,34 @@ Antigravity Local checks open-source models at runtime instead of defaulting to 
    - See [`docs/MEMORY_SPEC.md`](MEMORY_SPEC.md) for the mathematical formulation of Reciprocal Rank Fusion, SQLite FTS5 schema, and token benchmark reduction analysis.
 5. Docker clean-room checks:
    - Run `python tests/e2e.py docker` (or see the [README Docker section](../README.md#1-command-docker-clean-room-test-drive) for the shell-specific `docker run` form) to run the checks in a clean-room Linux container. The older `docker-test-drive.sh` script prints its results but does not assert, and CI does not run it.
+
+## Layer contract
+
+Every Python module belongs to one layer and may import only what this table allows. The machine checks are `ruff.toml` (banned APIs, print, complexity) and `scripts/check_arch.py` (a baseline that may only shrink).
+
+| Layer | Lives in | May import | Owns |
+|---|---|---|---|
+| shell | `run.py`, `code_agent.py`, `serve.py`, `agent_with_workspace.py`, `test_local.py` at repo root | anything | parse args, wire adapters into use cases, exit codes |
+| ui | `agl/ui/` | app, core | terminal text, prompts, `print`, `input` (injected as `input_fn`/`out`) |
+| app | `agl/app/` | core | use cases: bootstrap, pick and pull, upgrade check, agent session, probe |
+| core | `agl/core/` | stdlib only, no I/O | types, ports (`typing.Protocol`), ranking, catalog, fit and speed labels, menu building, pull gate |
+| platform | `agl/platform/` | core | HTTP (Ollama, Hugging Face, registry), subprocess, files and state, SQLite, hardware, env and config |
+
+Rules:
+
+- core, app and ui never import platform, `urllib.request`, `http.client`, `socket`, `subprocess` or `sqlite3`.
+- Platform never imports app or ui.
+- Only the shell wires a platform adapter into an app use case.
+- One HTTP helper (timeout required, same-host redirects only) and one base-URL default live in platform.
+
+Where new code goes:
+
+- HTTP or sockets to Ollama, Hugging Face or the registry: platform.
+- subprocess, files, SQLite, hardware probes, env and config reads: platform.
+- Types, ports, ranking, catalog data, fit and speed labels, menu building, the pull gate: core. No I/O in core.
+- A use case that orchestrates ports (bootstrap, pick and pull, upgrade check, agent session, probe): app.
+- Terminal text, prompts, menu printing (`print`, `input` injected as `input_fn`/`out`): ui.
+- Argument parsing, wiring adapters into use cases, exit codes: shell.
+- Code with no clear layer: ask before writing; do not park it in shell by default.
+
+Baseline rule: `[lint.per-file-ignores]` in `ruff.toml` records today's violations. It is generated, never hand-written, and it may only shrink: `python scripts/check_arch.py` fails a change that adds an entry. Phase 0 runs it report-only; a later phase flips it to blocking.
