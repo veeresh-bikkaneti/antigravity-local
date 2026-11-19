@@ -15,6 +15,7 @@ How:
 - python scripts/check_docs.py
 - python scripts/check_agents_md.py
 - python scripts/check_commit_trailers.py origin/main..HEAD
+- python scripts/check_test_moves.py origin/main
 - python scripts/check_arch.py --report-only
 
 Serves:

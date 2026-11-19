@@ -1,6 +1,8 @@
 """R13 guard for refactors: versus BASE_REF, every removed or changed line under tests/ must be an
 import line or a patch()/patch.object() target line. Added lines are free.
 Usage: python scripts/check_test_moves.py BASE_REF. Exit 1 listing the offending lines.
+The diff is two-dot, BASE_REF versus the working tree, so point it at a branch point rather than a
+branch that moves while you work.
 """
 import re, subprocess, sys
 from pathlib import Path
