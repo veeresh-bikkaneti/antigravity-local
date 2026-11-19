@@ -258,13 +258,13 @@ pm`, reinstalled `npm install -g ./.agents/skills/archify`; `archify doctor` pas
 ## 7. How Next Model Can Resume Immediately
 1. Read this file (`CONTEXT_MEMORY.md`).
 2. Activate venv: `C:\Users\veere\antigravity-local\venv\Scripts\Activate.ps1`.
-3. Test local streaming:
+3. Run the picker and setup:
    ```powershell
-   python test_local.py gemma2:27b
+   python run.py
    ```
-4. Run workspace agent:
+4. Run the agent:
    ```powershell
-   python agent_with_workspace.py qwen2.5:14b
+   python run.py --agent
    ```
 5. Inspect generated workspace artifacts in `C:\Users\veere\antigravity-local\workspace`.
 
@@ -286,3 +286,5 @@ pm`, reinstalled `npm install -g ./.agents/skills/archify`; `archify doctor` pas
   - Cost: the job ran about 900k tokens against a 70k cap. Each builder and council seat went 6 to 8 times over its own cap and cannot see its own counter. R25 now requires the coordinator to track returned usage.
 - [x] **v1.2.2** (Nov 16, 2026, branch `fix/v1.2.2`): one model list (the upgrade is a `recommended upgrade` row; Enter while it shows records the 7-day stay via `run._remember_upgrade_stay`; `offer_upgrade` never prompts now), a bad typed tag re-asks (`choose(validate_fn=...)`, 3 tries then the default with one line), `ranking.size_class` (known size under 4.0 GB ranks below bigger or unknown, right after tools), clean Ctrl+C (`run_agent` wraps `_run_agent_session`), header once (`ANTIGRAVITY_HEADER_SHOWN` env flag set before relaunch). README, home page step 4 and the game note cover "use your model in a coding app". 869 tests OK. Quirk: `scripts/check_commit_trailers.py` rejects AI Co-Authored-By trailers, so leave them out. Cost: the swarm went far over its 60k cap (Seat B alone used 85k); A and C were stopped and finished inline.
 - [x] **v1.2.3** (Nov 16, 2026, branch `fix/v1.2.3`, PR #56): `choose(default_label=, result=)` (result["how"] is enter/pick/gave_up/eof; the upgrade stay is written only on "enter"), stage 4 prints the context command and never asks, scene.js has an 8th piece `app` (shapes now chosen by key, counts 1-8 follow the guide), game payoff panel shows both coding-app commands. Pages deploys were fine; the stale part was content. Not reproduced: "Demonstration complete!" printed twice in logs/run-2026-11-16.log (one demo start, two completes 10 s apart). Later: re-record site/media/brag.mp4; PRODUCT_SPEC ranking order lacks the size class.
+
+- [x] **v1.2.4** (Nov 18, 2026, PRs #58 #59 #60, tag v1.2.4 on 225471a, label bump in #60): readable wizard; model_wizard.speed_label Fast/Moderate/Slow on every row, installed sizes from /api/tags (run.get_installed_info), same-digest tags shown once, one capability word (tools / chat only), legend line; README, ZERO_TO_CODING and docs/coding-apps.md rendered on Pages at docs/ (site/scripts/build-docs.mjs, marked); game HOPS = the home page's 8 steps; facts test (step counts and version label == latest tag) and browser gate (npm run gate, Playwright devDependency, not in build).
