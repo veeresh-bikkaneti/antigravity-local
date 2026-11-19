@@ -26,6 +26,10 @@ jobs:
         run: python scripts/check_agents_md.py
       - name: Docs checks (anchors, em dashes, emoji headings)
         run: python scripts/check_docs.py
+      - name: Dev tools (arch guardrails)
+        run: pip install -r requirements-dev.txt
+      - name: Arch guardrails (report-only until a later phase)
+        run: python scripts/check_arch.py --report-only
       - name: Unit tests
         run: python -m unittest discover -s tests
       - name: Real E2E (docker path)

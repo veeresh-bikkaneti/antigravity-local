@@ -1,0 +1,51 @@
+usage: run.py [-h] [--model TAG] [--serve] [--host HOST] [--port PORT]
+              [--check-upgrades] [--probe] [--scan-library] [-y]
+              [--sync-memory] [--plain]
+              [--agent {shell,pi,opencode,codex,claude}] [--agent-config-only]
+              [--workspace PATH] [--continue-local] [--coding-apps] [--doctor]
+              [--copy-user-settings] [--resume-from ID|latest]
+              [model]
+
+Plug-and-play bootstrap for Antigravity with a local Ollama model.
+
+positional arguments:
+  model                 Ollama model to use (pulled if missing)
+
+options:
+  -h, --help            show this help message and exit
+  --model TAG           same as the positional model
+  --serve               start the web UI + API (needs no Ollama)
+  --host HOST           with --serve: bind address
+  --port PORT           with --serve: port (default: a free one)
+  --check-upgrades      list catalog models that beat your best installed one
+                        and fit this PC; report only, never pulls
+  --probe               run one live tool call against the model and record
+                        pass or fail in the local ledger, then exit
+  --scan-library        also list models read off ollama.com/library (reads
+                        HTML, so it can break; the curated list stays)
+  -y, --yes             skip the menu and every question: use the best
+                        installed model, or exit 1 and print the ollama pull
+                        command. Never downloads
+  --sync-memory         re-index the memory fabric and exit
+  --plain               no colour, no art, ASCII only (NO_COLOR does the same)
+  --agent {shell,pi,opencode,codex,claude}
+                        coding agent to land in: shell (default, Antigravity
+                        SDK), or pi / opencode / codex / claude pre-configured
+                        for your local model
+  --agent-config-only   with --agent: write the agent's config, print how to
+                        start it, and exit
+  --workspace PATH      with --agent: the project folder the agent works in
+                        (default: the folder you ran this from, or this repo's
+                        workspace/ folder when you run it from here)
+  --continue-local      with --agent: start with the prompt that makes the
+                        agent read HANDOFF.md and carry on
+  --coding-apps         print how to connect VS Code, Continue, terminal
+                        agents, Antigravity and Gemini CLI to your model, then
+                        exit
+  --doctor              with --agent claude: read-only check for settings that
+                        send normal Claude Code sessions to a local model
+  --copy-user-settings  with --agent claude: copy (once) a safe slice of
+                        ~/.claude into ~/.claude-local
+  --resume-from ID|latest
+                        with --agent claude: EXPERIMENTAL, fork a Claude Code
+                        session into the local model

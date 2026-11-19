@@ -1,0 +1,46 @@
+# Boundary rules for antigravity-local. See "Layer contract" in docs/ARCHITECTURE.md.
+# Only these four rule families run; everything else stays off on purpose.
+# T201 (print) is allowed only in the ui layer and the root shell scripts.
+# The baseline below lists the files that break a rule today; it may only shrink
+# (scripts/check_arch.py).
+
+# Top-level key: ruff only honours `exclude` at the root of the config, not under [lint].
+exclude = ["tests", "site", "graphify-out", "workspace", ".memory", ".wiki"]
+
+[lint]
+select = ["TID251", "T201", "C901", "PLR0915"]
+
+[lint.mccabe]
+max-complexity = 12
+
+[lint.flake8-tidy-imports.banned-api]
+"urllib.request".msg = "HTTP belongs in the platform layer (agl/platform). See Layer contract in docs/ARCHITECTURE.md."
+"http.client".msg = "HTTP belongs in the platform layer (agl/platform). See Layer contract in docs/ARCHITECTURE.md."
+"socket".msg = "Sockets belong in the platform layer (agl/platform). See Layer contract in docs/ARCHITECTURE.md."
+"subprocess".msg = "Subprocess belongs in the platform layer (agl/platform). See Layer contract in docs/ARCHITECTURE.md."
+"sqlite3".msg = "SQLite belongs in the platform layer (agl/platform). See Layer contract in docs/ARCHITECTURE.md."
+
+[lint.per-file-ignores]
+# baseline: generated with `ruff check --output-format concise . --extend-exclude=v1*-work/** --extend-exclude=scan-craft-anything/**` at c90a615, 2026-11-19.
+# One entry per file, listing only the codes it breaks today.
+"agent_setup.py" = ["C901", "TID251"]
+"agent_with_workspace.py" = ["T201"]
+"code_agent.py" = ["C901", "PLR0915", "T201"]
+"download_size.py" = ["TID251"]
+"handoff.py" = ["C901", "TID251"]
+"hardware.py" = ["TID251"]
+"hf_search.py" = ["TID251"]
+"ledger.py" = ["TID251"]
+"memory.py" = ["C901", "T201", "TID251"]
+"model_wizard.py" = ["C901", "PLR0915", "TID251"]
+"ollama_library.py" = ["TID251"]
+"ollama_models.py" = ["TID251"]
+"probe.py" = ["C901", "PLR0915", "TID251"]
+"run.py" = ["C901", "PLR0915", "T201", "TID251"]
+"scripts/check_agents_md.py" = ["T201"]
+"scripts/check_arch.py" = ["T201", "TID251"]
+"scripts/check_commit_trailers.py" = ["T201", "TID251"]
+"scripts/check_docs.py" = ["T201", "TID251"]
+"scripts/check_test_moves.py" = ["T201", "TID251"]
+"serve.py" = ["C901", "T201"]
+"test_local.py" = ["T201"]

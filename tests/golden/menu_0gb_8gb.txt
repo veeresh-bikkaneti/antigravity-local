@@ -1,0 +1,8 @@
+       Worth downloading
+         1. hf.co/mradermacher/nanbeige4.1-3b-gguf:q4_k_m  Slow            2.4 GB
+
+         2. A Hugging Face model (type hf.co/user/repo:quant)
+
+       Fast = fits in your graphics card · Moderate = part on CPU · Slow = mostly CPU (estimate from size and memory)
+       tools = can edit files. Download list checked 2026-11-15, not yet run through this project's agent loop.
+       Enter picks 1. Or type a number, or any Ollama tag.
