@@ -776,9 +776,11 @@ export function start({ canvas, tags, isPaused, onStack }) {
       const top = assembledCount - 1;
       pieces.forEach((p, i) => {
         if (p.placed && !(landing === i)) {
-          p.g.position.y = slot(i).y + stackBob;
+          const sway = i >= 3 ? Math.sin(elapsed * 2.1 + i * 1.3) * 0.035 : 0; // layers 4-8 drift on their own
+          p.g.position.y = slot(i).y + stackBob + sway;
           const ts = (i === top) ? 1 + Math.sin(elapsed * 3.4) * 0.03 : 1;
           p.g.scale.setScalar(ts * PIECE_SCALE);
+          p.g.rotation.y = i >= 3 ? Math.sin(elapsed * 0.8 + i * 0.9) * 0.1 : 0; // layers 4-8 sway gently
         }
       });
       if (top >= 0) {
