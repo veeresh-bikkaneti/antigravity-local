@@ -1,7 +1,7 @@
 # AGENTS.md - the rule registry
 
 Short on purpose. Every rule below can be checked by a command, a hook, a CI job, or a named human or reviewer agent. If a rule can't be checked, it lives in the Cut table, not here.
-Start every session by reading `CONTEXT_MEMORY.md` (rule R1). Python/Docker repo, no package.json or Makefile.
+Start every session by reading `CONTEXT_MEMORY.md` (rule R1). Python/Docker repo; the site has `site/package.json`; no Makefile.
 
 ## Rules
 
@@ -19,7 +19,7 @@ Start every session by reading `CONTEXT_MEMORY.md` (rule R1). Python/Docker repo
 | R10 | After merge, delete the local and remote branch. | `git branch -a` shows no topic branch | none |
 | R11 | Tests pass before "done": `python -m unittest discover -s tests` | run that command; CI reruns it | CI: `.github/workflows/docker.yml` |
 | R12 | Touching `serve.py`, `Dockerfile` or run scripts also needs `python tests/e2e.py local` and `python tests/e2e.py docker` green. | run both; CI runs the docker one | CI: `.github/workflows/docker.yml` (docker only) |
-| R13 | Tests ship in the same PR as the code. Never weaken, skip or rewrite an assertion to go green. | `git diff main...HEAD -- tests` read by reviewer agent | none |
+| R13 | Tests ship in the same PR as the code. Never weaken, skip or rewrite an assertion to go green. Re-pointing an import or a mock patch target to the code's new home is not rewriting an assertion; `python scripts/check_test_moves.py origin/main` proves only those lines changed. | `git diff main...HEAD -- tests` read by reviewer agent | none |
 | R14 | "Done" needs evidence: the command run and its result, quoted in the report. | judgment: reviewer agent rejects any report without it | none |
 | R15 | One flaky CI rerun max. A second identical failure is a real bug: read the logs. | judgment: reviewer agent reads the run history | none |
 | R16 | Every subagent task carries the 9-field brief (below). | judgment: reviewer agent checks the spawn prompt has all 9 field names | none |
@@ -32,6 +32,7 @@ Start every session by reading `CONTEXT_MEMORY.md` (rule R1). Python/Docker repo
 | R23 | Technical docs (README, guides, wiki) follow the user's tone: human, light, collaborative, positive, conversational. | judgment: reviewer agent reads the diff against `~/.claude/CLAUDE.md` tone pillars | none |
 | R24 | Every task states a token cap and an estimate up front (default cap 150k if the brief gives none). Count the main session plus every seat from runtime counters. Council seats read only the evidence pack, never the whole repo. Stop and ask the user before the running total passes the cap. Report tokens with each result. | judgment: reviewer agent finds the cap, estimate and running total in the transcript | none |
 | R25 | Tiered orchestration. Workers on the cheapest model that clears the gate (Haiku class) do the building, writing and searching. A Sonnet-class reviewer reads only the evidence pack and returns ACCEPT or REJECT with reasons, and never rewrites. The coordinator plans, briefs, runs the gate and integrates, and writes no bulk code itself. Run the deterministic gates before any reviewer. Workers return a summary of 150 words or fewer plus paths and the SHA. Escalate a worker one tier only after it fails the same gate twice. At most 2 review rounds, then stop and ask the user. Seats can't see their own counter, so the coordinator reads each subagent's returned usage, keeps a running total, and spawns nothing more once the total reaches 80 percent of the cap. A seat that went over its own cap gets a smaller brief on its next spawn, never a bigger cap. | judgment: reviewer agent finds each seat's tier, its returned usage, the running total, the gate output before the review, and the round count in the transcript | none |
+| R26 | Code goes in the layer that `docs/ARCHITECTURE.md` Layer contract names. `python scripts/check_arch.py` is green and its baseline (ruff per-file-ignores, import-linter ignore_imports) only shrinks. | `python scripts/check_arch.py` | CI: `.github/workflows/docker.yml` (report-only until Phase 2) |
 
 ## The 9-field subagent brief
 
