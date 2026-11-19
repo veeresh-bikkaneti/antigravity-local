@@ -1283,6 +1283,7 @@ def run_probe_command(args):
 def parse_args(argv=None):
     ap = argparse.ArgumentParser(description="Plug-and-play bootstrap for Antigravity with a local Ollama model.")
     ap.add_argument("model", nargs="?", help="Ollama model to use (pulled if missing)")
+    ap.add_argument("--model", dest="model_flag", metavar="TAG", help="same as the positional model")
     ap.add_argument("--serve", action="store_true", help="start the web UI + API (needs no Ollama)")
     ap.add_argument("--host", help="with --serve: bind address")
     ap.add_argument("--port", type=int, help="with --serve: port (default: a free one)")
@@ -1315,6 +1316,9 @@ def parse_args(argv=None):
     ap.add_argument("--resume-from", metavar="ID|latest",
                     help="with --agent claude: EXPERIMENTAL, fork a Claude Code session into the local model")
     args = ap.parse_args(argv)
+    if args.model and args.model_flag and args.model != args.model_flag:
+        ap.error("give the model once: python run.py <tag> or --model <tag>")
+    args.model = args.model_flag or args.model
     for flag, on in (("--workspace", args.workspace), ("--agent-config-only", args.agent_config_only),
                      ("--continue-local", args.continue_local)):
         if on and args.agent == "shell":

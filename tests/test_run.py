@@ -68,6 +68,19 @@ class Cli(unittest.TestCase):
         fake.main.assert_called_once_with(["--port", "9"])
 
 
+class ModelFlagAlias(unittest.TestCase):
+    """--model is only a spelling: whatever main reads still lands in args.model (audit 2026-11-18, M1)."""
+
+    def test_flag_positional_and_both_give_args_model(self):
+        self.assertEqual(run.parse_args(["--model", "x"]).model, "x")
+        self.assertEqual(run.parse_args(["x"]).model, "x")
+        self.assertEqual(run.parse_args(["x", "--model", "x"]).model, "x")
+
+    def test_two_different_models_are_refused(self):
+        with self.assertRaises(SystemExit):
+            run.parse_args(["a", "--model", "b"])
+
+
 class ModelMatching(unittest.TestCase):
     def test_empty_is_never_installed(self):
         self.assertFalse(run.is_model_installed("", {"qwen2.5:7b", ""}))
