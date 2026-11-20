@@ -25,6 +25,8 @@ import quant_pick  # noqa: E402
 import run  # noqa: E402
 import test_pull_flow  # noqa: E402
 import test_run  # noqa: E402
+from agl.platform import hardware as platform_hardware  # noqa: E402
+from agl.platform import process  # noqa: E402
 
 GB = 10 ** 9
 HW16 = {"ram_gb": 128.0, "vram_gb": 16.0, "gpu_name": "RTX"}
@@ -41,7 +43,7 @@ def smi(output=None, raises=None, which="nvidia-smi"):
             raise raises
         return output
     return (mock.patch.object(hardware.shutil, "which", return_value=which),
-            mock.patch.object(hardware.subprocess, "check_output", side_effect=fake),
+            mock.patch.object(platform_hardware.subprocess, "check_output", side_effect=fake),
             mock.patch.object(hardware.sys, "platform", "linux"))
 
 
@@ -98,7 +100,7 @@ class FreeVram(unittest.TestCase):
                 self.assertEqual(hardware.get_free_vram_gb(), (0.0, False))
 
     def test_free_resources_survives_a_missing_models_folder_and_blank_override(self):
-        with fake_smi(output="", which=None), mock.patch.object(hardware, "get_free_ram_gb", return_value=0.0):
+        with fake_smi(output="", which=None), mock.patch.object(platform_hardware, "get_free_ram_gb", return_value=0.0):
             res = hardware.free_resources(env={"OLLAMA_MODELS": "   "}, home="Z:\\no\\such\\home")
         self.assertFalse(res["gpu_known"])
         self.assertGreaterEqual(res["free_disk_gb"], 0.0)
@@ -467,7 +469,7 @@ class GateInRun(unittest.TestCase):
     def test_gated_repo_non_interactive_downloads_nothing(self):
         info = {"status": "ok", "gated": True, "license": "llama3"}
         with mock.patch.object(run.model_wizard, "hf_repo_info", return_value=info), \
-                mock.patch.object(run.subprocess, "check_call", side_effect=AssertionError("must not pull")), \
+                mock.patch.object(process.subprocess, "check_call", side_effect=AssertionError("must not pull")), \
                 mock.patch("builtins.input", side_effect=AssertionError("must not ask")), \
                 contextlib.redirect_stdout(io.StringIO()):
             self.assertIsNone(run._pull_with_gate("hf.co/meta/llama", False, HW16, test_run.free_of(HW16)))
@@ -476,7 +478,7 @@ class GateInRun(unittest.TestCase):
         info = {"status": "ok", "gated": "manual", "license": None}
         full = test_run.free_of(HW16, disk_free=1.0, disk_total=1000.0)
         with mock.patch.object(run.model_wizard, "hf_repo_info", return_value=info), \
-                mock.patch.object(run.subprocess, "check_call", side_effect=AssertionError("must not pull")), \
+                mock.patch.object(process.subprocess, "check_call", side_effect=AssertionError("must not pull")), \
                 mock.patch("builtins.input", side_effect=AssertionError("must not ask")), \
                 contextlib.redirect_stdout(io.StringIO()):
             self.assertIsNone(run._pull_with_gate("hf.co/meta/llama", True, HW16, full))

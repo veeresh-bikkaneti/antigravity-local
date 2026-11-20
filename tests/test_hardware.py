@@ -8,6 +8,7 @@ from unittest import mock
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 import hardware  # noqa: E402
+from agl.platform import hardware as platform_hardware  # noqa: E402
 
 
 def smi(text=None, raises=False):
@@ -16,7 +17,7 @@ def smi(text=None, raises=False):
         if raises:
             raise OSError("boom")
         return text
-    return mock.patch.multiple(hardware.subprocess, check_output=fake), mock.patch.object(
+    return mock.patch.multiple(platform_hardware.subprocess, check_output=fake), mock.patch.object(
         hardware.shutil, "which", return_value="nvidia-smi")
 
 
@@ -50,21 +51,21 @@ class FreeVram(unittest.TestCase):
     def test_apple_unified_memory_uses_free_ram(self):
         with mock.patch.object(hardware.shutil, "which", return_value=None), \
                 mock.patch.object(hardware.sys, "platform", "darwin"), \
-                mock.patch.object(hardware, "get_free_ram_gb", return_value=20.0):
+                mock.patch.object(platform_hardware, "get_free_ram_gb", return_value=20.0):
             self.assertEqual(hardware.get_free_vram_gb(), (20.0, True))
 
 
 class Profile(unittest.TestCase):
     def test_total_vram_and_name_still_come_from_nvidia_smi(self):
         a, b = smi("NVIDIA RTX 5000 Ada, 16376\n")
-        with a, b, mock.patch.object(hardware, "get_system_ram_gb", return_value=128.0):
+        with a, b, mock.patch.object(platform_hardware, "get_system_ram_gb", return_value=128.0):
             p = hardware.get_hardware_profile()
         self.assertEqual((p["gpu_name"], round(p["vram_gb"], 2), p["ram_gb"]), ("NVIDIA RTX 5000 Ada", 15.99, 128.0))
 
     def test_no_gpu_is_cpu_only(self):
         with mock.patch.object(hardware.shutil, "which", return_value=None), \
                 mock.patch.object(hardware.sys, "platform", "linux"), \
-                mock.patch.object(hardware, "get_system_ram_gb", return_value=16.0):
+                mock.patch.object(platform_hardware, "get_system_ram_gb", return_value=16.0):
             self.assertEqual(hardware.get_hardware_profile(), {"ram_gb": 16.0, "vram_gb": 0.0, "gpu_name": "CPU Only"})
 
 

@@ -2,24 +2,20 @@
 
 Append-only, one compact JSON object per line. A model's LATEST entry decides: no entry is "unproven", which ranks above
 "fail". It warns and never refuses, and a write that fails only warns, so the ledger can never stop a run.
+moved, shim until Phase 6: the file I/O (ledger_path, append/read/_ends_mid_line, the gethostname call) now lives
+in agl/platform/state.py; this module keeps the pure read side (_latest/status/fresh_pass and their stamps) and re-exports
+the moved names so old callers and tests keep working.
 """
-import codecs
 import datetime
-import json
-import socket
 import time
 
 from agl.core import menu
-import userdata
+from agl.platform import state
 
-LEDGER_NAME = "ledger.jsonl"
-REASON_CAP = 500
+LEDGER_NAME = state.LEDGER_NAME  # moved, shim until Phase 6: the constant now lives in agl.platform.state
+REASON_CAP = state.REASON_CAP  # moved, shim until Phase 6
+VERDICTS = state.VERDICTS  # moved, shim until Phase 6
 PASS_TTL_SECONDS = 300  # a pass this young is reused instead of probing again straight away
-VERDICTS = ("pass", "fail")
-
-
-def ledger_path(home=None, env=None):
-    return userdata.data_dir(home, env) / LEDGER_NAME
 
 
 def _stamp_epoch(epoch):
@@ -37,68 +33,26 @@ def _epoch(stamp):
         return None
 
 
+def ledger_path(home=None, env=None):
+    return state.ledger_path(home, env)  # moved, shim until Phase 6
+
+
 def append(model_ref, verdict, reason, *, runtime="ollama", harness="probe", evidence_key=None,
            home=None, env=None, now=None, host=None):
     """Record one verdict. Returns (ok, message); never raises. On failure the message is a one-line warning."""
-    if verdict not in VERDICTS:
-        return False, f"Ledger not written: verdict must be pass or fail, not {verdict!r}."
-    entry = {
-        "timestampUtc": _stamp_epoch(time.time() if now is None else now),
-        "host": host if host is not None else socket.gethostname(),
-        "modelRef": str(model_ref),
-        "runtime": runtime,
-        "harness": harness,
-    }
-    if evidence_key:
-        entry["evidenceKey"] = str(evidence_key)
-    entry["reason"] = str(reason or "")[:REASON_CAP]
-    entry["verdict"] = verdict
-    path = ledger_path(home, env)
-    try:
-        # ensure_ascii keeps every line pure ASCII, so a lone surrogate becomes a \udcff escape instead of a crash
-        line = json.dumps(entry, separators=(",", ":"), ensure_ascii=True) + "\n"
-        path.parent.mkdir(parents=True, exist_ok=True)
-        prefix = b"\n" if _ends_mid_line(path) else b""
-        with open(path, "ab") as f:
-            f.write(prefix + line.encode("ascii"))
-    except (OSError, ValueError) as exc:  # UnicodeError is a ValueError
-        return False, f"Could not write the fail ledger ({exc.__class__.__name__}); carrying on without it."
-    return True, ""
+    return state.append(model_ref, verdict, reason, runtime=runtime, harness=harness, evidence_key=evidence_key,
+                        home=home, env=env, now=now, host=host,
+                        stamp=_stamp_epoch(time.time() if now is None else now))  # moved, shim until Phase 6
+
+
+def read(home=None, env=None):
+    """Every well-formed entry, oldest first (a missing file is []); see agl.platform.state.read."""
+    return state.read(home, env)  # moved, shim until Phase 6
 
 
 def _ends_mid_line(path):
     """True when the ledger has bytes and the last one is not a newline (a crash cut the last line short)."""
-    try:
-        with open(path, "rb") as f:
-            f.seek(0, 2)
-            if f.tell() == 0:
-                return False
-            f.seek(-1, 2)
-            return f.read(1) != b"\n"
-    except FileNotFoundError:
-        return False
-
-
-def read(home=None, env=None):
-    """Every well-formed entry, oldest first. A missing file is []; corrupt lines and odd values are skipped.
-
-    Split on b"\\n" only, so one bad byte costs only its own line, and U+2028 or NEL inside a reason stay put.
-    """
-    try:
-        raw = ledger_path(home, env).read_bytes()
-    except OSError:
-        return []
-    if raw.startswith(codecs.BOM_UTF8):
-        raw = raw[len(codecs.BOM_UTF8):]
-    entries = []
-    for line in raw.split(b"\n"):
-        try:
-            item = json.loads(line.decode("utf-8"))
-        except (ValueError, RecursionError):
-            continue
-        if isinstance(item, dict) and item.get("verdict") in VERDICTS and isinstance(item.get("modelRef"), str):
-            entries.append(item)
-    return entries
+    return state._ends_mid_line(path)  # moved, shim until Phase 6
 
 
 def _latest(model_ref, entries):

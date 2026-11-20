@@ -17,7 +17,6 @@ One command to rule them all:
 import sys
 import os
 import re
-import subprocess
 import platform
 import shutil
 import time
@@ -40,7 +39,7 @@ import ranking
 import runlog
 import task_report
 import userdata
-from agl.platform import config, http, ollama
+from agl.platform import config, http, ollama, process, state
 
 # Ensure UTF-8 console output on Windows
 if sys.platform == "win32":
@@ -56,11 +55,7 @@ VENV_DIR = os.path.join(PROJECT_DIR, "venv")
 
 def _load_env():
     """Load PROJECT_DIR/.env into os.environ when python-dotenv is installed. Without it, .env is simply skipped."""
-    try:
-        from dotenv import load_dotenv
-    except ImportError:
-        return
-    load_dotenv(os.path.join(PROJECT_DIR, ".env"))
+    state.load_env(os.path.join(PROJECT_DIR, ".env"))  # moved, shim until Phase 6
 IS_WIN = sys.platform == "win32"
 VENV_PYTHON = os.path.join(VENV_DIR, "Scripts" if IS_WIN else "bin", "python.exe" if IS_WIN else "python")
 
@@ -179,7 +174,7 @@ def bootstrap_venv():
     if not os.path.exists(VENV_DIR) or not os.path.exists(VENV_PYTHON):
         healthy = False
         print(f"       Creating virtual environment at: {VENV_DIR}")
-        subprocess.check_call([sys.executable, "-m", "venv", VENV_DIR])
+        process.check_call([sys.executable, "-m", "venv", VENV_DIR])
 
     # Copy .env.example to .env if missing
     env_file = os.path.join(PROJECT_DIR, ".env")
@@ -191,15 +186,15 @@ def bootstrap_venv():
 
     # Check if google-antigravity is installed in venv
     try:
-        subprocess.check_call([VENV_PYTHON, "-c", "import google.antigravity"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        process.check_call([VENV_PYTHON, "-c", "import google.antigravity"], stdout=process.DEVNULL, stderr=process.DEVNULL)
         print("       Python environment ready (google-antigravity installed)" if healthy
               else "       Dependencies verified: 'google-antigravity' is ready.")
-    except subprocess.CalledProcessError:
+    except process.CalledProcessError:
         healthy = False
         print("       Installing dependencies from requirements.txt (first run only)...")
         req_file = os.path.join(PROJECT_DIR, "requirements.txt")
-        subprocess.check_call([VENV_PYTHON, "-m", "pip", "install", "--upgrade", "pip", "--quiet"])  # not pip.exe: Windows cannot self-replace it
-        subprocess.check_call([VENV_PYTHON, "-m", "pip", "install", "-r", req_file, "--quiet"])
+        process.check_call([VENV_PYTHON, "-m", "pip", "install", "--upgrade", "pip", "--quiet"])  # not pip.exe: Windows cannot self-replace it
+        process.check_call([VENV_PYTHON, "-m", "pip", "install", "-r", req_file, "--quiet"])
         print("       Dependencies successfully installed.")
 
     # Relaunch script using the venv python
@@ -208,10 +203,10 @@ def bootstrap_venv():
     sys.stdout.flush()  # the venv child writes next; our buffered lines must reach the log and screen first
     sys.stderr.flush()
     script_path = os.path.abspath(__file__)
-    os.environ[HEADER_FLAG] = "1"  # inherited by both relaunch paths below (execv and the Windows subprocess)
+    os.environ[HEADER_FLAG] = "1"  # inherited by both relaunch paths below (execv and the Windows child process)
     if IS_WIN:
         try:
-            sys.exit(subprocess.call([VENV_PYTHON, script_path] + sys.argv[1:]))
+            sys.exit(process.call([VENV_PYTHON, script_path] + sys.argv[1:]))
         except KeyboardInterrupt:
             sys.exit(0)
     else:
@@ -256,18 +251,18 @@ def check_ollama_service(base_url=config.OLLAMA_BASE_URL):
         print(f"       (Your OLLAMA_HOST is set; the server we start listens on {LOOPBACK_OLLAMA_HOST} only.)")
     try:
         if IS_WIN:
-            subprocess.Popen(
+            process.popen(
                 ["ollama", "serve"],
-                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                creationflags=process.CREATE_NEW_PROCESS_GROUP | process.DETACHED_PROCESS,
+                stdout=process.DEVNULL,
+                stderr=process.DEVNULL,
                 env=child_env
             )
         else:
-            subprocess.Popen(
+            process.popen(
                 ["ollama", "serve"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                stdout=process.DEVNULL,
+                stderr=process.DEVNULL,
                 start_new_session=True,
                 env=child_env
             )
@@ -357,7 +352,7 @@ def get_installed_ollama_models(base_url=config.OLLAMA_BASE_URL):
     # Tier 2: CLI fallback if API was empty or unreachable
     if not models and shutil.which("ollama"):
         try:
-            output = subprocess.check_output(["ollama", "list"], text=True, stderr=subprocess.DEVNULL)
+            output = process.check_output(["ollama", "list"], text=True, stderr=process.DEVNULL)
             for line in output.splitlines()[1:]:
                 parts = line.split()
                 if parts:
@@ -527,12 +522,7 @@ def run_check_upgrades(base_url=None):
 
 
 def _read_upgrade_state():
-    try:
-        with open(UPGRADE_STATE_FILE, encoding="utf-8") as f:
-            data = json.load(f)
-        return data if isinstance(data, dict) else {}
-    except Exception:
-        return {}
+    return state.read_upgrade_state(UPGRADE_STATE_FILE)  # moved, shim until Phase 6
 
 
 def offer_upgrade(installed, hw, free_vram, free_ram, now=None):
@@ -556,15 +546,7 @@ def offer_upgrade(installed, hw, free_vram, free_ram, now=None):
 
 def _remember_upgrade_stay(current, now=None):
     """Enter on the model menu while the upgrade row was shown: that model's upgrade stays quiet for a week."""
-    now = time.time() if now is None else now
-    try:
-        stays = _read_upgrade_state().get("stay_until")
-        stays = dict(stays) if isinstance(stays, dict) else {}
-        stays[current] = now + UPGRADE_STAY_SECONDS
-        with open(UPGRADE_STATE_FILE, "w", encoding="utf-8") as f:
-            json.dump({"stay_until": stays}, f, indent=2)
-    except OSError:
-        pass  # the answer still counts for this run; we just cannot remember it
+    state.remember_upgrade_stay(current, now=now, path=UPGRADE_STATE_FILE)  # moved, shim until Phase 6
 
 
 def _with_tag(name):
@@ -582,19 +564,9 @@ def is_model_installed(target_model, installed_models):
 
 def update_env_model(model_name: str):
     """Keep .env synchronized with the active local model."""
-    env_file = os.path.join(PROJECT_DIR, ".env")
-    if os.path.exists(env_file):
-        try:
-            with open(env_file, "r", encoding="utf-8") as f:
-                content = f.read()
-            if "LOCAL_LLM_MODEL=" in content:
-                content = re.sub(r"LOCAL_LLM_MODEL=.*", f"LOCAL_LLM_MODEL={model_name}", content)
-            else:
-                content += f"\nLOCAL_LLM_MODEL={model_name}\n"
-            with open(env_file, "w", encoding="utf-8") as f:
-                f.write(content)
-        except Exception as exc:
-            print(f"Couldn't update .env: {exc}")  # the model still runs; only the saved default is lost
+    exc = state.update_env_model(model_name, env_file=os.path.join(PROJECT_DIR, ".env"))  # moved, shim until Phase 6
+    if exc is not None:
+        print(f"Couldn't update .env: {exc}")  # the model still runs; only the saved default is lost
 
 _WARNED = set()
 
@@ -932,7 +904,7 @@ def _pull_with_gate(tag, interactive, hw, res):
     if decision == "yes":
         print(f"\n📥 Downloading '{plan['tag']}' via Ollama...")
         try:
-            subprocess.check_call(["ollama", "pull", plan["tag"]])
+            process.check_call(["ollama", "pull", plan["tag"]])
         except Exception as exc:
             print(f"\n❌ Failed to pull model: {exc}")
             print(f"   You can manually pull it via: ollama pull {plan['tag']}\n")
