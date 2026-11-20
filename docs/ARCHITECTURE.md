@@ -212,3 +212,7 @@ Where new code goes:
 - Code with no clear layer: ask before writing; do not park it in shell by default.
 
 Baseline rule: `[lint.per-file-ignores]` in `ruff.toml` records today's violations. It is generated, never hand-written, and it may only shrink: `python scripts/check_arch.py` fails a change that adds an entry. CI runs it on every PR and blocks a change that grows the baseline.
+
+### Network adapters (Phase 4a)
+
+Every network call outside `agl/platform` now sits behind one platform module per service: `agl/platform/ollama.py` (the Ollama server: the service check, the installed-model reads, the library page, the chat call), `agl/platform/hub.py` (Hugging Face: repo facts, the file tree, tag vetting, the search with its cache and back-off), `agl/platform/registry.py` (registry.ollama.ai: tag exists, reachable, manifest sizes), plus the public `open_url`/`get_text` in `agl/platform/http.py`. The old names at their old modules stay as shims (`# moved, shim until Phase 6`). On the seam, the arena pick was keyword-argument collaborators with platform defaults (A) over a small `Deps` dataclass (B): it adds no new names and it is what let zero existing test lines change. The same pick applies to Phase 4b (pull and the process-start).

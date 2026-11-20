@@ -44,7 +44,7 @@ from agl.core.menu import (  # noqa: F401
     parse_hf_tag,
     speed_label,
 )
-from agl.platform import http
+from agl.platform import http, hub, registry
 
 TAG_RE = re.compile(r"^[a-z0-9][a-z0-9._/-]*(:[a-z0-9._-]+)?$")
 
@@ -62,16 +62,7 @@ def _hf_api_model(user, repo, timeout=4):
     """The Hub's model record for user/repo, fetched through the same-host opener. Returns (status, data):
     'ok' with a dict, 'missing' (a 404), or 'unknown' (offline, private or gated, odd reply; data None).
     Sends only the repo name. Both hf_check and hf_repo_info read through here."""
-    try:
-        with _HF_OPENER.open(f"https://huggingface.co/api/models/{user}/{repo}", timeout=timeout) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        return ("missing", None) if e.code == 404 else ("unknown", None)
-    except Exception:
-        return "unknown", None
-    if not isinstance(data, dict):
-        return "unknown", None
-    return "ok", data
+    return hub._hf_api_model(user, repo, timeout=timeout, opener=_HF_OPENER)  # moved, shim until Phase 6
 
 
 def hf_check(tag, timeout=4):
@@ -82,33 +73,13 @@ def hf_check(tag, timeout=4):
     'bad_tag'  not hf.co/user/repo[:quant]
     'unknown'  could not tell (offline, private or gated repo, odd reply): allow it, like the Ollama registry check
     Sends only the repo name."""
-    parsed = parse_hf_tag(tag)
-    if not parsed:
-        return "bad_tag", None
-    user, repo, quant = parsed
-    status, data = _hf_api_model(user, repo, timeout=timeout)
-    if status != "ok":
-        return status, None
-    if not quant:
-        return "ok", None
-    files = [s.get("rfilename", "") for s in (data.get("siblings") or []) if s.get("rfilename", "").lower().endswith(".gguf")]
-    have = sorted({q.upper() for f in files for q in QUANT_RE.findall(f)})
-    if quant.upper() in have:
-        return "ok", None
-    return "no_quant", have
+    return hub.hf_check(tag, timeout=timeout, opener=_HF_OPENER)  # moved, shim until Phase 6
 
 
 def hf_repo_info(user, repo, timeout=4):
     """{'status': 'ok'|'missing'|'unknown', 'gated': bool, 'license': str|None} for a Hugging Face repo.
     Sends only the repo name. gated can be False, True, 'auto' or 'manual' on the Hub: anything truthy counts."""
-    status, data = _hf_api_model(user, repo, timeout=timeout)
-    if status != "ok":
-        return {"status": status, "gated": False, "license": None}
-    card = data.get("cardData") if isinstance(data.get("cardData"), dict) else {}
-    lic = card.get("license")
-    if not lic:
-        lic = next((t[len("license:"):] for t in data.get("tags") or [] if isinstance(t, str) and t.startswith("license:")), None)
-    return {"status": "ok", "gated": bool(data.get("gated")), "license": str(lic) if lic else None}
+    return hub.hf_repo_info(user, repo, timeout=timeout, opener=_HF_OPENER)  # moved, shim until Phase 6
 
 
 _SameHostOnly = http._SameHostOnly  # moved, shim until Phase 6: the class now lives in agl.platform.http
@@ -120,35 +91,8 @@ _STATE = {"offline": False}  # set when the Hub cannot be reached; later calls i
 def hf_tree_files(user, repo, timeout=6, max_pages=5):
     """[{'name', 'size'}] for every file in the repo (sizes in bytes, from the LFS size when there is one).
     Follows the Link: rel=next header up to max_pages, on huggingface.co only. Any failure returns []."""
-    url = f"https://huggingface.co/api/models/{user}/{repo}/tree/main?expand=true&recursive=true"
-    files = []
-    for _ in range(max_pages):
-        try:
-            with _HF_OPENER.open(url, timeout=timeout) as resp:
-                rows = json.loads(resp.read().decode("utf-8"))
-                link = resp.headers.get("Link", "") if getattr(resp, "headers", None) else ""
-        except urllib.error.HTTPError:
-            return []  # the Hub answered with an error: say nothing rather than give a wrong size
-        except (urllib.error.URLError, OSError, TimeoutError):
-            _STATE["offline"] = True  # no network: stop asking for the rest of the run
-            return []
-        except Exception:
-            return []  # a half-read repo would undercount split quants, so say nothing rather than give a wrong size
-        if not isinstance(rows, list):
-            return []
-        for row in rows:
-            if isinstance(row, dict) and row.get("type", "file") == "file":
-                size = (row.get("lfs") or {}).get("size") if isinstance(row.get("lfs"), dict) else None
-                files.append({"name": row.get("path", ""), "size": size if size else row.get("size")})
-        nxt = re.search(r'<([^>]+)>;\s*rel="next"', link or "")
-        if not nxt:
-            break
-        url = nxt.group(1)
-        if not url.startswith("https://huggingface.co/"):
-            return []  # never follow a page link to another host
-    else:
-        return []  # still more pages after max_pages: a partial list would undercount split quants
-    return files
+    return hub.hf_tree_files(user, repo, timeout=timeout, max_pages=max_pages,
+                              opener=_HF_OPENER, state=_STATE)  # moved, shim until Phase 6
 
 
 FIT_TEXT = {"gpu": "fits in GPU", "split": "part on CPU", "too big": "too big"}
@@ -449,29 +393,10 @@ def choose(menu, default_tag, input_fn=None, out=print, backend="ollama", search
 
 def tag_exists(tag, timeout=4):
     """True/False from the public Ollama registry, None when we cannot tell (offline). Sends only the tag."""
-    name, _, version = _norm(tag).rpartition(":")
-    if "/" in name and "." in name.split("/")[0]:
-        return None  # another registry (hf.co/..., host.example/...): ours cannot vouch for it, so do not refuse it
-    if "/" not in name:
-        name = "library/" + name
-    try:
-        with http._open(f"https://registry.ollama.ai/v2/{name}/manifests/{version}", timeout=timeout,
-                        method="HEAD", headers={"Accept": "application/vnd.docker.distribution.manifest.v2+json"},
-                        opener=_REGISTRY_OPENER):
-            return True
-    except urllib.error.HTTPError as e:
-        return False if e.code == 404 else None  # a refused cross-host redirect lands here as a 3xx: unknown
-    except Exception:
-        return None
+    return registry.tag_exists(tag, timeout=timeout, opener=_REGISTRY_OPENER)  # moved, shim until Phase 6
 
 
 def registry_reachable(timeout=3):
     """True when registry.ollama.ai answers at all (any HTTP reply, even a 401), False when we cannot reach it.
     Used by --check-upgrades to say "couldn't check" instead of guessing. Sends no model name."""
-    try:
-        with http._open("https://registry.ollama.ai/v2/", timeout=timeout, method="HEAD", opener=_REGISTRY_OPENER):
-            return True
-    except urllib.error.HTTPError:
-        return True
-    except Exception:
-        return False
+    return registry.registry_reachable(timeout=timeout, opener=_REGISTRY_OPENER)  # moved, shim until Phase 6
