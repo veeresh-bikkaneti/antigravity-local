@@ -14,7 +14,8 @@ import shutil
 import tempfile
 import time
 import urllib.error
-import urllib.request
+
+from agl.platform import ollama as ollama_platform
 
 REASON_CAP = 200
 PROMPT = ("Use your tools. First call read_file with path seed.md; it holds one line of the form MARKER=<value>. "
@@ -90,10 +91,8 @@ def _run_tool(folder, name, args):
 
 
 def _chat(opener, url, body, timeout):
-    request = urllib.request.Request(url, data=json.dumps(body).encode("utf-8"), method="POST",
-                                     headers={"Content-Type": "application/json", "Accept": "application/json"})
-    with opener(request, timeout=timeout) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    # moved, shim until Phase 6
+    return ollama_platform.chat_json(url, body, opener=opener, timeout=timeout)
 
 
 def _result(verdict, reason, marker, tokens, started, clock, calls):
@@ -104,8 +103,8 @@ def _result(verdict, reason, marker, tokens, started, clock, calls):
 
 
 def run_probe(base_url, model, *, opener=None, clock=None, timeout=120, max_calls=8):
-    """Run the probe. Returns {"verdict": "pass"|"fail", "reason", "tok_s" (float or None), "calls"}. Never raises."""
-    opener = urllib.request.urlopen if opener is None else opener
+    """Run the probe. Returns {"verdict": "pass"|"fail", "reason", "tok_s" (float or None), "calls"}. Never raises.
+    moved, shim until Phase 6: an opener left as None now resolves inside the platform adapter (chat_json)."""
     clock = time.monotonic if clock is None else clock
     base = base_url.rstrip("/")
     url = (base if base.endswith("/v1") else base + "/v1") + "/chat/completions"

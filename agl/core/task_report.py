@@ -3,7 +3,7 @@
 The parts that touch the disk (snapshot, set_aside, demo_page_ok) stayed at the root
 task_report.py until Phase 4. Standard library only.
 """
-import os
+import posixpath
 
 
 def summarize(before, after):
@@ -26,7 +26,7 @@ def render(workspace_dir, files, created, changed, removed=()):
     lines = ["=" * 76, head, f"Workspace files ({len(files)}):"]
     if removed:
         lines.append(f"Deleted {len(removed)}: " + ", ".join(removed))
-    lines += [f"   \U0001F4C1 {os.path.join(workspace_dir, f)}" for f in files]
+    lines += [f"   \U0001F4C1 {posixpath.join(workspace_dir, f)}" for f in files]
     if not wrote:
         lines += ["Small local models sometimes answer without writing anything.",
                   "If you expected a file, run the same command again, or name the file in your task."]

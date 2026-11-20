@@ -40,7 +40,7 @@ import ranking
 import runlog
 import task_report
 import userdata
-from agl.platform import config, http
+from agl.platform import config, http, ollama
 
 # Ensure UTF-8 console output on Windows
 if sys.platform == "win32":
@@ -230,16 +230,11 @@ LOOPBACK_OLLAMA_HOST = "127.0.0.1:11434"
 def check_ollama_service(base_url=config.OLLAMA_BASE_URL):
     """Check if Ollama is running; if not, attempt to start it."""
     stage(2, 5, "SERVER", "make sure Ollama is answering")
-    tags_url = f"{base_url}/api/tags"
 
     # 1. Test if already responsive
-    try:
-        with http._open(tags_url, timeout=3) as resp:
-            if resp.status == 200:
-                print(f"       Connected to Ollama service at: {base_url}")
-                return True
-    except Exception:
-        pass
+    if ollama.check_service(base_url=base_url, timeout=3):  # moved, shim until Phase 6: the HTTP ask lives in agl.platform.ollama
+        print(f"       Connected to Ollama service at: {base_url}")
+        return True
 
     # 2. Ollama is not responding, check if ollama binary exists to auto-start
     ollama_bin = shutil.which("ollama")
@@ -280,13 +275,9 @@ def check_ollama_service(base_url=config.OLLAMA_BASE_URL):
         # Wait up to 12 seconds for Ollama to spin up
         for _ in range(12):
             time.sleep(1)
-            try:
-                with http._open(tags_url, timeout=1) as resp:
-                    if resp.status == 200:
-                        print("       Ollama service successfully started.")
-                        return True
-            except Exception:
-                continue
+            if ollama.check_service(base_url=base_url, timeout=1):  # moved, shim until Phase 6: the HTTP ask lives in agl.platform.ollama
+                print("       Ollama service successfully started.")
+                return True
     except Exception as exc:
         print(f"       Warning: Auto-start attempted but got: {exc}")
 
@@ -300,7 +291,7 @@ DEFAULT_OLLAMA_HOSTS = (config.OLLAMA_BASE_URL, "http://127.0.0.1:11434")
 def _http_get(url, timeout=3):
     """Body text of a 200 reply, or None for anything else (refused, timeout, non-200).
     moved, shim until Phase 6: the urlopen call now lives in agl.platform.http"""
-    return http._get_text(url, timeout=timeout)
+    return http.get_text(url, timeout=timeout)  # moved, shim until Phase 6
 
 
 def _server_urls(base_url):
@@ -361,20 +352,7 @@ def get_installed_ollama_models(base_url=config.OLLAMA_BASE_URL):
     Tier 2: Ollama CLI (`ollama list`) fallback
     Returns a set of normalized model identifiers.
     """
-    models = set()
-
-    # Tier 1: Query Ollama REST API
-    tags_url = f"{base_url}/api/tags"
-    try:
-        data = http.get_json(tags_url, timeout=3)
-        for m in data.get("models", []):
-            name = m.get("name", "").strip().lower()
-            if name:
-                models.add(name)
-                clean_name = name.split("/")[-1]
-                models.add(clean_name)
-    except Exception:
-        pass
+    models = ollama.installed_models(base_url)  # moved, shim until Phase 6: the Tier-1 REST read lives in agl.platform.ollama
 
     # Tier 2: CLI fallback if API was empty or unreachable
     if not models and shutil.which("ollama"):
@@ -396,21 +374,8 @@ def get_installed_info(base_url=config.OLLAMA_BASE_URL):
     """{normalised tag: {"size_gb", "digest"}} from Ollama's /api/tags (size is in bytes). Each model is listed under
     its full name and its short name (after the last slash), the same two names get_installed_ollama_models returns.
     {} when Ollama does not answer: a size we were not told is left out, never guessed."""
-    try:
-        data = http.get_json(f"{base_url}/api/tags", timeout=3)
-    except Exception:
-        return {}
-    out = {}
-    for m in data.get("models", []) if isinstance(data, dict) else []:
-        name = (m.get("name") or "").strip().lower() if isinstance(m, dict) else ""
-        size = m.get("size") if isinstance(m, dict) else None
-        if not name:
-            continue
-        row = {"size_gb": size / 1e9 if isinstance(size, (int, float)) and size > 0 else None,
-               "digest": m.get("digest") if isinstance(m.get("digest"), str) else None}
-        out[name] = row
-        out.setdefault(name.split("/")[-1], row)
-    return out
+    # moved, shim until Phase 6: the REST read lives in agl.platform.ollama
+    return ollama.installed_info(base_url)
 
 
 def _raw_capability_score(model_name: str) -> float:

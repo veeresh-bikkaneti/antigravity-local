@@ -10,7 +10,7 @@ import urllib.parse
 
 import model_wizard
 import quant_pick
-from agl.platform import http
+from agl.platform import http, registry
 
 REGISTRY = "https://registry.ollama.ai/v2/"
 MANIFEST_ACCEPT = ("application/vnd.docker.distribution.manifest.v2+json, "
@@ -68,24 +68,9 @@ def _get_json(url, headers=None, timeout=3):
 
 def ollama_registry_size(tag):
     """Total bytes of the model layers in the registry manifest, or None (offline, unknown tag, other registry)."""
-    if any(bad in (tag or "") for bad in ("?", "#", " ", "..")):
-        return None  # would change the request path; never send it
-    key = model_wizard._norm(tag)
-    if key in _CACHE:
-        return _CACHE[key]
-    name, _, version = key.rpartition(":")
-    if "/" in name and "." in name.split("/")[0]:
-        return None  # hf.co/... and other registries are not ours to size
-    if "/" not in name:
-        name = "library/" + name
-    data = _get_json(f"{REGISTRY}{urllib.parse.quote(name, safe='/')}/manifests/{urllib.parse.quote(version, safe='')}", headers={"Accept": MANIFEST_ACCEPT})
-    layers = data.get("layers") if isinstance(data, dict) else None
-    if not isinstance(layers, list):
-        layers = None
-    sizes = [l.get("size") for l in layers or [] if isinstance(l, dict) and isinstance(l.get("size"), int)]
-    total = sum(sizes) if sizes and len(sizes) == len(layers) else None
-    _CACHE[key] = total if total and total > 0 else None
-    return _CACHE[key]
+    # moved, shim until Phase 6: the manifest read now lives in agl.platform.registry; our own budget,
+    # offline flag and cache are passed through as the fetch and the cache.
+    return registry.ollama_registry_size(tag, fetch=_get_json, cache=_CACHE)
 
 
 def estimate_gb(tag):

@@ -1,7 +1,7 @@
-"""The one HTTP helper: a single JSON entry point with a required timeout, one private place that
-opens a request, and the same-host redirect opener. The Layer contract in docs/ARCHITECTURE.md
-puts HTTP here; the timeout is a keyword-only argument with no default so every caller keeps
-its own current default at the call site."""
+"""The one HTTP helper: a single JSON entry point with a required timeout, the one place that
+opens a request (open_url; _open is the old name kept as a shim until Phase 6), and the same-host
+redirect opener. The Layer contract in docs/ARCHITECTURE.md puts HTTP here; the timeout is a
+keyword-only argument with no default so every caller keeps its own current default at the call site."""
 import http.client
 import json
 import urllib.error
@@ -33,7 +33,7 @@ ANSWERED_ERRORS = (urllib.error.HTTPError, http.client.HTTPException)  # the ser
 NETWORK_ERRORS = (urllib.error.URLError, OSError, TimeoutError)       # nothing answered: refused, down, timeout
 
 
-def _open(url, *, timeout, method=None, headers=None, data=None, opener=None):
+def open_url(url, *, timeout, method=None, headers=None, data=None, opener=None):
     """The one place a request is opened. A plain GET (no data, method, headers or opener) keeps urlopen's
     exact old call shape, a bare url, so a test or caller that watches urlopen sees what it saw before; the
     Request is built only when data, method, headers or an opener need it. `opener` is None (urllib.request.urlopen),
@@ -48,6 +48,11 @@ def _open(url, *, timeout, method=None, headers=None, data=None, opener=None):
     return opener.open(request, timeout=timeout)
 
 
+def _open(url, *, timeout, method=None, headers=None, data=None, opener=None):
+    # moved, shim until Phase 6
+    return open_url(url, timeout=timeout, method=method, headers=headers, data=data, opener=opener)
+
+
 def get_json(url, *, timeout, headers=None, data=None, opener=None):
     """The parsed JSON of the reply. `timeout` has no default on purpose: the caller passes its own.
     `data` is a POST body (a GET when it is None); `opener` as in _open."""
@@ -55,12 +60,17 @@ def get_json(url, *, timeout, headers=None, data=None, opener=None):
         return json.loads(resp.read().decode("utf-8"))
 
 
-def _get_text(url, timeout):
+def get_text(url, timeout):
     """Body text of a 200 reply, or None for anything else (refused, timeout, non-200)."""
     try:
-        with _open(url, timeout=timeout) as resp:
+        with open_url(url, timeout=timeout) as resp:
             if resp.status == 200:
                 return resp.read().decode("utf-8")
     except Exception:
         pass
     return None
+
+
+def _get_text(url, timeout):
+    # moved, shim until Phase 6
+    return get_text(url, timeout)
