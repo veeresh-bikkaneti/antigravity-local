@@ -68,8 +68,9 @@ def _blocks(rec):
             if isinstance(b, dict)]
 
 
-def summarize(records):
-    """The facts HANDOFF.md needs, from whatever records we recognise."""
+def summarize_transcript(records):
+    """The facts HANDOFF.md needs, from whatever records we recognise.
+    was summarize: renamed because task_report.summarize means the workspace before/after diff."""
     users, todos, files, commands, last_text = [], None, [], [], ""
     tasks = {}   # TaskCreate / TaskUpdate (current Claude Code): ids are 1, 2, 3 ... in creation order
     for rec in records:
@@ -109,6 +110,9 @@ def summarize(records):
                 elif name in SHELL_TOOLS and isinstance(data.get("command"), str):
                     commands.append(data["command"])
     return {"users": users, "todos": todos, "files": files, "commands": commands[-10:], "last_text": last_text}
+
+
+summarize = summarize_transcript  # renamed, shim until Phase 6: the old name stays for callers and tests
 
 
 # ---------- finding the transcript ----------
