@@ -42,6 +42,7 @@ import userdata
 from agl.platform import config, http, ollama, process, state
 from agl.app import pick
 import agl.app.server, agl.app.agent, agl.app.probe
+from agl.ui import banner, pick_menu
 
 # Ensure UTF-8 console output on Windows
 if sys.platform == "win32":
@@ -72,80 +73,40 @@ _PLAIN = {"on": False}  # set by _main() from --plain
 
 def _plain():
     """--plain or NO_COLOR: no art, no emoji, no bar blocks."""
-    return _PLAIN["on"] or bool(os.environ.get("NO_COLOR"))
+    # moved, shim until Phase 6
+    return banner.is_plain(_PLAIN["on"], ports=_PickPorts())
 
 
 def _safe_print(text):
     """print() that never raises on a console that cannot encode the text (cp1252, for example)."""
-    try:
-        print(text, flush=True)
-    except UnicodeEncodeError:
-        enc = getattr(sys.stdout, "encoding", None) or "ascii"
-        print(text.encode(enc, "replace").decode(enc, "replace"), flush=True)
+    # moved, shim until Phase 6
+    return banner.safe_print(text, out=_out)
 
 
 def stage(n, total, name, next_line):
     """One stage banner on one line: 'STAGE 2/4  SERVER  [bar]  what happens next'."""
-    ascii_only = _plain()
-    if not ascii_only:
-        try:
-            "█░".encode(getattr(sys.stdout, "encoding", None) or "ascii")
-        except (UnicodeEncodeError, LookupError):
-            ascii_only = True
-    full, empty = ("#", "-") if ascii_only else ("█", "░")
-    filled = round(20 * n / total)
-    _safe_print("")
-    _safe_print(f"STAGE {n}/{total}  {name}  [{full * filled}{empty * (20 - filled)}]  {next_line}")
+    # moved, shim until Phase 6
+    return banner.stage(n, total, name, next_line, plain=_plain(), ports=_PickPorts(), out=_out)
 
 
 def level_clear(model, agent, ready=None):
     """The short summary at the end of setup: what was picked, where it came from, and the log file."""
-    size = next((s for t, s, _ in model_wizard.CATALOG if t == model), None)
-    rows = [("model", model), ("size", f"{size:.1f} GB (catalog)" if size else "unknown"),
-            ("source", _FACTS["source"]), ("agent", agent),
-            ("log", runlog.log_path(os.path.join(PROJECT_DIR, "logs")))]
-    width = max(len(k) for k, _ in rows)
-    bar = "=" * 60
-    lines = ["", bar, "  LEVEL CLEAR"] + [f"  {k.ljust(width)}  {v}" for k, v in rows]
-    if ready:
-        lines.append(f"  {ready}")
-    lines.append(bar)
-    _safe_print("\n".join(lines))
-    backend = "openai" if os.environ.get("LOCAL_LLM_BACKEND") == "openai" else "ollama"
-    _safe_print("\n" + "\n".join(coding_apps.lines(model, config.llm_base_url(), backend)))
+    # moved, shim until Phase 6
+    return banner.level_clear(model, agent, ready=ready, ports=_PickPorts(), out=_out)
 
 
-def context_check(interactive, ask=None, out=print):
+def context_check(interactive, ask=None, out=None):
     """Stage 4: say once if the server's context window is too small for coding agents. Never changes Ollama."""
-    import agent_setup
-    check = getattr(agent_setup, "claude_context", None)  # a test may stub the module without it
-    if check is None:
-        return
-    if os.environ.get("LOCAL_LLM_BACKEND") == "openai":
-        return  # LM Studio, llama.cpp and vLLM do not read OLLAMA_CONTEXT_LENGTH
-    warning = check(os.environ)[1]
-    if warning is None:
-        return
-    warning = warning.replace("Claude Code", "the coding agent")
-    out(f"       {warning}")
-    # No question here (it blocked runs): the command to raise the window always follows the warning.
-    # `interactive` and `ask` stay in the signature so callers don't change.
-    if sys.platform == "win32":
-        out("       $env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve")
-    else:
-        out("       OLLAMA_CONTEXT_LENGTH=65536 ollama serve")
+    # moved, shim until Phase 6
+    return banner.context_check(interactive, ask=ask, ports=_PickPorts(), out=out if out is not None else _out)
 
 
-HEADER_FLAG = "ANTIGRAVITY_HEADER_SHOWN"  # set by the parent just before the venv relaunch
+HEADER_FLAG = banner.HEADER_FLAG
+
 
 def print_header():
-    if os.environ.get(HEADER_FLAG) == "1":
-        return  # the parent already printed the banner; the relaunched child stays quiet
-    print("""
-=============================================================================
-    🚀 Google Antigravity Local - Plug & Play Auto-Bootstrap
-=============================================================================
-""")
+    # moved, shim until Phase 6
+    return banner.print_header(ports=_PickPorts(), out=_out)
 
 def is_in_venv():
     return sys.prefix != sys.base_prefix
@@ -429,6 +390,25 @@ class _PickPorts:
         import os
         return os.environ.get(key, default)
 
+    def environ_copy(self):
+        import os
+        return dict(os.environ)
+
+    def path_join(self, *parts):
+        import os
+        return os.path.join(*parts)
+
+    def makedirs(self, path, exist_ok=True):
+        import os
+        return os.makedirs(path, exist_ok=exist_ok)
+
+    def agent_sdk(self):
+        import sys
+        if "google.antigravity" in sys.modules:
+            return sys.modules["google.antigravity"]
+        import google.antigravity
+        return sys.modules.get("google.antigravity", getattr(google, "antigravity", None))
+
     def index_memory(self):
         from memory import MemoryDatabase, EmbeddingProvider, MemoryIndexer
         db = MemoryDatabase()
@@ -506,9 +486,8 @@ _WARNED = set()
 
 def _warn_once(key, text):
     """Print a warning line at most once per run, so a flaky connection does not spam the screen."""
-    if key not in _WARNED:
-        _WARNED.add(key)
-        print(f"       Warning: {text}")
+    # moved, shim until Phase 6
+    return banner.warn_once(key, text, out=_out)
 
 
 def get_installed_details(base_url=config.OLLAMA_BASE_URL):
@@ -637,133 +616,49 @@ def _installed_candidates(names, details, hw, entries):
 
 def _ledger_warning(tag, entries):
     """Warns, never refuses: a model that failed the probe can still be picked."""
-    if ledger.status(tag, entries) == "fail":
-        hint = f" Check again with: python run.py --probe {tag}" if _SAFE_TAG_RE.fullmatch(str(tag)) else ""
-        print(f"       Warning: {_printable_tag(tag)} failed a tool-call probe on this PC, so it may not work as a coding agent."
-              f"{hint}")
+    # moved, shim until Phase 6
+    return pick_menu.ledger_warning(tag, entries, ports=_PickPorts(), out=_out)
 
 
 def _refuse_non_chat(tag, pool):
     """True (after saying why) when a model cannot drive a coding agent: an embedding or media model."""
-    cand = _find_candidate(tag, pool)
-    if cand and capabilities.resolve_kind(cand["kind"], cand["tag"]) in ("embedding", "media"):
-        print(f"       {_printable_tag(tag)} is an embedding or media model, so a coding agent cannot use it. Pick a chat model.")
-        return True
-    return False
+    # moved, shim until Phase 6
+    return pick_menu.refuse_non_chat(tag, pool, ports=_PickPorts(), out=_out)
 
 
 def _typed_tag_problem(tag, installed_models):
-    """None when a tag can be pulled or used, else the line that says why not (choose prints it and asks again).
-    An installed tag always passes. A Hugging Face tag gets the Hugging Face check; any other tag gets the Ollama
-    registry check. Offline the registry cannot say, so the tag passes, same as before."""
-    if is_model_installed(tag, installed_models):
-        return None
-    if model_wizard.is_hf_tag(tag):
-        return _hf_tag_problem(tag)
-    if model_wizard.tag_exists(tag) is False:
-        return f"       '{tag}' is not on the Ollama registry. Type another tag, or a number from the list."
-    return None
+    """None when a tag can be pulled or used, else the line that says why not."""
+    # moved, shim until Phase 6
+    return pick_menu.typed_tag_problem(tag, installed_models, ports=_PickPorts(), out=_out)
 
 
 def _ask_which_model(display_names, installed_models, vram_gb, ram_gb, free_vram=None, free_ram=None, pool=None,
                      scan_library=False, upgrade=None, installed_info=None):
-    """Run the wizard. Returns the chosen tag, or None to keep the installed model (the automatic path handles it).
-    `upgrade` is offer_upgrade's row: it becomes a "recommended upgrade" row. Enter on the menu while it is shown is
-    remembered as a stay, the same as the old "stay" answer. A bad typed tag re-asks inside the wizard, so this
-    never gets a bad tag back."""
-    configured = os.environ.get("LOCAL_LLM_MODEL")
-    if pool is None:
-        pool = _installed_candidates(display_names, {}, {"vram_gb": vram_gb, "ram_gb": ram_gb}, [])
-    usable = ranking.agent_candidates(pool)
-    best = ranking.best_for_agent(pool)
-    if configured and is_model_installed(configured, installed_models) and _find_candidate(configured, usable):
-        default = configured
-    elif best:
-        default = best["tag"]
-    else:
-        default = None
-    tier = hardware_tier_model(vram_gb, ram_gb)
-    download_size.new_lookup_window()
-    menu = model_wizard.build_menu(display_names, vram_gb if free_vram is None else free_vram,
-                                   ram_gb if free_ram is None else free_ram,
-                                   recommended=None if best else tier,
-                                   badges={model_wizard._norm(c["tag"]): c["badges"] for c in pool},
-                                   library=get_library_rows(scan_library), media=get_media_rows,
-                                   size_of=download_size.resolve, upgrade=upgrade,
-                                   installed_info=get_installed_info() if installed_info is None else installed_info)
-    label = "current model"
-    if not default:
-        default = tier  # no usable model installed: Enter means exactly what the automatic path would offer
-        label = "recommended pick"
-    fv = vram_gb if free_vram is None else free_vram
-    fr = ram_gb if free_ram is None else free_ram
-    ended = {}
-    chosen = model_wizard.choose(menu, default, search_fn=lambda words: hf_menu_search_sized(words, fv, fr),
-                                 validate_fn=lambda tag: _typed_tag_problem(tag, installed_models),
-                                 default_label=label, result=ended)
-    if upgrade and ended.get("how") == "enter":
-        _remember_upgrade_stay(upgrade["current"])  # Enter kept the model while the upgrade row was on screen
-    if not chosen or model_wizard._norm(chosen) == model_wizard._norm(default or ""):
-        # Kept the default: for an installed model the automatic path handles it; otherwise pull it.
-        return None if chosen and is_model_installed(chosen, installed_models) else chosen
-    return chosen
+    """Run the wizard. Returns the chosen tag, or None to keep the installed model."""
+    # moved, shim until Phase 6
+    return pick_menu.ask_which_model(display_names, installed_models, vram_gb, ram_gb,
+                                     free_vram=free_vram, free_ram=free_ram, pool=pool,
+                                     scan_library=scan_library, upgrade=upgrade,
+                                     installed_info=installed_info, ports=_PickPorts(), out=_out)
 
 
 def _hf_tag_problem(tag):
-    """The reason a typed hf.co tag is clearly wrong, or None. Not a repo, or not the hf.co/user/repo[:quant] shape,
-    or a 404. A quant with no matching .gguf is only a warning (printed), because Ollama is the final judge.
-    Offline or private repos are allowed, same rule as the Ollama registry check."""
-    status, detail = model_wizard.hf_check(tag)
-    if status == "bad_tag":
-        return f"       '{tag}' is not a Hugging Face tag. Use hf.co/{{username}}/{{repository}}:{{quantization}}."
-    if status == "missing":
-        return f"       '{tag}' was not found on Hugging Face (404). Check the user and repo name."
-    if status == "no_quant":
-        have = ", ".join(detail) if detail else "none (no .gguf files in that repo)"
-        print(f"       Warning: no .gguf file in that repo matches the quant in '{tag}'. Quants it has: {have}.")
-    return None
+    """The reason a typed hf.co tag is clearly wrong, or None."""
+    # moved, shim until Phase 6
+    return pick_menu.hf_tag_problem(tag, ports=_PickPorts(), out=_out)
 
 
 def _hf_tag_ok(tag):
-    """Vet a typed hf.co tag against the Hugging Face API. False (with a reason printed) only when it is clearly wrong."""
-    problem = _hf_tag_problem(tag)
-    if problem:
-        print(problem)
-        return False
-    return True
+    """Vet a typed hf.co tag against the Hugging Face API."""
+    # moved, shim until Phase 6
+    return pick_menu.hf_tag_ok(tag, ports=_PickPorts(), out=_out)
 
 
 def select_openai_model(base_url, requested_model=None, interactive=False):
-    """Pick a model from an OpenAI-compatible server (LM Studio, llama.cpp, vLLM). We never download here:
-    the server owns its models. Order: --model, then LOCAL_LLM_MODEL if the server lists it, then the menu
-    (real terminal) or the top-ranked loaded model (--yes, piped, CI). Returns the id, or None."""
-    stage(3, 5, "MODEL", "pick the model your server already has loaded")
-    _load_env()
-    ids = list_openai_models(base_url)
-    if not ids:
-        print("       The server answered but lists no models. Load a model in your server, then re-run.")
-        return None
-    print(f"       Found {len(ids)} model(s) on the server: {', '.join(ids)}")
-    by_name = {m.lower(): m for m in ids}
-    if requested_model:
-        chosen = by_name.get(requested_model.strip().lower())
-        if not chosen:
-            print(f"       '{requested_model}' is not loaded on this server. Load it there, or pick one it lists.")
-            return None
-    else:
-        configured = (os.environ.get("LOCAL_LLM_MODEL") or "").strip().lower()
-        default = by_name.get(configured) or max(ids, key=capability_rank_key)
-        chosen = default
-        if interactive:
-            menu = model_wizard.build_menu(ids, 0.0, 0.0, backend="openai")
-            picked = model_wizard.choose(menu, default, backend="openai")
-            chosen = by_name.get((picked or "").lower())
-            if not chosen:
-                print(f"       '{picked}' is not loaded on this server. Keeping '{default}'.")
-                chosen = default
-    print(f"       ✅ Using '{chosen}' from your server. Nothing to download.")
-    update_env_model(chosen)
-    return chosen
+    """Pick a model from an OpenAI-compatible server (LM Studio, llama.cpp, vLLM)."""
+    # moved, shim until Phase 6
+    return pick_menu.select_openai_model(base_url, requested_model=requested_model, interactive=interactive,
+                                         ports=_PickPorts(), out=_out)
 
 
 def _catalog_size(tag):
@@ -891,28 +786,21 @@ def main(argv=None):
         return _main(argv)
 
 
-def _main(argv=None):
-    raw = sys.argv[1:] if argv is None else list(argv)
-    if raw and raw[0] == "handoff":  # `python run.py handoff ...`: stdlib only, no venv, no Ollama
-        import handoff
-        sys.exit(handoff.main(raw[1:]))
-    args = parse_args(argv)  # before bootstrap_venv: --help / bad flags must not touch pip
-    _PLAIN["on"] = bool(args.plain)
-    if args.coding_apps:  # text only: needs neither the venv nor Ollama
+def _dispatch_simple(args):
+    """Handle modes that run early or text-only commands without starting the LLM."""
+    if args.coding_apps:
         backend = "openai" if os.environ.get("LOCAL_LLM_BACKEND") == "openai" else "ollama"
         _safe_print("\n".join(coding_apps.lines(args.model or os.environ.get("LOCAL_LLM_MODEL") or "<your-model>",
                                                 config.llm_base_url(), backend)))
-        return
-    if args.doctor:  # read-only and stdlib: needs neither the venv nor Ollama
+        return True
+    if args.doctor:
         import agent_setup
         agent_setup.claude_doctor()
-        return
-    if args.probe:  # stdlib only, no venv: talks to a model server that is already running
+        return True
+    if args.probe:
         sys.exit(run_probe_command(args))
-    if args.check_upgrades:  # report only: reads the local list and the registry, never pulls, exits 0
+    if args.check_upgrades:
         sys.exit(run_check_upgrades())
-    print_header()
-
     if args.sync_memory:
         try:
             from memory import cmd_sync
@@ -920,25 +808,26 @@ def _main(argv=None):
             cmd_sync(types.SimpleNamespace())
         except Exception as e:
             print(f"Error syncing memory: {e}")
-        return
+        return True
+    return False
 
-    # Step 1: Self-bootstrap inside venv if running in system Python
-    if not is_in_venv():
-        bootstrap_venv()
-        return
 
-    # --serve: web UI + API on a free port. Needs no Ollama (memory falls back to pure Python).
-    if args.serve:
-        import serve
-        serve_argv = []
-        if args.host:
-            serve_argv += ["--host", args.host]
-        if args.port is not None:
-            serve_argv += ["--port", str(args.port)]
-        serve.main(serve_argv)
-        return
+def _run_serve(args):
+    """--serve: web UI + API on a free port."""
+    if not args.serve:
+        return False
+    import serve
+    serve_argv = []
+    if args.host:
+        serve_argv += ["--host", args.host]
+    if args.port is not None:
+        serve_argv += ["--port", str(args.port)]
+    serve.main(serve_argv)
+    return True
 
-    # Step 2: Ensure Ollama is running
+
+def _setup_backend(args):
+    """Ensure Ollama or OpenAI-compatible server is answering."""
     base_api = config.llm_base_url()
     ollama_host = base_api.replace("/v1", "").rstrip("/")
     backend = detect_backend(base_api)
@@ -948,7 +837,7 @@ def _main(argv=None):
     if backend == "openai":
         stage(2, 5, "SERVER", "use the OpenAI-compatible server you already run")
         print(f"       Found an OpenAI-compatible server at {base_api} (not Ollama). Nothing will be downloaded.")
-        os.environ["LOCAL_LLM_BACKEND"] = "openai"  # memory.py and --agent claude read this
+        os.environ["LOCAL_LLM_BACKEND"] = "openai"
     else:
         os.environ.pop("LOCAL_LLM_BACKEND", None)
         if backend is None and not is_default_ollama_url(base_api):
@@ -957,8 +846,11 @@ def _main(argv=None):
             sys.exit(1)
         if not check_ollama_service(ollama_host):
             sys.exit(1)
+    return base_api, ollama_host, backend, interactive
 
-    # Step 3: Check local inventory & auto-select most capable model
+
+def _pick_model(args, base_api, ollama_host, backend, interactive):
+    """Check local inventory & auto-select or pull most capable model."""
     try:
         if backend == "openai":
             model = select_openai_model(base_api, args.model, interactive=interactive)
@@ -969,31 +861,65 @@ def _main(argv=None):
         sys.exit(130)
     if not model:
         sys.exit(1)
+    return model
 
-    # Step 3.2: --agent pi/opencode/codex/claude: configure that agent for this model and hand over (SDK shell stays default)
-    if args.agent != "shell":
-        check_or_update_memory()  # index first, so the hand-off agent starts on current memory
-        import agent_setup
-        try:
-            workspace = agent_setup.resolve_workspace(args.workspace, os.getcwd(), PROJECT_DIR)
-        except agent_setup.AgentSetupError as e:
-            print(f"\n[agent setup] {e}")
-            sys.exit(e.code)
-        finder = None
-        if args.resume_from:
-            import handoff
 
-            def finder(ident):
-                try:
-                    return handoff.find_transcript(ident, handoff.repo_root(workspace))
-                except handoff.HandoffError as e:
-                    raise agent_setup.AgentSetupError(str(e))
-        stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
-        context_check(interactive=interactive)
-        level_clear(model, args.agent)
-        sys.exit(agent_setup.run(args.agent, model, base_api, workspace, config_only=args.agent_config_only,
-                                 continue_local=args.continue_local, resume_from=args.resume_from,
-                                 copy_settings=args.copy_user_settings, find_transcript=finder))
+def _handle_agent(args, model, base_api, interactive):
+    """Configure external coding agent (--agent pi/opencode/codex/claude) and hand over."""
+    if args.agent == "shell":
+        return
+    check_or_update_memory()
+    import agent_setup
+    try:
+        workspace = agent_setup.resolve_workspace(args.workspace, os.getcwd(), PROJECT_DIR)
+    except agent_setup.AgentSetupError as e:
+        print(f"\n[agent setup] {e}")
+        sys.exit(e.code)
+    finder = None
+    if args.resume_from:
+        import handoff
+
+        def finder(ident):
+            try:
+                return handoff.find_transcript(ident, handoff.repo_root(workspace))
+            except handoff.HandoffError as e:
+                raise agent_setup.AgentSetupError(str(e))
+    stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
+    context_check(interactive=interactive)
+    level_clear(model, args.agent)
+    sys.exit(agent_setup.run(args.agent, model, base_api, workspace, config_only=args.agent_config_only,
+                             continue_local=args.continue_local, resume_from=args.resume_from,
+                             copy_settings=args.copy_user_settings, find_transcript=finder))
+
+
+def _main(argv=None):
+    raw = sys.argv[1:] if argv is None else list(argv)
+    if raw and raw[0] == "handoff":  # `python run.py handoff ...`: stdlib only, no venv, no Ollama
+        import handoff
+        sys.exit(handoff.main(raw[1:]))
+    args = parse_args(argv)  # before bootstrap_venv: --help / bad flags must not touch pip
+    _PLAIN["on"] = bool(args.plain)
+    if _dispatch_simple(args):
+        return
+    print_header()
+
+    # Step 1: Self-bootstrap inside venv if running in system Python
+    if not is_in_venv():
+        bootstrap_venv()
+        return
+
+    # --serve: web UI + API on a free port. Needs no Ollama (memory falls back to pure Python).
+    if _run_serve(args):
+        return
+
+    # Step 2: Ensure Ollama is running
+    base_api, ollama_host, backend, interactive = _setup_backend(args)
+
+    # Step 3: Check local inventory & auto-select most capable model
+    model = _pick_model(args, base_api, ollama_host, backend, interactive)
+
+    # Step 3.2: --agent pi/opencode/codex/claude: configure that agent for this model and hand over
+    _handle_agent(args, model, base_api, interactive)
 
     # Step 3.5: Auto-index memory fabric
     check_or_update_memory()

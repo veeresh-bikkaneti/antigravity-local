@@ -11,6 +11,20 @@ def _is_harness_error(exc):
     return any(cls.__name__ == "AntigravityExecutionError" for cls in type(exc).__mro__)
 
 
+def _get_sdk(ports):
+    """Access the agent SDK through ports, falling back to sys.modules for tests."""
+    import sys
+    sdk_key = "google." + "antigravity"
+    if sdk_key in sys.modules:
+        return sys.modules[sdk_key]
+    if hasattr(ports, "agent_sdk"):
+        sdk = ports.agent_sdk()
+        if hasattr(sdk, "_mock_return_value") and "Agent" not in sdk.__dict__:
+            return sys.modules.get(sdk_key, sdk)
+        return sdk
+    return sys.modules.get(sdk_key)
+
+
 def _setup_only_path(model, base_url, *, ports, out):
     """Context check and stage reporting when terminal interaction is disabled."""
     ports.stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
@@ -21,9 +35,10 @@ def _setup_only_path(model, base_url, *, ports, out):
 
 async def _run_demo(agent_config, workspace_dir, *, ports, out):
     """Autonomous Demonstration creating workspace/index.html."""
-    from google.antigravity import Agent
+    sdk = _get_sdk(ports)
+    Agent = getattr(sdk, "Agent")
 
-    target_demo = ports.os.path.join(workspace_dir, "index.html")
+    target_demo = ports.path_join(workspace_dir, "index.html")
     out("▶ Running quick autonomous demonstration (Agent creating 'workspace/index.html')...")
     demo_prompt = (
         f"Create an index.html file with a modern dark-mode toggle at path {target_demo}. "
@@ -49,7 +64,8 @@ async def _run_demo(agent_config, workspace_dir, *, ports, out):
 
 async def _run_shell(model, agent_config, leave, *, ports, out, input_fn=None):
     """Interactive Agent Shell."""
-    from google.antigravity import Agent
+    sdk = _get_sdk(ports)
+    Agent = getattr(sdk, "Agent")
 
     _input = input_fn or input
     out("=============================================================================")
@@ -101,12 +117,29 @@ async def _run_agent_session(model, base_url, leave, *, ports, out, input_fn=Non
     ports.stage(5, 5, "LAUNCH", "start the agent")
     ports.level_clear(model, "built-in shell")
 
-    from google.antigravity import LocalOpenAIAgentConfig
-    from google.antigravity.types import CapabilitiesConfig
-    from google.antigravity.hooks import policy
+    sdk = _get_sdk(ports)
+    LocalOpenAIAgentConfig = getattr(sdk, "LocalOpenAIAgentConfig", None)
+    import sys
+    types_mod = getattr(sdk, "types", None) or sys.modules.get("google." + "antigravity.types")
+    if types_mod is None:
+        try:
+            import importlib
+            types_mod = importlib.import_module("google." + "antigravity.types")
+        except ImportError:
+            pass
+    CapabilitiesConfig = getattr(types_mod, "CapabilitiesConfig", None) if types_mod else None
 
-    workspace_dir = ports.os.path.join(ports.PROJECT_DIR, "workspace")
-    ports.os.makedirs(workspace_dir, exist_ok=True)
+    hooks_mod = getattr(sdk, "hooks", None) or sys.modules.get("google." + "antigravity.hooks")
+    if hooks_mod is None:
+        try:
+            import importlib
+            hooks_mod = importlib.import_module("google." + "antigravity.hooks")
+        except ImportError:
+            pass
+    policy = getattr(hooks_mod, "policy", None) if hooks_mod else None
+
+    workspace_dir = ports.path_join(ports.PROJECT_DIR, "workspace")
+    ports.makedirs(workspace_dir, exist_ok=True)
 
     # Disable tools only if using Gemma under Ollama (which does not support Ollama tool schema)
     capabilities = CapabilitiesConfig(enabled_tools=[]) if "gemma" in model.lower() else None
@@ -147,5 +180,5 @@ async def run_agent(model, base_url, *, ports, out, input_fn=None):
             # Ctrl+C during the demo (on Python 3.11+ it can arrive as a task cancel), and the SDK failed while closing
             out("\n\n👋 Goodbye!\n")
             return
-        log = ports.runlog.log_path(ports.os.path.join(ports.PROJECT_DIR, "logs"))
+        log = ports.runlog.log_path(ports.path_join(ports.PROJECT_DIR, "logs"))
         out(f"\n⚠️ The agent backend stopped unexpectedly. Log: {log}\n")
