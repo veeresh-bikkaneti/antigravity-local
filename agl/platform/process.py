@@ -30,3 +30,8 @@ def check_output(cmd, **kwargs):
 def popen(cmd, **kwargs):
     """A detached child: `ollama serve`, with Windows creationflags or POSIX start_new_session."""
     return subprocess.Popen(cmd, **kwargs)
+
+
+def run(cmd, **kwargs):
+    """A command we read the exit code and output of (memory.py's graphify sync)."""
+    return subprocess.run(cmd, **kwargs)

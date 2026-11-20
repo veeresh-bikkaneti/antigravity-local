@@ -10,19 +10,12 @@ Zero external dependencies: runs on pure Python standard library.
 import os
 import sys
 import time
-import re
 import json
-import math
-import zlib
-import contextlib
-import sqlite3
 import argparse
-import subprocess
-import urllib.request
-import urllib.error
 from pathlib import Path
 
-from agl.platform import config
+from agl.platform import config, embeddings, memory_store, process
+from agl.core import memory as core_memory
 
 # Windows console UTF-8 safety
 if sys.platform == "win32":
@@ -63,171 +56,28 @@ CATEGORY_BOOSTS = {
 # 1. Embedding Provider: Local Ollama with Pure Python Fallback
 # ==============================================================================
 
-class EmbeddingProvider:
-    """Provides vector embeddings via local Ollama or pure-Python TF-IDF fallback."""
-
-    def __init__(self, base_url: str = OLLAMA_API_BASE):
-        self.base_url = base_url.rstrip("/")
-        self.ollama_model = self._detect_ollama_embedding_model()
-        self.mode = f"ollama ({self.ollama_model})" if self.ollama_model else "pure_python_tfidf"
-        self.fell_back = False  # set when an Ollama call failed and a fallback vector was returned
-
-    def _detect_ollama_embedding_model(self) -> str | None:
-        """Check if Ollama has a known embedding model installed."""
-        if os.getenv("LOCAL_LLM_BACKEND") == "openai":
-            return None  # run.py found a non-Ollama server: there is no /api/tags to ask, so use the built-in vectors quietly
-        try:
-            req = urllib.request.Request(f"{self.base_url}/api/tags", headers={"User-Agent": "antigravity-memory"})
-            with urllib.request.urlopen(req, timeout=1.5) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                models = [m.get("name", "") for m in data.get("models", [])]
-                # Look for common embedding models
-                candidates = ["nomic-embed-text", "all-minilm", "bge-m3", "bge-small", "snowflake-arctic-embed"]
-                for cand in candidates:
-                    for m in models:
-                        if cand in m:
-                            return m
-        except Exception:
-            pass
-        return None
-
-    def embed_text(self, text: str) -> list[float]:
-        """Generate embedding vector for text."""
-        if self.ollama_model:
-            try:
-                payload = json.dumps({"model": self.ollama_model, "prompt": text[:2000]}).encode("utf-8")
-                req = urllib.request.Request(
-                    f"{self.base_url}/api/embeddings",
-                    data=payload,
-                    headers={"Content-Type": "application/json"}
-                )
-                with urllib.request.urlopen(req, timeout=5) as resp:
-                    data = json.loads(resp.read().decode("utf-8"))
-                    emb = data.get("embedding")
-                    if emb and isinstance(emb, list):
-                        return emb
-            except Exception:
-                pass
-            self.fell_back = True
-
-        # Fallback to pure Python feature vectorizer
-        return self._pure_python_embed(text)
-
-    def _pure_python_embed(self, text: str, dimensions: int = 128) -> list[float]:
-        """Deterministic, lightweight 128-dim hashing vectorizer with L2 normalization."""
-        words = re.findall(r"\w+", text.lower())
-        if not words:
-            return [0.0] * dimensions
-
-        vec = [0.0] * dimensions
-        for word in words:
-            # Word hash
-            h = zlib.crc32(word.encode())  # stable across processes (builtin hash() is salted)
-            idx = h % dimensions
-            sign = 1.0 if (h >> 3) & 1 else -1.0
-            vec[idx] += sign
-
-            # Character 3-gram hashing for subword matching
-            if len(word) >= 3:
-                for i in range(len(word) - 2):
-                    trigram = word[i:i+3]
-                    th = zlib.crc32(trigram.encode())
-                    tidx = th % dimensions
-                    tsign = 1.0 if (th >> 2) & 1 else -1.0
-                    vec[tidx] += 0.5 * tsign
-
-        # L2 normalize
-        norm = math.sqrt(sum(v * v for v in vec))
-        if norm > 1e-9:
-            vec = [v / norm for v in vec]
-        return vec
+class EmbeddingProvider(embeddings.EmbeddingProvider):
+    # moved, shim until Phase 6: the class lives in agl.platform.embeddings; the default is
+    # this module's OLLAMA_API_BASE, looked up at call time so nothing is frozen.
+    def __init__(self, base_url=None):
+        super().__init__(base_url if base_url is not None else OLLAMA_API_BASE)
 
 
 def cosine_similarity(v1: list[float], v2: list[float]) -> float:
     """Compute cosine similarity between two unit vectors."""
-    if not v1 or not v2 or len(v1) != len(v2):
-        return 0.0
-    return sum(a * b for a, b in zip(v1, v2))
+    # moved, shim until Phase 6
+    return core_memory.cosine_similarity(v1, v2)
 
 
 # ==============================================================================
 # 2. Database & Schema Management
 # ==============================================================================
 
-class MemoryDatabase:
-    """Manages SQLite tables and FTS5 virtual indices."""
-
-    def __init__(self, db_path: Path | None = None):
-        self.db_path = db_path or DB_PATH  # looked up at call time so tests/tools can repoint DB_PATH
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self._init_schema()
-
-    @contextlib.contextmanager
-    def get_connection(self):
-        """Yield a connection: commit on success, roll back on error, always close."""
-        conn = sqlite3.connect(str(self.db_path), timeout=30)
-        try:
-            conn.row_factory = sqlite3.Row
-            conn.execute("PRAGMA busy_timeout = 30000;")
-            if conn.execute("PRAGMA journal_mode;").fetchone()[0] != "wal":  # sticky once set
-                try:
-                    conn.execute("PRAGMA journal_mode = WAL;")
-                except sqlite3.OperationalError:  # another process is switching it; rollback mode still works
-                    pass
-            conn.execute("PRAGMA foreign_keys = ON;")
-            yield conn
-            conn.commit()
-        except BaseException:
-            conn.rollback()
-            raise
-        finally:
-            conn.close()
-
-    def _init_schema(self):
-        with self.get_connection() as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS documents (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    path TEXT UNIQUE NOT NULL,
-                    title TEXT NOT NULL,
-                    category TEXT NOT NULL,
-                    mtime REAL NOT NULL,
-                    chunk_count INTEGER NOT NULL,
-                    indexed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    embed_mode TEXT
-                );
-            """)
-            # Migrate pre-embed_mode DBs. NULL = unknown backend = re-embedded on next index.
-            cols = [r["name"] for r in conn.execute("PRAGMA table_info(documents)")]
-            if "embed_mode" not in cols:
-                try:
-                    conn.execute("ALTER TABLE documents ADD COLUMN embed_mode TEXT")
-                except sqlite3.OperationalError as e:  # another process migrated first
-                    if "duplicate column" not in str(e):
-                        raise
-
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS chunks (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    doc_id INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-                    chunk_index INTEGER NOT NULL,
-                    start_line INTEGER NOT NULL,
-                    end_line INTEGER NOT NULL,
-                    content TEXT NOT NULL,
-                    embedding TEXT
-                );
-            """)
-
-            # FTS5 virtual table for lexical BM25 matching
-            conn.execute("""
-                CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5(
-                    content,
-                    doc_id UNINDEXED,
-                    chunk_id UNINDEXED,
-                    tokenize = 'porter unicode61'
-                );
-            """)
-            conn.commit()
+class MemoryDatabase(memory_store.MemoryDatabase):
+    # moved, shim until Phase 6: connection and schema live in agl.platform.memory_store;
+    # DB_PATH is looked up at call time so tests and tools can repoint it.
+    def __init__(self, db_path=None):
+        super().__init__(db_path if db_path is not None else DB_PATH)
 
 
 # ==============================================================================
@@ -278,30 +128,8 @@ class MemoryIndexer:
     @staticmethod
     def _split_oversize(lines: list[str], start_line: int) -> list[dict]:
         """Cut a section into pieces <= MAX_CHUNK_CHARS, preferring blank-line (paragraph) breaks."""
-        # Hard cap: a single giant line is sliced.
-        pieces = []  # (line_no, text)
-        for n, ln in enumerate(lines, start=start_line):
-            for i in range(0, max(len(ln), 1), MAX_CHUNK_CHARS):
-                pieces.append((n, ln[i:i + MAX_CHUNK_CHARS]))
-        out, buf = [], []
-
-        def flush(items):
-            text = "\n".join(t for _, t in items).strip()
-            if text:
-                out.append({"start_line": items[0][0], "end_line": items[-1][0], "content": text})
-
-        size = 0
-        for item in pieces:
-            if buf and size + len(item[1]) + 1 > MAX_CHUNK_CHARS:
-                cut = next((i for i in range(len(buf) - 1, 0, -1) if not buf[i][1].strip()), None)
-                head, buf = (buf[:cut], buf[cut:]) if cut else (buf, [])
-                flush(head)
-                size = sum(len(t) + 1 for _, t in buf)
-            buf.append(item)
-            size += len(item[1]) + 1
-        if buf:
-            flush(buf)
-        return out
+        # moved, shim until Phase 6
+        return core_memory._split_oversize(lines, start_line, MAX_CHUNK_CHARS)
 
     def chunk_file(self, path: Path) -> list[dict]:
         """Split a file into semantically meaningful chunks with line bounds."""
@@ -456,11 +284,7 @@ class MemorySearcher:
 
     def _sanitize_fts_query(self, query: str) -> str:
         """Strip punctuation and format query tokens for safe SQLite FTS5 matching."""
-        tokens = re.findall(r"\w+", query)
-        if not tokens:
-            return ""
-        # Match tokens using prefix or exact matching
-        return " OR ".join(f'"{t}"' for t in tokens)
+        return core_memory._sanitize_fts_query(query)
 
     def search(self, query: str, limit: int = 5) -> list[dict]:
         """Perform hybrid search and return top-K scored chunks."""
@@ -604,7 +428,7 @@ def _run_index(force: bool, embedder) -> dict:
     """Index; if the DB file is corrupt, move it aside to .bak and rebuild from scratch."""
     try:
         return MemoryIndexer(MemoryDatabase(), embedder).index_all(force=force)
-    except sqlite3.DatabaseError as e:
+    except memory_store.DatabaseError as e:
         msg = str(e).lower()
         if "malformed" not in msg and "not a database" not in msg:
             raise  # locked, disk I/O, read-only and similar are not corruption
@@ -621,13 +445,8 @@ def _run_index(force: bool, embedder) -> dict:
 
 
 def _positive_limit(value: str) -> int:
-    try:
-        n = int(value)
-    except ValueError:
-        raise argparse.ArgumentTypeError(f"limit must be an integer, got {value!r}")
-    if n < 1:
-        raise argparse.ArgumentTypeError("limit must be >= 1")
-    return min(n, MAX_LIMIT)
+    # moved, shim until Phase 6
+    return core_memory._positive_limit(value, MAX_LIMIT)
 
 
 def _need_index() -> bool:
@@ -655,7 +474,7 @@ def cmd_search(args):
     try:
         searcher = MemorySearcher(MemoryDatabase(), embedder)
         results = searcher.search(args.query, limit=args.limit)
-    except sqlite3.DatabaseError as e:
+    except memory_store.DatabaseError as e:
         print(f"Memory index is unreadable ({e}). {REINDEX_HINT}", file=sys.stderr)
         sys.exit(1)
 
@@ -702,7 +521,7 @@ def cmd_status(args):
 
     try:
         _print_status(MemoryDatabase())
-    except sqlite3.DatabaseError as e:
+    except memory_store.DatabaseError as e:
         print(f"Memory index is unreadable ({e}). {REINDEX_HINT}", file=sys.stderr)
         sys.exit(1)
 
@@ -776,7 +595,7 @@ def cmd_sync(args):
 
     # 2. Run graphify update if installed
     try:
-        proc = subprocess.run(["graphify", "update", "."], capture_output=True, text=True)
+        proc = process.run(["graphify", "update", "."], capture_output=True, text=True)
         if proc.returncode == 0:
             print("[+] Graphify AST Knowledge Graph updated successfully.")
         else:
