@@ -15,7 +15,6 @@ HEADER_TEXT = """
 """
 
 _PLAIN = {"on": False}
-_WARNED = set()
 
 
 def set_plain(val: bool) -> None:
@@ -100,11 +99,15 @@ def level_clear(model, agent, ready=None, *, ports=None, out=print) -> None:
 
 def context_check(interactive, ask=None, *, ports=None, out=print) -> None:
     """Stage 4: say once if the server's context window is too small for coding agents."""
-    agent_setup = getattr(ports, "agent_setup", None) if ports else None
-    if agent_setup is None:
+    if ports is not None and hasattr(ports, "agent_setup"):
+        agent_setup = ports.agent_setup
+    else:
         agent_setup = sys.modules.get("agent_setup")
     check = getattr(agent_setup, "claude_context", None) if agent_setup else None
     if check is None:
+        return
+    env_get = ports.environ_get if (ports and hasattr(ports, "environ_get")) else os.environ.get
+    if env_get("LOCAL_LLM_BACKEND") == "openai":
         return
     env = ports.environ_copy() if (ports and hasattr(ports, "environ_copy")) else dict(os.environ)
     if env.get("LOCAL_LLM_BACKEND") == "openai":
@@ -127,10 +130,3 @@ def print_header(*, ports=None, out=print) -> None:
     if env_get(HEADER_FLAG) == "1":
         return
     out(HEADER_TEXT)
-
-
-def warn_once(key, text, *, out=print) -> None:
-    """Print a warning line at most once per run."""
-    if key not in _WARNED:
-        _WARNED.add(key)
-        out(f"       Warning: {text}")

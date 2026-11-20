@@ -481,13 +481,12 @@ def update_env_model(model_name: str):
     if exc is not None:
         print(f"Couldn't update .env: {exc}")  # the model still runs; only the saved default is lost
 
-_WARNED = set()
+_WARNED = pick_menu._WARNED
 
 
-def _warn_once(key, text):
-    """Print a warning line at most once per run, so a flaky connection does not spam the screen."""
-    # moved, shim until Phase 6
-    return banner.warn_once(key, text, out=_out)
+# moved, shim until Phase 6
+def _warn_once(key, text, *, out=None):
+    return pick_menu._warn_once(key, text, out=out or _out)
 
 
 def get_installed_details(base_url=config.OLLAMA_BASE_URL):
