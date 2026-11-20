@@ -11,8 +11,11 @@ from typing import Any, Protocol, runtime_checkable
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import agl.core.ports as ports  # noqa: E402
 from agl.platform import hub  # noqa: E402
+from agl.platform import hardware as platform_hardware  # noqa: E402
 from agl.platform import ollama as ollama_platform  # noqa: E402
+from agl.platform import process  # noqa: E402
 from agl.platform import registry  # noqa: E402
+from agl.platform import state  # noqa: E402
 
 
 @runtime_checkable
@@ -75,6 +78,69 @@ class RegistryAdapter(unittest.TestCase):
         self.assertTrue(callable(registry.tag_exists))
         self.assertTrue(callable(registry.registry_reachable))
         self.assertTrue(callable(registry.ollama_registry_size))
+
+
+@runtime_checkable
+class _ProcessRunner(ports.ProcessRunner, Protocol):
+    """The ProcessRunner port, made runtime-checkable so the adapter can be asserted against it, no process spawned."""
+
+
+class _ProcessAdapter:
+    """agl.platform.process behind the ProcessRunner shape: the module functions, held as static methods."""
+
+    check_call = staticmethod(process.check_call)
+    call = staticmethod(process.call)
+    check_output = staticmethod(process.check_output)
+    popen = staticmethod(process.popen)
+
+
+@runtime_checkable
+class _StateStore(ports.StateStore, Protocol):
+    """The StateStore port, made runtime-checkable so the adapter can be asserted against it, no file touched."""
+
+
+class _StateAdapter:
+    """agl.platform.state behind the StateStore shape: the module functions, held as static methods."""
+
+    load_env = staticmethod(state.load_env)
+    update_env_model = staticmethod(state.update_env_model)
+    read_upgrade_state = staticmethod(state.read_upgrade_state)
+    remember_upgrade_stay = staticmethod(state.remember_upgrade_stay)
+    append = staticmethod(state.append)
+    read = staticmethod(state.read)
+
+
+@runtime_checkable
+class _HardwareProbe(ports.HardwareProbe, Protocol):
+    """The HardwareProbe port, made runtime-checkable so the adapter can be asserted against it, no probe run."""
+
+
+class _HardwareAdapter:
+    """agl.platform.hardware behind the HardwareProbe shape: all eight moved functions, held as static methods."""
+
+    get_system_ram_gb = staticmethod(platform_hardware.get_system_ram_gb)
+    _nvidia_rows = staticmethod(platform_hardware._nvidia_rows)
+    get_hardware_profile = staticmethod(platform_hardware.get_hardware_profile)
+    get_free_ram_gb = staticmethod(platform_hardware.get_free_ram_gb)
+    get_free_vram_gb = staticmethod(platform_hardware.get_free_vram_gb)
+    ollama_models_dir = staticmethod(platform_hardware.ollama_models_dir)
+    free_disk_gb = staticmethod(platform_hardware.free_disk_gb)
+    free_resources = staticmethod(platform_hardware.free_resources)
+
+
+class ProcessPort(unittest.TestCase):
+    def test_the_process_adapter_satisfies_the_port(self):
+        self.assertIsInstance(_ProcessAdapter(), _ProcessRunner)
+
+
+class StatePort(unittest.TestCase):
+    def test_the_state_adapter_satisfies_the_port(self):
+        self.assertIsInstance(_StateAdapter(), _StateStore)
+
+
+class HardwarePort(unittest.TestCase):
+    def test_the_hardware_adapter_satisfies_the_port(self):
+        self.assertIsInstance(_HardwareAdapter(), _HardwareProbe)
 
 
 if __name__ == "__main__":

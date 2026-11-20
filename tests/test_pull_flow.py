@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 import run  # noqa: E402
+from agl.platform import process  # noqa: E402
 from test_run import OLLAMA_TAGS, _Server, _Tty, free_of  # noqa: E402
 
 HW = {"ram_gb": 128.0, "vram_gb": 16.0, "gpu_name": "RTX"}
@@ -38,7 +39,7 @@ class NeverDownloads(unittest.TestCase):
                 mock.patch.object(run, "get_ledger_entries", return_value=[]),
                 mock.patch.object(run, "get_media_rows", return_value=[]),
                 mock.patch.object(run, "get_installed_ollama_models", return_value=set(installed)),
-                mock.patch.object(run.subprocess, "check_call", side_effect=lambda c: pulls.append(c)),
+                mock.patch.object(process.subprocess, "check_call", side_effect=lambda c: pulls.append(c)),
                 mock.patch.object(run, "check_or_update_memory"),
                 mock.patch.object(run, "run_agent"),
                 mock.patch.object(run.sys, "stdin", stdin),
@@ -107,7 +108,7 @@ class OllamaServe(unittest.TestCase):
         with mock.patch.dict(run.os.environ, env or {}), \
                 mock.patch.object(urllib.request, "urlopen", fake_urlopen), \
                 mock.patch.object(run.shutil, "which", return_value="ollama"), \
-                mock.patch.object(run.subprocess, "Popen", side_effect=fake_popen), \
+                mock.patch.object(process.subprocess, "Popen", side_effect=fake_popen), \
                 mock.patch.object(run.time, "sleep"), contextlib.redirect_stdout(out):
             run.os.environ.pop("OLLAMA_HOST", None) if env is None else None
             ok = run.check_ollama_service()

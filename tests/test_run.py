@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import model_wizard  # noqa: E402
 import run  # noqa: E402
+from agl.platform import process  # noqa: E402
 
 
 os.environ["ANTIGRAVITY_NO_RUN_LOG"] = "1"  # tests must not write into the real logs/ folder
@@ -100,13 +101,13 @@ class ModelMatching(unittest.TestCase):
         out = "NAME ID\nqwen2.5-coder:14b abc\n"
         with mock.patch.object(urllib.request, "urlopen", side_effect=OSError), \
                 mock.patch.object(run.shutil, "which", return_value="ollama"), \
-                mock.patch.object(run.subprocess, "check_output", return_value=out):
+                mock.patch.object(process.subprocess, "check_output", return_value=out):
             self.assertEqual(run.get_installed_ollama_models(), {"qwen2.5-coder:14b"})
 
 
 class Hardware(unittest.TestCase):
     def test_ram_detection_failure_is_not_invented(self):
-        with mock.patch.object(run.subprocess, "check_output", side_effect=OSError), \
+        with mock.patch.object(process.subprocess, "check_output", side_effect=OSError), \
                 mock.patch("builtins.open", side_effect=OSError):
             self.assertEqual(run.get_system_ram_gb(), 0.0)
 
@@ -119,7 +120,7 @@ class Hardware(unittest.TestCase):
                 mock.patch.object(run, "get_ledger_entries", return_value=[]), \
                 mock.patch.object(run, "get_media_rows", return_value=[]), \
                 mock.patch.object(run, "get_installed_ollama_models", return_value=set()), \
-                mock.patch.object(run.subprocess, "check_call", side_effect=lambda c: calls.append(c)), \
+                mock.patch.object(process.subprocess, "check_call", side_effect=lambda c: calls.append(c)), \
                 mock.patch("builtins.input", side_effect=["", "y"]), \
                 contextlib.redirect_stdout(io.StringIO()):
             # Enter at the model menu keeps llama3.2:3b, then "y" answers "Download? [y/N]"
@@ -172,7 +173,7 @@ class ModelWizardInRun(unittest.TestCase):
                 mock.patch.object(run.model_wizard, "hf_tree_files", return_value=list(hf_files)), \
                 mock.patch.object(run, "get_installed_ollama_models", return_value=set(installed)), \
                 mock.patch.object(run.model_wizard, "tag_exists", return_value=registry), \
-                mock.patch.object(run.subprocess, "check_call", side_effect=fake_pull), \
+                mock.patch.object(process.subprocess, "check_call", side_effect=fake_pull), \
                 mock.patch("builtins.input", side_effect=ask), \
                 contextlib.redirect_stdout(out):
             if env_text is not None:
@@ -351,7 +352,7 @@ class ModelWizardInRun(unittest.TestCase):
         missing = {"status": "missing", "gated": False, "license": None}
         with mock.patch.object(run.model_wizard, "hf_repo_info", return_value=missing), \
                 mock.patch("builtins.input", side_effect=AssertionError("must not ask for a repo that is not there")), \
-                mock.patch.object(run.subprocess, "check_call", side_effect=AssertionError("must not pull")), \
+                mock.patch.object(process.subprocess, "check_call", side_effect=AssertionError("must not pull")), \
                 contextlib.redirect_stdout(io.StringIO()) as shown:
             got = run._pull_with_gate("hf.co/nobody/nothing", True, self.HW, free_of(self.HW))
         self.assertIsNone(got)
@@ -368,7 +369,7 @@ class ModelWizardInRun(unittest.TestCase):
         info = {"status": "ok", "gated": True, "license": "llama3"}
         with mock.patch.object(run.model_wizard, "hf_repo_info", return_value=info), \
                 mock.patch("builtins.input", side_effect=AssertionError("must not ask for a gated repo")), \
-                mock.patch.object(run.subprocess, "check_call", side_effect=AssertionError("must not pull")), \
+                mock.patch.object(process.subprocess, "check_call", side_effect=AssertionError("must not pull")), \
                 contextlib.redirect_stdout(plan_out):
             got = run._pull_with_gate("hf.co/meta/llama", True, self.HW, free_of(self.HW))
         self.assertIsNone(got)
@@ -478,7 +479,7 @@ class ModelWizardInRun(unittest.TestCase):
                 mock.patch.object(run, "get_media_rows", return_value=[]), \
                 mock.patch.object(run, "get_installed_ollama_models", return_value=set()), \
                 mock.patch.object(run.model_wizard, "tag_exists", return_value=True), \
-                mock.patch.object(run.subprocess, "check_call", side_effect=lambda c: pulls.append(c)), \
+                mock.patch.object(process.subprocess, "check_call", side_effect=lambda c: pulls.append(c)), \
                 mock.patch.object(run.sys, "stdin", _Tty()), \
                 mock.patch.object(run.sys, "stdout", out), \
                 mock.patch("builtins.input", side_effect=ctrl_c):
@@ -580,7 +581,7 @@ class AnyBackend(unittest.TestCase):
 
     def test_openai_server_runs_without_touching_ollama_and_downloads_nothing(self):
         boom = AssertionError("Ollama must not be touched on an OpenAI-compatible server")
-        with mock.patch.object(run.subprocess, "check_call") as pull, mock.patch.object(run.subprocess, "Popen") as start, \
+        with mock.patch.object(process.subprocess, "check_call") as pull, mock.patch.object(process.subprocess, "Popen") as start, \
                 mock.patch.object(run.shutil, "which") as find, mock.patch.object(run, "get_hardware_profile") as hw:
             code, text, ran = self.main_with(LM, {LM + "/models": LM_MODELS}, check_ollama_service=boom)
         for call in (pull, start, find, hw):  # no `ollama pull`, no `ollama serve`, no PATH hunt, no hardware probe
@@ -597,7 +598,7 @@ class AnyBackend(unittest.TestCase):
 
     def test_requested_model_the_server_does_not_have_exits_1_instead_of_downloading(self):
         boom = AssertionError("never download")
-        with mock.patch.object(run.subprocess, "check_call", side_effect=boom):
+        with mock.patch.object(process.subprocess, "check_call", side_effect=boom):
             code, text, _ = self.main_with(LM, {LM + "/models": LM_MODELS}, argv=("--yes", "llama3:8b"))
         self.assertEqual(code, 1)
         self.assertIn("is not loaded on this server", text)
@@ -675,7 +676,7 @@ class PullFailure(unittest.TestCase):
                 mock.patch.object(run, "get_ledger_entries", return_value=[]), \
                 mock.patch.object(run, "get_media_rows", return_value=[]), \
                 mock.patch.object(run, "get_installed_ollama_models", return_value=set()), \
-                mock.patch.object(run.subprocess, "check_call", side_effect=OSError("boom")), \
+                mock.patch.object(process.subprocess, "check_call", side_effect=OSError("boom")), \
                 contextlib.redirect_stdout(io.StringIO()):
             self.assertIsNone(run.select_and_pull_model())
         with mock.patch.object(run, "is_in_venv", return_value=True), \
@@ -822,7 +823,7 @@ class CheckUpgradesCommand(unittest.TestCase):
         return cm.exception.code, out.getvalue()
 
     def test_prints_the_better_fitting_models_and_exits_0_without_pulling(self):
-        with mock.patch.object(run.subprocess, "check_call", side_effect=AssertionError("must not pull")):
+        with mock.patch.object(process.subprocess, "check_call", side_effect=AssertionError("must not pull")):
             code, text = self.run_cmd({"llama3.2:3b"})
         self.assertEqual(code, 0)
         self.assertIn("Best installed model: llama3.2:3b", text)
