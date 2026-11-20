@@ -4,6 +4,7 @@ import "@fontsource/atkinson-hyperlegible-next/700.css";
 import "./styles.css";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { STEPS } from "./steps.js";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -148,8 +149,9 @@ dimWhile("#faq", "top 85%");
 /* ---- hero hologram controls + stack readout: the buttons drive the scene
    directly, in place - they never scroll the page. Page scroll still syncs
    the hologram through the triggers above; the two share the scene's goTo. ---- */
-const LAYER_SHORT = ["Ollama", "Qwen model", "Repo · run.bat", "Coding app", ".venv terminal", "Agent", "One job · Gate", "Editor"];
-const LAYER_NAMES = ["Install Ollama", "Choose a model", "Clone the repo and run setup", "Use your model in a coding app", "Activate the virtual environment", "Chat with your agent", "Give it one job", "Use it from your editor or the browser"];
+// Layer labels come from steps.js - the one source of truth for the guide steps.
+const LAYER_SHORT = STEPS.map((s) => s.short);
+const LAYER_NAMES = STEPS.map((s) => s.name);
 const stackList = $("#stack-list");
 const stackCount = $("#stack-count");
 const stackJust = $("#stack-just");
