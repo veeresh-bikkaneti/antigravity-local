@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from agl.platform import http  # noqa: E402
 import memory  # noqa: E402
 
 DEAD_OLLAMA = "http://127.0.0.1:9"
@@ -20,7 +21,7 @@ class NonOllamaBackend(unittest.TestCase):
         from unittest import mock
         out = io.StringIO()
         with mock.patch.dict(memory.os.environ, {"LOCAL_LLM_BACKEND": "openai"}), \
-                mock.patch.object(memory.urllib.request, "urlopen", side_effect=OSError("down")) as probe, \
+                mock.patch.object(http.urllib.request, "urlopen", side_effect=OSError("down")) as probe, \
                 contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
             emb = memory.EmbeddingProvider("http://127.0.0.1:1234")
         probe.assert_not_called()  # the probe swallows its own errors, so "never called" is the only honest check
@@ -31,7 +32,7 @@ class NonOllamaBackend(unittest.TestCase):
     def test_without_the_marker_the_probe_still_runs(self):
         from unittest import mock
         with mock.patch.dict(memory.os.environ, {}, clear=False), \
-                mock.patch.object(memory.urllib.request, "urlopen", side_effect=OSError("down")) as call:
+                mock.patch.object(http.urllib.request, "urlopen", side_effect=OSError("down")) as call:
             memory.os.environ.pop("LOCAL_LLM_BACKEND", None)
             memory.EmbeddingProvider(DEAD_OLLAMA)
         self.assertTrue(call.called)
