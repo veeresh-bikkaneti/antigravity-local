@@ -1,6 +1,7 @@
 """
 agl/platform/memory_store.py - the SQLite adapter: the memory store's connection and
-schema, moved out of memory.py in Phase 6a. The db path is always passed in.
+schema, moved out of memory.py in Phase 6a, and the search queries, moved in Phase 6b.
+The db path is always passed in.
 """
 import contextlib
 import sqlite3
@@ -82,3 +83,44 @@ class MemoryDatabase:
                 );
             """)
             conn.commit()
+
+    @staticmethod
+    def fts_candidates(conn, fts_query, limit):
+        """BM25 lexical hits for a sanitized FTS query, best first (the search path's half 1)."""
+        return conn.execute("""
+            SELECT 
+                c.id AS chunk_id,
+                c.doc_id,
+                c.start_line,
+                c.end_line,
+                c.content,
+                d.path,
+                d.title,
+                d.category,
+                bm25(chunks_fts) AS bm25_rank
+            FROM chunks_fts f
+            JOIN chunks c ON f.chunk_id = c.id
+            JOIN documents d ON c.doc_id = d.id
+            WHERE chunks_fts MATCH ?
+            ORDER BY bm25_rank ASC
+            LIMIT ?;
+        """, (fts_query, limit)).fetchall()
+
+    @staticmethod
+    def vector_chunks(conn, embed_mode):
+        """Every chunk whose document was embedded by `embed_mode`, stored vector included (half 2)."""
+        return conn.execute("""
+            SELECT 
+                c.id AS chunk_id,
+                c.doc_id,
+                c.start_line,
+                c.end_line,
+                c.content,
+                c.embedding,
+                d.path,
+                d.title,
+                d.category
+            FROM chunks c
+            JOIN documents d ON c.doc_id = d.id
+            WHERE d.embed_mode = ?;
+        """, (embed_mode,)).fetchall()  # only compare vectors from the same backend
