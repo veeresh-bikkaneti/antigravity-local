@@ -9,7 +9,7 @@ import json
 import socket
 import time
 
-import model_wizard
+from agl.core import menu
 import userdata
 
 LEDGER_NAME = "ledger.jsonl"
@@ -22,8 +22,12 @@ def ledger_path(home=None, env=None):
     return userdata.data_dir(home, env) / LEDGER_NAME
 
 
-def _stamp(epoch):
+def _stamp_epoch(epoch):
+    """was _stamp: renamed so one name means one thing (runlog._stamp stamps a log line)."""
     return datetime.datetime.fromtimestamp(epoch, datetime.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+_stamp = _stamp_epoch  # renamed, shim until Phase 6: alias kept for callers and tests that use the old name
 
 
 def _epoch(stamp):
@@ -39,7 +43,7 @@ def append(model_ref, verdict, reason, *, runtime="ollama", harness="probe", evi
     if verdict not in VERDICTS:
         return False, f"Ledger not written: verdict must be pass or fail, not {verdict!r}."
     entry = {
-        "timestampUtc": _stamp(time.time() if now is None else now),
+        "timestampUtc": _stamp_epoch(time.time() if now is None else now),
         "host": host if host is not None else socket.gethostname(),
         "modelRef": str(model_ref),
         "runtime": runtime,
@@ -98,10 +102,10 @@ def read(home=None, env=None):
 
 
 def _latest(model_ref, entries):
-    want = model_wizard._norm(str(model_ref))
+    want = menu._norm(str(model_ref))
     found = None
     for item in entries or []:
-        if model_wizard._norm(item["modelRef"]) == want:
+        if menu._norm(item["modelRef"]) == want:
             found = item  # later lines win
     return found
 

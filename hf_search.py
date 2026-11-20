@@ -11,7 +11,7 @@ import time
 import urllib.error
 import urllib.parse
 
-import capabilities
+from agl.core import capabilities
 from agl.platform import http
 
 SEARCH_URL = "https://huggingface.co/api/models"
@@ -156,8 +156,9 @@ def search_url(query=None, pipeline_tag="text-generation", limit=20):
     return f"{SEARCH_URL}?{base}&" + "&".join(f"expand[]={name}" for name in EXPAND)
 
 
-def _text(value):
-    """The value if it is a string, else None. A list or dict in a text field is junk, not a name."""
+def _text_or_none(value):
+    """The value if it is a string, else None. A list or dict in a text field is junk, not a name.
+    was _text: renamed because model_wizard's _text means a stripped note (now _note_text)."""
     return value if isinstance(value, str) else None
 
 
@@ -168,11 +169,11 @@ def _count(value):
 
 def _result(row):
     gguf = row.get("gguf") if isinstance(row.get("gguf"), dict) else {}
-    pipeline = _text(row.get("pipeline_tag"))
+    pipeline = _text_or_none(row.get("pipeline_tag"))
     return {
-        "repo": _text(row.get("id")) or _text(row.get("modelId")) or "",
+        "repo": _text_or_none(row.get("id")) or _text_or_none(row.get("modelId")) or "",
         "downloads": _count(row.get("downloads")),
-        "last_modified": _text(row.get("lastModified")),
+        "last_modified": _text_or_none(row.get("lastModified")),
         "pipeline_tag": pipeline,
         "badges": capabilities.hf_badges(pipeline, gguf.get("chat_template")),
         "kind": capabilities.kind_from_hf(pipeline),

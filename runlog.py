@@ -14,8 +14,9 @@ import sys
 _ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 
 
-def _stamp(line):
-    """One log line: HH:MM:SS, then the text with colour codes removed. Blank lines stay blank."""
+def _stamp_line(line):
+    """One log line: HH:MM:SS, then the text with colour codes removed. Blank lines stay blank.
+    was _stamp: renamed so one name means one thing (ledger._stamp_epoch stamps an epoch)."""
     clean = _ANSI.sub("", line).rstrip("\r")
     if not clean.strip():
         return ""
@@ -34,7 +35,7 @@ class _Tee:
             self._partial += text
             while "\n" in self._partial:
                 line, self._partial = self._partial.split("\n", 1)
-                self._log.write(_stamp(line) + "\n")
+                self._log.write(_stamp_line(line) + "\n")
             self._log.flush()
         except Exception:
             pass  # the log is a courtesy; never break the run over it
@@ -43,7 +44,7 @@ class _Tee:
     def flush(self):
         try:
             if self._partial:  # a prompt with no newline (input()) still gets its line in the log
-                self._log.write(_stamp(self._partial) + "\n")
+                self._log.write(_stamp_line(self._partial) + "\n")
                 self._partial = ""
             self._log.flush()
         except Exception:

@@ -1,9 +1,24 @@
-"""Describe what a --task run changed in the workspace. Standard library only."""
+"""Describe what a --task run changed in the workspace. Standard library only.
+
+moved, shim until Phase 6: the pure report functions (summarize, deleted, render) now live at
+agl.core.task_report and are resolved on first use (not at import) -- a lone copy of this file beside
+a side script (code_agent.py and friends get one in their folder) keeps importing with the standard
+library only, and touches no package. The disk-touching parts below stay at the root until Phase 4.
+"""
 import hashlib
 import os
 
-
 HASH_CAP = 64 * 1024 * 1024  # ponytail: bigger files fall back to (size, mtime); fine for agent-written text
+
+_MOVED_TO_CORE = ("summarize", "deleted", "render")
+
+
+def __getattr__(name):
+    """Re-export the pure functions from agl.core.task_report on first attribute access."""
+    if name in _MOVED_TO_CORE:
+        from agl.core import task_report as _core
+        return getattr(_core, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def snapshot(workspace_dir):
@@ -25,13 +40,6 @@ def snapshot(workspace_dir):
     return files
 
 
-def summarize(before, after):
-    """Return (created, changed) relative paths, sorted."""
-    created = sorted(f for f in after if f not in before)
-    changed = sorted(f for f in after if f in before and after[f] != before[f])
-    return created, changed
-
-
 def set_aside(path):
     """Move a leftover demo file to <path>.prev so the SDK can create it fresh (it refuses to create over a file)."""
     if os.path.isfile(path):
@@ -45,24 +53,3 @@ def demo_page_ok(path):
             return "dark" in f.read().lower()
     except OSError:
         return False
-
-
-def deleted(before, after):
-    """Relative paths present before and gone after, sorted."""
-    return sorted(f for f in before if f not in after)
-
-
-def render(workspace_dir, files, created, changed, removed=()):
-    """Lines to print after a task. Say 'completed' only when a file was created or changed."""
-    wrote = bool(created or changed or removed)
-    head = (f"✅ Task completed. Created {len(created)}, changed {len(changed)}." + (f" Deleted {len(removed)}." if removed else "") if wrote
-            else "⚠️ The agent finished, but it created or changed no files.")
-    lines = ["=" * 76, head, f"Workspace files ({len(files)}):"]
-    if removed:
-        lines.append(f"Deleted {len(removed)}: " + ", ".join(removed))
-    lines += [f"   \U0001F4C1 {os.path.join(workspace_dir, f)}" for f in files]
-    if not wrote:
-        lines += ["Small local models sometimes answer without writing anything.",
-                  "If you expected a file, run the same command again, or name the file in your task."]
-    lines.append("=" * 76)
-    return lines
