@@ -10,6 +10,14 @@ import sys
 from agl.core import capabilities, menu, ranking
 
 _SAFE_TAG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/:@+-]*$")
+_WARNED = set()
+
+
+def _warn_once(key, text, *, out=print) -> None:
+    """Print a warning line at most once per run, so a flaky connection does not spam the screen."""
+    if key not in _WARNED:
+        _WARNED.add(key)
+        out(f"       Warning: {text}")
 
 
 def printable_tag(tag) -> str:

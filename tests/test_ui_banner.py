@@ -8,7 +8,6 @@ import agl.ui.banner as banner
 class TestBanner(unittest.TestCase):
     def setUp(self):
         banner.set_plain(False)
-        banner._WARNED.clear()
 
     def test_is_plain(self):
         self.assertTrue(banner.is_plain(True))
@@ -108,13 +107,6 @@ class TestBanner(unittest.TestCase):
         banner.print_header(ports=ports, out=lines.append)
         self.assertEqual(len(lines), 1)
         self.assertIn("Google Antigravity Local", lines[0])
-
-    def test_warn_once(self):
-        lines = []
-        banner.warn_once("key1", "test warning", out=lines.append)
-        banner.warn_once("key1", "test warning again", out=lines.append)
-        self.assertEqual(len(lines), 1)
-        self.assertIn("Warning: test warning", lines[0])
 
 
 if __name__ == "__main__":

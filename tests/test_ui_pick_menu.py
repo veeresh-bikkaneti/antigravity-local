@@ -6,6 +6,16 @@ import agl.ui.pick_menu as pick_menu
 
 
 class TestPickMenu(unittest.TestCase):
+    def setUp(self):
+        pick_menu._WARNED.clear()
+
+    def test_warn_once(self):
+        lines = []
+        pick_menu._warn_once("key1", "test warning", out=lines.append)
+        pick_menu._warn_once("key1", "test warning again", out=lines.append)
+        self.assertEqual(len(lines), 1)
+        self.assertIn("Warning: test warning", lines[0])
+
     def test_printable_tag(self):
         self.assertEqual(pick_menu.printable_tag("qwen2.5-coder:7b"), "'qwen2.5-coder:7b'")
         self.assertEqual(pick_menu.printable_tag("hf.co/user/repo:Q4_K_M"), "'hf.co/user/repo:Q4_K_M'")
