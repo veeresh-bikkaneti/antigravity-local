@@ -29,8 +29,10 @@ def check_ollama_service(base_url, *, ports, out):
         ports.sys.exit(1)
 
     out("       Ollama service is not running. Launching 'ollama serve' in background (this PC only)...")
-    child_env = dict(ports.os.environ, OLLAMA_HOST=ports.LOOPBACK_OLLAMA_HOST)  # child only: our own environment stays as it was
-    if ports.os.environ.get("OLLAMA_HOST") and ports.os.environ["OLLAMA_HOST"] != ports.LOOPBACK_OLLAMA_HOST:
+    env_copy = ports.environ_copy() if hasattr(ports, "environ_copy") else {}
+    child_env = dict(env_copy, OLLAMA_HOST=ports.LOOPBACK_OLLAMA_HOST)  # child only: our own environment stays as it was
+    host = ports.environ_get("OLLAMA_HOST") if hasattr(ports, "environ_get") else child_env.get("OLLAMA_HOST")
+    if host and host != ports.LOOPBACK_OLLAMA_HOST:
         out(f"       (Your OLLAMA_HOST is set; the server we start listens on {ports.LOOPBACK_OLLAMA_HOST} only.)")
     try:
         if ports.IS_WIN:
