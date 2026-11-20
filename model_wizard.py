@@ -7,9 +7,9 @@ this machine, and let the human choose. Enter keeps the current pick, so it cost
 import json
 import re
 import urllib.error
-import urllib.request
 
 import capabilities
+from agl.platform import http
 
 # Re-check this list when you touch it: `curl -I https://registry.ollama.ai/v2/library/<name>/manifests/<tag>`
 # must return 200, and sizes come from the manifest layers. Nothing here has been run through this
@@ -167,18 +167,9 @@ def hf_repo_info(user, repo, timeout=4):
     return {"status": "ok", "gated": bool(data.get("gated")), "license": str(lic) if lic else None}
 
 
-class _SameHostOnly(urllib.request.HTTPRedirectHandler):
-    """Follow a redirect only when it stays on the host we asked. Anything else is an error, not a new host."""
-
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        from urllib.parse import urlsplit
-        if urlsplit(newurl).netloc != urlsplit(req.full_url).netloc:
-            return None
-        return super().redirect_request(req, fp, code, msg, headers, newurl)
-
-
-_HF_OPENER = urllib.request.build_opener(_SameHostOnly)
-_REGISTRY_OPENER = urllib.request.build_opener(_SameHostOnly)  # registry.ollama.ai: a cross-host redirect is not followed
+_SameHostOnly = http._SameHostOnly  # moved, shim until Phase 6: the class now lives in agl.platform.http
+_HF_OPENER = http.same_host_opener()  # moved, shim until Phase 6: built by the platform http helper
+_REGISTRY_OPENER = http.same_host_opener()  # registry.ollama.ai: a cross-host redirect is not followed
 _STATE = {"offline": False}  # set when the Hub cannot be reached; later calls in the run stop asking
 
 
@@ -668,11 +659,10 @@ def tag_exists(tag, timeout=4):
         return None  # another registry (hf.co/..., host.example/...): ours cannot vouch for it, so do not refuse it
     if "/" not in name:
         name = "library/" + name
-    req = urllib.request.Request(
-        f"https://registry.ollama.ai/v2/{name}/manifests/{version}", method="HEAD",
-        headers={"Accept": "application/vnd.docker.distribution.manifest.v2+json"})
     try:
-        with _REGISTRY_OPENER.open(req, timeout=timeout):
+        with http._open(f"https://registry.ollama.ai/v2/{name}/manifests/{version}", timeout=timeout,
+                        method="HEAD", headers={"Accept": "application/vnd.docker.distribution.manifest.v2+json"},
+                        opener=_REGISTRY_OPENER):
             return True
     except urllib.error.HTTPError as e:
         return False if e.code == 404 else None  # a refused cross-host redirect lands here as a 3xx: unknown
@@ -683,9 +673,8 @@ def tag_exists(tag, timeout=4):
 def registry_reachable(timeout=3):
     """True when registry.ollama.ai answers at all (any HTTP reply, even a 401), False when we cannot reach it.
     Used by --check-upgrades to say "couldn't check" instead of guessing. Sends no model name."""
-    req = urllib.request.Request("https://registry.ollama.ai/v2/", method="HEAD")
     try:
-        with _REGISTRY_OPENER.open(req, timeout=timeout):
+        with http._open("https://registry.ollama.ai/v2/", timeout=timeout, method="HEAD", opener=_REGISTRY_OPENER):
             return True
     except urllib.error.HTTPError:
         return True

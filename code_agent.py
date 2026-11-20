@@ -288,6 +288,10 @@ async def run_one_shot(base_url: str, model: str, workspace_dir: str, task: str,
 
 
 def main():
+    try:
+        from agl.platform import config  # moved, shim until Phase 6: the one default lives in agl.platform.config
+    except ImportError:  # a bare copy of this script (no agl/ next to it, as tests copy it) must still answer
+        config = None
     parser = argparse.ArgumentParser(
         description="Google Antigravity Local Developer Coding Agent",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -309,8 +313,9 @@ def main():
     )
     parser.add_argument(
         "--base-url", "-u",
-        default=os.environ.get("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1"),
-        help="OpenAI-compatible server endpoint (e.g., http://localhost:11434/v1).",
+        default=os.environ.get("LOCAL_LLM_BASE_URL", config.LLM_BASE_URL if config else None),
+        help=(f"OpenAI-compatible server endpoint (e.g., {config.LLM_BASE_URL})." if config
+              else "OpenAI-compatible server endpoint."),
     )
     parser.add_argument(
         "--with-memory",

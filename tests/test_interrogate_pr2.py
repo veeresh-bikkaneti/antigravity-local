@@ -8,6 +8,7 @@ import sys
 import tempfile
 import unittest
 import urllib.error
+import urllib.request
 from pathlib import Path
 from unittest import mock
 
@@ -801,7 +802,7 @@ class RunGlue(test_pick_badges.PickBase):
             raise urllib.error.URLError(secret)  # a hostile error text that echoes it
         out = io.StringIO()
         with tempfile.TemporaryDirectory() as home, mock.patch.dict(os.environ, {"ANTIGRAVITY_LOCAL_HOME": home, "HF_TOKEN": secret}), \
-                mock.patch.object(hf_search.urllib.request, "urlopen", opener), contextlib.redirect_stdout(out):
+                mock.patch.object(urllib.request, "urlopen", opener), contextlib.redirect_stdout(out):
             run._WARNED.clear()
             rows = run.hf_menu_search("coder")
             for p in Path(home).rglob("*"):

@@ -3,20 +3,22 @@
 Pure text: no network, no files. Facts and sources live in docs/coding-apps.md (checked 2026-11-18).
 """
 
+from agl.platform import config
+
 DOCS_PATH = "docs/coding-apps.md"
 
 
 def _roots(base_url, backend):
     """(server root, OpenAI-style base). Ollama: root is http://host:11434 and the OpenAI base adds /v1.
     An OpenAI-compatible server gives its own base, so both are that URL."""
-    base = (base_url or "http://localhost:11434/v1").rstrip("/")
+    base = (base_url or config.LLM_BASE_URL).rstrip("/")
     if backend == "openai":
         return base, base
     root = base[:-3] if base.endswith("/v1") else base
     return root, root + "/v1"
 
 
-def lines(model, base_url="http://localhost:11434/v1", backend="ollama"):
+def lines(model, base_url=config.LLM_BASE_URL, backend="ollama"):
     """The block, one string per printed line. `backend="openai"` drops the rows that only work with Ollama."""
     root, openai_base = _roots(base_url, backend)
     rows = []

@@ -10,9 +10,9 @@ import math
 import time
 import urllib.error
 import urllib.parse
-import urllib.request
 
 import capabilities
+from agl.platform import http
 
 SEARCH_URL = "https://huggingface.co/api/models"
 CACHE_TTL = 24 * 3600
@@ -86,10 +86,39 @@ def _read_capped(resp):
         return resp.read()[:MAX_BYTES + 1]
 
 
+class _Capped:
+    """A wrapped reply that reads at most MAX_BYTES + 1 bytes and refuses a longer one, so a huge
+    reply is never read whole and never trusted. The refusal raises, which fetch_json treats as
+    a failed fetch (stale cache, or offline)."""
+
+    def __init__(self, resp):
+        self._resp = resp
+
+    def read(self):
+        raw = _read_capped(self._resp)
+        if len(raw) > MAX_BYTES:
+            raise ValueError("reply bigger than MAX_BYTES: not trusted")
+        return raw
+
+    def __enter__(self):
+        self._resp.__enter__()
+        return self
+
+    def __exit__(self, *exc):
+        return self._resp.__exit__(*exc)
+
+
+def _capped(opener):
+    """Wrap a urlopen-style opener so every reply it returns is capped."""
+    def fetch(request, timeout=None):
+        return _Capped(opener(request, timeout=timeout))
+    return fetch
+
+
 def fetch_json(url, *, cache_dir, now=None, opener=None, sleep=None, token=None, ttl=CACHE_TTL, accept=None):
     """(data, source). source: 'cache' (fresh), 'net', 'stale' (expired cache after a failure) or 'offline' (data None)."""
     now = time.time if now is None else now
-    opener = urllib.request.urlopen if opener is None else opener
+    opener = http._urlopen if opener is None else opener  # moved, shim until Phase 6: the default urlopen lives in the platform helper
     sleep = time.sleep if sleep is None else sleep
     path = cache_path(url, cache_dir)
     cached, age = _read_cache(path, now())
@@ -100,11 +129,7 @@ def fetch_json(url, *, cache_dir, now=None, opener=None, sleep=None, token=None,
         headers["Authorization"] = f"Bearer {token.strip()}"
     for attempt in range(MAX_RETRIES + 1):
         try:
-            with opener(urllib.request.Request(url, headers=headers), timeout=6) as resp:
-                raw = _read_capped(resp)
-                if len(raw) > MAX_BYTES:
-                    break  # too big to trust: do not keep it
-                data = json.loads(raw.decode("utf-8"))
+            data = http.get_json(url, timeout=6, headers=headers, opener=_capped(opener))
         except urllib.error.HTTPError as e:
             if e.code == 429 and attempt < MAX_RETRIES:
                 sleep(_retry_wait(getattr(e, "headers", None) or {}, attempt))

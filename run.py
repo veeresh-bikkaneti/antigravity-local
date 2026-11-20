@@ -22,8 +22,6 @@ import platform
 import shutil
 import time
 import json
-import urllib.request
-import urllib.error
 import argparse
 
 import capabilities
@@ -42,6 +40,7 @@ import ranking
 import runlog
 import task_report
 import userdata
+from agl.platform import config, http
 
 # Ensure UTF-8 console output on Windows
 if sys.platform == "win32":
@@ -116,7 +115,7 @@ def level_clear(model, agent, ready=None):
     lines.append(bar)
     _safe_print("\n".join(lines))
     backend = "openai" if os.environ.get("LOCAL_LLM_BACKEND") == "openai" else "ollama"
-    _safe_print("\n" + "\n".join(coding_apps.lines(model, os.environ.get("LOCAL_LLM_BASE_URL", DEFAULT_BASE_URL), backend)))
+    _safe_print("\n" + "\n".join(coding_apps.lines(model, config.llm_base_url(), backend)))
 
 
 def context_check(interactive, ask=None, out=print):
@@ -228,14 +227,14 @@ def _is_tty(stream):
 
 LOOPBACK_OLLAMA_HOST = "127.0.0.1:11434"
 
-def check_ollama_service(base_url="http://localhost:11434"):
+def check_ollama_service(base_url=config.OLLAMA_BASE_URL):
     """Check if Ollama is running; if not, attempt to start it."""
     stage(2, 5, "SERVER", "make sure Ollama is answering")
     tags_url = f"{base_url}/api/tags"
-    
+
     # 1. Test if already responsive
     try:
-        with urllib.request.urlopen(tags_url, timeout=3) as resp:
+        with http._open(tags_url, timeout=3) as resp:
             if resp.status == 200:
                 print(f"       Connected to Ollama service at: {base_url}")
                 return True
@@ -282,7 +281,7 @@ def check_ollama_service(base_url="http://localhost:11434"):
         for _ in range(12):
             time.sleep(1)
             try:
-                with urllib.request.urlopen(tags_url, timeout=1) as resp:
+                with http._open(tags_url, timeout=1) as resp:
                     if resp.status == 200:
                         print("       Ollama service successfully started.")
                         return True
@@ -294,19 +293,14 @@ def check_ollama_service(base_url="http://localhost:11434"):
     print(f"\n⚠️  Please ensure Ollama is running (`ollama serve`) at {base_url} and re-run.\n")
     return False
 
-DEFAULT_BASE_URL = "http://localhost:11434/v1"
-DEFAULT_OLLAMA_HOSTS = ("http://localhost:11434", "http://127.0.0.1:11434")
+DEFAULT_BASE_URL = config.LLM_BASE_URL  # moved, shim until Phase 6: the one default lives in agl.platform.config
+DEFAULT_OLLAMA_HOSTS = (config.OLLAMA_BASE_URL, "http://127.0.0.1:11434")
 
 
 def _http_get(url, timeout=3):
-    """Body text of a 200 reply, or None for anything else (refused, timeout, non-200)."""
-    try:
-        with urllib.request.urlopen(url, timeout=timeout) as resp:
-            if resp.status == 200:
-                return resp.read().decode("utf-8")
-    except Exception:
-        pass
-    return None
+    """Body text of a 200 reply, or None for anything else (refused, timeout, non-200).
+    moved, shim until Phase 6: the urlopen call now lives in agl.platform.http"""
+    return http._get_text(url, timeout=timeout)
 
 
 def _server_urls(base_url):
@@ -360,7 +354,7 @@ def is_default_ollama_url(base_url):
     return _server_urls(base_url)[0].lower() in DEFAULT_OLLAMA_HOSTS
 
 
-def get_installed_ollama_models(base_url="http://localhost:11434"):
+def get_installed_ollama_models(base_url=config.OLLAMA_BASE_URL):
     """
     Rigorously detect already pulled models using dual-tier checks:
     Tier 1: Ollama HTTP API (/api/tags)
@@ -368,18 +362,17 @@ def get_installed_ollama_models(base_url="http://localhost:11434"):
     Returns a set of normalized model identifiers.
     """
     models = set()
-    
+
     # Tier 1: Query Ollama REST API
     tags_url = f"{base_url}/api/tags"
     try:
-        with urllib.request.urlopen(tags_url, timeout=3) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            for m in data.get("models", []):
-                name = m.get("name", "").strip().lower()
-                if name:
-                    models.add(name)
-                    clean_name = name.split("/")[-1]
-                    models.add(clean_name)
+        data = http.get_json(tags_url, timeout=3)
+        for m in data.get("models", []):
+            name = m.get("name", "").strip().lower()
+            if name:
+                models.add(name)
+                clean_name = name.split("/")[-1]
+                models.add(clean_name)
     except Exception:
         pass
 
@@ -399,13 +392,12 @@ def get_installed_ollama_models(base_url="http://localhost:11434"):
 
     return models
 
-def get_installed_info(base_url="http://localhost:11434"):
+def get_installed_info(base_url=config.OLLAMA_BASE_URL):
     """{normalised tag: {"size_gb", "digest"}} from Ollama's /api/tags (size is in bytes). Each model is listed under
     its full name and its short name (after the last slash), the same two names get_installed_ollama_models returns.
     {} when Ollama does not answer: a size we were not told is left out, never guessed."""
     try:
-        with urllib.request.urlopen(f"{base_url}/api/tags", timeout=3) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+        data = http.get_json(f"{base_url}/api/tags", timeout=3)
     except Exception:
         return {}
     out = {}
@@ -547,7 +539,7 @@ def _upgrade_candidates(installed, hw, free_vram, free_ram):
 def run_check_upgrades(base_url=None):
     """`python run.py --check-upgrades`: one line per better model that fits this PC. Never pulls. Always returns 0."""
     _load_env()
-    base_api = base_url or os.environ.get("LOCAL_LLM_BASE_URL", DEFAULT_BASE_URL)
+    base_api = base_url or config.llm_base_url()
     ollama_host = base_api.replace("/v1", "").rstrip("/")
     try:
         if not model_wizard.registry_reachable():
@@ -649,7 +641,7 @@ def _warn_once(key, text):
         print(f"       Warning: {text}")
 
 
-def get_installed_details(base_url="http://localhost:11434"):
+def get_installed_details(base_url=config.OLLAMA_BASE_URL):
     """Size, age and capabilities of the installed models (ollama_models.installed_details)."""
     return ollama_models.installed_details(base_url)
 
@@ -989,7 +981,7 @@ def _pull_with_gate(tag, interactive, hw, res):
     return None
 
 
-def select_and_pull_model(base_url="http://localhost:11434", requested_model=None, interactive=False, scan_library=False):
+def select_and_pull_model(base_url=config.OLLAMA_BASE_URL, requested_model=None, interactive=False, scan_library=False):
     """
     Engineering Best Practice:
     1. NEVER download if compatible models are already present on the machine!
@@ -1108,7 +1100,7 @@ def _is_harness_error(exc):
     """True for the SDK's execution error. Matched by class name, so an SDK module move cannot break the CLI."""
     return any(cls.__name__ == "AntigravityExecutionError" for cls in type(exc).__mro__)
 
-async def run_agent(model, base_url="http://localhost:11434/v1"):
+async def run_agent(model, base_url=config.LLM_BASE_URL):
     """Run the demo and the shell. Leaving (exit word or Ctrl+C) ends quietly; the SDK's close-time error is not shown."""
     leave = {"left": False}  # set once the user chose to leave; Agent.__aexit__ may fail after that
     try:
@@ -1247,7 +1239,7 @@ def run_probe_command(args):
     """`python run.py --probe [model]`: one live tool call, recorded in the local ledger. Returns the exit code.
     It runs before the venv step and never starts or pulls anything: it only talks to a server that is already up."""
     _load_env()
-    base_api = os.environ.get("LOCAL_LLM_BASE_URL", DEFAULT_BASE_URL)
+    base_api = config.llm_base_url()
     backend = detect_backend(base_api)
     if backend is None:
         print(f"❌ Nothing answered at {base_api}. Start your model server, then run --probe again.")
@@ -1350,7 +1342,7 @@ def _main(argv=None):
     if args.coding_apps:  # text only: needs neither the venv nor Ollama
         backend = "openai" if os.environ.get("LOCAL_LLM_BACKEND") == "openai" else "ollama"
         _safe_print("\n".join(coding_apps.lines(args.model or os.environ.get("LOCAL_LLM_MODEL") or "<your-model>",
-                                                os.environ.get("LOCAL_LLM_BASE_URL", DEFAULT_BASE_URL), backend)))
+                                                config.llm_base_url(), backend)))
         return
     if args.doctor:  # read-only and stdlib: needs neither the venv nor Ollama
         import agent_setup
@@ -1388,7 +1380,7 @@ def _main(argv=None):
         return
 
     # Step 2: Ensure Ollama is running
-    base_api = os.environ.get("LOCAL_LLM_BASE_URL", DEFAULT_BASE_URL)
+    base_api = config.llm_base_url()
     ollama_host = base_api.replace("/v1", "").rstrip("/")
     backend = detect_backend(base_api)
     interactive = _is_tty(sys.stdin) and _is_tty(sys.stdout) and not args.yes

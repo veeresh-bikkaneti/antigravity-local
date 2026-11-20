@@ -37,7 +37,8 @@ except ImportError:
     sys.exit(1)
 
 async def main():
-    base_url = os.environ.get("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1")
+    from agl.platform import config  # moved, shim until Phase 6: the one default lives in agl.platform.config
+    base_url = os.environ.get("LOCAL_LLM_BASE_URL", config.LLM_BASE_URL)
     model = ARGS.model or os.environ.get("LOCAL_LLM_MODEL")
     workspace_dir = os.environ.get(
         "WORKSPACE_DIR",
