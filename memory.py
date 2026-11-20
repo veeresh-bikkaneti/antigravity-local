@@ -189,87 +189,17 @@ class MemoryIndexer:
 
     def index_all(self, force: bool = False) -> dict:
         """Scan, chunk, and index all repository memory files."""
-        targets = self.collect_target_files()
-        stats = {"indexed": 0, "skipped": 0, "chunks": 0, "purged": 0}
-
-        with self.db.get_connection() as conn:
-            # One writer at a time: parallel `index` runs queue here instead of hitting IntegrityError.
-            conn.execute("BEGIN IMMEDIATE")
-            # Purge docs whose source file vanished (FTS5 has no FK cascade, delete it by hand).
-            live = {str(p.relative_to(REPO_ROOT)).replace("\\", "/") for p, _ in targets}
-            for r in conn.execute("SELECT id, path FROM documents").fetchall():
-                if r["path"] not in live:
-                    conn.execute("DELETE FROM chunks_fts WHERE doc_id = ?", (r["id"],))
-                    conn.execute("DELETE FROM documents WHERE id = ?", (r["id"],))  # chunks cascade
-                    stats["purged"] += 1
-
-            for file_path, category in targets:
-                rel_path = str(file_path.relative_to(REPO_ROOT)).replace("\\", "/")
-                mtime = file_path.stat().st_mtime
-
-                # Check if already indexed and up to date
-                cur = conn.execute("SELECT id, mtime, embed_mode FROM documents WHERE path = ?", (rel_path,))
-                row = cur.fetchone()
-
-                if row and not force and abs(row["mtime"] - mtime) < 1e-4                         and row["embed_mode"] == self.embedder.mode:
-                    stats["skipped"] += 1
-                    continue
-                if row and row["embed_mode"] not in (None, self.embedder.mode):
-                    print(f"[!] Embedding backend changed ({row['embed_mode']} -> {self.embedder.mode}); re-embedding {rel_path}", file=sys.stderr)
-
-                # Delete existing entries for this doc
-                if row:
-                    doc_id = row["id"]
-                    conn.execute("DELETE FROM chunks WHERE doc_id = ?", (doc_id,))
-                    conn.execute("DELETE FROM chunks_fts WHERE doc_id = ?", (doc_id,))
-                    conn.execute("DELETE FROM documents WHERE id = ?", (doc_id,))
-
-                # Chunk file
-                raw_chunks = self.chunk_file(file_path)
-                if not raw_chunks:
-                    continue
-
-                title = file_path.stem.replace("_", " ").replace("-", " ").title()
-
-                # Insert document
-                cur = conn.execute("""
-                    INSERT INTO documents (path, title, category, mtime, chunk_count)
-                    VALUES (?, ?, ?, ?, ?)
-                """, (rel_path, title, category, mtime, len(raw_chunks)))
-                doc_id = cur.lastrowid
-
-                # Insert chunks and compute embeddings
-                dims = set()
-                self.embedder.fell_back = False
-                for idx, ch in enumerate(raw_chunks):
-                    emb = self.embedder.embed_text(ch["content"])
-                    dims.add(len(emb))
-                    emb_json = json.dumps(emb)
-
-                    cur_chunk = conn.execute("""
-                        INSERT INTO chunks (doc_id, chunk_index, start_line, end_line, content, embedding)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    """, (doc_id, idx, ch["start_line"], ch["end_line"], ch["content"], emb_json))
-                    chunk_id = cur_chunk.lastrowid
-
-                    # Insert into FTS5
-                    conn.execute("""
-                        INSERT INTO chunks_fts (content, doc_id, chunk_id)
-                        VALUES (?, ?, ?)
-                    """, (ch["content"], doc_id, chunk_id))
-
-                # Mixed sizes or any fallback vector = backend flaked mid-doc: leave NULL so the next run retries.
-                if len(dims) == 1 and not self.embedder.fell_back:
-                    conn.execute("UPDATE documents SET embed_mode = ? WHERE id = ?", (self.embedder.mode, doc_id))
-                else:
-                    print(f"[!] Inconsistent embedding sizes for {rel_path}; will retry next index", file=sys.stderr)
-
-                stats["indexed"] += 1
-                stats["chunks"] += len(raw_chunks)
-
-            conn.commit()
-
-        return stats
+        # moved, shim until Phase 6d: the SQL lives in agl.platform.memory_store and the orchestration in
+        # agl.app.memory; targets and chunking stay here, so REPO_ROOT / WIKI_DIR are read at call time.
+        return app_memory.index_all(
+            force,
+            store=self.db,
+            embedder=self.embedder,
+            targets=self.collect_target_files(),
+            repo_root=REPO_ROOT,
+            chunk=self.chunk_file,
+            warn=lambda m: print(m, file=sys.stderr)
+        )
 
 
 # ==============================================================================
@@ -412,9 +342,9 @@ def cmd_status(args):
 
 def _print_status(db):
     with db.get_connection() as conn:
-        doc_count = conn.execute("SELECT COUNT(*) FROM documents;").fetchone()[0]
-        chunk_count = conn.execute("SELECT COUNT(*) FROM chunks;").fetchone()[0]
-        categories = conn.execute("SELECT category, COUNT(*) FROM documents GROUP BY category;").fetchall()
+        # moved, shim until Phase 6d: the counts SQL lives in agl.platform.memory_store.
+        doc_count, chunk_count = db.counts(conn)
+        categories = db.category_counts(conn)
 
         print(f"Total Documents Indexed: {doc_count}")
         print(f"Total Chunks Stored: {chunk_count}")
