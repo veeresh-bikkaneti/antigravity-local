@@ -98,7 +98,7 @@ class ModelMatching(unittest.TestCase):
 
     def test_inventory_has_no_bare_family_entries(self):
         out = "NAME ID\nqwen2.5-coder:14b abc\n"
-        with mock.patch.object(run.urllib.request, "urlopen", side_effect=OSError), \
+        with mock.patch.object(urllib.request, "urlopen", side_effect=OSError), \
                 mock.patch.object(run.shutil, "which", return_value="ollama"), \
                 mock.patch.object(run.subprocess, "check_output", return_value=out):
             self.assertEqual(run.get_installed_ollama_models(), {"qwen2.5-coder:14b"})
@@ -521,7 +521,7 @@ class AnyBackend(unittest.TestCase):
     """run.py works with Ollama, or any OpenAI-compatible server (LM Studio, llama.cpp, vLLM) with no download."""
 
     def detect(self, base, routes):
-        with mock.patch.object(run.urllib.request, "urlopen", _Server(routes)):
+        with mock.patch.object(urllib.request, "urlopen", _Server(routes)):
             return run.detect_backend(base)
 
     def test_ollama_answering_wins_even_though_it_also_serves_v1_models(self):
@@ -547,7 +547,7 @@ class AnyBackend(unittest.TestCase):
         self.assertFalse(run.is_default_ollama_url(LM))
 
     def test_list_openai_models_returns_the_ids(self):
-        with mock.patch.object(run.urllib.request, "urlopen", _Server({LM + "/models": LM_MODELS})):
+        with mock.patch.object(urllib.request, "urlopen", _Server({LM + "/models": LM_MODELS})):
             self.assertEqual(run.list_openai_models(LM), ["qwen2.5-coder-7b-instruct", "gemma-2-27b"])
 
     def main_with(self, base, routes, argv=("--yes",), env_extra=None, **patches):
@@ -562,7 +562,7 @@ class AnyBackend(unittest.TestCase):
         code = None
         with tempfile.TemporaryDirectory() as d, mock.patch.dict(run.os.environ, env), \
                 mock.patch.object(run, "PROJECT_DIR", d), mock.patch.object(run, "is_in_venv", return_value=True), \
-                mock.patch.object(run.urllib.request, "urlopen", _Server(routes)), \
+                mock.patch.object(urllib.request, "urlopen", _Server(routes)), \
                 mock.patch.object(run, "check_or_update_memory"), mock.patch.object(run, "run_agent", fake_agent), \
                 mock.patch.object(run.sys, "stdin", io.StringIO("")), contextlib.redirect_stdout(out):
             if not base:
@@ -626,7 +626,7 @@ class AnyBackend(unittest.TestCase):
         body = json.dumps({"data": [{"id": i} for i in ids]})
         with tempfile.TemporaryDirectory() as d, mock.patch.object(run, "PROJECT_DIR", d), \
                 mock.patch.dict(run.os.environ, {"LOCAL_LLM_MODEL": env} if env else {}), \
-                mock.patch.object(run.urllib.request, "urlopen", _Server({LM + "/models": body})), \
+                mock.patch.object(urllib.request, "urlopen", _Server({LM + "/models": body})), \
                 mock.patch("builtins.input", side_effect=lambda _="": next(feed)), contextlib.redirect_stdout(out):
             if not env:
                 run.os.environ.pop("LOCAL_LLM_MODEL", None)

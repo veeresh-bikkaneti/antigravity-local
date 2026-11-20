@@ -19,6 +19,8 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from agl.platform import config
+
 AGENTS = ("pi", "opencode", "codex", "claude")
 PACKAGES = {"pi": "@earendil-works/pi-coding-agent", "opencode": "opencode-ai", "codex": "@openai/codex"}
 CONTINUE_PROMPT = ("Read HANDOFF.md and AGENTS.md, then continue the task. Check git state before editing. "
@@ -325,10 +327,10 @@ CLAUDE_BANNER = ("This session uses your local model. Plain `claude`, VS Code an
 
 def claude_base_url(base_url):
     """LOCAL_LLM_BASE_URL minus a trailing slash and /v1: Claude Code wants the server root."""
-    url = (base_url or "http://localhost:11434").strip().rstrip("/")
+    url = (base_url or config.OLLAMA_BASE_URL).strip().rstrip("/")
     if url.endswith("/v1"):
         url = url[:-3]
-    return url.rstrip("/") or "http://localhost:11434"
+    return url.rstrip("/") or config.OLLAMA_BASE_URL
 
 
 def claude_context(environ):

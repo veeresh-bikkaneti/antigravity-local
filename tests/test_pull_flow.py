@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 import urllib.error
+import urllib.request
 from pathlib import Path
 from unittest import mock
 
@@ -29,7 +30,7 @@ class NeverDownloads(unittest.TestCase):
                 mock.patch.dict(run.os.environ, env or {}),
                 mock.patch.object(run, "PROJECT_DIR", d),
                 mock.patch.object(run, "is_in_venv", return_value=True),
-                mock.patch.object(run.urllib.request, "urlopen", _Server({OLLAMA_TAGS: "{}"})),
+                mock.patch.object(urllib.request, "urlopen", _Server({OLLAMA_TAGS: "{}"})),
                 mock.patch.object(run, "check_ollama_service", return_value=True),
                 mock.patch.object(run, "get_hardware_profile", return_value=HW),
                 mock.patch.object(run, "get_free_resources", return_value=free_of(HW)),
@@ -104,7 +105,7 @@ class OllamaServe(unittest.TestCase):
             started.append((cmd, kw))
 
         with mock.patch.dict(run.os.environ, env or {}), \
-                mock.patch.object(run.urllib.request, "urlopen", fake_urlopen), \
+                mock.patch.object(urllib.request, "urlopen", fake_urlopen), \
                 mock.patch.object(run.shutil, "which", return_value="ollama"), \
                 mock.patch.object(run.subprocess, "Popen", side_effect=fake_popen), \
                 mock.patch.object(run.time, "sleep"), contextlib.redirect_stdout(out):

@@ -23,18 +23,17 @@ max-complexity = 12
 [lint.per-file-ignores]
 # baseline: generated with `ruff check --output-format concise . --extend-exclude=v1*-work/** --extend-exclude=scan-craft-anything/**` at c90a615, 2026-11-19.
 # One entry per file, listing only the codes it breaks today.
+# by design, not debt: platform is where HTTP, subprocess and SQLite live (Layer contract)
+"agl/platform/**" = ["TID251"]
 "agent_setup.py" = ["C901", "TID251"]
 "agent_with_workspace.py" = ["T201"]
 "code_agent.py" = ["C901", "PLR0915", "T201"]
-"download_size.py" = ["TID251"]
 "handoff.py" = ["C901", "TID251"]
 "hardware.py" = ["TID251"]
-"hf_search.py" = ["TID251"]
 "ledger.py" = ["TID251"]
 "memory.py" = ["C901", "T201", "TID251"]
-"model_wizard.py" = ["C901", "PLR0915", "TID251"]
+"model_wizard.py" = ["C901", "PLR0915"]
 "ollama_library.py" = ["TID251"]
-"ollama_models.py" = ["TID251"]
 "probe.py" = ["C901", "PLR0915", "TID251"]
 "run.py" = ["C901", "PLR0915", "T201", "TID251"]
 "scripts/check_agents_md.py" = ["T201"]

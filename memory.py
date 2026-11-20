@@ -22,6 +22,8 @@ import urllib.request
 import urllib.error
 from pathlib import Path
 
+from agl.platform import config
+
 # Windows console UTF-8 safety
 if sys.platform == "win32":
     try:
@@ -34,7 +36,7 @@ REPO_ROOT = Path(__file__).resolve().parent
 DB_DIR = REPO_ROOT / ".memory"
 DB_PATH = DB_DIR / "index.sqlite"
 WIKI_DIR = REPO_ROOT / ".wiki"
-OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", "http://localhost:11434")
+OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", config.OLLAMA_BASE_URL)
 
 # Relevance gates (calibrated on this repo's index with the pure-python backend: gibberish tops out
 # near 0.31 cosine, real questions sit 0.35-0.7). A vector-only hit must clear VECTOR_SIM_FLOOR; a

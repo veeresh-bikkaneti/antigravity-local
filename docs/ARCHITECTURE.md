@@ -211,4 +211,4 @@ Where new code goes:
 - Argument parsing, wiring adapters into use cases, exit codes: shell.
 - Code with no clear layer: ask before writing; do not park it in shell by default.
 
-Baseline rule: `[lint.per-file-ignores]` in `ruff.toml` records today's violations. It is generated, never hand-written, and it may only shrink: `python scripts/check_arch.py` fails a change that adds an entry. Phase 0 runs it report-only; a later phase flips it to blocking.
+Baseline rule: `[lint.per-file-ignores]` in `ruff.toml` records today's violations. It is generated, never hand-written, and it may only shrink: `python scripts/check_arch.py` fails a change that adds an entry. CI runs it on every PR and blocks a change that grows the baseline.

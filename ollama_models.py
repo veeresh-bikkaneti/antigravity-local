@@ -5,22 +5,20 @@
 an old Ollama must not make every model look tool-less.
 """
 import json
-import urllib.request
 
 import model_wizard
+from agl.platform import config, http
 
 MAX_SHOW_CALLS = 30
 GB = 1e9  # Ollama and Hugging Face print decimal GB
 
 
 def _get_json(opener, url, timeout, data=None):
+    # moved, shim until Phase 6: the request/parse now lives in agl.platform.http
     if data is None:
-        request = urllib.request.Request(url, headers={"Accept": "application/json"})
-    else:
-        request = urllib.request.Request(url, data=json.dumps(data).encode("utf-8"), method="POST",
-                                         headers={"Content-Type": "application/json", "Accept": "application/json"})
-    with opener(request, timeout=timeout) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+        return http.get_json(url, timeout=timeout, headers={"Accept": "application/json"}, opener=opener)
+    return http.get_json(url, timeout=timeout, headers={"Content-Type": "application/json", "Accept": "application/json"},
+                         data=json.dumps(data).encode("utf-8"), opener=opener)
 
 
 def _caps(value):
@@ -31,9 +29,8 @@ def _caps(value):
     return kept if kept or not value else None
 
 
-def installed_details(base_url="http://localhost:11434", opener=None, timeout=3):
+def installed_details(base_url=config.OLLAMA_BASE_URL, opener=None, timeout=3):
     """{normalised tag: {"name", "size_gb", "modified_at", "caps"}}. {} when the server does not answer."""
-    opener = urllib.request.urlopen if opener is None else opener
     base = base_url.rstrip("/")
     try:
         tags = _get_json(opener, f"{base}/api/tags", timeout)

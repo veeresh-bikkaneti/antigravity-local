@@ -4,16 +4,13 @@ Order for an Ollama tag: the registry manifest (the real layer sizes), then our 
 from the parameter count in the tag. An estimate is always labelled "(estimate)". Nothing here downloads a
 model; it reads a small JSON manifest, and only from registry.ollama.ai.
 """
-import http.client
-import json
 import re
 import time
-import urllib.error
 import urllib.parse
-import urllib.request
 
 import model_wizard
 import quant_pick
+from agl.platform import http
 
 REGISTRY = "https://registry.ollama.ai/v2/"
 MANIFEST_ACCEPT = ("application/vnd.docker.distribution.manifest.v2+json, "
@@ -43,7 +40,7 @@ def new_lookup_window():
 
 
 _SameHostOnly = model_wizard._SameHostOnly  # kept here so older callers and tests keep working
-_OPENER = urllib.request.build_opener(_SameHostOnly)
+_OPENER = http.same_host_opener()  # moved, shim until Phase 6: the same-host opener is built in agl.platform.http
 
 
 def _budget_spent():
@@ -58,13 +55,11 @@ def _get_json(url, headers=None, timeout=3):
     """Parsed JSON, or None. Sets the offline flag on a network failure so the rest of the run stops asking."""
     if _STATE["offline"] or _budget_spent():
         return None
-    req = urllib.request.Request(url, headers=headers or {})
     try:
-        with _OPENER.open(req, timeout=timeout) as resp:
-            return json.loads(resp.read().decode("utf-8"))
-    except (urllib.error.HTTPError, http.client.HTTPException):
+        return http.get_json(url, timeout=timeout, headers=headers, opener=_OPENER)
+    except http.ANSWERED_ERRORS:  # moved, shim until Phase 6: the request/parse lives in agl.platform.http
         return None  # the server answered (404, redirect refused, a cut-off reply): not an outage
-    except (urllib.error.URLError, OSError, TimeoutError):
+    except http.NETWORK_ERRORS:
         _STATE["offline"] = True
         return None
     except ValueError:

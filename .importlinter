@@ -1,0 +1,35 @@
+[importlinter]
+root_package = agl
+include_external_packages = True
+
+[importlinter:contract:product-layers]
+name = product layers ui > app > core
+type = layers
+layers =
+    agl.ui
+    agl.app
+    agl.core
+
+[importlinter:contract:no-platform-or-banned]
+name = core, app, ui never import platform or the banned modules
+type = forbidden
+source_modules =
+    agl.core
+    agl.app
+    agl.ui
+forbidden_modules =
+    agl.platform
+    urllib
+    http
+    socket
+    subprocess
+    sqlite3
+
+[importlinter:contract:platform-not-above]
+name = platform never imports app or ui
+type = forbidden
+source_modules =
+    agl.platform
+forbidden_modules =
+    agl.app
+    agl.ui
