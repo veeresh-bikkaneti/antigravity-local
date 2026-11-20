@@ -14,6 +14,7 @@ import json
 import argparse
 from pathlib import Path
 
+from agl.app import memory as app_memory
 from agl.platform import config, embeddings, memory_store, process
 from agl.core import memory as core_memory
 
@@ -188,87 +189,17 @@ class MemoryIndexer:
 
     def index_all(self, force: bool = False) -> dict:
         """Scan, chunk, and index all repository memory files."""
-        targets = self.collect_target_files()
-        stats = {"indexed": 0, "skipped": 0, "chunks": 0, "purged": 0}
-
-        with self.db.get_connection() as conn:
-            # One writer at a time: parallel `index` runs queue here instead of hitting IntegrityError.
-            conn.execute("BEGIN IMMEDIATE")
-            # Purge docs whose source file vanished (FTS5 has no FK cascade, delete it by hand).
-            live = {str(p.relative_to(REPO_ROOT)).replace("\\", "/") for p, _ in targets}
-            for r in conn.execute("SELECT id, path FROM documents").fetchall():
-                if r["path"] not in live:
-                    conn.execute("DELETE FROM chunks_fts WHERE doc_id = ?", (r["id"],))
-                    conn.execute("DELETE FROM documents WHERE id = ?", (r["id"],))  # chunks cascade
-                    stats["purged"] += 1
-
-            for file_path, category in targets:
-                rel_path = str(file_path.relative_to(REPO_ROOT)).replace("\\", "/")
-                mtime = file_path.stat().st_mtime
-
-                # Check if already indexed and up to date
-                cur = conn.execute("SELECT id, mtime, embed_mode FROM documents WHERE path = ?", (rel_path,))
-                row = cur.fetchone()
-
-                if row and not force and abs(row["mtime"] - mtime) < 1e-4                         and row["embed_mode"] == self.embedder.mode:
-                    stats["skipped"] += 1
-                    continue
-                if row and row["embed_mode"] not in (None, self.embedder.mode):
-                    print(f"[!] Embedding backend changed ({row['embed_mode']} -> {self.embedder.mode}); re-embedding {rel_path}", file=sys.stderr)
-
-                # Delete existing entries for this doc
-                if row:
-                    doc_id = row["id"]
-                    conn.execute("DELETE FROM chunks WHERE doc_id = ?", (doc_id,))
-                    conn.execute("DELETE FROM chunks_fts WHERE doc_id = ?", (doc_id,))
-                    conn.execute("DELETE FROM documents WHERE id = ?", (doc_id,))
-
-                # Chunk file
-                raw_chunks = self.chunk_file(file_path)
-                if not raw_chunks:
-                    continue
-
-                title = file_path.stem.replace("_", " ").replace("-", " ").title()
-
-                # Insert document
-                cur = conn.execute("""
-                    INSERT INTO documents (path, title, category, mtime, chunk_count)
-                    VALUES (?, ?, ?, ?, ?)
-                """, (rel_path, title, category, mtime, len(raw_chunks)))
-                doc_id = cur.lastrowid
-
-                # Insert chunks and compute embeddings
-                dims = set()
-                self.embedder.fell_back = False
-                for idx, ch in enumerate(raw_chunks):
-                    emb = self.embedder.embed_text(ch["content"])
-                    dims.add(len(emb))
-                    emb_json = json.dumps(emb)
-
-                    cur_chunk = conn.execute("""
-                        INSERT INTO chunks (doc_id, chunk_index, start_line, end_line, content, embedding)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    """, (doc_id, idx, ch["start_line"], ch["end_line"], ch["content"], emb_json))
-                    chunk_id = cur_chunk.lastrowid
-
-                    # Insert into FTS5
-                    conn.execute("""
-                        INSERT INTO chunks_fts (content, doc_id, chunk_id)
-                        VALUES (?, ?, ?)
-                    """, (ch["content"], doc_id, chunk_id))
-
-                # Mixed sizes or any fallback vector = backend flaked mid-doc: leave NULL so the next run retries.
-                if len(dims) == 1 and not self.embedder.fell_back:
-                    conn.execute("UPDATE documents SET embed_mode = ? WHERE id = ?", (self.embedder.mode, doc_id))
-                else:
-                    print(f"[!] Inconsistent embedding sizes for {rel_path}; will retry next index", file=sys.stderr)
-
-                stats["indexed"] += 1
-                stats["chunks"] += len(raw_chunks)
-
-            conn.commit()
-
-        return stats
+        # moved, shim until Phase 6d: the SQL lives in agl.platform.memory_store and the orchestration in
+        # agl.app.memory; targets and chunking stay here, so REPO_ROOT / WIKI_DIR are read at call time.
+        return app_memory.index_all(
+            force,
+            store=self.db,
+            embedder=self.embedder,
+            targets=self.collect_target_files(),
+            repo_root=REPO_ROOT,
+            chunk=self.chunk_file,
+            warn=lambda m: print(m, file=sys.stderr)
+        )
 
 
 # ==============================================================================
@@ -288,133 +219,16 @@ class MemorySearcher:
 
     def search(self, query: str, limit: int = 5) -> list[dict]:
         """Perform hybrid search and return top-K scored chunks."""
-        query = query.strip()
-        if not query:
-            return []
-
-        fts_query = self._sanitize_fts_query(query)
-        bm25_results = []
-
-        with self.db.get_connection() as conn:
-            # 1. BM25 Lexical Search via FTS5
-            if fts_query:
-                try:
-                    cur = conn.execute("""
-                        SELECT 
-                            c.id AS chunk_id,
-                            c.doc_id,
-                            c.start_line,
-                            c.end_line,
-                            c.content,
-                            d.path,
-                            d.title,
-                            d.category,
-                            bm25(chunks_fts) AS bm25_rank
-                        FROM chunks_fts f
-                        JOIN chunks c ON f.chunk_id = c.id
-                        JOIN documents d ON c.doc_id = d.id
-                        WHERE chunks_fts MATCH ?
-                        ORDER BY bm25_rank ASC
-                        LIMIT 30;
-                    """, (fts_query,))
-                    bm25_results = cur.fetchall()
-                except Exception:
-                    bm25_results = []
-
-            # 2. Semantic Vector Search
-            self.embedder.fell_back = False
-            query_emb = self.embedder.embed_text(query)
-            # A fallback query vector is not comparable to stored backend vectors: BM25 only.
-            mode = None if self.embedder.fell_back else self.embedder.mode
-            cur = conn.execute("""
-                SELECT 
-                    c.id AS chunk_id,
-                    c.doc_id,
-                    c.start_line,
-                    c.end_line,
-                    c.content,
-                    c.embedding,
-                    d.path,
-                    d.title,
-                    d.category
-                FROM chunks c
-                JOIN documents d ON c.doc_id = d.id
-                WHERE d.embed_mode = ?;
-            """, (mode,))  # only compare vectors from the same backend
-            all_chunks = cur.fetchall()
-
-        vector_results = []
-        sims: dict[int, float] = {}
-        for ch in all_chunks:
-            if ch["embedding"]:
-                emb = json.loads(ch["embedding"])
-                sim = cosine_similarity(query_emb, emb)
-                sims[ch["chunk_id"]] = sim
-                vector_results.append((ch, sim))
-
-        # Sort vector results by cosine similarity descending
-        vector_results.sort(key=lambda x: x[1], reverse=True)
-        top_vector = vector_results[:30]
-
-        # 3. Reciprocal Rank Fusion (RRF)
-        # RRF Score = sum( w / (k + rank) )
-        k = 60.0
-        scores: dict[int, dict] = {}
-
-        # Accumulate BM25 ranks
-        for rank, row in enumerate(bm25_results):
-            cid = row["chunk_id"]
-            if cid not in scores:
-                scores[cid] = {
-                    "chunk_id": cid,
-                    "path": row["path"],
-                    "title": row["title"],
-                    "category": row["category"],
-                    "start_line": row["start_line"],
-                    "end_line": row["end_line"],
-                    "content": row["content"],
-                    "rrf_score": 0.0,
-                    "bm25_rank": rank + 1,
-                    "vector_sim": 0.0
-                }
-            boost = CATEGORY_BOOSTS.get(row["category"], 1.0)
-            scores[cid]["rrf_score"] += boost * (0.5 / (k + rank + 1))
-
-        # Accumulate Vector ranks
-        for rank, (row, sim) in enumerate(top_vector):
-            cid = row["chunk_id"]
-            if cid not in scores:
-                scores[cid] = {
-                    "chunk_id": cid,
-                    "path": row["path"],
-                    "title": row["title"],
-                    "category": row["category"],
-                    "start_line": row["start_line"],
-                    "end_line": row["end_line"],
-                    "content": row["content"],
-                    "rrf_score": 0.0,
-                    "bm25_rank": 999,
-                    "vector_sim": sim
-                }
-            scores[cid]["vector_sim"] = max(scores[cid].get("vector_sim", 0.0), sim)
-            boost = CATEGORY_BOOSTS.get(row["category"], 1.0)
-            scores[cid]["rrf_score"] += boost * (0.5 / (k + rank + 1))
-
-        # Relevance gate: drop vector-only noise and BM25 hits with no semantic support.
-        # No comparable vectors (backend flaked/mismatch) -> trust BM25 alone.
-        kept = {}
-        for cid, r in scores.items():
-            has_vec = cid in sims
-            r["vector_sim"] = sims.get(cid, r["vector_sim"])
-            if r["bm25_rank"] == 999:
-                ok = r["vector_sim"] >= VECTOR_SIM_FLOOR
-            else:
-                # A chunk with no embedding cannot be judged semantically, so keep its BM25 hit.
-                ok = not has_vec or r["vector_sim"] >= BM25_MIN_SIM
-            if ok:
-                kept[cid] = r
-        ranked = sorted(kept.values(), key=lambda x: x["rrf_score"], reverse=True)
-        return ranked[:limit]
+        # moved, shim until Phase 6d: the SQL lives in agl.platform.memory_store, the fusion math in
+        # agl.core.memory and the orchestration in agl.app.memory. The gates are looked up at call time.
+        return app_memory.search(
+            query, limit,
+            store=self.db,
+            embedder=self.embedder,
+            category_boosts=CATEGORY_BOOSTS,
+            vector_sim_floor=VECTOR_SIM_FLOOR,
+            bm25_min_sim=BM25_MIN_SIM
+        )
 
 
 # ==============================================================================
@@ -528,9 +342,9 @@ def cmd_status(args):
 
 def _print_status(db):
     with db.get_connection() as conn:
-        doc_count = conn.execute("SELECT COUNT(*) FROM documents;").fetchone()[0]
-        chunk_count = conn.execute("SELECT COUNT(*) FROM chunks;").fetchone()[0]
-        categories = conn.execute("SELECT category, COUNT(*) FROM documents GROUP BY category;").fetchall()
+        # moved, shim until Phase 6d: the counts SQL lives in agl.platform.memory_store.
+        doc_count, chunk_count = db.counts(conn)
+        categories = db.category_counts(conn)
 
         print(f"Total Documents Indexed: {doc_count}")
         print(f"Total Chunks Stored: {chunk_count}")

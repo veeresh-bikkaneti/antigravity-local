@@ -1,9 +1,11 @@
 """
 agl/core/memory.py - the pure memory helpers moved out of memory.py in Phase 6a: cosine
 similarity, the pure-python vectorizer, the oversize chunk split, the FTS query sanitizer
-and the limit rule. Standard library only, no I/O.
+and the limit rule. Phase 6b added the hybrid rank fusion, rank_hits.
+Standard library only, no I/O.
 """
 import argparse
+import json
 import math
 import re
 import zlib
@@ -91,3 +93,84 @@ def _positive_limit(value, max_limit):
     if n < 1:
         raise argparse.ArgumentTypeError("limit must be >= 1")
     return min(n, max_limit)
+
+
+def _sims_and_vector_ranks(vector_rows, query_emb, fuse_depth):
+    """(cosine by chunk id, [(row, sim)] best first cut to fuse_depth) over rows with a stored vector."""
+    sims: dict[int, float] = {}
+    vector_results = []
+    for ch in vector_rows:
+        if ch["embedding"]:
+            emb = json.loads(ch["embedding"])
+            sim = cosine_similarity(query_emb, emb)
+            sims[ch["chunk_id"]] = sim
+            vector_results.append((ch, sim))
+    # Sort vector results by cosine similarity descending
+    vector_results.sort(key=lambda x: x[1], reverse=True)
+    return sims, vector_results[:fuse_depth]
+
+
+def _new_hit(row, bm25_rank, vector_sim):
+    """One fused result; the key order is what `memory.py search --json` prints, so never reorder it."""
+    return {
+        "chunk_id": row["chunk_id"],
+        "path": row["path"],
+        "title": row["title"],
+        "category": row["category"],
+        "start_line": row["start_line"],
+        "end_line": row["end_line"],
+        "content": row["content"],
+        "rrf_score": 0.0,
+        "bm25_rank": bm25_rank,
+        "vector_sim": vector_sim
+    }
+
+
+def _add_bm25_ranks(scores, bm25_rows, *, category_boosts, rrf_k):
+    """Accumulate BM25 ranks: a first sighting records that rank, every sighting adds its boosted share."""
+    for rank, row in enumerate(bm25_rows):
+        cid = row["chunk_id"]
+        if cid not in scores:
+            scores[cid] = _new_hit(row, rank + 1, 0.0)
+        boost = category_boosts.get(row["category"], 1.0)
+        scores[cid]["rrf_score"] += boost * (0.5 / (rrf_k + rank + 1))
+
+
+def _add_vector_ranks(scores, top_vector, *, category_boosts, rrf_k):
+    """Accumulate vector ranks: keep the best cosine, and a vector-only hit is marked bm25_rank 999."""
+    for rank, (row, sim) in enumerate(top_vector):
+        cid = row["chunk_id"]
+        if cid not in scores:
+            scores[cid] = _new_hit(row, 999, sim)
+        scores[cid]["vector_sim"] = max(scores[cid].get("vector_sim", 0.0), sim)
+        boost = category_boosts.get(row["category"], 1.0)
+        scores[cid]["rrf_score"] += boost * (0.5 / (rrf_k + rank + 1))
+
+
+def _clear_gate(hit, has_vec, *, vector_sim_floor, bm25_min_sim):
+    """A vector-only hit must clear the vector floor; a BM25 hit needs support only when it has a vector."""
+    if hit["bm25_rank"] == 999:
+        return hit["vector_sim"] >= vector_sim_floor
+    # A chunk with no embedding cannot be judged semantically, so keep its BM25 hit.
+    return not has_vec or hit["vector_sim"] >= bm25_min_sim
+
+
+def rank_hits(bm25_rows, vector_rows, query_emb, *, category_boosts, vector_sim_floor, bm25_min_sim,
+              limit, fuse_depth=30, rrf_k=60.0):
+    """Fuse BM25 and vector ranks (RRF, category-boosted), drop what fails the relevance gate, cut to limit."""
+    # 3. Reciprocal Rank Fusion (RRF): RRF Score = sum( w / (k + rank) )
+    sims, top_vector = _sims_and_vector_ranks(vector_rows, query_emb, fuse_depth)
+    scores: dict[int, dict] = {}
+    _add_bm25_ranks(scores, bm25_rows, category_boosts=category_boosts, rrf_k=rrf_k)
+    _add_vector_ranks(scores, top_vector, category_boosts=category_boosts, rrf_k=rrf_k)
+
+    # Relevance gate: drop vector-only noise and BM25 hits with no semantic support.
+    # No comparable vectors (backend flaked/mismatch) -> trust BM25 alone.
+    kept = {}
+    for cid, r in scores.items():
+        has_vec = cid in sims
+        r["vector_sim"] = sims.get(cid, r["vector_sim"])
+        if _clear_gate(r, has_vec, vector_sim_floor=vector_sim_floor, bm25_min_sim=bm25_min_sim):
+            kept[cid] = r
+    ranked = sorted(kept.values(), key=lambda x: x["rrf_score"], reverse=True)
+    return ranked[:limit]
