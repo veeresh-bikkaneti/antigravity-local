@@ -9,16 +9,9 @@ import * as THREE from "three";
 import { gsap } from "gsap";
 
 // Guide order: focus key, step name, short label, nameplate, source in the workspace.
-const STEPS = [
-  { key: "ollama", name: "Install Ollama", short: "Ollama", plate: "OLLAMA" },
-  { key: "model", name: "Choose a model", short: "Qwen model", plate: "QWEN2.5-CODER:14B" },
-  { key: "repo", name: "Clone the repo and run setup", short: "Repo · run.bat", plate: "REPO · RUN.BAT" },
-  { key: "app", name: "Use your model in a coding app", short: "Coding app", plate: "CODING APP · OLLAMA LAUNCH" },
-  { key: "venv", name: "Activate the virtual environment", short: ".venv terminal", plate: ".VENV · TERMINAL" },
-  { key: "agent", name: "Chat with your agent", short: "Agent", plate: "ANTIGRAVITY AGENT" },
-  { key: "job", name: "Give it one job", short: "One job · Gate", plate: "HARNESS · POLICY GATE" },
-  { key: "editor", name: "Use it from your editor or the browser", short: "Editor", plate: "EDITOR </>" },
-];
+// The steps themselves live in steps.js - the one source of truth, shared with
+// main.js and scripts/check-steps.mjs. Never declare step data here again.
+import { STEPS } from "./steps.js";
 const STEP_KEYS = STEPS.map((s) => s.key);
 
 const FLOOR = -1.5;
@@ -339,11 +332,9 @@ export function start({ canvas, tags, isPaused, onStack }) {
     p.mats.push(m.material, e.material);
     return m;
   };
-  const buildPiece = (i) => {
-    const g = new THREE.Group();
-    const p = { g, mats: [], v: 0, landed: 0 };
-    const k = STEPS[i].key; // shapes go by key, so a new step can slot in anywhere
-    if (k === "ollama") { // OLLAMA - the llama mark in 3D: head, ears, snout, neck
+  // One builder per guide step, keyed by the step's focus key: adding a step
+  // is one registry entry plus one function here. buildPiece only dispatches.
+  const buildOllamaLayer = (p, g) => { // OLLAMA - the llama mark in 3D: head, ears, snout, neck
       holo(p, new THREE.CylinderGeometry(0.13, 0.17, 0.36, 12), 0, -0.3, 0, 0.35);
       const hd = holo(p, new THREE.SphereGeometry(0.27, 12, 10), 0, 0.1, 0, 0.35);
       hd.scale.set(0.85, 1, 0.9);
@@ -360,7 +351,8 @@ export function start({ canvas, tags, isPaused, onStack }) {
       tuft.scale.set(1.2, 0.6, 1);
       const portD = holo(p, new THREE.CylinderGeometry(0.3, 0.3, 0.07, 20), 0, -0.55, 0.1);
       portD.rotation.x = 0.5;
-    } else if (k === "model") { // MODEL - a processor chip, pins all round
+  };
+  const buildModelLayer = (p, g) => { // MODEL - a processor chip, pins all round
       holo(p, new THREE.BoxGeometry(0.54, 0.54, 0.16), 0, 0, 0, 0.28);
       holo(p, new THREE.BoxGeometry(0.34, 0.34, 0.2), 0, 0, 0, 0.35);
       for (let k = 0; k < 4; k++) {
@@ -370,7 +362,8 @@ export function start({ canvas, tags, isPaused, onStack }) {
         holo(p, new THREE.BoxGeometry(0.14, 0.05, 0.05), 0.34, off, 0);
         holo(p, new THREE.BoxGeometry(0.14, 0.05, 0.05), -0.34, off, 0);
       }
-    } else if (k === "repo") { // REPO - a folder of workspace files with run.bat's play launcher
+  };
+  const buildRepoLayer = (p, g) => { // REPO - a folder of workspace files with run.bat's play launcher
       holo(p, new THREE.BoxGeometry(0.64, 0.48, 0.04), 0, 0.02, -0.07);
       holo(p, new THREE.BoxGeometry(0.24, 0.09, 0.045), -0.18, 0.29, -0.07);
       holo(p, new THREE.BoxGeometry(0.52, 0.4, 0.02), 0, 0.08, 0, 0.35);
@@ -383,7 +376,8 @@ export function start({ canvas, tags, isPaused, onStack }) {
       tri.position.set(0, -0.05, 0.14);
       g.add(tri);
       p.mats.push(tri.material);
-    } else if (k === "app") { // CODING APP - an app window with a launch arrow plugged into it
+  };
+  const buildAppLayer = (p, g) => { // CODING APP - an app window with a launch arrow plugged into it
       holo(p, new THREE.BoxGeometry(0.74, 0.5, 0.05), 0, 0, 0, 0.26);
       const as = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.34), new THREE.MeshBasicMaterial({ map: codeTexture([3, 5, 2, 6, 4, 3]) }));
       as.position.set(0.1, -0.04, 0.032);
@@ -391,13 +385,15 @@ export function start({ canvas, tags, isPaused, onStack }) {
       holo(p, new THREE.BoxGeometry(0.74, 0.09, 0.055), 0, 0.205, 0, 0.45);
       const arrow = holo(p, new THREE.ConeGeometry(0.07, 0.16, 3), -0.24, -0.04, 0.05, 0.7, "signal");
       arrow.rotation.z = -Math.PI / 2;
-    } else if (k === "venv") { // VENV - a terminal window with a typed prompt
+  };
+  const buildVenvLayer = (p, g) => { // VENV - a terminal window with a typed prompt
       holo(p, new THREE.BoxGeometry(0.7, 0.52, 0.05), 0, 0, 0, 0.28);
       const ts = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.36), new THREE.MeshBasicMaterial({ map: codeTexture([4, 2, 5, 3, 6, 2, 4]) }));
       ts.position.set(0, -0.05, 0.032);
       g.add(ts);
       holo(p, new THREE.BoxGeometry(0.7, 0.09, 0.055), 0, 0.235, 0, 0.45);
-    } else if (k === "agent") { // AGENT - the "A", four brand dots, harness lead
+  };
+  const buildAgentLayer = (p, g) => { // AGENT - the "A", four brand dots, harness lead
       const legL = holo(p, new THREE.BoxGeometry(0.12, 0.62, 0.12), -0.15, 0, 0, 0.35);
       legL.rotation.z = 0.38;
       const legR = holo(p, new THREE.BoxGeometry(0.12, 0.62, 0.12), 0.15, 0, 0, 0.35);
@@ -416,7 +412,8 @@ export function start({ canvas, tags, isPaused, onStack }) {
       lead.rotation.z = Math.PI;
       g.add(lead);
       p.mats.push(lead.material);
-    } else if (k === "job") { // ONE JOB - harness plug + the job file, through the Policy Gate
+  };
+  const buildJobLayer = (p, g) => { // ONE JOB - harness plug + the job file, through the Policy Gate
       const sheet = holo(p, new THREE.BoxGeometry(0.36, 0.46, 0.03), -0.1, 0.05, -0.1, 0.35);
       sheet.rotation.z = 0.08;
       holo(p, new THREE.BoxGeometry(0.3, 0.24, 0.24), 0.08, -0.05, 0.1, 0.35);
@@ -433,14 +430,32 @@ export function start({ canvas, tags, isPaused, onStack }) {
       p.mats.push(cable.material);
       const gate = holo(p, new THREE.TorusGeometry(0.44, 0.025, 8, 40), 0, 0, 0, 0.7, "signal");
       gate.rotation.x = 0.3;
-    } else { // EDITOR - a code editor window, sidebar + code
+  };
+  const buildEditorLayer = (p, g) => { // EDITOR - a code editor window, sidebar + code
       holo(p, new THREE.BoxGeometry(0.76, 0.56, 0.05), 0, 0, 0, 0.25);
       const es = new THREE.Mesh(new THREE.PlaneGeometry(0.52, 0.44), new THREE.MeshBasicMaterial({ map: codeTexture([5, 3, 6, 2, 4, 5, 3, 6, 4, 2, 5]) }));
       es.position.set(0.09, -0.03, 0.032);
       g.add(es);
       holo(p, new THREE.BoxGeometry(0.16, 0.56, 0.055), -0.3, 0, 0, 0.4);
       holo(p, new THREE.BoxGeometry(0.76, 0.09, 0.055), 0, 0.245, 0, 0.45);
-    }
+  };
+  const LAYER_BUILDERS = {
+    ollama: buildOllamaLayer,
+    model: buildModelLayer,
+    repo: buildRepoLayer,
+    app: buildAppLayer,
+    venv: buildVenvLayer,
+    agent: buildAgentLayer,
+    job: buildJobLayer,
+    editor: buildEditorLayer,
+  };
+  const buildPiece = (i) => {
+    const g = new THREE.Group();
+    const p = { g, mats: [], v: 0, landed: 0 };
+    const k = STEPS[i].key; // shapes go by key, so a new step can slot in anywhere
+    const build = LAYER_BUILDERS[k];
+    if (!build) throw new Error(`No layer builder for the step key "${k}"`);
+    build(p, g);
     g.add(makePlate(STEPS[i].plate));
     g.position.copy(SOURCES[i]);
     g.visible = false;
