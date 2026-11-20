@@ -285,5 +285,17 @@ class Probe(unittest.TestCase):
         self.assertLessEqual(len(probe._result("fail", "x" * 900, "m", 0, 0, lambda: 1, 0)["reason"]), probe.REASON_CAP)
 
 
+class AppProbe(unittest.TestCase):
+    def test_check_or_update_memory_raising_calls_out(self):
+        class RaisingPorts:
+            def index_memory(self):
+                raise RuntimeError("database locked")
+
+        out = mock.Mock()
+        import agl.app.probe
+        agl.app.probe.check_or_update_memory(ports=RaisingPorts(), out=out)
+        out.assert_called_with("Memory index skipped: database locked")
+
+
 if __name__ == "__main__":
     unittest.main()

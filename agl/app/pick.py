@@ -2,10 +2,8 @@
 
 Nothing here writes to the terminal or reads the keyboard by itself: text leaves only through the injected
 `out` callable, the menu choice arrives through `ask`, the progress banner through `stage`, and every run.py
-helper or root module through the one `ports` object. `os` is the only thing pulled in directly, because
-`os.environ.get` reads the user's saved pick.
+helper or root module through the one `ports` object.
 """
-import os
 
 
 def _upgrade_candidates(installed, hw, free_vram, free_ram, *, ports):
@@ -261,7 +259,7 @@ def select_and_pull_model(base_url, requested_model=None, interactive=False, sca
             return value
         target_to_pull = value
     elif best:  # 2. ZERO-DOWNLOAD BEST PRACTICE: If models are already installed on this machine, REUSE THEM!
-        return _installed_pick(best, os.environ.get("LOCAL_LLM_MODEL"), installed_models, pool, entries,
+        return _installed_pick(best, ports.environ_get("LOCAL_LLM_MODEL"), installed_models, pool, entries,
                                ports=ports, out=out)
     else:  # 3. No models installed on machine at all: evaluate PC build and select optimal cutting-edge model
         target_to_pull = _tier_pick(display_names, vram_gb, ram_gb, ports=ports, out=out)
