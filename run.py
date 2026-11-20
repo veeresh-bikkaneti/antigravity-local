@@ -41,6 +41,7 @@ import task_report
 import userdata
 from agl.platform import config, http, ollama, process, state
 from agl.app import pick
+import agl.app.server, agl.app.agent, agl.app.probe
 
 # Ensure UTF-8 console output on Windows
 if sys.platform == "win32":
@@ -225,60 +226,8 @@ LOOPBACK_OLLAMA_HOST = "127.0.0.1:11434"
 
 def check_ollama_service(base_url=config.OLLAMA_BASE_URL):
     """Check if Ollama is running; if not, attempt to start it."""
-    stage(2, 5, "SERVER", "make sure Ollama is answering")
-
-    # 1. Test if already responsive
-    if ollama.check_service(base_url=base_url, timeout=3):  # moved, shim until Phase 6: the HTTP ask lives in agl.platform.ollama
-        print(f"       Connected to Ollama service at: {base_url}")
-        return True
-
-    # 2. Ollama is not responding, check if ollama binary exists to auto-start
-    ollama_bin = shutil.which("ollama")
-    if not ollama_bin:
-        print("\n❌ [ERROR] Ollama is not installed or not in your system PATH.")
-        print("   Please install Ollama (free, open-source local LLM engine):")
-        if IS_WIN:
-            print("   👉 Windows: Download from https://ollama.com/download or run: winget install Ollama.Ollama")
-        elif sys.platform == "darwin":
-            print("   👉 macOS: Download from https://ollama.com/download or run: brew install ollama")
-        else:
-            print("   👉 Linux: Run: curl -fsSL https://ollama.com/install.sh | sh")
-        print("\n   Once installed, run this command again!\n")
-        sys.exit(1)
-
-    print("       Ollama service is not running. Launching 'ollama serve' in background (this PC only)...")
-    child_env = dict(os.environ, OLLAMA_HOST=LOOPBACK_OLLAMA_HOST)  # child only: our own environment stays as it was
-    if os.environ.get("OLLAMA_HOST") and os.environ["OLLAMA_HOST"] != LOOPBACK_OLLAMA_HOST:
-        print(f"       (Your OLLAMA_HOST is set; the server we start listens on {LOOPBACK_OLLAMA_HOST} only.)")
-    try:
-        if IS_WIN:
-            process.popen(
-                ["ollama", "serve"],
-                creationflags=process.CREATE_NEW_PROCESS_GROUP | process.DETACHED_PROCESS,
-                stdout=process.DEVNULL,
-                stderr=process.DEVNULL,
-                env=child_env
-            )
-        else:
-            process.popen(
-                ["ollama", "serve"],
-                stdout=process.DEVNULL,
-                stderr=process.DEVNULL,
-                start_new_session=True,
-                env=child_env
-            )
-        
-        # Wait up to 12 seconds for Ollama to spin up
-        for _ in range(12):
-            time.sleep(1)
-            if ollama.check_service(base_url=base_url, timeout=1):  # moved, shim until Phase 6: the HTTP ask lives in agl.platform.ollama
-                print("       Ollama service successfully started.")
-                return True
-    except Exception as exc:
-        print(f"       Warning: Auto-start attempted but got: {exc}")
-
-    print(f"\n⚠️  Please ensure Ollama is running (`ollama serve`) at {base_url} and re-run.\n")
-    return False
+    # moved to agl.app.server, shim until Phase 6
+    return agl.app.server.check_ollama_service(base_url, ports=_PickPorts(), out=_out)
 
 DEFAULT_BASE_URL = config.LLM_BASE_URL  # moved, shim until Phase 6: the one default lives in agl.platform.config
 DEFAULT_OLLAMA_HOSTS = (config.OLLAMA_BASE_URL, "http://127.0.0.1:11434")
@@ -471,7 +420,21 @@ def _best_installed(installed):
 class _PickPorts:
     """run.py's own globals, looked up at call time, so every test patch on a run.X name still lands."""
     def __getattr__(self, name):
-        return globals()[name]
+        try:
+            return globals()[name]
+        except KeyError:
+            raise AttributeError(name)
+
+    def environ_get(self, key, default=None):
+        import os
+        return os.environ.get(key, default)
+
+    def index_memory(self):
+        from memory import MemoryDatabase, EmbeddingProvider, MemoryIndexer
+        db = MemoryDatabase()
+        embedder = EmbeddingProvider()
+        indexer = MemoryIndexer(db, embedder)
+        return indexer.index_all(force=False)
 
 
 def _out(*a, **k):
@@ -841,178 +804,31 @@ def select_and_pull_model(base_url=config.OLLAMA_BASE_URL, requested_model=None,
 
 def _is_harness_error(exc):
     """True for the SDK's execution error. Matched by class name, so an SDK module move cannot break the CLI."""
-    return any(cls.__name__ == "AntigravityExecutionError" for cls in type(exc).__mro__)
+    # moved to agl.app.agent, shim until Phase 6
+    return agl.app.agent._is_harness_error(exc)
 
 async def run_agent(model, base_url=config.LLM_BASE_URL):
     """Run the demo and the shell. Leaving (exit word or Ctrl+C) ends quietly; the SDK's close-time error is not shown."""
-    leave = {"left": False}  # set once the user chose to leave; Agent.__aexit__ may fail after that
-    try:
-        await _run_agent_session(model, base_url, leave)
-    except KeyboardInterrupt:
-        print("\n\n👋 Goodbye!\n")
-    except Exception as exc:
-        if not _is_harness_error(exc):
-            raise
-        if leave["left"]:
-            return  # the goodbye is already printed
-        import asyncio
-        if isinstance(exc.__context__, (KeyboardInterrupt, asyncio.CancelledError)):
-            # Ctrl+C during the demo (on Python 3.11+ it can arrive as a task cancel), and the SDK failed while closing
-            print("\n\n👋 Goodbye!\n")
-            return
-        log = runlog.log_path(os.path.join(PROJECT_DIR, "logs"))
-        print(f"\n⚠️ The agent backend stopped unexpectedly. Log: {log}\n")
+    # moved to agl.app.agent, shim until Phase 6
+    return await agl.app.agent.run_agent(model, base_url, ports=_PickPorts(), out=_out, input_fn=input)
 
 async def _run_agent_session(model, base_url, leave):
     """Run autonomous demonstration and interactive shell."""
-    if _SETUP_ONLY:
-        stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
-        context_check(interactive=False)
-        stage(5, 5, "LAUNCH", "skipped: no terminal, so the chat does not start. Run python run.py in a terminal to chat")
-        level_clear(model, "built-in shell", ready=f"Ready: {model} at {base_url}. Run python run.py in a terminal to chat.")
-        return
-    stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
-    context_check(interactive=True)
-    stage(5, 5, "LAUNCH", "start the agent")
-    level_clear(model, "built-in shell")
-    
-    from google.antigravity import Agent, LocalOpenAIAgentConfig
-    from google.antigravity.types import CapabilitiesConfig
-    from google.antigravity.hooks import policy
-
-    workspace_dir = os.path.join(PROJECT_DIR, "workspace")
-    os.makedirs(workspace_dir, exist_ok=True)
-
-    # Disable tools only if using Gemma under Ollama (which does not support Ollama tool schema)
-    capabilities = CapabilitiesConfig(enabled_tools=[]) if "gemma" in model.lower() else None
-
-    config = LocalOpenAIAgentConfig(
-        model=model,
-        base_url=base_url,
-        workspaces=[workspace_dir],
-        policies=[policy.allow_all()],
-        capabilities=capabilities,
-    )
-
-    print("=============================================================================")
-    print(" ✨ System Online: Autonomous Agent Ready!")
-    print(f"    - Endpoint  : {base_url}")
-    print(f"    - Model     : {model}")
-    print(f"    - Workspace : {workspace_dir}")
-    print("=============================================================================\n")
-
-    # Autonomous Demonstration
-    target_demo = os.path.join(workspace_dir, "index.html")
-    print("▶ Running quick autonomous demonstration (Agent creating 'workspace/index.html')...")
-    demo_prompt = (
-        f"Create an index.html file with a modern dark-mode toggle at path {target_demo}. "
-        "Call the write_to_file tool with TargetFile, CodeContent, and Overwrite=true."
-    )
-    
-    task_report.set_aside(target_demo)
-    before = task_report.snapshot(workspace_dir)
-    try:
-        async with Agent(config) as agent:
-            response = await agent.chat(demo_prompt)
-            async for chunk in response:
-                print(chunk, end="", flush=True)
-            created, changed = task_report.summarize(before, task_report.snapshot(workspace_dir))
-            if "index.html" in created + changed and task_report.demo_page_ok(target_demo):
-                print("\n\n✅ Demonstration complete! File generated at: workspace/index.html\n")
-            else:
-                print("\n\n⚠️ The agent finished, but it did not write a dark-mode page to workspace/index.html.")
-                print("Small local models sometimes answer without writing anything. Try the same prompt below.\n")
-    except Exception as exc:
-        print(f"\n⚠️ Demo notice: {exc}\n")
-
-    # Interactive Agent Shell
-    print("=============================================================================")
-    print(" 💬 Interactive Local Agent Shell (Type 'exit' or 'quit' to leave)")
-    print(f"    Active Model: {model} (Prompt your agent to write code or inspect files)")
-    print("=============================================================================")
-    print("💡 Example prompts to try:")
-    print("   - 'What files are in this repository?'")
-    print("   - 'Create a python script called calculator.py with basic math functions.'")
-    print("   - 'Create about.html, a small page with a heading and one paragraph.'\n")
-
-    failures = 0  # consecutive per-turn errors; a dead backend must not loop forever
-    async with Agent(config) as agent:
-        while True:
-            try:
-                user_input = input("You > ").strip()
-                if not user_input:
-                    continue
-                if user_input.lower() in ["exit", "quit", "q"]:
-                    print("\n👋 Goodbye! Happy agent coding.\n")
-                    leave["left"] = True
-                    break
-
-                print("\nAgent > ", end="", flush=True)
-                response = await agent.chat(user_input)
-                async for chunk in response:
-                    print(chunk, end="", flush=True)
-                print("\n")
-                failures = 0
-            except (KeyboardInterrupt, EOFError):
-                print("\n\n👋 Goodbye!\n")
-                leave["left"] = True
-                break
-            except Exception as exc:
-                print(f"\n❌ Error during response: {exc}\n")
-                failures += 1
-                if failures >= MAX_SHELL_FAILURES:
-                    print(f"Stopping after {failures} errors in a row. Check that Ollama is running.\n")
-                    break
+    # Prompt contract: write_to_file(TargetFile, CodeContent, Overwrite=True)
+    # moved to agl.app.agent, shim until Phase 6
+    return await agl.app.agent._run_agent_session(model, base_url, leave, ports=_PickPorts(), out=_out, input_fn=input)
 
 def check_or_update_memory():
     """Ensure the 3-Tier Memory Fabric (.memory/index.sqlite) is indexed and up to date."""
-    try:
-        from memory import MemoryDatabase, EmbeddingProvider, MemoryIndexer
-        db = MemoryDatabase()
-        embedder = EmbeddingProvider()
-        indexer = MemoryIndexer(db, embedder)
-        stats = indexer.index_all(force=False)
-        if stats["indexed"] > 0:
-            print(f"[*] Memory Fabric auto-indexed {stats['indexed']} updated files ({stats['chunks']} chunks).")
-    except Exception as exc:
-        print(f"Memory index skipped: {exc}")  # the run goes on without the index
+    # moved to agl.app.probe, shim until Phase 6
+    agl.app.probe.check_or_update_memory(ports=_PickPorts(), out=_out)
 
 
 def run_probe_command(args):
     """`python run.py --probe [model]`: one live tool call, recorded in the local ledger. Returns the exit code.
     It runs before the venv step and never starts or pulls anything: it only talks to a server that is already up."""
-    _load_env()
-    base_api = config.llm_base_url()
-    backend = detect_backend(base_api)
-    if backend is None:
-        print(f"❌ Nothing answered at {base_api}. Start your model server, then run --probe again.")
-        return 1
-    host = base_api.replace("/v1", "").rstrip("/")
-    entries = get_ledger_entries()
-    model = args.model or os.environ.get("LOCAL_LLM_MODEL")
-    if not model and backend == "ollama":
-        names = sorted(n for n in get_installed_ollama_models(host) if ":" in n or "/" in n)
-        best = ranking.best_for_agent(_installed_candidates(names, get_installed_details(host), get_hardware_profile(), entries))
-        model = best["tag"] if best else None
-    if not model:
-        print("❌ No model to probe. Name one: python run.py --probe <model>")
-        return 1
-    print(f"🔬 Probing {_printable_tag(model)}: one live tool call (read a file, write a file)...")
-    if ledger.fresh_pass(model, entries):
-        print("       It passed a few minutes ago, so we are not repeating it (a pass is trusted for 5 minutes).")
-        return 0
-    result = probe.run_probe(base_api, model)
-    ok, warning = ledger.append(model, result["verdict"], result["reason"], runtime=backend, harness="probe")
-    if result["verdict"] == "pass":
-        print(f"       ✅ Passed: {result['reason']}.")
-    else:
-        print(f"       ❌ Failed: {result['reason']}.")
-        print("          Models that fail are ranked below ones we have not tried, but you can still pick them.")
-    if result["tok_s"] is not None:
-        print(f"       slow on this PC ({result['tok_s']} tok/s)" if result["tok_s"] < 5 else f"       Speed: {result['tok_s']} tok/s")
-    if not ok:
-        print(f"       Warning: {warning}")
-    return 0 if result["verdict"] == "pass" else 1
+    # moved to agl.app.probe, shim until Phase 6
+    return agl.app.probe.run_probe_command(args, ports=_PickPorts(), out=_out)
 
 
 def parse_args(argv=None):
