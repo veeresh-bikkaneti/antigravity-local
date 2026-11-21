@@ -25,7 +25,6 @@ max-complexity = 12
 # One entry per file, listing only the codes it breaks today.
 # by design, not debt: platform is where HTTP, subprocess and SQLite live (Layer contract)
 "agl/platform/**" = ["TID251"]
-"agent_setup.py" = ["C901", "TID251"]
 "agent_with_workspace.py" = ["T201"]
 "code_agent.py" = ["C901", "PLR0915", "T201"]
 "handoff.py" = ["C901", "TID251"]
