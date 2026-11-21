@@ -8,11 +8,9 @@ record types are skipped. HANDOFF.md can hold command output and secrets from th
 Collaborators (stdin, input, git runner, home, cwd) are passed in and looked up at call time, so tests never touch
 the real machine.
 
-Phase 6c: the file/JSON/git/registry I/O lives in agl/platform (agent_files.py, agent_proc.py), the pure
-decisions in agl/core/handoff.py, and the orchestration (write_handoff, install_hook) in agl/app/agent_session.py.
-Every name below stays as a shim marked "# moved, shim until Phase 6d", reading this module's own globals
-(constants, sys, STDIN_WAIT) at call time so patch.object keeps hitting. main() and read_hook_stdin() stay here:
-they are the hook's shell and move to agl/ui only in Phase 6d.
+The file/JSON/git/registry I/O lives in agl/platform (agent_files.py, agent_proc.py), the pure decisions in
+agl/core/handoff.py, and the orchestration (write_handoff, install_hook) in agl/app/agent_session.py. What is
+left here is this module's own shell: its constants, plus main() and read_hook_stdin(), the hook's shell.
 """
 
 import argparse
@@ -30,49 +28,27 @@ from agl.platform import agent_files, agent_proc
 RUN_PY = Path(__file__).resolve().parent / "run.py"
 
 
-def _clip(text, limit=MAX_TEXT):  # moved, shim until Phase 6d
-    return core_handoff.clip(text, limit)
-
-
-def read_records(path):  # moved, shim until Phase 6d
+def read_records(path):  # I/O in agl.platform.agent_files
     """Parsed JSON objects, one per line. Blank and broken lines are skipped."""
     return agent_files.read_records(path)
 
 
-def _blocks(rec):  # moved, shim until Phase 6d
-    return core_handoff.blocks(rec)
-
-
-def summarize_transcript(records):  # moved, shim until Phase 6d
-    """The facts HANDOFF.md needs, from whatever records we recognise.
-    was summarize: renamed because task_report.summarize means the workspace before/after diff."""
-    return core_handoff.summarize_transcript(records)
-
-
-summarize = summarize_transcript  # renamed, shim until Phase 6: the old name stays for callers and tests
+summarize = core_handoff.summarize_transcript  # old name stays for callers and tests
 
 
 # ---------- finding the transcript ----------
 
-def project_dir_name(path):  # moved, shim until Phase 6d
+def project_dir_name(path):  # pure logic in agl.core.handoff
     """Claude Code names a project's transcript folder after its path with every non-alphanumeric turned into '-'."""
     return core_handoff.project_dir_name(path)
 
 
-def config_dirs(home, environ):  # moved, shim until Phase 6d
+def config_dirs(home, environ):  # pure logic in agl.core.handoff
     """Where transcripts may live: the configured folder, ~/.claude, and ~/.claude-local (local-model sessions)."""
     return core_handoff.config_dirs(home, environ)
 
 
-def _first_cwd(path):  # moved, shim until Phase 6d
-    return agent_files.first_cwd(path)
-
-
-def _same(a, b):  # moved, shim until Phase 6d
-    return core_handoff.same(a, b)
-
-
-def find_transcript(session, repo, home=None, environ=None):  # moved, shim until Phase 6d
+def find_transcript(session, repo, home=None, environ=None):  # I/O in agl.platform.agent_files
     """The transcript for this repo: `session` is an id or 'latest'. Newest wins across every config folder."""
     home = Path(home) if home else Path.home()
     environ = os.environ if environ is None else environ
@@ -81,15 +57,11 @@ def find_transcript(session, repo, home=None, environ=None):  # moved, shim unti
 
 # ---------- HANDOFF.md ----------
 
-def _git(args, repo, run=None):  # moved, shim until Phase 6d
-    return agent_proc.git(args, repo, run)
-
-
-def repo_root(cwd, run=None):  # moved, shim until Phase 6d
+def repo_root(cwd, run=None):  # I/O in agl.platform.agent_proc
     return agent_proc.repo_root(cwd, run)
 
 
-def render(info, transcript, repo, now=None, git_run=None):  # moved, shim until Phase 6d
+def render(info, transcript, repo, now=None, git_run=None):  # pure logic in agl.core.handoff
     return core_handoff.render(info, transcript, repo, now=now,
                                git_text=lambda args, r: agent_proc.git(args, r, git_run))
 
@@ -130,12 +102,7 @@ def read_hook_stdin(stdin, wait=None):
 MARKER = "<!-- written by antigravity-local handoff -->"
 
 
-def _backup_path(target):  # moved, shim until Phase 6d
-    """A backup name that never overwrites an earlier backup."""
-    return agent_files.backup_path(target)
-
-
-def ensure_ignored(repo, git_run=None, out=print):  # moved, shim until Phase 6d
+def ensure_ignored(repo, git_run=None, out=print):  # stays here: this module's own shell
     """Make sure git will not pick HANDOFF.md up. If the project does not already ignore it, add it to
     .git/info/exclude (a local file that is never committed) and say so. Returns where it is ignored, or None."""
     run = git_run or agent_proc.run
@@ -161,13 +128,13 @@ def ensure_ignored(repo, git_run=None, out=print):  # moved, shim until Phase 6d
         return None
 
 
-def is_tracked(repo, git_run=None):  # moved, shim until Phase 6d
+def is_tracked(repo, git_run=None):  # I/O in agl.platform.agent_proc
     """True when git already tracks HANDOFF.md in this project (`git ls-files --error-unmatch` succeeds).
     If git cannot be run we cannot tell, so say no and let ensure_ignored warn."""
     return agent_proc.is_tracked(repo, git_run)
 
 
-def write_handoff(transcript, repo, now=None, git_run=None, out=print):  # moved, shim until Phase 6d
+def write_handoff(transcript, repo, now=None, git_run=None, out=print):  # orchestration in agl.app.agent_session
     """Write HANDOFF.md. Refuses when the project tracks it. A file we did not write is backed up, never overwritten."""
     return agent_session.write_handoff(
         transcript, repo, now=now, git_run=git_run, out=out, is_tracked=agent_proc.is_tracked,
@@ -185,16 +152,12 @@ def hook_command():
     return f'{py} "{RUN_PY}" handoff'
 
 
-def _our_hook(matcher=None):  # moved, shim until Phase 6d
-    return core_handoff.our_hook(hook_command(), matcher)
-
-
-def merge_hooks(settings):  # moved, shim until Phase 6d
+def merge_hooks(settings):  # pure logic in agl.core.handoff
     """settings with our StopFailure (rate_limit) and PreCompact hooks added. Everything else is kept."""
     return core_handoff.merge_hooks(settings, hook_command())
 
 
-def install_hook(repo, input_fn=None, out=print):  # moved, shim until Phase 6d
+def install_hook(repo, input_fn=None, out=print):  # orchestration in agl.app.agent_session
     """Add the hooks to <repo>/.claude/settings.local.json only, after showing the diff and a typed y."""
     return agent_session.install_hook(
         repo, input_fn=input_fn, out=out, hook_cmd=hook_command, merge=core_handoff.merge_hooks,
