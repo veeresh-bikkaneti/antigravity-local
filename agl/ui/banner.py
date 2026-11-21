@@ -106,9 +106,6 @@ def context_check(interactive, ask=None, *, ports=None, out=print) -> None:
     check = getattr(agent_setup, "claude_context", None) if agent_setup else None
     if check is None:
         return
-    env_get = ports.environ_get if (ports and hasattr(ports, "environ_get")) else os.environ.get
-    if env_get("LOCAL_LLM_BACKEND") == "openai":
-        return
     env = ports.environ_copy() if (ports and hasattr(ports, "environ_copy")) else dict(os.environ)
     if env.get("LOCAL_LLM_BACKEND") == "openai":
         return
