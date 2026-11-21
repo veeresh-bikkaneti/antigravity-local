@@ -8,10 +8,10 @@ Every collaborator (which, input, subprocess, home) is passed in and looked up a
 touch the real machine. Do not bind `input` or `subprocess.call` as default arguments: that freezes the real
 one at import time and the mocks stop working.
 
-Phase 6c: the subprocess/file/registry I/O lives in agl/platform (agent_files.py, agent_proc.py), the pure
-decisions in agl/core/agent_config.py, and the orchestration (run, claude_doctor) in agl/app/agent_session.py.
-Every name below stays as a shim marked "# moved, shim until Phase 6d", reading this module's own globals
-(constants, sys, config) at call time so patch.object keeps hitting.
+The subprocess/file/registry I/O lives in agl/platform (agent_files.py, agent_proc.py), the pure decisions in
+agl/core/agent_config.py, and the orchestration (run, claude_doctor) in agl/app/agent_session.py. What is left
+here is this module's own shell: its constants, the thin wrappers that read them, and the entry points run.py
+calls.
 """
 
 import json
@@ -51,23 +51,19 @@ class Result:
     notes: list = field(default_factory=list)
 
 
-def validate_model_tag(model):  # moved, shim until Phase 6d
+def validate_model_tag(model):  # decision in agl.core.agent_config
     """Reject anything that could be read as a flag, split into arguments, or run by a shell."""
     err = core_config.validate_model_tag(model, MODEL_TAG_RE)
     if err is not None:
         raise AgentSetupError(err)
 
 
-def node_ok(version):  # moved, shim until Phase 6d
+def node_ok(version):  # decision in agl.core.agent_config
     """True for Node >= 22.19 (what pi needs). Accepts 'v26.13.0'."""
     return core_config.node_ok(version, PI_NODE_MIN)
 
 
-def _node_version():  # moved, shim until Phase 6d
-    return agent_proc.node_version()
-
-
-def ensure_agent(name, which=None, input_fn=None, call=None, node_version=None, out=print):  # moved, shim until Phase 6d
+def ensure_agent(name, which=None, input_fn=None, call=None, node_version=None, out=print):  # I/O in agl.platform.agent_proc
     """Return the agent's path. If it is missing, show the command and install only when the user types y."""
     which = which or agent_proc.which
     input_fn = input_fn or input
@@ -107,69 +103,26 @@ def ensure_agent(name, which=None, input_fn=None, call=None, node_version=None, 
     return found
 
 
-def _claude_install_argv():  # moved, shim until Phase 6d
-    return agent_proc.claude_install_argv(sys.platform)
-
-
-def _ensure_claude(which, input_fn, call, out):  # moved, shim until Phase 6d
-    return agent_proc.ensure_claude(which, input_fn, call, out, sys.platform)
-
-
 # ---------- config merging ----------
 
-def _load(path):  # moved, shim until Phase 6d
-    return agent_files.load(path)
-
-
-def _obj(parent, key, path):  # moved, shim until Phase 6d
-    return core_config.obj(parent, key, path)
-
-
-def _pi_models(data, model, base_url, path):  # moved, shim until Phase 6d
-    return core_config.pi_models(data, model, base_url, path, CONTEXT_WINDOW)
-
-
-def _opencode(data, model, base_url, path):  # moved, shim until Phase 6d
-    return core_config.opencode(data, model, base_url, path, OPENCODE_SCHEMA)
-
-
-def _targets(name, home):  # moved, shim until Phase 6d
-    """(path, merge function) per file we own a block in. Codex has none."""
-    return core_config.targets(name, home, CONTEXT_WINDOW, OPENCODE_SCHEMA)
-
-
-def _render(data):  # moved, shim until Phase 6d
-    return core_config.render_json(data)
-
-
-def _atomic_write(path, payload):  # moved, shim until Phase 6d
-    return agent_files.atomic_write(path, payload)
-
-
-def agent_command(name, model, exe=None, prompt=None):  # moved, shim until Phase 6d
-    """The one argv for each agent, used by the printed hint, write_config's result and launch.
-    `prompt` is the agent's first message (--continue-local); every agent takes it on its command line."""
-    return core_config.agent_command(name, model, exe=exe, prompt=prompt)
-
-
-def write_config(name, model, base_url, home=None):  # moved, shim until Phase 6d
+def write_config(name, model, base_url, home=None):  # this module's own shell
     """Merge our Ollama block into the agent's config. Plans every file first, so a broken file stops us
     before anything is written. A file whose parsed content would not change is left exactly as it is."""
     validate_model_tag(model)
     home = Path(home) if home else Path.home()
 
     if name == "claude":
-        return Result(command=agent_command("claude", model))
+        return Result(command=core_config.agent_command("claude", model))
 
     if name == "codex":
         notes = []
         if "11434" not in base_url:
             notes.append(f"codex --oss talks to Ollama on its default port (11434); {base_url} is not used by it.")
-        return Result(command=agent_command("codex", model), notes=notes)
+        return Result(command=core_config.agent_command("codex", model), notes=notes)
 
     plans = []
-    for path, merge in _targets(name, home):
-        data, text = _load(path)
+    for path, merge in core_config.targets(name, home, CONTEXT_WINDOW, OPENCODE_SCHEMA):
+        data, text = agent_files.load(path)
         before = json.loads(text) if text is not None else None
         merge(data, model, base_url, path)
         plans.append((path, text is not None, data != before, data))
@@ -181,25 +134,12 @@ def write_config(name, model, base_url, home=None):  # moved, shim until Phase 6
         backup = Path(str(path) + BACKUP_SUFFIX)
         if existed and not backup.exists():
             agent_files.copy2(path, backup)
-        _atomic_write(path, _render(data))
+        agent_files.atomic_write(path, core_config.render_json(data))
         changed = True
-    return Result(command=agent_command(name, model), files=[p for p, *_ in plans], changed=changed)
+    return Result(command=core_config.agent_command(name, model), files=[p for p, *_ in plans], changed=changed)
 
 
-def context_hint():  # moved, shim until Phase 6d
-    return core_config.context_hint()
-
-
-def _cmdline(argv):  # moved, shim until Phase 6d
-    return agent_proc.cmdline(argv, sys.platform)
-
-
-def _same_folder(a, b):  # moved, shim until Phase 6d
-    """True when two paths are the same folder: resolved, and case-insensitive where the OS is (Windows)."""
-    return core_config.same_folder(a, b)
-
-
-def resolve_workspace(arg, cwd, project_dir, out=None):  # moved, shim until Phase 6d
+def resolve_workspace(arg, cwd, project_dir, out=None):  # this module's own shell
     """The folder the agent works in, and one printed line that says which.
 
     --workspace wins. With no flag it is the folder the command was run from, except inside this repo's own
@@ -218,7 +158,7 @@ def resolve_workspace(arg, cwd, project_dir, out=None):  # moved, shim until Pha
         out(f"       Folder   : {path} (from --workspace)")
         return str(path)
     here = Path(cwd).resolve()
-    if _same_folder(here, project_dir):
+    if core_config.same_folder(here, project_dir):
         path = Path(project_dir).resolve() / "workspace"
         path.mkdir(exist_ok=True)
         out(f"       Folder   : {path} (you ran this inside antigravity-local, so the agent works in its "
@@ -243,17 +183,12 @@ CLAUDE_BANNER = ("This session uses your local model. Plain `claude`, VS Code an
                  "subscription. Uninstall: delete ~/.claude-local.")
 
 
-def claude_base_url(base_url):  # moved, shim until Phase 6d
-    """LOCAL_LLM_BASE_URL minus a trailing slash and /v1: Claude Code wants the server root."""
-    return core_config.claude_base_url(base_url, config.OLLAMA_BASE_URL)
-
-
-def claude_context(environ):  # moved, shim until Phase 6d
+def claude_context(environ):  # decision in agl.core.agent_config
     """(tokens, warning or None). The window Ollama really runs with is what Claude Code must plan for."""
     return core_config.claude_context(environ, CONTEXT_WINDOW)
 
 
-def claude_child_env(model, base_url, home=None, environ=None):  # moved, shim until Phase 6d
+def claude_child_env(model, base_url, home=None, environ=None):  # this module's own shell
     """A COPY of the environment with everything Claude Code needs to talk to Ollama. Never applied to os.environ."""
     home = Path(home) if home else Path.home()
     env = dict(os.environ if environ is None else environ)
@@ -265,7 +200,7 @@ def claude_child_env(model, base_url, home=None, environ=None):  # moved, shim u
     env.update({
         "CLAUDE_CONFIG_DIR": str((home / LOCAL_CONFIG_NAME).resolve()),
         "CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST": "1",
-        "ANTHROPIC_BASE_URL": claude_base_url(base_url),
+        "ANTHROPIC_BASE_URL": core_config.claude_base_url(base_url, config.OLLAMA_BASE_URL),
         "ANTHROPIC_AUTH_TOKEN": "ollama",
         "ANTHROPIC_API_KEY": "",
         "CLAUDE_CODE_USE_BEDROCK": "",
@@ -281,17 +216,13 @@ def claude_child_env(model, base_url, home=None, environ=None):  # moved, shim u
     return env
 
 
-def _read_json(path):  # moved, shim until Phase 6d
-    return agent_files.read_json(path)
-
-
-def claude_routing_warnings(home=None, environ=None):  # moved, shim until Phase 6d
+def claude_routing_warnings(home=None, environ=None):  # this module's own shell
     """Where a routing variable is already set. Names and places only, never values. Read-only."""
     home = Path(home) if home else Path.home()
     environ = os.environ if environ is None else environ
     found = [f"{v} is set in this terminal's environment" for v in ROUTING_VARS if environ.get(v)]
     settings = home / ".claude" / "settings.json"
-    env_block = _read_json(settings).get("env")
+    env_block = agent_files.read_json(settings).get("env")
     if isinstance(env_block, dict):
         found += [f"{v} is set in the env block of {settings}" for v in ROUTING_VARS if v in env_block]
     if not found:
@@ -301,7 +232,7 @@ def claude_routing_warnings(home=None, environ=None):  # moved, shim until Phase
                     "`python run.py --agent claude --doctor` to see exactly what to remove."]
 
 
-def copy_user_settings(home=None, out=None):  # moved, shim until Phase 6d
+def copy_user_settings(home=None, out=None):  # I/O in agl.platform.agent_files
     """Copy (never link) a safe slice of ~/.claude into ~/.claude-local, once. Reads ~/.claude, writes only the copy."""
     out = out or print
     home = Path(home) if home else Path.home()
@@ -318,30 +249,26 @@ def copy_user_settings(home=None, out=None):  # moved, shim until Phase 6d
         if (src / folder).is_dir():
             agent_files.copytree(src / folder, dst / folder)
             copied.append(folder + "/")
-    settings = _read_json(src / "settings.json")
+    settings = agent_files.read_json(src / "settings.json")
     if settings:
         kept = {k: v for k, v in settings.items() if k not in DROP_SETTINGS_KEYS}
-        _atomic_write(dst / "settings.json", _render(kept))
+        agent_files.atomic_write(dst / "settings.json", core_config.render_json(kept))
         copied.append("settings.json (without env, model, modelSettings, apiKeyHelper)")
     (dst / COPY_MARKER).write_text("copied once; delete this file to copy again\n", encoding="utf-8")
     out(f"       Settings : copied {', '.join(copied) or 'nothing (no ~/.claude files found)'} into {dst}")
     return copied
 
 
-def _is_claude_key(name):  # moved, shim until Phase 6d
-    return core_config.is_claude_key(name)
-
-
-def _registry_env(scope):  # moved, shim until Phase 6d
+def _registry_env(scope):  # I/O in agl.platform.agent_proc
     """Variable NAMES in a Windows environment hive ('User' or 'Machine'). Empty elsewhere."""
     return agent_proc.registry_env(scope, sys.platform, MACHINE_ENV_KEY)
 
 
-def _settings_findings(path):  # moved, shim until Phase 6d
-    data = _read_json(path)
+def _settings_findings(path):  # this module's own shell
+    data = agent_files.read_json(path)
     hits = []
     if isinstance(data.get("env"), dict):
-        hits += [(f'"{k}" inside the "env" block', k) for k in data["env"] if _is_claude_key(k)]
+        hits += [(f'"{k}" inside the "env" block', k) for k in data["env"] if core_config.is_claude_key(k)]
     if "apiKeyHelper" in data:
         hits.append(('the "apiKeyHelper" line', "apiKeyHelper"))
     model = data.get("model")
@@ -350,7 +277,7 @@ def _settings_findings(path):  # moved, shim until Phase 6d
     return hits
 
 
-def project_roots(cwd=None, git_run=None):  # moved, shim until Phase 6d
+def project_roots(cwd=None, git_run=None):  # I/O in agl.platform.agent_proc
     """The folders whose .claude/settings*.json apply here: the current folder and, when it is inside a git
     repository, the repository root. Claude Code reads the project settings from the root even when you start it
     in a subfolder, so a doctor that only looked at the current folder would miss them."""
@@ -360,7 +287,7 @@ def project_roots(cwd=None, git_run=None):  # moved, shim until Phase 6d
     try:
         r = run(["git", "rev-parse", "--show-toplevel"], cwd=str(here), capture_output=True, text=True, timeout=30)
         top = (r.stdout or "").strip()
-        if r.returncode == 0 and top and not _same_folder(top, here):
+        if r.returncode == 0 and top and not core_config.same_folder(top, here):
             roots.append(Path(top))
     except Exception:
         pass
@@ -368,7 +295,7 @@ def project_roots(cwd=None, git_run=None):  # moved, shim until Phase 6d
 
 
 def claude_doctor(home=None, environ=None, project=None, registry=None, platform=None, out=None, cwd=None,
-                  git_run=None):  # moved, shim until Phase 6d
+                  git_run=None):  # orchestration in agl.app.agent_session
     """Read-only. Finds what would send normal Claude Code sessions to a local model. Returns the number of
     findings. Prints variable names and file paths, never values. `project` pins one folder (tests); otherwise
     it looks at the current folder and its git root."""
@@ -380,7 +307,7 @@ def claude_doctor(home=None, environ=None, project=None, registry=None, platform
         read_json=agent_files.read_json, read_text=agent_files.read_text_or, managed_settings=MANAGED_SETTINGS)
 
 
-def launch(name, model, workspace, call=None, which=None, env=None, prompt=None, argv=None):  # moved, shim until Phase 6d
+def launch(name, model, workspace, call=None, which=None, env=None, prompt=None, argv=None):  # I/O in agl.platform.agent_proc
     """Start the agent as a child process in `workspace` and return its exit code.
     `env` (Claude Code) is a full child environment; `argv(exe)` replaces the default command (resume)."""
     return agent_proc.launch(name, model, workspace, call_fn=call, which_fn=which, env=env, prompt=prompt, argv=argv)
@@ -388,16 +315,19 @@ def launch(name, model, workspace, call=None, which=None, env=None, prompt=None,
 
 def run(name, model, base_url, workspace, config_only=False, home=None, which=None, input_fn=None, call=None,
         node_version=None, out=print, environ=None, continue_local=False, resume_from=None,
-        copy_settings=False, find_transcript=None):  # moved, shim until Phase 6d
+        copy_settings=False, find_transcript=None):  # orchestration in agl.app.agent_session
     """Install if the user agrees, write config, say what we did, then launch. Returns the exit code."""
     return agent_session.setup_run(
         name, model, base_url, workspace, config_only=config_only, home=Path(home) if home else Path.home(),
         which=which, input_fn=input_fn, call=call, node_version=node_version, out=out, environ=environ,
         continue_local=continue_local, resume_from=resume_from, copy_settings=copy_settings,
         find_transcript=find_transcript, validate=validate_model_tag, ensure_agent=ensure_agent,
-        write_config=write_config, launch=launch, endpoint_of=claude_base_url, context_of=claude_context,
+        write_config=write_config, launch=launch,
+        endpoint_of=lambda b: core_config.claude_base_url(b, config.OLLAMA_BASE_URL),
+        context_of=lambda e: core_config.claude_context(e, CONTEXT_WINDOW),
         routing_warnings=claude_routing_warnings, child_env=claude_child_env, copy_settings_fn=copy_user_settings,
-        hint=context_hint, cmdline=lambda argv: agent_proc.cmdline(argv, sys.platform), no_transcript=_no_transcript,
+        hint=lambda: core_config.context_hint(), cmdline=lambda argv: agent_proc.cmdline(argv, sys.platform),
+        no_transcript=_no_transcript,
         mkdir=agent_files.mkdir, continue_prompt=CONTINUE_PROMPT, backup_suffix=BACKUP_SUFFIX, banner=CLAUDE_BANNER,
         local_config_name=LOCAL_CONFIG_NAME)
 

@@ -51,7 +51,7 @@ def hf_badges(pipeline_tag, chat_template=None):
     template = (chat_template or "")[:TEMPLATE_CAP] if isinstance(chat_template, str) else ""
     if _TOOLS_TEMPLATE.search(template):
         out.append("tools?")
-    if "\x3ct\x68ink\x3e" in template:  # moved, shim until Phase 6 equivalent tag check, written as escapes: a raw \x3cthink\x3e is scrambled by copy tooling
+    if "\x3ct\x68ink\x3e" in template:  # tag check written as escapes: a raw \x3cthink\x3e is scrambled by copy tooling
         out.append("thinking?")
     return tuple(out)
 

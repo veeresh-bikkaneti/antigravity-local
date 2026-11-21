@@ -1,9 +1,9 @@
 """Describe what a --task run changed in the workspace. Standard library only.
 
-moved, shim until Phase 6: the pure report functions (summarize, deleted, render) now live at
+the pure report functions (summarize, deleted, render) live at
 agl.core.task_report and are resolved on first use (not at import) -- a lone copy of this file beside
 a side script (code_agent.py and friends get one in their folder) keeps importing with the standard
-library only, and touches no package. The disk-touching parts below stay at the root until Phase 4.
+library only, and touches no package. The disk-touching parts below stay at the root.
 """
 import hashlib
 import os

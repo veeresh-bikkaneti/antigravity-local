@@ -4,8 +4,8 @@ Ollama has no documented JSON API for its library, so this reads the HTML page. 
 with no stable hooks, so a redesign can break it at any time. That is why it sits behind --scan-library and why a
 page we cannot read gives an empty list instead of an error. The curated catalog stays the dependable list.
 
-moved, shim until Phase 6: the fetch now lives in the ollama platform module (agl/platform/ollama.py);
-this file keeps the parsing (which is pure) and the same names, so old imports and test patches keep working.
+the fetch lives in the ollama platform module (agl/platform/ollama.py);
+this file keeps the parsing (which is pure) and the same names for old imports and test patches.
 """
 import bisect
 import html
@@ -13,8 +13,7 @@ import re
 
 from agl.platform import ollama as ollama_platform
 
-LIBRARY_URL = ollama_platform.LIBRARY_URL  # moved, shim until Phase 6
-MAX_BYTES = ollama_platform.MAX_BYTES  # moved, shim until Phase 6
+MAX_BYTES = ollama_platform.MAX_BYTES  # moved to agl.platform.ollama
 CAPABILITY_CHIPS = {"tools": "tools", "vision": "vision", "thinking": "thinking", "embedding": "embedding"}
 # The page paints capability chips indigo and size chips blue. Anything else is ignored.
 _ITEM_OPEN = re.compile(r'<li\b[^>]{0,4000}>')  # the cap keeps a flood of "<li" linear, and allows long real attributes
@@ -67,5 +66,5 @@ def parse_library(page):
 
 def scan(opener=None, timeout=6):
     """Fetch and parse the page. Any failure is []."""
-    # moved, shim until Phase 6: the page fetch lives in agl.platform.ollama; the None opener resolves there
+    # the page fetch lives in agl.platform.ollama; the None opener resolves there
     return parse_library(ollama_platform.library_page(opener=opener, timeout=timeout))

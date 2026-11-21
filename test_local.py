@@ -43,7 +43,7 @@ except ImportError:
     sys.exit(1)
 
 async def main():
-    from agl.platform import config  # moved, shim until Phase 6: the one default lives in agl.platform.config
+    from agl.platform import config  # the one default lives in agl.platform.config
     model, base_url = resolve_model(ARGS.model, environ=os.environ, default_base_url=config.LLM_BASE_URL)
 
     # Gemma models in Ollama do not support tool calling schema; disable tools if running gemma

@@ -1,6 +1,6 @@
 """Pick the largest GGUF quant that fits the memory that is free right now.
 
-moved, shim until Phase 6: the module now lives at agl.core.quant_pick; this file only re-exports it.
+the module lives at agl.core.quant_pick; this file only re-exports it.
 """
 from agl.core.quant_pick import (  # noqa: F401
     BELOW_Q3,
@@ -13,4 +13,4 @@ from agl.core.quant_pick import (  # noqa: F401
     pick_quant,
     quant_of,
 )
-from agl.core.menu import QUANT_RE, SPLIT_RAM_SHARE  # noqa: F401  moved, shim until Phase 6: as today, re-exported under this module's old name
+from agl.core.menu import QUANT_RE, SPLIT_RAM_SHARE  # noqa: F401  re-exported under this module's old name

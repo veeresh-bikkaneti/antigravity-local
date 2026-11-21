@@ -4,8 +4,8 @@
 /api/show once per model. If neither answers, capabilities stay None, which means "unknown", never "none":
 an old Ollama must not make every model look tool-less.
 
-moved, shim until Phase 6: the HTTP machinery (requests, caps, the /api/show fallback) lives at
-agl/platform/ollama; this file keeps the same names and defaults so old imports keep working.
+the HTTP machinery (requests, caps, the /api/show fallback) lives at
+agl/platform/ollama; this file keeps the same names and defaults for old imports.
 """
 import json
 
@@ -13,24 +13,23 @@ import model_wizard
 from agl.platform import config, http
 from agl.platform import ollama as ollama_platform
 
-MAX_SHOW_CALLS = ollama_platform.MAX_SHOW_CALLS  # moved, shim until Phase 6
-GB = ollama_platform.GB  # moved, shim until Phase 6
+MAX_SHOW_CALLS = ollama_platform.MAX_SHOW_CALLS  # moved to agl.platform.ollama
 
 
 def _get_json(opener, url, timeout, data=None):
-    # moved, shim until Phase 6
+    # moved to agl.platform.ollama
     return ollama_platform._get_json(opener, url, timeout, data=data)
 
 
 def _caps(value):
     """Known-type entries only. A non-empty list with nothing usable is unknown (None), not an empty list."""
-    # moved, shim until Phase 6
+    # moved to agl.platform.ollama
     return ollama_platform._caps(value)
 
 
 def installed_details(base_url=config.OLLAMA_BASE_URL, opener=None, timeout=3):
     """{normalised tag: {"name", "size_gb", "modified_at", "caps"}}. {} when the server does not answer."""
-    # moved, shim until Phase 6
+    # moved to agl.platform.ollama
     return ollama_platform.installed_details(base_url, opener=opener, timeout=timeout)
 
 
@@ -41,5 +40,5 @@ def lookup(details, name):
     lists that short alias. It never finds a model in any other namespace:
     acme/foo:1 does not answer to foo:1.
     """
-    # moved, shim until Phase 6
+    # moved to agl.platform.ollama
     return ollama_platform.lookup(details, name)

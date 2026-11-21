@@ -12,7 +12,7 @@ class HttpJson(Protocol):
 
     def get_json(self, url, *, timeout, headers=None, data=None, opener=None) -> Any:
         """The parsed JSON of the reply. `timeout` has no default on purpose: the caller passes its own.
-        `data` is a POST body (a GET when it is None); `opener` as in agl.platform.http._open."""
+        `data` is a POST body (a GET when it is None); `opener` as in agl.platform.http.open_url."""
         ...
 
 

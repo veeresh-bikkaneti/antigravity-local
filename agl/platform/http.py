@@ -1,5 +1,5 @@
 """The one HTTP helper: a single JSON entry point with a required timeout, the one place that
-opens a request (open_url; _open is the old name kept as a shim until Phase 6), and the same-host
+opens a request (open_url), and the same-host
 redirect opener. The Layer contract in docs/ARCHITECTURE.md puts HTTP here; the timeout is a
 keyword-only argument with no default so every caller keeps its own current default at the call site."""
 import http.client
@@ -48,15 +48,10 @@ def open_url(url, *, timeout, method=None, headers=None, data=None, opener=None)
     return opener.open(request, timeout=timeout)
 
 
-def _open(url, *, timeout, method=None, headers=None, data=None, opener=None):
-    # moved, shim until Phase 6
-    return open_url(url, timeout=timeout, method=method, headers=headers, data=data, opener=opener)
-
-
 def get_json(url, *, timeout, headers=None, data=None, opener=None):
     """The parsed JSON of the reply. `timeout` has no default on purpose: the caller passes its own.
-    `data` is a POST body (a GET when it is None); `opener` as in _open."""
-    with _open(url, timeout=timeout, headers=headers, data=data, opener=opener) as resp:
+    `data` is a POST body (a GET when it is None); `opener` as in open_url."""
+    with open_url(url, timeout=timeout, headers=headers, data=data, opener=opener) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
 
@@ -70,7 +65,3 @@ def get_text(url, timeout):
         pass
     return None
 
-
-def _get_text(url, timeout):
-    # moved, shim until Phase 6
-    return get_text(url, timeout)

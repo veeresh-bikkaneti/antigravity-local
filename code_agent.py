@@ -289,7 +289,7 @@ async def run_one_shot(base_url: str, model: str, workspace_dir: str, task: str,
 
 def main():
     try:
-        from agl.platform import config  # moved, shim until Phase 6: the one default lives in agl.platform.config
+        from agl.platform import config  # the one default lives in agl.platform.config
         from agl.app.agent_session import resolve_model  # Phase 6c: the one model/base-url path for the side scripts
     except ImportError:  # a bare copy of this script (no agl/ next to it, as tests copy it) must still answer
         config = None
