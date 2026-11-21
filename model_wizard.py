@@ -4,9 +4,9 @@ Why this exists: run.py used to grab whatever was already installed and call it 
 Models move fast, so we show what is installed plus a short list of newer candidates, say what fits
 this machine, and let the human choose. Enter keeps the current pick, so it costs one keypress.
 
-moved, shim until Phase 6: the pure parts (catalog, tag shapes, fit and speed labels, menu building
-and its row helpers) now live at agl.core.menu; this file keeps the HTTP functions and the interactive
-chooser, and re-exports the moved names so old imports keep working.
+the pure parts (catalog, tag shapes, fit and speed labels, menu building and its row helpers)
+live at agl.core.menu; this file keeps the HTTP functions and the interactive chooser and re-exports
+the moved names for old imports.
 """
 import json
 import re
@@ -62,7 +62,7 @@ def _hf_api_model(user, repo, timeout=4):
     """The Hub's model record for user/repo, fetched through the same-host opener. Returns (status, data):
     'ok' with a dict, 'missing' (a 404), or 'unknown' (offline, private or gated, odd reply; data None).
     Sends only the repo name. Both hf_check and hf_repo_info read through here."""
-    return hub._hf_api_model(user, repo, timeout=timeout, opener=_HF_OPENER)  # moved, shim until Phase 6
+    return hub._hf_api_model(user, repo, timeout=timeout, opener=_HF_OPENER)  # moved to agl.platform.hub
 
 
 def hf_check(tag, timeout=4):
@@ -73,17 +73,17 @@ def hf_check(tag, timeout=4):
     'bad_tag'  not hf.co/user/repo[:quant]
     'unknown'  could not tell (offline, private or gated repo, odd reply): allow it, like the Ollama registry check
     Sends only the repo name."""
-    return hub.hf_check(tag, timeout=timeout, opener=_HF_OPENER)  # moved, shim until Phase 6
+    return hub.hf_check(tag, timeout=timeout, opener=_HF_OPENER)  # moved to agl.platform.hub
 
 
 def hf_repo_info(user, repo, timeout=4):
     """{'status': 'ok'|'missing'|'unknown', 'gated': bool, 'license': str|None} for a Hugging Face repo.
     Sends only the repo name. gated can be False, True, 'auto' or 'manual' on the Hub: anything truthy counts."""
-    return hub.hf_repo_info(user, repo, timeout=timeout, opener=_HF_OPENER)  # moved, shim until Phase 6
+    return hub.hf_repo_info(user, repo, timeout=timeout, opener=_HF_OPENER)  # moved to agl.platform.hub
 
 
-_SameHostOnly = http._SameHostOnly  # moved, shim until Phase 6: the class now lives in agl.platform.http
-_HF_OPENER = http.same_host_opener()  # moved, shim until Phase 6: built by the platform http helper
+_SameHostOnly = http._SameHostOnly  # moved to agl.platform.http
+_HF_OPENER = http.same_host_opener()  # built by agl.platform.http
 _REGISTRY_OPENER = http.same_host_opener()  # registry.ollama.ai: a cross-host redirect is not followed
 _STATE = {"offline": False}  # set when the Hub cannot be reached; later calls in the run stop asking
 
@@ -92,7 +92,7 @@ def hf_tree_files(user, repo, timeout=6, max_pages=5):
     """[{'name', 'size'}] for every file in the repo (sizes in bytes, from the LFS size when there is one).
     Follows the Link: rel=next header up to max_pages, on huggingface.co only. Any failure returns []."""
     return hub.hf_tree_files(user, repo, timeout=timeout, max_pages=max_pages,
-                              opener=_HF_OPENER, state=_STATE)  # moved, shim until Phase 6
+                              opener=_HF_OPENER, state=_STATE)  # moved to agl.platform.hub
 
 
 FIT_TEXT = {"gpu": "fits in GPU", "split": "part on CPU", "too big": "too big"}
@@ -393,10 +393,10 @@ def choose(menu, default_tag, input_fn=None, out=print, backend="ollama", search
 
 def tag_exists(tag, timeout=4):
     """True/False from the public Ollama registry, None when we cannot tell (offline). Sends only the tag."""
-    return registry.tag_exists(tag, timeout=timeout, opener=_REGISTRY_OPENER)  # moved, shim until Phase 6
+    return registry.tag_exists(tag, timeout=timeout, opener=_REGISTRY_OPENER)  # moved to agl.platform.registry
 
 
 def registry_reachable(timeout=3):
     """True when registry.ollama.ai answers at all (any HTTP reply, even a 401), False when we cannot reach it.
     Used by --check-upgrades to say "couldn't check" instead of guessing. Sends no model name."""
-    return registry.registry_reachable(timeout=timeout, opener=_REGISTRY_OPENER)  # moved, shim until Phase 6
+    return registry.registry_reachable(timeout=timeout, opener=_REGISTRY_OPENER)  # moved to agl.platform.registry

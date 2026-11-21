@@ -107,7 +107,7 @@ def _run_tool(folder, name, args):
 
 
 def _chat(opener, url, body, timeout):
-    # moved, shim until Phase 6
+    # moved to agl.platform.ollama
     return ollama_platform.chat_json(url, body, opener=opener, timeout=timeout)
 
 
@@ -171,7 +171,7 @@ def _verdict(state, max_calls, timeout):
 
 def run_probe(base_url, model, *, opener=None, clock=None, timeout=120, max_calls=8):
     """Run the probe. Returns {"verdict": "pass"|"fail", "reason", "tok_s" (float or None), "calls"}. Never raises.
-    moved, shim until Phase 6: an opener left as None now resolves inside the platform adapter (chat_json)."""
+    An opener left as None resolves inside the platform adapter (chat_json)."""
     clock = time.monotonic if clock is None else clock
     base = base_url.rstrip("/")
     url = (base if base.endswith("/v1") else base + "/v1") + "/chat/completions"

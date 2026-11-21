@@ -1,12 +1,11 @@
 """What this PC has right now: free VRAM, free RAM, free disk at the Ollama models folder.
 
-moved, shim until Phase 6: the probes moved verbatim to agl/platform/hardware.py; this module only
-re-exports the names so old callers and tests keep working.
+the probes live in agl/platform/hardware.py; this module re-exports the names for old callers.
 """
 import shutil  # kept: old patch targets (hardware.shutil / hardware.sys, same module objects) keep working
 import sys
 
-from agl.platform.hardware import (  # moved, shim until Phase 6: every old name still resolves
+from agl.platform.hardware import (  # moved to agl.platform.hardware
     GB,
     IS_WIN,
     _nvidia_rows,
