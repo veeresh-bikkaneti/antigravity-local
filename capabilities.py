@@ -1,6 +1,6 @@
 """What a model can do, as short badges: tools, thinking, vision, embedding, image, video, audio, coding.
 
-moved, shim until Phase 6: the module now lives at agl.core.capabilities; this file only re-exports it.
+the module lives at agl.core.capabilities; this file only re-exports it.
 """
 from agl.core.capabilities import (  # noqa: F401
     CATALOG_BADGES,

@@ -10,7 +10,7 @@ def check_ollama_service(base_url, *, ports, out):
     ports.stage(2, 5, "SERVER", "make sure Ollama is answering")
 
     # 1. Test if already responsive
-    if ports.ollama.check_service(base_url=base_url, timeout=3):  # moved, shim until Phase 6: the HTTP ask lives in agl.platform.ollama
+    if ports.ollama.check_service(base_url=base_url, timeout=3):  # the HTTP ask lives in agl.platform.ollama
         out(f"       Connected to Ollama service at: {base_url}")
         return True
 
@@ -55,7 +55,7 @@ def check_ollama_service(base_url, *, ports, out):
         # Wait up to 12 seconds for Ollama to spin up
         for _ in range(12):
             ports.time.sleep(1)
-            if ports.ollama.check_service(base_url=base_url, timeout=1):  # moved, shim until Phase 6: the HTTP ask lives in agl.platform.ollama
+            if ports.ollama.check_service(base_url=base_url, timeout=1):  # the HTTP ask lives in agl.platform.ollama
                 out("       Ollama service successfully started.")
                 return True
     except Exception as exc:

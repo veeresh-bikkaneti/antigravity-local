@@ -3,8 +3,7 @@
 Standard library only. Every probe fails quietly to "unknown" (0.0), because inventing numbers is worse than saying
 we don't know. Free memory is what matters for fitting a model: a browser or a game can be sitting on your VRAM.
 
-moved, shim until Phase 6: this file moved here verbatim from the root hardware.py; the old names stay
-there as re-export shims.
+this file lives here; the root hardware.py re-exports these names for old callers.
 """
 import math
 import os

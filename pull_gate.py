@@ -1,6 +1,6 @@
 """Every model pull asks first. This module only decides; the caller pulls on "yes".
 
-moved, shim until Phase 6: the module now lives at agl.core.pull_gate; this file only re-exports it.
+the module lives at agl.core.pull_gate; this file only re-exports it.
 """
 from agl.core.pull_gate import (  # noqa: F401
     MIN_FREE_SHARE,
