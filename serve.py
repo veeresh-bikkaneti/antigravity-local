@@ -12,6 +12,7 @@ Override with --port N or PORT=N. Local default binds 127.0.0.1 only; the Docker
 """
 
 import argparse
+import functools
 import html
 import json
 import os
@@ -45,72 +46,99 @@ p.textContent=x.content.slice(0,600);out.append(h,p)});if(!(j.results||[]).lengt
 </script>"""
 
 
+def _search_params(qs):
+    """Parse ?q=&limit= into (q, limit). On a bad request limit is None and err is the 400 body."""
+    q = (qs.get("q") or [""])[0].strip()
+    if not q or len(q) > MAX_QUERY_CHARS:
+        return None, None, f"q must be 1-{MAX_QUERY_CHARS} characters"
+    try:
+        limit = int((qs.get("limit") or ["5"])[0])
+    except ValueError:
+        return None, None, "limit must be an integer"
+    if limit < 1:
+        return None, None, "limit must be >= 1"
+    return q, min(limit, MAX_LIMIT), None
+
+
 def build_server(host, port, db_path=None, ollama_url=memory.OLLAMA_API_BASE):
     """Index memory (cheap when unchanged) and return a ready, not-yet-serving server."""
-    db = memory.MemoryDatabase(db_path) if db_path else memory.MemoryDatabase()
+    db = memory.MemoryDatabase(db_path)
     embedder = memory.EmbeddingProvider(ollama_url)
     memory.MemoryIndexer(db, embedder).index_all()
     searcher = memory.MemorySearcher(db, embedder)
     # ponytail: one global lock, because EmbeddingProvider.fell_back is shared state that search
     # reads right after embedding. Per-request provider instances if concurrency ever matters.
     lock = threading.Lock()
+    return Server((host, port), handler_factory(db, embedder, searcher, lock))
 
-    class Handler(BaseHTTPRequestHandler):
-        def log_message(self, fmt, *args):
-            sys.stderr.write("[serve] " + fmt % args + "\n")
 
-        def _send(self, code, body, ctype="application/json"):
-            data = body if isinstance(body, bytes) else body.encode("utf-8")
-            self.send_response(code)
-            self.send_header("Content-Type", ctype + "; charset=utf-8")
-            self.send_header("Content-Length", str(len(data)))
-            self.send_header("X-Content-Type-Options", "nosniff")
-            self.end_headers()
-            self.wfile.write(data)
+class Handler(BaseHTTPRequestHandler):
+    def __init__(self, db, embedder, searcher, lock, *args, **kwargs):
+        self.db, self.embedder, self.searcher, self.lock = db, embedder, searcher, lock
+        BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
 
-        def _json(self, code, obj):
-            self._send(code, json.dumps(obj))
+    def log_message(self, fmt, *args):
+        sys.stderr.write("[serve] " + fmt % args + "\n")
 
-        def do_GET(self):
-            url = urlparse(self.path)
-            if url.path == "/healthz":
-                with db.get_connection() as c:
-                    n = c.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
-                return self._json(200, {"status": "ok", "backend": embedder.mode, "documents": n})
-            if url.path == "/api/search":
-                qs = parse_qs(url.query, keep_blank_values=True)  # blank limit= must 400, not default
-                q = (qs.get("q") or [""])[0].strip()
-                if not q or len(q) > MAX_QUERY_CHARS:
-                    return self._json(400, {"error": f"q must be 1-{MAX_QUERY_CHARS} characters"})
-                try:
-                    limit = int((qs.get("limit") or ["5"])[0])
-                except ValueError:
-                    return self._json(400, {"error": "limit must be an integer"})
-                if limit < 1:
-                    return self._json(400, {"error": "limit must be >= 1"})
-                limit = min(limit, MAX_LIMIT)
-                with lock:
-                    results = searcher.search(q, limit=limit)
-                return self._json(200, {"query": q, "results": results})
-            if url.path.startswith("/diagrams/"):
-                name = url.path[len("/diagrams/"):]
-                f = DIAGRAMS / name
-                # resolve() follows symlinks: a link pointing outside docs/diagrams must 404.
-                if DIAGRAM_NAME.match(name) and f.is_file() and f.resolve().is_relative_to(DIAGRAMS.resolve()):
-                    return self._send(200, f.read_bytes(), "text/html")
-                return self._json(404, {"error": "not found"})
-            if url.path == "/":
-                links = "".join(
-                    f'<li><a href="/diagrams/{html.escape(p.name)}">{html.escape(p.stem)}</a></li>'
-                    for p in sorted(DIAGRAMS.glob("*.html")))
-                return self._send(200, PAGE % {"backend": html.escape(embedder.mode), "diagrams": links}, "text/html")
-            return self._json(404, {"error": "not found"})
+    def _send(self, code, body, ctype="application/json"):
+        self.send_response(code)
+        self.send_header("Content-Type", ctype + "; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.end_headers()
+        self.wfile.write(body)
 
-    class Server(ThreadingHTTPServer):
-        # On Windows SO_REUSEADDR lets two processes bind one port (silent hijack); POSIX needs it for restarts.
-        allow_reuse_address = os.name != "nt"
+    def _json(self, code, obj):
+        self._send(code, json.dumps(obj).encode("utf-8"))
 
-    return Server((host, port), Handler)
+    def _healthz(self, url):
+        with self.db.get_connection() as c:
+            n = c.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
+        return self._json(200, {"status": "ok", "backend": self.embedder.mode, "documents": n})
+
+    def _search(self, url):
+        qs = parse_qs(url.query, keep_blank_values=True)  # blank limit= must 400, not default
+        q, limit, err = _search_params(qs)
+        if err:
+            return self._json(400, {"error": err})
+        with self.lock:
+            results = self.searcher.search(q, limit=limit)
+        return self._json(200, {"query": q, "results": results})
+
+    def _diagram(self, url):
+        name = url.path[len("/diagrams/"):]
+        f = DIAGRAMS / name
+        # resolve() follows symlinks: a link pointing outside docs/diagrams must 404.
+        if DIAGRAM_NAME.match(name) and f.is_file() and f.resolve().is_relative_to(DIAGRAMS.resolve()):
+            return self._send(200, f.read_bytes(), "text/html")
+        return self._json(404, {"error": "not found"})
+
+    def _index(self, url):
+        links = "".join(
+            f'<li><a href="/diagrams/{html.escape(p.name)}">{html.escape(p.stem)}</a></li>'
+            for p in sorted(DIAGRAMS.glob("*.html")))
+        return self._send(200, (PAGE % {"backend": html.escape(self.embedder.mode), "diagrams": links}).encode("utf-8"), "text/html")
+
+    # Exact routes first: a prefix match on "/" would swallow every unknown route.
+    ROUTES = (("/healthz", "_healthz", True), ("/api/search", "_search", True),
+              ("/diagrams/", "_diagram", False), ("/", "_index", True))
+
+    def do_GET(self):
+        url = urlparse(self.path)
+        for prefix, name, exact in self.ROUTES:
+            if (url.path == prefix) if exact else url.path.startswith(prefix):
+                return getattr(self, name)(url)
+        return self._json(404, {"error": "not found"})
+
+
+def handler_factory(db, embedder, searcher, lock):
+    """Handler bound to this server's db, embedder, searcher and lock."""
+    return functools.partial(Handler, db, embedder, searcher, lock)
+
+
+class Server(ThreadingHTTPServer):
+    # On Windows SO_REUSEADDR lets two processes bind one port (silent hijack); POSIX needs it for restarts.
+    allow_reuse_address = os.name != "nt"
 
 
 def main(argv=None):
