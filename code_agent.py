@@ -290,8 +290,13 @@ async def run_one_shot(base_url: str, model: str, workspace_dir: str, task: str,
 def main():
     try:
         from agl.platform import config  # moved, shim until Phase 6: the one default lives in agl.platform.config
+        from agl.app.agent_session import resolve_model  # Phase 6c: the one model/base-url path for the side scripts
     except ImportError:  # a bare copy of this script (no agl/ next to it, as tests copy it) must still answer
         config = None
+
+        def resolve_model(cli_model, *, environ, default_base_url):
+            return (cli_model or environ.get("LOCAL_LLM_MODEL") or None,
+                    environ.get("LOCAL_LLM_BASE_URL", default_base_url))
     parser = argparse.ArgumentParser(
         description="Google Antigravity Local Developer Coding Agent",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -308,12 +313,12 @@ def main():
     )
     parser.add_argument(
         "--model", "-m",
-        default=os.environ.get("LOCAL_LLM_MODEL"),
+        default=None,
         help="Model name (e.g., qwen2.5:14b, llama3.1:8b, mistral-nemo).",
     )
     parser.add_argument(
         "--base-url", "-u",
-        default=os.environ.get("LOCAL_LLM_BASE_URL", config.LLM_BASE_URL if config else None),
+        default=None,
         help=(f"OpenAI-compatible server endpoint (e.g., {config.LLM_BASE_URL})." if config
               else "OpenAI-compatible server endpoint."),
     )
@@ -324,6 +329,8 @@ def main():
     )
 
     args = parser.parse_args()
+    args.model, args.base_url = resolve_model(args.model, environ=os.environ,
+                                               default_base_url=config.LLM_BASE_URL if config else None)
     if not args.model:
         print("No model chosen yet. Run python run.py first, or pass --model.")
         sys.exit(2)

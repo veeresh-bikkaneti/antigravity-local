@@ -15,7 +15,8 @@ agree. Sizes are relative effort for one focused PR, and Evidence says how firm 
 | Duplicate hardware probes | get_hardware_profile and get_system_ram_gb live in both run.py and hardware.py | platform | Phase 2 | S | tested |
 | Small duplicate names | render in handoff.py, model_wizard.py and task_report.py; summarize in handoff.py and task_report.py; _stamp in ledger.py and runlog.py | wherever the owner layer lands | Phases 3 to 6 | S | tested |
 | Base URL literal | http://localhost:11434 typed 18 times across 8 product files (measured at c90a615) | platform (one base-URL default) | Phase 2 | S | tested |
-| Picker bypass | code_agent.py, agent_with_workspace.py and test_local.py skip the model picker | app (shared session entry) | Phase 6 | M | inferred (known open item) |
+| Picker bypass | code_agent.py, agent_with_workspace.py and test_local.py skip the model picker (one path since 6c; menu still skipped) | app (shared session entry) | Phase 6 | M | inferred (known open item) |
+| Agent scripts vs the picker | owner call: route agent scripts through the picker (arena B) instead of the one resolve_model path in agl/app/agent_session.py (arena A, since 6c) | shell/app | Phase 6d | S | inferred |
 | Site step lists | the 8 steps are defined 4 times (scene.js STEPS, main.js LAYER_SHORT, index.html stack list, game HOPS); scene.js is 846 lines with an if/else chain per layer; the game is one 1,498-line HTML file | site | Phase S | L | tested (counts) |
 | Test seams | tests patch run.py internals: patch.object(run, ...) 116 sites over 24 names (PROJECT_DIR 15, is_in_venv 12, check_ollama_service 11); code moves need the targets re-pointed, Phase 1 amends R13 for that | tests follow the code | Phase 1 | M | tested |
 | AGENTS.md stale line | says "no package.json"; site/package.json exists | docs (rule text, needs maintainer approval) | Phase 1 | S | tested |

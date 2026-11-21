@@ -20,10 +20,18 @@ try:
 except ImportError:
     pass
 
+try:
+    from agl.app.agent_session import resolve_model  # Phase 6c: the one model/base-url path for the side scripts
+except ImportError:  # a bare copy of this script (no agl/ next to it, as tests copy it) must still answer
+    def resolve_model(cli_model, *, environ, default_base_url):
+        return (cli_model or environ.get("LOCAL_LLM_MODEL") or None,
+                environ.get("LOCAL_LLM_BASE_URL", default_base_url))
+
 _parser = argparse.ArgumentParser(description="Local agent demo: creates index.html in the workspace.")
 _parser.add_argument("model", nargs="?", default=None, help="Model name (default: $LOCAL_LLM_MODEL, saved by run.py).")
 ARGS = _parser.parse_args()  # before the SDK import so --help works without it
-if not (ARGS.model or os.environ.get("LOCAL_LLM_MODEL")):
+model, _ = resolve_model(ARGS.model, environ=os.environ, default_base_url=None)
+if not model:
     print("No model chosen yet. Run python run.py first, or pass --model.")
     sys.exit(2)
 
@@ -38,8 +46,7 @@ except ImportError:
 
 async def main():
     from agl.platform import config  # moved, shim until Phase 6: the one default lives in agl.platform.config
-    base_url = os.environ.get("LOCAL_LLM_BASE_URL", config.LLM_BASE_URL)
-    model = ARGS.model or os.environ.get("LOCAL_LLM_MODEL")
+    model, base_url = resolve_model(ARGS.model, environ=os.environ, default_base_url=config.LLM_BASE_URL)
     workspace_dir = os.environ.get(
         "WORKSPACE_DIR",
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "workspace"),
