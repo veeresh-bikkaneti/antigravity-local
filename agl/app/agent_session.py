@@ -6,10 +6,14 @@ registry, git) is a keyword argument the root agent_setup.py shim wires with its
 at call time. Standard library plus agl.core only.
 """
 
+import copy
+import difflib
+import json
 import os
 from pathlib import Path
 
 from agl.core.agent_config import AgentSetupError
+from agl.core.handoff import HandoffError
 
 
 def _report_result(out, name, model, endpoint, backend, result, backup_suffix, hint):
@@ -180,3 +184,60 @@ def doctor(home, environ, projects, registry, platform, out, *, is_claude_key, s
         out("Nothing found: no variable, settings file, VS Code setting or Desktop mode here routes normal Claude "
             "Code sessions to a local model. Nothing was changed.")
     return len(findings)
+
+
+def write_handoff(transcript, repo, now=None, git_run=None, out=None, *, is_tracked, read_records, summarize,
+                  render, backup_path, copy2, read_existing, write_file, marker, name="HANDOFF.md"):
+    """Write HANDOFF.md. Refuses when the project tracks it. A file we did not write is backed up, never overwritten."""
+    out = out or print
+    if is_tracked(repo, git_run):
+        raise HandoffError("This project already tracks HANDOFF.md in git, so hand-off notes written there would be "
+                           "committed with their command output and any secrets in it. Nothing was written. Run "
+                           "`git rm --cached HANDOFF.md` (keeps your file) and add it to .gitignore, or move your "
+                           "tracked file elsewhere, then run this again.")
+    info = summarize(read_records(transcript))
+    target = Path(repo) / name
+    existing = read_existing(target)
+    if existing is not None and marker not in existing:
+        backup = backup_path(target)
+        copy2(target, backup)
+        out(f"An existing HANDOFF.md that we did not write was saved to {backup} first.")
+    write_file(target, render(info, transcript, repo, now=now))
+    return target
+
+
+def install_hook(repo, input_fn=None, out=None, *, hook_cmd, merge, read_text, atomic_text_write, copy2, mkdir,
+                 backup_suffix):
+    """Add the hooks to <repo>/.claude/settings.local.json only, after showing the diff and a typed y."""
+    out = out or print
+    input_fn = input_fn or input
+    path = Path(repo) / ".claude" / "settings.local.json"
+    before_text = read_text(path)
+    try:
+        settings = json.loads(before_text) if before_text.strip() else {}
+    except ValueError as e:
+        raise HandoffError(f"{path} is not valid JSON ({e}). We did not change it. Fix it and run again.")
+    if not isinstance(settings, dict):
+        raise HandoffError(f"{path} should hold a JSON object. We did not change it.")
+    merged = merge(copy.deepcopy(settings), hook_cmd())
+    after_text = json.dumps(merged, indent=2, ensure_ascii=False) + "\n"
+    if merged == settings:  # compare what the file means, not how it is indented
+        out(f"The hand-off hooks are already in {path}. Nothing to do.")
+        return False
+    out(f"This changes only {path} (never your user settings):\n")
+    out("".join(difflib.unified_diff(before_text.splitlines(True), after_text.splitlines(True),
+                                     "before", "after")))
+    try:
+        answer = input_fn("\nAdd these hooks? [y/N] ")
+    except (EOFError, KeyboardInterrupt):
+        answer = ""
+    if answer.strip().lower() not in ("y", "yes"):
+        out("Not changed.")
+        return False
+    mkdir(path.parent)
+    backup = Path(str(path) + backup_suffix)
+    if before_text and not backup.exists():
+        copy2(path, backup)
+    atomic_text_write(path, after_text)
+    out(f"Added. When a rate limit stops a session, or before a compaction, HANDOFF.md is written in {repo}.")
+    return True

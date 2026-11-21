@@ -11,6 +11,7 @@ import tempfile
 from pathlib import Path
 
 from agl.core.agent_config import AgentSetupError
+from agl.core.handoff import BACKUP_SUFFIX, HandoffError, config_dirs, project_dir_name, same
 
 
 def load(path):
@@ -96,3 +97,68 @@ def read_text_if_exists(path):
 
 def write_text(path, text):
     path.write_text(text, encoding="utf-8")
+
+
+def backup_path(target):
+    """A backup name that never overwrites an earlier backup."""
+    base = Path(str(target) + BACKUP_SUFFIX)
+    n, path = 1, base
+    while path.exists():
+        n += 1
+        path = Path(f"{base}.{n}")
+    return path
+
+
+def read_records(path):
+    """Parsed JSON objects, one per line. Blank and broken lines are skipped."""
+    records = []
+    with open(path, encoding="utf-8", errors="replace") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rec = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(rec, dict):
+                records.append(rec)
+    return records
+
+
+def first_cwd(path):
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            for _, line in zip(range(50), f):
+                try:
+                    cwd = json.loads(line).get("cwd")
+                except (ValueError, AttributeError):
+                    continue
+                if isinstance(cwd, str):
+                    return cwd
+    except OSError:
+        pass
+    return None
+
+
+def find_transcript(session, repo, home, environ):
+    """The transcript for this repo: `session` is an id or 'latest'. Newest wins across every config folder."""
+    found = []
+    for base in config_dirs(home, environ):
+        projects = base / "projects"
+        if not projects.is_dir():
+            continue
+        named = projects / project_dir_name(repo)
+        folders = [named] if named.is_dir() else []
+        folders += [p for p in projects.iterdir() if p.is_dir() and p != named]
+        for folder in folders:
+            for f in folder.glob("*.jsonl"):
+                if session not in (None, "latest") and f.stem != session:
+                    continue
+                if folder == named or (first_cwd(f) and same(first_cwd(f), repo)):
+                    found.append(f)
+    if not found:
+        raise HandoffError(f"No Claude Code transcript found for {repo}"
+                           + ("" if session in (None, "latest") else f" with session id {session}")
+                           + ". Pass --transcript PATH.")
+    return max(found, key=lambda p: p.stat().st_mtime)
