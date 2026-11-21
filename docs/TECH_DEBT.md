@@ -9,6 +9,8 @@ agree. Sizes are relative effort for one focused PR, and Evidence says how firm 
 | Where | What | Layer it belongs in | Fixes in | Size | Evidence |
 |---|---|---|---|---|---|
 | run.py (root) | 1,466 lines, 66 functions, 121 prints, 15 subprocess and 24 env sites; select_and_pull_model 114 lines, _main 109, _run_agent_session 100 | shell now; the parts move to app, core, platform | Phase 5 | L | tested |
+| run.py shims | 34 "moved, shim" re-exports left in run.py after Phase 6d, pinned by the 164 patch.object(run, ...) targets; deleting them moves test lines, so it is one PR | per the Layer contract | Phase 6e | M | tested |
+| Patch-target-only aliases | names kept in root modules only so tests can patch them, with no internal user: hardware.shutil and hardware.sys (10 sites), probe.tempfile (3), download_size._OPENER and download_size.time (5), model_wizard._HF_OPENER and _REGISTRY_OPENER (5). They alias the same module objects as the agl owner, so patching the root name reaches the owner's call | tests follow the code | Phase 6e | S | tested |
 | model_wizard.py | 693 lines: catalog data, HTTP to Hugging Face and the Ollama registry, and interactive choose() in one file; the input_fn/out injection is a good seam, keep it | core (catalog, menu building) + platform (HTTP) + ui (choose) | Phases 3 and 4 | L | tested |
 | memory.py | 826 lines: SQLite, embedding HTTP, subprocess and 52 prints together; search() is 129 lines | platform (state, HTTP, subprocess) + core (fusion and ranking) | Phase 6 | L | tested |
 | Duplicate HTTP helpers | _get_json in download_size.py and ollama_models.py, _http_get in run.py, fetch_json in hf_search.py | platform (one helper, timeout required) | Phase 2 | M | tested |
