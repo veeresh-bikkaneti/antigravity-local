@@ -10,13 +10,13 @@ Zero external dependencies: runs on pure Python standard library.
 import os
 import sys
 import time
-import json
 import argparse
 from pathlib import Path
 
 from agl.app import memory as app_memory
 from agl.platform import config, embeddings, memory_store, process
 from agl.core import memory as core_memory
+from agl.ui import memory_cli
 
 # Windows console UTF-8 safety
 if sys.platform == "win32":
@@ -58,16 +58,10 @@ CATEGORY_BOOSTS = {
 # ==============================================================================
 
 class EmbeddingProvider(embeddings.EmbeddingProvider):
-    # moved, shim until Phase 6: the class lives in agl.platform.embeddings; the default is
+    # moved, shim until Phase 6e: the class lives in agl.platform.embeddings; the default is
     # this module's OLLAMA_API_BASE, looked up at call time so nothing is frozen.
     def __init__(self, base_url=None):
         super().__init__(base_url if base_url is not None else OLLAMA_API_BASE)
-
-
-def cosine_similarity(v1: list[float], v2: list[float]) -> float:
-    """Compute cosine similarity between two unit vectors."""
-    # moved, shim until Phase 6
-    return core_memory.cosine_similarity(v1, v2)
 
 
 # ==============================================================================
@@ -75,7 +69,7 @@ def cosine_similarity(v1: list[float], v2: list[float]) -> float:
 # ==============================================================================
 
 class MemoryDatabase(memory_store.MemoryDatabase):
-    # moved, shim until Phase 6: connection and schema live in agl.platform.memory_store;
+    # moved, shim until Phase 6e: connection and schema live in agl.platform.memory_store;
     # DB_PATH is looked up at call time so tests and tools can repoint it.
     def __init__(self, db_path=None):
         super().__init__(db_path if db_path is not None else DB_PATH)
@@ -126,12 +120,6 @@ class MemoryIndexer:
 
         return targets
 
-    @staticmethod
-    def _split_oversize(lines: list[str], start_line: int) -> list[dict]:
-        """Cut a section into pieces <= MAX_CHUNK_CHARS, preferring blank-line (paragraph) breaks."""
-        # moved, shim until Phase 6
-        return core_memory._split_oversize(lines, start_line, MAX_CHUNK_CHARS)
-
     def chunk_file(self, path: Path) -> list[dict]:
         """Split a file into semantically meaningful chunks with line bounds."""
         try:
@@ -156,7 +144,7 @@ class MemoryIndexer:
                 if (line.startswith("## ") or line.startswith("# ")) and current_chunk:
                     chunk_text = "\n".join(current_chunk).strip()
                     if len(chunk_text) > 30:
-                        chunks.extend(self._split_oversize(current_chunk, start_line))
+                        chunks.extend(core_memory._split_oversize(current_chunk, start_line, MAX_CHUNK_CHARS))
                     current_chunk = [line]
                     start_line = idx
                 else:
@@ -166,7 +154,7 @@ class MemoryIndexer:
             if current_chunk:
                 chunk_text = "\n".join(current_chunk).strip()
                 if len(chunk_text) > 20:
-                    chunks.extend(self._split_oversize(current_chunk, start_line))
+                    chunks.extend(core_memory._split_oversize(current_chunk, start_line, MAX_CHUNK_CHARS))
         else:
             # Code sliding window: 60 lines with 10 lines overlap
             window_size = 60
@@ -189,7 +177,7 @@ class MemoryIndexer:
 
     def index_all(self, force: bool = False) -> dict:
         """Scan, chunk, and index all repository memory files."""
-        # moved, shim until Phase 6d: the SQL lives in agl.platform.memory_store and the orchestration in
+        # moved, shim until Phase 6e: the SQL lives in agl.platform.memory_store and the orchestration in
         # agl.app.memory; targets and chunking stay here, so REPO_ROOT / WIKI_DIR are read at call time.
         return app_memory.index_all(
             force,
@@ -198,7 +186,7 @@ class MemoryIndexer:
             targets=self.collect_target_files(),
             repo_root=REPO_ROOT,
             chunk=self.chunk_file,
-            warn=lambda m: print(m, file=sys.stderr)
+            warn=memory_cli.render_index_warn
         )
 
 
@@ -213,13 +201,9 @@ class MemorySearcher:
         self.db = db
         self.embedder = embedder
 
-    def _sanitize_fts_query(self, query: str) -> str:
-        """Strip punctuation and format query tokens for safe SQLite FTS5 matching."""
-        return core_memory._sanitize_fts_query(query)
-
     def search(self, query: str, limit: int = 5) -> list[dict]:
         """Perform hybrid search and return top-K scored chunks."""
-        # moved, shim until Phase 6d: the SQL lives in agl.platform.memory_store, the fusion math in
+        # moved, shim until Phase 6e: the SQL lives in agl.platform.memory_store, the fusion math in
         # agl.core.memory and the orchestration in agl.app.memory. The gates are looked up at call time.
         return app_memory.search(
             query, limit,
@@ -235,7 +219,7 @@ class MemorySearcher:
 # 5. CLI & User-Facing Operations
 # ==============================================================================
 
-REINDEX_HINT = "Run: python memory.py index --force"
+REINDEX_HINT = memory_cli.REINDEX_HINT  # the text itself lives in agl.ui.memory_cli
 
 
 def _run_index(force: bool, embedder) -> dict:
@@ -247,7 +231,7 @@ def _run_index(force: bool, embedder) -> dict:
         if "malformed" not in msg and "not a database" not in msg:
             raise  # locked, disk I/O, read-only and similar are not corruption
         bak = DB_PATH.with_name(f"{DB_PATH.name}.{int(time.time())}.bak")
-        print(f"[!] Index database is corrupt ({e}); moving it to {bak.name} and rebuilding.", file=sys.stderr)
+        memory_cli.render_index_corrupt(str(e), bak.name)
         try:
             for suffix in ("-wal", "-shm", ""):
                 p = DB_PATH.with_name(DB_PATH.name + suffix)
@@ -259,110 +243,74 @@ def _run_index(force: bool, embedder) -> dict:
 
 
 def _positive_limit(value: str) -> int:
-    # moved, shim until Phase 6
+    # moved, shim until Phase 6e
     return core_memory._positive_limit(value, MAX_LIMIT)
 
 
-def _need_index() -> bool:
-    if DB_PATH.exists():
-        return False
-    print("No index found. Run: python memory.py index", file=sys.stderr)
-    return True
-
-
 def cmd_index(args):
-    print("=" * 70)
-    print("MEMORY FABRIC: Scanning & Indexing Repository Knowledge Base")
-    print("=" * 70)
+    memory_cli.render_index_header()
     embedder = EmbeddingProvider()
-    print(f"[*] Vector Embedding Backend: {embedder.mode}")
+    memory_cli.render_index_backend(embedder.mode)
     stats = _run_index(args.force, embedder)
-    print(f"[+] Indexing Complete: {stats['indexed']} files updated, {stats['skipped']} files unchanged, {stats['chunks']} chunks stored.")
-    print(f"[+] Memory Store Location: {DB_PATH}")
+    memory_cli.render_index_done(stats, DB_PATH)
 
 
 def cmd_search(args):
-    if _need_index():
+    if not DB_PATH.exists():
+        memory_cli.render_no_index()
         sys.exit(1)
     embedder = EmbeddingProvider()
     try:
         searcher = MemorySearcher(MemoryDatabase(), embedder)
         results = searcher.search(args.query, limit=args.limit)
     except memory_store.DatabaseError as e:
-        print(f"Memory index is unreadable ({e}). {REINDEX_HINT}", file=sys.stderr)
+        memory_cli.render_search_unreadable(str(e))
         sys.exit(1)
 
     if args.json:
-        print(json.dumps(results, indent=2))
+        memory_cli.render_search_json(results)
         return
 
-    print("=" * 70)
-    print(f"HYBRID MEMORY SEARCH: '{args.query}'")
-    print(f"Engine: BM25 (FTS5) + Cosine Vector Fusion [{embedder.mode}]")
-    print("=" * 70)
+    memory_cli.render_search_header(args.query, embedder.mode)
 
     if not results:
-        print("No results. (If you expected some, re-index with: python memory.py index)")
+        memory_cli.render_search_empty()
         return
 
-    for i, res in enumerate(results, start=1):
-        rel_link = f"{res['path']}#L{res['start_line']}-L{res['end_line']}"
-        print(f"\n[{i}] [{res['category'].upper()}] {res['title']} -> {rel_link}")
-        print(f"    RRF Score: {res['rrf_score']:.5f} | Vector Sim: {res['vector_sim']:.3f} | BM25 Rank: {res['bm25_rank']}")
-        print("    " + "-" * 62)
-        lines = res["content"].strip().splitlines()
-        preview = lines[:6]
-        for l in preview:
-            print(f"    | {l}")
-        if len(lines) > 6:
-            print(f"    | ... ({len(lines) - 6} more lines)")
+    memory_cli.render_search_results(results)
 
 
 def cmd_status(args):
     embedder = EmbeddingProvider()
-    print("=" * 70)
-    print("MEMORY FABRIC STATUS")
-    print("=" * 70)
-    print(f"Database Path: {DB_PATH}")
-    print(f"Vector Backend: {embedder.mode}")
+    memory_cli.render_status_header(DB_PATH, embedder.mode)
 
     if not DB_PATH.exists():
-        print("Database not initialized. Run: python memory.py index")
+        memory_cli.render_status_uninitialized()
         return
 
     size_kb = DB_PATH.stat().st_size / 1024
-    print(f"Database Size: {size_kb:.1f} KB")
+    memory_cli.render_status_size(size_kb)
 
     try:
-        _print_status(MemoryDatabase())
+        db = MemoryDatabase()
+        with db.get_connection() as conn:
+            # moved in Phase 6d: the counts SQL lives in agl.platform.memory_store.
+            doc_count, chunk_count = db.counts(conn)
+            categories = db.category_counts(conn)
+        memory_cli.render_status_counts(doc_count, chunk_count, categories)
     except memory_store.DatabaseError as e:
-        print(f"Memory index is unreadable ({e}). {REINDEX_HINT}", file=sys.stderr)
+        memory_cli.render_status_unreadable(str(e))
         sys.exit(1)
-
-
-def _print_status(db):
-    with db.get_connection() as conn:
-        # moved, shim until Phase 6d: the counts SQL lives in agl.platform.memory_store.
-        doc_count, chunk_count = db.counts(conn)
-        categories = db.category_counts(conn)
-
-        print(f"Total Documents Indexed: {doc_count}")
-        print(f"Total Chunks Stored: {chunk_count}")
-        print("\nDocument Breakdown:")
-        for cat, cnt in categories:
-            print(f"  - {cat}: {cnt} documents")
 
 
 def cmd_wiki(args):
     """View or list canonical LLMWiki pages."""
     if not WIKI_DIR.is_dir():
-        print(f"LLMWiki directory not found at {WIKI_DIR}")
+        memory_cli.render_wiki_missing_dir(WIKI_DIR)
         return
 
     if not args.topic:
-        print("=" * 70)
-        print("CANONICAL LLMWIKI TOPICS (.wiki/)")
-        print("=" * 70)
+        entries = []
         for p in sorted(WIKI_DIR.glob("*.md")):
             name = p.stem
             # extract first line or title
@@ -374,8 +322,8 @@ def cmd_wiki(args):
                         break
             except Exception:
                 pass
-            print(f"  * {name:<22} - {title}")
-        print("\nUsage: python memory.py wiki <topic>")
+            entries.append((name, title))
+        memory_cli.render_wiki_list(entries)
         return
 
     wiki_root = WIKI_DIR.resolve()
@@ -387,35 +335,30 @@ def cmd_wiki(args):
         if matches:
             target = matches[0]
         else:
-            print(f"Wiki topic '{args.topic}' not found in {WIKI_DIR}.")
+            memory_cli.render_wiki_not_found(args.topic, WIKI_DIR)
             sys.exit(1)
 
-    print("=" * 70)
-    print(f"LLMWIKI: {target.stem.upper()} ({target.name})")
-    print("=" * 70)
-    print(target.read_text(encoding="utf-8"))
+    memory_cli.render_wiki_page(target.stem.upper(), target.name, target.read_text(encoding="utf-8"))
 
 
 def cmd_sync(args):
     """Dual-sync: Update Graphify AST graph + SQLite memory store in one step."""
-    print("=" * 70)
-    print("DUAL-SYNC: Synchronizing Graphify AST Knowledge Graph + Memory Store")
-    print("=" * 70)
+    memory_cli.render_sync_header()
 
     # 1. Run memory indexing
     embedder = EmbeddingProvider()
     stats = _run_index(True, embedder)
-    print(f"[+] Memory Index Updated: {stats['indexed']} files, {stats['chunks']} chunks.")
+    memory_cli.render_sync_memory_done(stats)
 
     # 2. Run graphify update if installed
     try:
         proc = process.run(["graphify", "update", "."], capture_output=True, text=True)
         if proc.returncode == 0:
-            print("[+] Graphify AST Knowledge Graph updated successfully.")
+            memory_cli.render_sync_graphify_ok()
         else:
-            print(f"[!] Graphify update returned non-zero code: {proc.stderr.strip() or proc.stdout.strip()}")
+            memory_cli.render_sync_graphify_failed(proc.stderr.strip() or proc.stdout.strip())
     except FileNotFoundError:
-        print("[!] Note: 'graphify' command not in PATH. AST graph was left untouched.")
+        memory_cli.render_sync_graphify_missing()
 
 
 # ==============================================================================
