@@ -16,6 +16,14 @@ from agl.core.agent_config import AgentSetupError
 from agl.core.handoff import HandoffError
 
 
+def resolve_model(cli_model, *, environ, default_base_url):
+    """The one model/base-url resolution for every side script (Phase 6c): the CLI flag wins, then
+    LOCAL_LLM_MODEL, then none; LOCAL_LLM_BASE_URL wins over the default base URL."""
+    model = cli_model or environ.get("LOCAL_LLM_MODEL") or None
+    base_url = environ.get("LOCAL_LLM_BASE_URL", default_base_url)
+    return model, base_url
+
+
 def _report_result(out, name, model, endpoint, backend, result, backup_suffix, hint):
     """The banner lines every setup run prints after the config write."""
     out("")
