@@ -58,16 +58,10 @@ CATEGORY_BOOSTS = {
 # ==============================================================================
 
 class EmbeddingProvider(embeddings.EmbeddingProvider):
-    # moved, shim until Phase 6: the class lives in agl.platform.embeddings; the default is
+    # moved, shim until Phase 6e: the class lives in agl.platform.embeddings; the default is
     # this module's OLLAMA_API_BASE, looked up at call time so nothing is frozen.
     def __init__(self, base_url=None):
         super().__init__(base_url if base_url is not None else OLLAMA_API_BASE)
-
-
-def cosine_similarity(v1: list[float], v2: list[float]) -> float:
-    """Compute cosine similarity between two unit vectors."""
-    # moved, shim until Phase 6
-    return core_memory.cosine_similarity(v1, v2)
 
 
 # ==============================================================================
@@ -75,7 +69,7 @@ def cosine_similarity(v1: list[float], v2: list[float]) -> float:
 # ==============================================================================
 
 class MemoryDatabase(memory_store.MemoryDatabase):
-    # moved, shim until Phase 6: connection and schema live in agl.platform.memory_store;
+    # moved, shim until Phase 6e: connection and schema live in agl.platform.memory_store;
     # DB_PATH is looked up at call time so tests and tools can repoint it.
     def __init__(self, db_path=None):
         super().__init__(db_path if db_path is not None else DB_PATH)
@@ -126,12 +120,6 @@ class MemoryIndexer:
 
         return targets
 
-    @staticmethod
-    def _split_oversize(lines: list[str], start_line: int) -> list[dict]:
-        """Cut a section into pieces <= MAX_CHUNK_CHARS, preferring blank-line (paragraph) breaks."""
-        # moved, shim until Phase 6
-        return core_memory._split_oversize(lines, start_line, MAX_CHUNK_CHARS)
-
     def chunk_file(self, path: Path) -> list[dict]:
         """Split a file into semantically meaningful chunks with line bounds."""
         try:
@@ -156,7 +144,7 @@ class MemoryIndexer:
                 if (line.startswith("## ") or line.startswith("# ")) and current_chunk:
                     chunk_text = "\n".join(current_chunk).strip()
                     if len(chunk_text) > 30:
-                        chunks.extend(self._split_oversize(current_chunk, start_line))
+                        chunks.extend(core_memory._split_oversize(current_chunk, start_line, MAX_CHUNK_CHARS))
                     current_chunk = [line]
                     start_line = idx
                 else:
@@ -166,7 +154,7 @@ class MemoryIndexer:
             if current_chunk:
                 chunk_text = "\n".join(current_chunk).strip()
                 if len(chunk_text) > 20:
-                    chunks.extend(self._split_oversize(current_chunk, start_line))
+                    chunks.extend(core_memory._split_oversize(current_chunk, start_line, MAX_CHUNK_CHARS))
         else:
             # Code sliding window: 60 lines with 10 lines overlap
             window_size = 60
@@ -189,7 +177,7 @@ class MemoryIndexer:
 
     def index_all(self, force: bool = False) -> dict:
         """Scan, chunk, and index all repository memory files."""
-        # moved, shim until Phase 6d: the SQL lives in agl.platform.memory_store and the orchestration in
+        # moved, shim until Phase 6e: the SQL lives in agl.platform.memory_store and the orchestration in
         # agl.app.memory; targets and chunking stay here, so REPO_ROOT / WIKI_DIR are read at call time.
         return app_memory.index_all(
             force,
@@ -213,13 +201,9 @@ class MemorySearcher:
         self.db = db
         self.embedder = embedder
 
-    def _sanitize_fts_query(self, query: str) -> str:
-        """Strip punctuation and format query tokens for safe SQLite FTS5 matching."""
-        return core_memory._sanitize_fts_query(query)
-
     def search(self, query: str, limit: int = 5) -> list[dict]:
         """Perform hybrid search and return top-K scored chunks."""
-        # moved, shim until Phase 6d: the SQL lives in agl.platform.memory_store, the fusion math in
+        # moved, shim until Phase 6e: the SQL lives in agl.platform.memory_store, the fusion math in
         # agl.core.memory and the orchestration in agl.app.memory. The gates are looked up at call time.
         return app_memory.search(
             query, limit,
@@ -259,7 +243,7 @@ def _run_index(force: bool, embedder) -> dict:
 
 
 def _positive_limit(value: str) -> int:
-    # moved, shim until Phase 6
+    # moved, shim until Phase 6e
     return core_memory._positive_limit(value, MAX_LIMIT)
 
 
@@ -310,7 +294,7 @@ def cmd_status(args):
     try:
         db = MemoryDatabase()
         with db.get_connection() as conn:
-            # moved, shim until Phase 6d: the counts SQL lives in agl.platform.memory_store.
+            # moved in Phase 6d: the counts SQL lives in agl.platform.memory_store.
             doc_count, chunk_count = db.counts(conn)
             categories = db.category_counts(conn)
         memory_cli.render_status_counts(doc_count, chunk_count, categories)
