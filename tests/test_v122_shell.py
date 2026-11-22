@@ -162,7 +162,7 @@ class RealSigint(unittest.TestCase):
         import signal
         import threading
 
-        async def stand_in(model, base_url):
+        async def stand_in(model, base_url, **_kwargs):
             await asyncio.sleep(5)  # a real SIGINT arrives while this waits
 
         buf = io.StringIO()
@@ -171,7 +171,7 @@ class RealSigint(unittest.TestCase):
             timer.start()
             try:
                 with self.assertRaises(SystemExit) as done:
-                    run._run_shell("m", "http://localhost:11434/v1")
+                    run._run_shell("m", "http://localhost:11434/v1", run.build_ports())
             finally:
                 timer.cancel()
         self.assertEqual(done.exception.code, 0)
