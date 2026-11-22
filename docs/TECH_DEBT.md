@@ -10,9 +10,9 @@ agree. Sizes are relative effort for one focused PR, and Evidence says how firm 
 
 | Where | What | Layer it belongs in | Fixes in | Size | Evidence |
 |---|---|---|---|---|---|
-| run.py (root) | Closed in Phase 6e (run.py is 199 lines thin shell, parts moved to app, core, platform, ui) | shell | Closed in Phase 6e | L | tested |
-| run.py shims | Closed in Phase 6e (all 34 shims deleted, 0 shims remain) | per the Layer contract | Closed in Phase 6e | M | tested |
-| Patch-target-only aliases | Closed in Phase 6e (23 aliases removed across hardware, probe, download_size, model_wizard) | tests follow the code | Closed in Phase 6e | S | tested |
+| run.py (root) | Closed in Phase 6e (run.py is a 199-line thin shell, black-clean at 100 columns, parts moved to app, core, platform, ui) | shell | Closed in Phase 6e | L | tested |
+| run.py shims | Closed in the Phase 6e follow-up (every alias, tuple alias and forwarder deleted; tests/test_run_shell_shape.py fails if one returns) | per the Layer contract | Closed in Phase 6e | M | tested |
+| Patch-target-only aliases | Closed in Phase 6e (23 aliases removed across hardware, probe, download_size, model_wizard; the follow-up removed run.py's ~40 tuple and lambda aliases) | tests follow the code | Closed in Phase 6e | S | tested |
 | model_wizard.py | 693 lines: catalog data, HTTP to Hugging Face and the Ollama registry, and interactive choose() in one file; the input_fn/out injection is a good seam, keep it | core (catalog, menu building) + platform (HTTP) + ui (choose) | Phases 3 and 4 | L | tested |
 | memory.py | Closed in Phase 6e (5 shims removed, callers use agl.platform directly, timeout=60 on graphify) | platform + core | Closed in Phase 6e | L | tested |
 | Duplicate HTTP helpers | _get_json in download_size.py and ollama_models.py, _http_get in run.py, fetch_json in hf_search.py | platform (one helper, timeout required) | Phase 2 | M | tested |
@@ -22,9 +22,13 @@ agree. Sizes are relative effort for one focused PR, and Evidence says how firm 
 | Picker bypass | code_agent.py, agent_with_workspace.py and test_local.py skip the model picker (one path since 6c; menu still skipped) | app (shared session entry) | Phase 6 | M | inferred (known open item) |
 | Agent scripts vs the picker | owner call: route agent scripts through the picker (arena B) instead of the one resolve_model path in agl/app/agent_session.py (arena A, since 6c) | shell/app | Phase 6d | S | inferred |
 | Site step lists | the 8 steps are defined 4 times (scene.js STEPS, main.js LAYER_SHORT, index.html stack list, game HOPS); scene.js is 846 lines with an if/else chain per layer; the game is one 1,498-line HTML file | site | Phase S | L | tested (counts) |
-| Test seams | tests patch run.py internals: patch.object(run, ...) 116 sites over 24 names (PROJECT_DIR 15, is_in_venv 12, check_ollama_service 11); code moves need the targets re-pointed, Phase 1 amends R13 for that | tests follow the code | Phase 1 | M | tested |
+| Test seams | after the Phase 6e follow-up, tests patch the owner modules; only 18 patch sites still name run (PROJECT_DIR, _SETUP_ONLY, main/_main/_run_shell) | tests follow the code | Phase 1 | S | tested |
 | AGENTS.md stale line | says "no package.json"; site/package.json exists | docs (rule text, needs maintainer approval) | Phase 1 | S | tested |
 | Today's boundary violations | Closed in Phase 6e (ratcheted baseline to 16, run.py and memory.py removed from ruff.toml) | per the Layer contract | Closed in Phase 6e | M | tested |
 | Audit follow-ups | docs/audit-2026-11-18.md: no open High; its one Medium (the --model docs) was fixed by PR #66; its Lows and Proposed fix PRs stay there - link, do not re-audit | mixed | Phases 2 to 6 | S | tested |
 
-Seed: ruff baseline at c90a615 plus the Phase 0 findings sweep, 2026-11-19. Architecture plan complete: all refactor roadmap phases (0 through 6e) closed.
+| check_test_moves whitelist | scripts/check_test_moves.py allows only import and patch-target removals; moving `run.X` test calls to the owner module (138 lines in the 6e follow-up, no assertion touched) is flagged | scripts/check_test_moves.py | open | S | tested |
+| run.py eager memory import | run.py imports memory at startup so build_ports can pass memory.index_for_probe; it used to import lazily inside the index call | shell | open | S | tested |
+| RealSigint test | win32-skipped on this machine; its stand_in now accepts the ports/out/input_fn kwargs, unverified until CI runs it on Linux | tests | CI | S | inferred |
+
+Seed: ruff baseline at c90a615 plus the Phase 0 findings sweep, 2026-11-19. Architecture plan: all refactor roadmap phases (0 through 6e) are closed with the 6e follow-up; the open rows above are the leftovers.
