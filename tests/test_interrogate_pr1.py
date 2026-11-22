@@ -25,9 +25,11 @@ import quant_pick  # noqa: E402
 import run  # noqa: E402
 import test_pull_flow  # noqa: E402
 import test_run  # noqa: E402
+from agl.app import pick  # noqa: E402
 from agl.platform import hardware as platform_hardware  # noqa: E402
 from agl.platform import hub  # noqa: E402
 from agl.platform import process  # noqa: E402
+from agl.ui import banner  # noqa: E402
 
 GB = 10 ** 9
 HW16 = {"ram_gb": 128.0, "vram_gb": 16.0, "gpu_name": "RTX"}
@@ -469,20 +471,20 @@ class GateInRun(unittest.TestCase):
 
     def test_gated_repo_non_interactive_downloads_nothing(self):
         info = {"status": "ok", "gated": True, "license": "llama3"}
-        with mock.patch.object(run.model_wizard, "hf_repo_info", return_value=info), \
+        with mock.patch.object(model_wizard, "hf_repo_info", return_value=info), \
                 mock.patch.object(process.subprocess, "check_call", side_effect=AssertionError("must not pull")), \
                 mock.patch("builtins.input", side_effect=AssertionError("must not ask")), \
                 contextlib.redirect_stdout(io.StringIO()):
-            self.assertIsNone(run._pull_with_gate("hf.co/meta/llama", False, HW16, test_run.free_of(HW16)))
+            self.assertIsNone(pick._pull_with_gate("hf.co/meta/llama", False, HW16, test_run.free_of(HW16), ports=run.build_ports(), out=banner.out))
 
     def test_gated_repo_beats_a_full_disk_message_and_never_asks(self):
         info = {"status": "ok", "gated": "manual", "license": None}
         full = test_run.free_of(HW16, disk_free=1.0, disk_total=1000.0)
-        with mock.patch.object(run.model_wizard, "hf_repo_info", return_value=info), \
+        with mock.patch.object(model_wizard, "hf_repo_info", return_value=info), \
                 mock.patch.object(process.subprocess, "check_call", side_effect=AssertionError("must not pull")), \
                 mock.patch("builtins.input", side_effect=AssertionError("must not ask")), \
                 contextlib.redirect_stdout(io.StringIO()):
-            self.assertIsNone(run._pull_with_gate("hf.co/meta/llama", True, HW16, full))
+            self.assertIsNone(pick._pull_with_gate("hf.co/meta/llama", True, HW16, full, ports=run.build_ports(), out=banner.out))
 
     def test_odd_tags_are_never_handed_to_ollama_as_a_flag(self):
         for tag in ("--insecure", "-h", "--help", "-"):

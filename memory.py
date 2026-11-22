@@ -169,6 +169,13 @@ class MemoryIndexer:
         )
 
 
+def index_for_probe() -> dict:
+    """Index the fabric for the pre-shell check; the body used to live inline in run.py."""
+    database = memory_store.MemoryDatabase(DB_PATH)
+    provider = embeddings.EmbeddingProvider(OLLAMA_API_BASE)
+    return MemoryIndexer(database, provider).index_all(force=False)
+
+
 # ==============================================================================
 # Search & Reciprocal Rank Fusion (RRF) Retrieval Engine
 # ==============================================================================

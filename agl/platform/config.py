@@ -4,6 +4,7 @@ import os
 
 OLLAMA_BASE_URL = "http://localhost:11434"  # the default Ollama host, written once for the whole repo
 LLM_BASE_URL = OLLAMA_BASE_URL + "/v1"      # the OpenAI-compatible default, derived, never typed out
+LOOPBACK_OLLAMA_HOST = "127.0.0.1:11434"    # where a started `ollama serve` listens; agl.app.ports reads this
 
 
 def llm_base_url(env=os.environ):

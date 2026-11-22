@@ -16,11 +16,6 @@ import run  # noqa: E402
 import agl.app.agent  # noqa: E402
 from agl.ui import banner  # noqa: E402
 
-run.run_agent = lambda model, base_url="http://localhost:11434/v1": agl.app.agent.run_agent(
-    model, base_url, ports=run._PickPorts(), out=run._out, input_fn=input
-)
-run.print_header = lambda: banner.print_header(ports=run._PickPorts(), out=run._out)
-
 os.environ["ANTIGRAVITY_NO_RUN_LOG"] = "1"  # tests must not write into the real logs/ folder
 
 
@@ -80,7 +75,7 @@ def make_sdk(exit_error=None, enter_error=None, chat_error=None, close_fails_fro
 
 
 def run_shell(inputs, **sdk_kwargs):
-    """Run run.run_agent with a fake SDK and scripted typed input. Returns (stdout, exception or None, chats)."""
+    """Run the shell agent with a fake SDK and scripted typed input. Returns (stdout, exception or None, chats)."""
     modules, state = make_sdk(**sdk_kwargs)
     answers = iter(inputs)
 
@@ -102,7 +97,7 @@ def run_shell(inputs, **sdk_kwargs):
             mock.patch("builtins.input", side_effect=fake_input), \
             contextlib.redirect_stdout(out):
         try:
-            asyncio.run(run.run_agent("test-model"))
+            asyncio.run(agl.app.agent.run_agent("test-model", "http://localhost:11434/v1", ports=run.build_ports(), out=banner.out, input_fn=input))
         except BaseException as exc:  # the tests assert on this, so capture everything
             err = exc
     return out.getvalue(), err, state["chats"]
@@ -151,11 +146,11 @@ class HeaderOnce(unittest.TestCase):
     def _header(self, env):
         buf = io.StringIO()
         with mock.patch.dict(os.environ, env, clear=True), contextlib.redirect_stdout(buf):
-            run.print_header()
+            banner.print_header(ports=run.build_ports(), out=banner.out)
         return buf.getvalue()
 
     def test_flag_set_prints_nothing(self):
-        self.assertEqual(self._header({run.HEADER_FLAG: "1"}), "")
+        self.assertEqual(self._header({banner.HEADER_FLAG: "1"}), "")
 
     def test_flag_unset_prints_header(self):
         self.assertIn("Google Antigravity Local", self._header({}))

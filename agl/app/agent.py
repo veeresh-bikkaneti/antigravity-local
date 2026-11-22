@@ -6,6 +6,8 @@ Collaborators are injected through `ports`.
 """
 import asyncio
 
+MAX_SHELL_FAILURES = 3  # consecutive per-turn shell errors before the session stops; ports read this knob
+
 
 def _is_harness_error(exc):
     """True for the SDK's execution error. Matched by class name, so an SDK module move cannot break the CLI."""

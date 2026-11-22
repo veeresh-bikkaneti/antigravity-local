@@ -10,7 +10,9 @@ import download_size
 import model_wizard
 import pull_gate
 import run
+from agl.app import pick
 from agl.platform import hub, registry
+from agl.ui import banner
 
 model_wizard._HF_OPENER = hub._HF_OPENER
 
@@ -227,8 +229,8 @@ class FixPass(unittest.TestCase):
     def test_the_hub_is_not_asked_again_when_it_is_offline(self):
         model_wizard._STATE["offline"] = True
         res = {"free_disk_gb": 100, "disk_total_gb": 500}
-        with mock.patch.object(run, "_free_for_fit", return_value=(24.0, 32.0)),                 mock.patch.object(model_wizard, "hf_repo_info") as info,                 mock.patch.object(model_wizard, "hf_tree_files") as tree, mock.patch("builtins.print"):
-            plan = run._plan_download("hf.co/u/r:Q4_K_M", {}, res)
+        with mock.patch("agl.app.pick._free_for_fit", return_value=(24.0, 32.0)),                 mock.patch.object(model_wizard, "hf_repo_info") as info,                 mock.patch.object(model_wizard, "hf_tree_files") as tree, mock.patch("builtins.print"):
+            plan = pick._plan_download("hf.co/u/r:Q4_K_M", {}, res, ports=run.build_ports(), out=lambda *a, **k: None)
         self.assertIsNotNone(plan)
         info.assert_not_called()
         tree.assert_not_called()
@@ -242,8 +244,8 @@ class FixPass(unittest.TestCase):
     def test_all_ten_valid_rows_are_sized_after_three_invalid_ones(self):
         rows = [{"repo": "bad"}, {"repo": ""}, {"repo": "a/b/c"}] + [{"repo": f"u/m{i}"} for i in range(10)]
         info = {"gb": 4.0, "quant": "Q4_K_M", "source": "hugging face"}
-        with mock.patch.object(run, "hf_menu_search", return_value=rows),                 mock.patch.object(download_size, "hf_quant_size", return_value=info) as sized:
-            run.hf_menu_search_sized("x", 24.0, 32.0, limit=10)
+        with mock.patch("agl.app.pick.hf_menu_search", return_value=rows),                 mock.patch.object(download_size, "hf_quant_size", return_value=info) as sized:
+            pick.hf_menu_search_sized("x", 24.0, 32.0, limit=10, ports=run.build_ports(), out=banner.out)
         self.assertEqual(sized.call_count, 10)
 
 

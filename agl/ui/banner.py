@@ -32,6 +32,17 @@ def is_plain(plain_flag=None, *, ports=None) -> bool:
     return bool(env_get("NO_COLOR"))
 
 
+def setup_console() -> None:
+    """Windows consoles default to cp1252: make stdout/stderr UTF-8 so emoji and box art print."""
+    if sys.platform != "win32":
+        return
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+
 def safe_print(text, *, out=None, **kwargs) -> None:
     """print() that never raises on a console that cannot encode the text (cp1252, for example)."""
     fn = out if out is not None else print
@@ -48,6 +59,12 @@ def safe_print(text, *, out=None, **kwargs) -> None:
                 fn(text.encode("ascii", errors="replace").decode("ascii"))
         except Exception:
             pass
+
+
+def out(*args, **kwargs) -> None:
+    """One line of terminal text: several values join with a space, one value prints as-is."""
+    text = " ".join(str(x) for x in args) if len(args) > 1 else (args[0] if args else "")
+    safe_print(text, out=print, **kwargs)
 
 
 def stage(n, total, name, next_line, *, plain=None, ports=None, out=None) -> None:
