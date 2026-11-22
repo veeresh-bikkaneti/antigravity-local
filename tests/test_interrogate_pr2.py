@@ -585,7 +585,7 @@ class Probe(unittest.TestCase):
         def spy(*a, **k):
             made.append(real(*a, **k))
             return made[-1]
-        with mock.patch.object(probe.tempfile, "mkdtemp", side_effect=spy):
+        with mock.patch.object(tempfile, "mkdtemp", side_effect=spy):
             res, _ = self.never_raises(lambda i, r: _write_call("output.md", "A" * 5_000_000) if i == 0 else test_probe.say("x"))
         self.assertEqual(res["verdict"], "fail")
         self.assertTrue(made and not os.path.exists(made[0]))
@@ -601,7 +601,7 @@ class Probe(unittest.TestCase):
             for path in hostile:
                 with self.subTest(path=path):
                     os.makedirs(folder, exist_ok=True)
-                    with mock.patch.object(probe.tempfile, "mkdtemp", return_value=folder):
+                    with mock.patch.object(tempfile, "mkdtemp", return_value=folder):
                         res, _ = self.never_raises(lambda i, r, p=path: _write_call(p) if i == 0 else test_probe.say("x"))
                     self.assertEqual(res["verdict"], "fail", res)
                     for root, _dirs, files in os.walk(outer):

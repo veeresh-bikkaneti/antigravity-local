@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import model_wizard  # noqa: E402
 import run  # noqa: E402
-from agl.platform import process  # noqa: E402
+from agl.platform import hub, process, registry  # noqa: E402
 
 
 os.environ["ANTIGRAVITY_NO_RUN_LOG"] = "1"  # tests must not write into the real logs/ folder
@@ -908,13 +908,13 @@ class SameHostRegistry(unittest.TestCase):
 
     def test_tag_exists_is_unknown_when_the_registry_redirects_away(self):
         redirect = urllib.error.HTTPError("https://registry.ollama.ai/v2/x", 302, "Found", {}, None)
-        with mock.patch.object(model_wizard._REGISTRY_OPENER, "open", side_effect=redirect), \
+        with mock.patch.object(registry._OPENER, "open", side_effect=redirect), \
                 mock.patch.object(urllib.request, "urlopen", side_effect=AssertionError("must use the same-host opener")):
             self.assertIsNone(model_wizard.tag_exists("qwen3.6:27b"))
 
     def test_hf_repo_info_goes_through_the_same_host_opener(self):
         missing = urllib.error.HTTPError("https://huggingface.co/api/models/u/r", 404, "Not Found", {}, None)
-        with mock.patch.object(model_wizard._HF_OPENER, "open", side_effect=missing), \
+        with mock.patch.object(hub._HF_OPENER, "open", side_effect=missing), \
                 mock.patch.object(urllib.request, "urlopen", side_effect=AssertionError("must use the same-host opener")):
             self.assertEqual(model_wizard.hf_repo_info("u", "r")["status"], "missing")
             self.assertEqual(model_wizard.hf_check("hf.co/u/r:Q4_K_M")[0], "missing")

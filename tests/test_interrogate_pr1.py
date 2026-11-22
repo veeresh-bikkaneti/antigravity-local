@@ -26,6 +26,7 @@ import run  # noqa: E402
 import test_pull_flow  # noqa: E402
 import test_run  # noqa: E402
 from agl.platform import hardware as platform_hardware  # noqa: E402
+from agl.platform import hub  # noqa: E402
 from agl.platform import process  # noqa: E402
 
 GB = 10 ** 9
@@ -42,9 +43,9 @@ def smi(output=None, raises=None, which="nvidia-smi"):
         if raises:
             raise raises
         return output
-    return (mock.patch.object(hardware.shutil, "which", return_value=which),
+    return (mock.patch.object(platform_hardware.shutil, "which", return_value=which),
             mock.patch.object(platform_hardware.subprocess, "check_output", side_effect=fake),
-            mock.patch.object(hardware.sys, "platform", "linux"))
+            mock.patch.object(platform_hardware.sys, "platform", "linux"))
 
 
 @contextlib.contextmanager
@@ -233,7 +234,7 @@ class HfApi(unittest.TestCase):
             if isinstance(nxt, BaseException):
                 raise nxt
             return nxt
-        with mock.patch.object(model_wizard._HF_OPENER, "open", fake):
+        with mock.patch.object(hub._HF_OPENER, "open", fake):
             return model_wizard.hf_tree_files("u", "m"), seen
 
     def info(self, response):
@@ -241,7 +242,7 @@ class HfApi(unittest.TestCase):
             if isinstance(response, BaseException):
                 raise response
             return response
-        with mock.patch.object(model_wizard._HF_OPENER, "open", fake):
+        with mock.patch.object(hub._HF_OPENER, "open", fake):
             return model_wizard.hf_repo_info("u", "m")
 
     ROW = {"type": "file", "path": "m-Q4_K_M-00001-of-00002.gguf", "size": 1000}

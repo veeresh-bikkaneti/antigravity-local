@@ -9,6 +9,8 @@ from unittest import mock
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 import hardware  # noqa: E402
 from agl.platform import hardware as platform_hardware  # noqa: E402
+platform_hw = platform_hardware
+hardware.shutil = platform_hardware.shutil
 
 
 def smi(text=None, raises=False):
@@ -44,13 +46,13 @@ class FreeVram(unittest.TestCase):
         self.assertEqual(self.free(raises=True), (0.0, False))
 
     def test_nvidia_smi_missing_is_unknown(self):
-        with mock.patch.object(hardware.shutil, "which", return_value=None), \
-                mock.patch.object(hardware.sys, "platform", "linux"):
+        with mock.patch.object(platform_hw.shutil, "which", return_value=None), \
+                mock.patch.object(platform_hw.sys, "platform", "linux"):
             self.assertEqual(hardware.get_free_vram_gb(), (0.0, False))
 
     def test_apple_unified_memory_uses_free_ram(self):
-        with mock.patch.object(hardware.shutil, "which", return_value=None), \
-                mock.patch.object(hardware.sys, "platform", "darwin"), \
+        with mock.patch.object(platform_hw.shutil, "which", return_value=None), \
+                mock.patch.object(platform_hw.sys, "platform", "darwin"), \
                 mock.patch.object(platform_hardware, "get_free_ram_gb", return_value=20.0):
             self.assertEqual(hardware.get_free_vram_gb(), (20.0, True))
 
@@ -63,8 +65,8 @@ class Profile(unittest.TestCase):
         self.assertEqual((p["gpu_name"], round(p["vram_gb"], 2), p["ram_gb"]), ("NVIDIA RTX 5000 Ada", 15.99, 128.0))
 
     def test_no_gpu_is_cpu_only(self):
-        with mock.patch.object(hardware.shutil, "which", return_value=None), \
-                mock.patch.object(hardware.sys, "platform", "linux"), \
+        with mock.patch.object(platform_hw.shutil, "which", return_value=None), \
+                mock.patch.object(platform_hw.sys, "platform", "linux"), \
                 mock.patch.object(platform_hardware, "get_system_ram_gb", return_value=16.0):
             self.assertEqual(hardware.get_hardware_profile(), {"ram_gb": 16.0, "vram_gb": 0.0, "gpu_name": "CPU Only"})
 
@@ -84,13 +86,13 @@ class Disk(unittest.TestCase):
     def test_walks_up_to_a_folder_that_exists(self):
         Usage = namedtuple("Usage", "total used free")
         with tempfile.TemporaryDirectory() as d, \
-                mock.patch.object(hardware.shutil, "disk_usage", return_value=Usage(1000 * 1024 ** 3, 0, 250 * 1024 ** 3)) as du:
+                mock.patch.object(platform_hw.shutil, "disk_usage", return_value=Usage(1000 * 1024 ** 3, 0, 250 * 1024 ** 3)) as du:
             free, total = hardware.free_disk_gb(os.path.join(d, "not", "made", "yet"))
         self.assertEqual((free, total), (250.0, 1000.0))
         self.assertEqual(du.call_args[0][0], os.path.abspath(d))
 
     def test_unreadable_disk_is_unknown(self):
-        with mock.patch.object(hardware.shutil, "disk_usage", side_effect=OSError):
+        with mock.patch.object(platform_hw.shutil, "disk_usage", side_effect=OSError):
             self.assertEqual(hardware.free_disk_gb(tempfile.gettempdir()), (0.0, 0.0))
 
 

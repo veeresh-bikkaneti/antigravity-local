@@ -5,6 +5,7 @@ import json
 import os
 import re
 import sys
+import tempfile
 import unittest
 import urllib.error
 from unittest import mock
@@ -97,7 +98,7 @@ class Probe(unittest.TestCase):
             folders.append(real(*a, **k))
             return folders[-1]
         out = io.StringIO()
-        with mock.patch.object(probe.tempfile, "mkdtemp", spy), contextlib.redirect_stdout(out):
+        with mock.patch.object(tempfile, "mkdtemp", spy), contextlib.redirect_stdout(out):
             result = probe.run_probe(BASE, "qwen3:8b", opener=server, clock=server.clock, **kw)
         self.server, self.folders, self.printed = server, folders, out.getvalue()
         return result
