@@ -3,6 +3,111 @@
 Nothing here writes directly to stdout or accesses the OS by itself: output goes through `out`,
 and all system collaborators (process, platform, stage, sleep) are injected through `ports`.
 """
+import json
+
+DEFAULT_OLLAMA_HOSTS = ("http://localhost:11434", "http://127.0.0.1:11434")
+
+
+def _is_tty(stream):
+    try:
+        return bool(stream.isatty())
+    except (AttributeError, ValueError):
+        return False
+
+
+def _server_urls(base_url, *, ports=None):
+    """(ollama root, [candidate /models URLs]) for a LOCAL_LLM_BASE_URL such as http://localhost:1234/v1."""
+    default_base = getattr(ports, "config", None).LLM_BASE_URL if (ports and hasattr(ports, "config")) else "http://localhost:11434/v1"
+    base = (base_url or default_base).strip().rstrip("/")
+    if base.endswith("/v1"):
+        return base[:-3].rstrip("/"), [base + "/models"]
+    return base, [base + "/v1/models", base + "/models"]
+
+
+def list_openai_models(base_url, *, ports=None):
+    """Model ids from an OpenAI-compatible GET /models (the `data[].id` list). [] when it does not answer in that shape."""
+    http_mod = getattr(ports, "http", None) if ports else None
+    if http_mod is None:
+        return []
+    for url in _server_urls(base_url, ports=ports)[1]:
+        body = http_mod.get_text(url, timeout=3)
+        if body is None:
+            continue
+        try:
+            data = json.loads(body).get("data")
+        except Exception:
+            continue
+        if isinstance(data, list):
+            return [m["id"] for m in data if isinstance(m, dict) and isinstance(m.get("id"), str) and m["id"].strip()]
+    return []
+
+
+def _openai_answers(base_url, *, ports=None):
+    http_mod = getattr(ports, "http", None) if ports else None
+    if http_mod is None:
+        return False
+    for url in _server_urls(base_url, ports=ports)[1]:
+        body = http_mod.get_text(url, timeout=3)
+        if body is None:
+            continue
+        try:
+            if isinstance(json.loads(body).get("data"), list):
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def detect_backend(base_url, *, ports=None):
+    """Which server answers at LOCAL_LLM_BASE_URL: "ollama" (its own /api/tags), "openai" (an OpenAI-compatible
+    GET /models with a `data` list, e.g. LM Studio, llama.cpp, vLLM), or None when neither answers."""
+    http_mod = getattr(ports, "http", None) if ports else None
+    if http_mod is None:
+        return None
+    host = _server_urls(base_url, ports=ports)[0]
+    if http_mod.get_text(f"{host}/api/tags", timeout=3) is not None:
+        return "ollama"
+    if _openai_answers(base_url, ports=ports):
+        return "openai"
+    return None
+
+
+def is_default_ollama_url(base_url, *, ports=None):
+    hosts = set(DEFAULT_OLLAMA_HOSTS)
+    if ports and hasattr(ports, "config") and hasattr(ports.config, "OLLAMA_BASE_URL"):
+        hosts.add(ports.config.OLLAMA_BASE_URL.lower())
+    return _server_urls(base_url, ports=ports)[0].lower() in hosts
+
+
+def setup_backend(args, *, ports, out):
+    """Ensure Ollama or OpenAI-compatible server is answering."""
+    base_api = ports.config.llm_base_url()
+    ollama_host = base_api.replace("/v1", "").rstrip("/")
+    backend = detect_backend(base_api, ports=ports)
+    stdin = getattr(ports.sys, "stdin", None) if hasattr(ports, "sys") else None
+    stdout = getattr(ports.sys, "stdout", None) if hasattr(ports, "sys") else None
+    interactive = _is_tty(stdin) and _is_tty(stdout) and not getattr(args, "yes", False)
+    if hasattr(ports, "_SETUP_ONLY"):
+        ports._SETUP_ONLY = not interactive
+    if backend == "openai":
+        ports.stage(2, 5, "SERVER", "use the OpenAI-compatible server you already run")
+        out(f"       Found an OpenAI-compatible server at {base_api} (not Ollama). Nothing will be downloaded.")
+        if hasattr(ports, "os"):
+            ports.os.environ["LOCAL_LLM_BACKEND"] = "openai"
+        elif hasattr(ports, "environ_set"):
+            ports.environ_set("LOCAL_LLM_BACKEND", "openai")
+    else:
+        if hasattr(ports, "os"):
+            ports.os.environ.pop("LOCAL_LLM_BACKEND", None)
+        elif hasattr(ports, "environ_pop"):
+            ports.environ_pop("LOCAL_LLM_BACKEND")
+        if backend is None and not is_default_ollama_url(base_api, ports=ports):
+            out(f"\n❌ Nothing answered at {base_api}: no Ollama (/api/tags) and no OpenAI-compatible /models. "
+                "Start your server, or fix LOCAL_LLM_BASE_URL in .env.")
+            ports.sys.exit(1)
+        if not check_ollama_service(ollama_host, ports=ports, out=out):
+            ports.sys.exit(1)
+    return base_api, ollama_host, backend, interactive
 
 
 def check_ollama_service(base_url, *, ports, out):

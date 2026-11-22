@@ -13,6 +13,13 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import run  # noqa: E402
+import agl.app.agent  # noqa: E402
+from agl.ui import banner  # noqa: E402
+
+run.run_agent = lambda model, base_url="http://localhost:11434/v1": agl.app.agent.run_agent(
+    model, base_url, ports=run._PickPorts(), out=run._out, input_fn=input
+)
+run.print_header = lambda: banner.print_header(ports=run._PickPorts(), out=run._out)
 
 os.environ["ANTIGRAVITY_NO_RUN_LOG"] = "1"  # tests must not write into the real logs/ folder
 
@@ -89,9 +96,9 @@ def run_shell(inputs, **sdk_kwargs):
             mock.patch.dict(sys.modules, modules), \
             mock.patch.object(run, "PROJECT_DIR", tmp), \
             mock.patch.object(run, "_SETUP_ONLY", False), \
-            mock.patch.object(run, "stage"), \
-            mock.patch.object(run, "context_check"), \
-            mock.patch.object(run, "level_clear"), \
+            mock.patch.object(banner, "stage"), \
+            mock.patch.object(banner, "context_check"), \
+            mock.patch.object(banner, "level_clear"), \
             mock.patch("builtins.input", side_effect=fake_input), \
             contextlib.redirect_stdout(out):
         try:
@@ -165,7 +172,7 @@ class RealSigint(unittest.TestCase):
 
         buf = io.StringIO()
         timer = threading.Timer(0.3, os.kill, (os.getpid(), signal.SIGINT))
-        with mock.patch.object(run, "run_agent", stand_in), contextlib.redirect_stdout(buf):
+        with mock.patch.object(agl.app.agent, "run_agent", stand_in), contextlib.redirect_stdout(buf):
             timer.start()
             try:
                 with self.assertRaises(SystemExit) as done:

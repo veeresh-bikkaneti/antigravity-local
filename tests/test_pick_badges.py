@@ -13,6 +13,24 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 import run  # noqa: E402
 import test_run  # noqa: E402  (a module import, so its own tests are not collected here)
+import agl.app.bootstrap  # noqa: E402
+import agl.app.probe  # noqa: E402
+import agl.app.server  # noqa: E402
+from agl.ui import banner, pick_menu  # noqa: E402
+from agl.app import pick  # noqa: E402
+
+run._refuse_non_chat = lambda tag, pool: pick_menu.refuse_non_chat(tag, pool, ports=run._PickPorts(), out=run._out)
+run._plan_download = lambda tag, hw, res: pick._plan_download(tag, hw, res, ports=run._PickPorts(), out=run._out)
+run.run_probe_command = lambda args: agl.app.probe.run_probe_command(args, ports=run._PickPorts(), out=run._out)
+run.select_and_pull_model = lambda base_url=None, *a, **k: pick.select_and_pull_model(
+    base_url or run.config.OLLAMA_BASE_URL,
+    *a,
+    ports=run._PickPorts(),
+    out=run._out,
+    ask=lambda *aa, **kk: pick_menu.ask_which_model(*aa, ports=run._PickPorts(), out=run._out, **kk),
+    stage=banner.stage,
+    **k
+)
 
 HW = {"ram_gb": 128.0, "vram_gb": 16.0, "gpu_name": "RTX"}
 
@@ -316,7 +334,10 @@ class ProbeCommand(unittest.TestCase):
         self.assertEqual(text.count("Could not write the fail ledger"), 1)
 
     def test_probe_is_an_early_exit_that_never_touches_the_venv_or_ollama_setup(self):
-        with mock.patch.object(run, "run_probe_command", return_value=0) as cmd,                 mock.patch.object(run, "bootstrap_venv", side_effect=AssertionError("no venv for --probe")),                 mock.patch.object(run, "check_ollama_service", side_effect=AssertionError("no ollama start for --probe")),                 mock.patch.object(run, "print_header", side_effect=AssertionError("no header")):
+        with mock.patch.object(agl.app.probe, "run_probe_command", return_value=0) as cmd, \
+                mock.patch.object(agl.app.bootstrap, "bootstrap_venv", side_effect=AssertionError("no venv for --probe")), \
+                mock.patch.object(agl.app.server, "check_ollama_service", side_effect=AssertionError("no ollama start for --probe")), \
+                mock.patch.object(banner, "print_header", side_effect=AssertionError("no header")):
             with self.assertRaises(SystemExit) as caught:
                 run._main(["--probe", "m"])
         self.assertEqual(caught.exception.code, 0)

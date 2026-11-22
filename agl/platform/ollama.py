@@ -46,6 +46,21 @@ def installed_models(base_url=config.OLLAMA_BASE_URL, *, timeout=3, get_json=Non
                 models.add(clean_name)
     except Exception:
         pass
+    if not models:
+        try:
+            import shutil
+            from agl.platform import process
+            if shutil.which("ollama"):
+                output = process.check_output(["ollama", "list"], text=True, stderr=process.DEVNULL)
+                for line in output.splitlines()[1:]:
+                    parts = line.split()
+                    if parts:
+                        name = parts[0].strip().lower()
+                        models.add(name)
+                        clean_name = name.split("/")[-1]
+                        models.add(clean_name)
+        except Exception:
+            pass
     return models
 
 

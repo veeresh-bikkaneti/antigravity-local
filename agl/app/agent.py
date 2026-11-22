@@ -4,6 +4,7 @@ Nothing here writes directly to stdout: output goes through `out`.
 Input is read via `input_fn` (defaults to builtin `input`).
 Collaborators are injected through `ports`.
 """
+import asyncio
 
 
 def _is_harness_error(exc):
@@ -14,15 +15,23 @@ def _is_harness_error(exc):
 def _get_sdk(ports):
     """Access the agent SDK through ports, falling back to sys.modules for tests."""
     import sys
+
     sdk_key = "google." + "antigravity"
-    if sdk_key in sys.modules:
-        return sys.modules[sdk_key]
+    sys_mod = getattr(ports, "sys", None)
+    sys_modules = getattr(sys_mod, "modules", None)
+    if not isinstance(sys_modules, dict):
+        sys_modules = sys.modules
+    if sdk_key in sys_modules:
+        return sys_modules[sdk_key]
     if hasattr(ports, "agent_sdk"):
-        sdk = ports.agent_sdk()
-        if hasattr(sdk, "_mock_return_value") and "Agent" not in sdk.__dict__:
-            return sys.modules.get(sdk_key, sdk)
-        return sdk
-    return sys.modules.get(sdk_key)
+        try:
+            sdk = ports.agent_sdk()
+            if hasattr(sdk, "_mock_return_value") and "Agent" not in getattr(sdk, "__dict__", {}):
+                return sys_modules.get(sdk_key, sdk)
+            return sdk
+        except Exception:
+            pass
+    return sys_modules.get(sdk_key)
 
 
 def _setup_only_path(model, base_url, *, ports, out):
@@ -119,8 +128,9 @@ async def _run_agent_session(model, base_url, leave, *, ports, out, input_fn=Non
 
     sdk = _get_sdk(ports)
     LocalOpenAIAgentConfig = getattr(sdk, "LocalOpenAIAgentConfig", None)
-    import sys
-    types_mod = getattr(sdk, "types", None) or sys.modules.get("google." + "antigravity.types")
+    sys_mod = getattr(ports, "sys", None)
+    sys_modules = getattr(sys_mod, "modules", {}) if sys_mod else {}
+    types_mod = getattr(sdk, "types", None) or sys_modules.get("google." + "antigravity.types")
     if types_mod is None:
         try:
             import importlib
@@ -129,7 +139,7 @@ async def _run_agent_session(model, base_url, leave, *, ports, out, input_fn=Non
             pass
     CapabilitiesConfig = getattr(types_mod, "CapabilitiesConfig", None) if types_mod else None
 
-    hooks_mod = getattr(sdk, "hooks", None) or sys.modules.get("google." + "antigravity.hooks")
+    hooks_mod = getattr(sdk, "hooks", None) or sys_modules.get("google." + "antigravity.hooks")
     if hooks_mod is None:
         try:
             import importlib
@@ -175,10 +185,71 @@ async def run_agent(model, base_url, *, ports, out, input_fn=None):
             raise
         if leave["left"]:
             return  # the goodbye is already printed
-        import asyncio
         if isinstance(exc.__context__, (KeyboardInterrupt, asyncio.CancelledError)):
             # Ctrl+C during the demo (on Python 3.11+ it can arrive as a task cancel), and the SDK failed while closing
             out("\n\n👋 Goodbye!\n")
             return
         log = ports.runlog.log_path(ports.path_join(ports.PROJECT_DIR, "logs"))
         out(f"\n⚠️ The agent backend stopped unexpectedly. Log: {log}\n")
+
+
+def handle_agent(args, model, base_api, interactive, *, ports, out):
+    """Configure external coding agent (--agent pi/opencode/codex/claude) and hand over."""
+    if getattr(args, "agent", "shell") == "shell":
+        return
+    if hasattr(ports, "check_or_update_memory"):
+        ports.check_or_update_memory(ports=ports, out=out)
+    else:
+        from agl.app import probe
+        probe.check_or_update_memory(ports=ports, out=out)
+
+    agent_setup = getattr(ports, "agent_setup", None)
+    if agent_setup is None:
+        import agent_setup
+
+    cwd = ports.os.getcwd() if hasattr(ports, "os") else ""
+    project_dir = getattr(ports, "PROJECT_DIR", "")
+    try:
+        workspace = agent_setup.resolve_workspace(args.workspace, cwd, project_dir)
+    except agent_setup.AgentSetupError as e:
+        out(f"\n[agent setup] {e}")
+        ports.sys.exit(e.code)
+
+    finder = None
+    if getattr(args, "resume_from", None):
+        handoff = getattr(ports, "handoff", None)
+        if handoff is None:
+            import handoff
+
+        def finder(ident):
+            try:
+                return handoff.find_transcript(ident, handoff.repo_root(workspace))
+            except handoff.HandoffError as e:
+                raise agent_setup.AgentSetupError(str(e))
+
+    ports.stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
+    ports.context_check(interactive=interactive)
+    ports.level_clear(model, args.agent)
+    ports.sys.exit(
+        agent_setup.run(
+            args.agent,
+            model,
+            base_api,
+            workspace,
+            config_only=getattr(args, "agent_config_only", False),
+            continue_local=getattr(args, "continue_local", False),
+            resume_from=getattr(args, "resume_from", None),
+            copy_settings=getattr(args, "copy_user_settings", False),
+            find_transcript=finder,
+        )
+    )
+
+
+def run_shell(model, base_api, *, ports, out, input_fn=None):
+    """Run the agent. On Python 3.11+ asyncio.run turns the first Ctrl+C into a task cancel and re-raises
+    KeyboardInterrupt once the task ends, outside run_agent, so it is caught here: Goodbye and exit 0."""
+    try:
+        asyncio.run(run_agent(model, base_api, ports=ports, out=out, input_fn=input_fn or input))
+    except KeyboardInterrupt:
+        out("\n\n👋 Goodbye!\n")
+        ports.sys.exit(0)
