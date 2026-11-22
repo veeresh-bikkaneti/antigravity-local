@@ -247,14 +247,8 @@ class AppPorts:
     def check_ollama_service(self, host):
         return server.check_ollama_service(host, ports=self, out=self._out)
 
-    def check_or_update_memory(self, *args, **kwargs):
-        try:
-            return app_probe.check_or_update_memory(*args, **kwargs)
-        except TypeError:
-            try:
-                return app_probe.check_or_update_memory(ports=self, out=self._out)
-            except TypeError:
-                return app_probe.check_or_update_memory()
+    def check_or_update_memory(self, *, ports=None, out=None):
+        return app_probe.check_or_update_memory(ports=ports or self, out=out or self._out)
 
     def _load_env(self):
         self._state.load_env(self._env_file)

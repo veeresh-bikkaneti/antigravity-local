@@ -966,7 +966,7 @@ class SharedMemory(unittest.TestCase):
                 mock.patch("agl.app.server.check_ollama_service", return_value=True), \
                 mock.patch("agl.app.server.detect_backend", return_value="ollama"), \
                 mock.patch("agl.app.pick.select_and_pull_model", return_value="m"), \
-                mock.patch("agl.app.probe.check_or_update_memory", side_effect=lambda: order.append("index")), \
+                mock.patch("agl.app.probe.check_or_update_memory", side_effect=lambda **_k: order.append("index")), \
                 mock.patch.object(agent_setup, "run", side_effect=lambda *a, **k: order.append("agent") or 0), \
                 contextlib.redirect_stdout(io.StringIO()):
             with self.assertRaises(SystemExit):
@@ -1147,7 +1147,7 @@ class WizardD2(unittest.TestCase):
                 mock.patch("agl.app.server.check_ollama_service", return_value=True), \
                 mock.patch("agl.app.server.detect_backend", return_value="ollama"), \
                 mock.patch("agl.app.pick.select_and_pull_model", return_value="m"), \
-                mock.patch("agl.app.probe.check_or_update_memory", side_effect=lambda: order.append("index")), \
+                mock.patch("agl.app.probe.check_or_update_memory", side_effect=lambda **_k: order.append("index")), \
                 mock.patch("agl.ui.banner.level_clear", side_effect=lambda *a, **k: order.append("box")), \
                 mock.patch.object(sys, "stdin", io.StringIO("")), \
                 contextlib.redirect_stdout(io.StringIO()):
