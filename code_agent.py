@@ -63,7 +63,10 @@ def _load_sdk():
 
 # Memory engine import
 try:
-    from memory import MemoryDatabase, EmbeddingProvider, MemorySearcher, WIKI_DIR
+    import memory
+    from memory import MemorySearcher, WIKI_DIR
+    from agl.platform.memory_store import MemoryDatabase
+    from agl.platform.embeddings import EmbeddingProvider
     HAS_MEMORY = True
 except ImportError:
     HAS_MEMORY = False
@@ -84,8 +87,8 @@ def get_memory_context(query: str, limit: int = 2) -> str:
     if not HAS_MEMORY:
         return ""
     try:
-        db = MemoryDatabase()
-        embedder = EmbeddingProvider()
+        db = MemoryDatabase(memory.DB_PATH)
+        embedder = EmbeddingProvider(memory.OLLAMA_API_BASE)
         searcher = MemorySearcher(db, embedder)
         results = searcher.search(query, limit=limit)
         if not results:

@@ -2,9 +2,6 @@
 
 the probes live in agl/platform/hardware.py; this module re-exports the names for old callers.
 """
-import shutil  # kept: old patch targets (hardware.shutil / hardware.sys, same module objects) keep working
-import sys
-
 from agl.platform.hardware import (  # moved to agl.platform.hardware
     GB,
     IS_WIN,
@@ -17,3 +14,4 @@ from agl.platform.hardware import (  # moved to agl.platform.hardware
     get_system_ram_gb,
     ollama_models_dir,
 )
+

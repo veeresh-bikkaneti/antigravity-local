@@ -4,6 +4,7 @@ import unittest
 
 import model_wizard as mw
 import run
+from agl.platform import ollama
 
 
 class SpeedLabel(unittest.TestCase):
@@ -84,7 +85,7 @@ class InstalledInfo(unittest.TestCase):
         real = urllib.request.urlopen
         urllib.request.urlopen = lambda *a, **k: io.BytesIO(body)
         try:
-            info = run.get_installed_info()
+            info = ollama.installed_info()
         finally:
             urllib.request.urlopen = real
         self.assertAlmostEqual(info["hf.co/x/nano:q4_k_m"]["size_gb"], 2.44, places=2)
@@ -98,7 +99,7 @@ class InstalledInfo(unittest.TestCase):
             raise OSError("down")
         urllib.request.urlopen = boom
         try:
-            self.assertEqual(run.get_installed_info(), {})
+            self.assertEqual(ollama.installed_info(), {})
         finally:
             urllib.request.urlopen = real
 

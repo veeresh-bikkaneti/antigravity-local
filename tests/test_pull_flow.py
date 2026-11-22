@@ -3,8 +3,10 @@ and the Ollama server we start listens on this PC only. Everything is faked: no 
 import contextlib
 import io
 import os
+import shutil
 import sys
 import tempfile
+import time
 import unittest
 import urllib.error
 import urllib.request
@@ -15,7 +17,12 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 import run  # noqa: E402
+import agl.app.agent  # noqa: E402
+import agl.app.bootstrap  # noqa: E402
+import agl.app.probe  # noqa: E402
+import agl.app.server  # noqa: E402
 from agl.platform import process  # noqa: E402
+from agl.ui import banner  # noqa: E402
 from test_run import OLLAMA_TAGS, _Server, _Tty, free_of  # noqa: E402
 
 HW = {"ram_gb": 128.0, "vram_gb": 16.0, "gpu_name": "RTX"}
@@ -28,27 +35,27 @@ class NeverDownloads(unittest.TestCase):
         code = None
         with tempfile.TemporaryDirectory() as d:
             patches = [
-                mock.patch.dict(run.os.environ, env or {}),
+                mock.patch.dict(os.environ, env or {}),
                 mock.patch.object(run, "PROJECT_DIR", d),
-                mock.patch.object(run, "is_in_venv", return_value=True),
+                mock.patch.object(agl.app.bootstrap, "is_in_venv", return_value=True),
                 mock.patch.object(urllib.request, "urlopen", _Server({OLLAMA_TAGS: "{}"})),
-                mock.patch.object(run, "check_ollama_service", return_value=True),
-                mock.patch.object(run, "get_hardware_profile", return_value=HW),
-                mock.patch.object(run, "get_free_resources", return_value=free_of(HW)),
-                mock.patch.object(run, "get_installed_details", return_value={}),
-                mock.patch.object(run, "get_ledger_entries", return_value=[]),
-                mock.patch.object(run, "get_media_rows", return_value=[]),
-                mock.patch.object(run, "get_installed_ollama_models", return_value=set(installed)),
+                mock.patch.object(agl.app.server, "check_ollama_service", return_value=True),
+                mock.patch("agl.platform.hardware.get_hardware_profile", return_value=HW),
+                mock.patch("agl.platform.hardware.free_resources", return_value=free_of(HW)),
+                mock.patch("agl.platform.ollama.installed_details", return_value={}),
+                mock.patch("ledger.read", return_value=[]),
+                mock.patch("agl.app.pick.get_media_rows", return_value=[]),
+                mock.patch("agl.platform.ollama.installed_models", return_value=set(installed)),
                 mock.patch.object(process.subprocess, "check_call", side_effect=lambda c: pulls.append(c)),
-                mock.patch.object(run, "check_or_update_memory"),
-                mock.patch.object(run, "run_agent"),
-                mock.patch.object(run.sys, "stdin", stdin),
-                mock.patch.object(run.sys, "stdout", out),
+                mock.patch.object(agl.app.probe, "check_or_update_memory"),
+                mock.patch.object(agl.app.agent, "run_agent"),
+                mock.patch.object(sys, "stdin", stdin),
+                mock.patch.object(sys, "stdout", out),
             ]
             with contextlib.ExitStack() as stack:
                 for p in patches:
                     stack.enter_context(p)
-                run.os.environ.pop("LOCAL_LLM_BASE_URL", None)
+                os.environ.pop("LOCAL_LLM_BASE_URL", None)
                 try:
                     run.main(list(argv))
                 except SystemExit as e:
@@ -105,14 +112,14 @@ class OllamaServe(unittest.TestCase):
         def fake_popen(cmd, **kw):
             started.append((cmd, kw))
 
-        with mock.patch.dict(run.os.environ, env or {}), \
+        with mock.patch.dict(os.environ, env or {}), \
                 mock.patch.object(urllib.request, "urlopen", fake_urlopen), \
-                mock.patch.object(run.shutil, "which", return_value="ollama"), \
+                mock.patch.object(shutil, "which", return_value="ollama"), \
                 mock.patch.object(process.subprocess, "Popen", side_effect=fake_popen), \
-                mock.patch.object(run.time, "sleep"), contextlib.redirect_stdout(out):
-            run.os.environ.pop("OLLAMA_HOST", None) if env is None else None
-            ok = run.check_ollama_service()
-            after = run.os.environ.get("OLLAMA_HOST")
+                mock.patch.object(time, "sleep"), contextlib.redirect_stdout(out):
+            os.environ.pop("OLLAMA_HOST", None) if env is None else None
+            ok = agl.app.server.check_ollama_service("http://localhost:11434", ports=run.build_ports(), out=banner.out)
+            after = os.environ.get("OLLAMA_HOST")
         return ok, started, out.getvalue(), after
 
     def test_spawned_serve_listens_on_this_pc_only(self):

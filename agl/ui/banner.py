@@ -32,23 +32,42 @@ def is_plain(plain_flag=None, *, ports=None) -> bool:
     return bool(env_get("NO_COLOR"))
 
 
-def safe_print(text, *, out=print) -> None:
+def setup_console() -> None:
+    """Windows consoles default to cp1252: make stdout/stderr UTF-8 so emoji and box art print."""
+    if sys.platform != "win32":
+        return
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+
+def safe_print(text, *, out=None, **kwargs) -> None:
     """print() that never raises on a console that cannot encode the text (cp1252, for example)."""
+    fn = out if out is not None else print
     try:
         try:
-            out(text, flush=True)
+            fn(text, **kwargs)
         except TypeError:
-            out(text)
+            fn(text)
     except UnicodeEncodeError:
-        enc = getattr(sys.stdout, "encoding", None) or "ascii"
-        encoded = text.encode(enc, "replace").decode(enc, "replace")
         try:
-            out(encoded, flush=True)
-        except TypeError:
-            out(encoded)
+            try:
+                fn(text.encode("ascii", errors="replace").decode("ascii"), **kwargs)
+            except TypeError:
+                fn(text.encode("ascii", errors="replace").decode("ascii"))
+        except Exception:
+            pass
 
 
-def stage(n, total, name, next_line, *, plain=None, ports=None, out=print) -> None:
+def out(*args, **kwargs) -> None:
+    """One line of terminal text: several values join with a space, one value prints as-is."""
+    text = " ".join(str(x) for x in args) if len(args) > 1 else (args[0] if args else "")
+    safe_print(text, out=print, **kwargs)
+
+
+def stage(n, total, name, next_line, *, plain=None, ports=None, out=None) -> None:
     """One stage banner on one line: 'STAGE 2/4  SERVER  [bar]  what happens next'."""
     ascii_only = is_plain(plain, ports=ports)
     if not ascii_only:
@@ -58,8 +77,8 @@ def stage(n, total, name, next_line, *, plain=None, ports=None, out=print) -> No
             ascii_only = True
     full, empty = ("#", "-") if ascii_only else ("█", "░")
     filled = round(20 * n / total)
-    safe_print("", out=out)
-    safe_print(f"STAGE {n}/{total}  {name}  [{full * filled}{empty * (20 - filled)}]  {next_line}", out=out)
+    safe_print("", out=out, flush=True)
+    safe_print(f"STAGE {n}/{total}  {name}  [{full * filled}{empty * (20 - filled)}]  {next_line}", out=out, flush=True)
 
 
 def level_clear(model, agent, ready=None, *, ports=None, out=print) -> None:

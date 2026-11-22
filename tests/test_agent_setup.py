@@ -6,6 +6,7 @@ real ~/.pi or ~/.config/opencode, install anything, or start an agent.
 import contextlib
 import io
 import json
+import os
 import sys
 import tempfile
 import types
@@ -17,6 +18,11 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import agent_setup as ags  # noqa: E402
 import run  # noqa: E402
+import agl.app.agent
+import agl.app.bootstrap
+import agl.app.probe
+import agl.app.server
+from agl.app import pick
 
 URL = "http://localhost:11434/v1"
 MODEL = "qwen2.5-coder:14b"
@@ -853,13 +859,14 @@ class RunPyHooks(unittest.TestCase):
         # the real resolver and error type, so the wiring through run.py is tested, not assumed
         fake = types.SimpleNamespace(run=agent, resolve_workspace=ags.resolve_workspace,
                                      AgentSetupError=ags.AgentSetupError)
-        with mock.patch.object(run, "is_in_venv", return_value=True), \
-                mock.patch.object(run, "check_ollama_service", return_value=True), \
-                mock.patch.object(run, "select_and_pull_model", return_value="m:1"), \
-                mock.patch.object(run, "check_or_update_memory"), \
-                mock.patch.object(run, "run_agent", fake_run_agent), \
-                mock.patch.object(run.os, "getcwd", return_value=cwd), \
+        with mock.patch.object(agl.app.bootstrap, "is_in_venv", return_value=True), \
+                mock.patch.object(agl.app.server, "check_ollama_service", return_value=True), \
+                mock.patch.object(pick, "select_and_pull_model", return_value="m:1"), \
+                mock.patch.object(agl.app.probe, "check_or_update_memory"), \
+                mock.patch.object(agl.app.agent, "run_agent", lambda m, b, *a, **k: fake_run_agent(m, b)), \
+                mock.patch.object(os, "getcwd", return_value=cwd), \
                 mock.patch.object(run, "PROJECT_DIR", str(project or ROOT)), \
+                mock.patch("agl.app.ports.agent_setup", fake), \
                 mock.patch.dict(sys.modules, {"agent_setup": fake}), quiet():
             try:
                 run.main(argv)
@@ -914,10 +921,11 @@ class RunPyHooks(unittest.TestCase):
 
         async def noop(*a):
             return None
-        with mock.patch.object(run, "is_in_venv", return_value=True), \
-                mock.patch.object(run, "check_ollama_service", return_value=True), \
-                mock.patch.object(run, "select_and_pull_model", return_value="m:1"), \
-                mock.patch.object(run, "check_or_update_memory"), mock.patch.object(run, "run_agent", noop), \
+        with mock.patch.object(agl.app.bootstrap, "is_in_venv", return_value=True), \
+                mock.patch.object(agl.app.server, "check_ollama_service", return_value=True), \
+                mock.patch.object(pick, "select_and_pull_model", return_value="m:1"), \
+                mock.patch.object(agl.app.probe, "check_or_update_memory"), mock.patch.object(agl.app.agent, "run_agent", lambda *a, **k: noop(*a)), \
+                mock.patch("agl.app.ports.agent_setup", fake), \
                 mock.patch.dict(sys.modules, {"agent_setup": fake}), quiet(), self.assertRaises(SystemExit) as cm:
             run.main(["--agent", "pi"])
         self.assertEqual(cm.exception.code, 3)

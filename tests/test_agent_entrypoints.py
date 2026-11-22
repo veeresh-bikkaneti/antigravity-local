@@ -68,10 +68,13 @@ if __name__ == "__main__":
 class TestPromptsNameRealFileTool(unittest.TestCase):
     """SDK 0.1.23 has write_to_file(TargetFile, CodeContent, Overwrite), not create_file."""
 
+    # run.py is a thin shell now; the prompts it used to hold live in the app layer.
+    SOURCE_OF = {"run.py": os.path.join("agl", "app", "agent.py")}
+
     def test_prompts_use_write_to_file(self):
         for script in ("run.py", "agent_with_workspace.py", "code_agent.py"):
             with self.subTest(script=script):
-                with open(os.path.join(ROOT, script), encoding="utf-8") as f:
+                with open(os.path.join(ROOT, self.SOURCE_OF.get(script, script)), encoding="utf-8") as f:
                     src = f.read()
                 self.assertIn("write_to_file", src)
                 self.assertIn("TargetFile", src)

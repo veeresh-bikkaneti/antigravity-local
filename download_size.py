@@ -40,7 +40,6 @@ def new_lookup_window():
 
 
 _SameHostOnly = model_wizard._SameHostOnly  # kept here so older callers and tests keep working
-_OPENER = http.same_host_opener()  # the same-host opener is built in agl.platform.http
 
 
 def _budget_spent():
@@ -56,7 +55,7 @@ def _get_json(url, headers=None, timeout=3):
     if _STATE["offline"] or _budget_spent():
         return None
     try:
-        return http.get_json(url, timeout=timeout, headers=headers, opener=_OPENER)
+        return http.get_json(url, timeout=timeout, headers=headers, opener=registry._OPENER)
     except http.ANSWERED_ERRORS:  # the request/parse lives in agl.platform.http
         return None  # the server answered (404, redirect refused, a cut-off reply): not an outage
     except http.NETWORK_ERRORS:

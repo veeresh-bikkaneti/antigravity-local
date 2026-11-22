@@ -13,6 +13,8 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import run  # noqa: E402
+import agl.app.agent  # noqa: E402
+from agl.ui import banner  # noqa: E402
 
 os.environ["ANTIGRAVITY_NO_RUN_LOG"] = "1"  # tests must not write into the real logs/ folder
 
@@ -73,7 +75,7 @@ def make_sdk(exit_error=None, enter_error=None, chat_error=None, close_fails_fro
 
 
 def run_shell(inputs, **sdk_kwargs):
-    """Run run.run_agent with a fake SDK and scripted typed input. Returns (stdout, exception or None, chats)."""
+    """Run the shell agent with a fake SDK and scripted typed input. Returns (stdout, exception or None, chats)."""
     modules, state = make_sdk(**sdk_kwargs)
     answers = iter(inputs)
 
@@ -89,13 +91,13 @@ def run_shell(inputs, **sdk_kwargs):
             mock.patch.dict(sys.modules, modules), \
             mock.patch.object(run, "PROJECT_DIR", tmp), \
             mock.patch.object(run, "_SETUP_ONLY", False), \
-            mock.patch.object(run, "stage"), \
-            mock.patch.object(run, "context_check"), \
-            mock.patch.object(run, "level_clear"), \
+            mock.patch.object(banner, "stage"), \
+            mock.patch.object(banner, "context_check"), \
+            mock.patch.object(banner, "level_clear"), \
             mock.patch("builtins.input", side_effect=fake_input), \
             contextlib.redirect_stdout(out):
         try:
-            asyncio.run(run.run_agent("test-model"))
+            asyncio.run(agl.app.agent.run_agent("test-model", "http://localhost:11434/v1", ports=run.build_ports(), out=banner.out, input_fn=input))
         except BaseException as exc:  # the tests assert on this, so capture everything
             err = exc
     return out.getvalue(), err, state["chats"]
@@ -144,11 +146,11 @@ class HeaderOnce(unittest.TestCase):
     def _header(self, env):
         buf = io.StringIO()
         with mock.patch.dict(os.environ, env, clear=True), contextlib.redirect_stdout(buf):
-            run.print_header()
+            banner.print_header(ports=run.build_ports(), out=banner.out)
         return buf.getvalue()
 
     def test_flag_set_prints_nothing(self):
-        self.assertEqual(self._header({run.HEADER_FLAG: "1"}), "")
+        self.assertEqual(self._header({banner.HEADER_FLAG: "1"}), "")
 
     def test_flag_unset_prints_header(self):
         self.assertIn("Google Antigravity Local", self._header({}))
@@ -160,16 +162,16 @@ class RealSigint(unittest.TestCase):
         import signal
         import threading
 
-        async def stand_in(model, base_url):
+        async def stand_in(model, base_url, **_kwargs):
             await asyncio.sleep(5)  # a real SIGINT arrives while this waits
 
         buf = io.StringIO()
         timer = threading.Timer(0.3, os.kill, (os.getpid(), signal.SIGINT))
-        with mock.patch.object(run, "run_agent", stand_in), contextlib.redirect_stdout(buf):
+        with mock.patch.object(agl.app.agent, "run_agent", stand_in), contextlib.redirect_stdout(buf):
             timer.start()
             try:
                 with self.assertRaises(SystemExit) as done:
-                    run._run_shell("m", "http://localhost:11434/v1")
+                    run._run_shell("m", "http://localhost:11434/v1", run.build_ports())
             finally:
                 timer.cancel()
         self.assertEqual(done.exception.code, 0)

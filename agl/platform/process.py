@@ -10,6 +10,7 @@ DEVNULL = subprocess.DEVNULL  # one alias per name: callers keep one place to lo
 CREATE_NEW_PROCESS_GROUP = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)  # Windows-only flag; 0 keeps this importable elsewhere
 DETACHED_PROCESS = getattr(subprocess, "DETACHED_PROCESS", 0)  # Windows-only flag; 0 keeps this importable elsewhere
 CalledProcessError = subprocess.CalledProcessError
+TimeoutExpired = subprocess.TimeoutExpired
 
 
 def check_call(cmd, **kwargs):
