@@ -6,15 +6,15 @@ base URL is always passed in; HTTP goes through the one helper in agl/platform/h
 import json
 import os
 
-from agl.platform import http
+from agl.platform import config, http
 from agl.core import memory as core_memory
 
 
 class EmbeddingProvider:
     """Provides vector embeddings via local Ollama or pure-Python TF-IDF fallback."""
 
-    def __init__(self, base_url: str):
-        self.base_url = base_url.rstrip("/")
+    def __init__(self, base_url: str = None):
+        self.base_url = (base_url if base_url is not None else config.OLLAMA_BASE_URL).rstrip("/")
         self.ollama_model = self._detect_ollama_embedding_model()
         self.mode = f"ollama ({self.ollama_model})" if self.ollama_model else "pure_python_tfidf"
         self.fell_back = False  # set when an Ollama call failed and a fallback vector was returned

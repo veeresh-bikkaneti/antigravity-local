@@ -23,6 +23,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 import memory
+from agl.platform.embeddings import EmbeddingProvider
+from agl.platform.memory_store import MemoryDatabase
 
 DIAGRAMS = memory.REPO_ROOT / "docs" / "diagrams"
 MAX_QUERY_CHARS = 500
@@ -62,8 +64,8 @@ def _search_params(qs):
 
 def build_server(host, port, db_path=None, ollama_url=memory.OLLAMA_API_BASE):
     """Index memory (cheap when unchanged) and return a ready, not-yet-serving server."""
-    db = memory.MemoryDatabase(db_path)
-    embedder = memory.EmbeddingProvider(ollama_url)
+    db = MemoryDatabase(db_path if db_path is not None else memory.DB_PATH)
+    embedder = EmbeddingProvider(ollama_url if ollama_url is not None else memory.OLLAMA_API_BASE)
     memory.MemoryIndexer(db, embedder).index_all()
     searcher = memory.MemorySearcher(db, embedder)
     # ponytail: one global lock, because EmbeddingProvider.fell_back is shared state that search

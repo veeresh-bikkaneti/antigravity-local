@@ -52,37 +52,18 @@ CATEGORY_BOOSTS = {
     "code": 1.00       # Source code files
 }
 
-
-# ==============================================================================
-# 1. Embedding Provider: Local Ollama with Pure Python Fallback
-# ==============================================================================
-
-class EmbeddingProvider(embeddings.EmbeddingProvider):
-    # moved, shim until Phase 6e: the class lives in agl.platform.embeddings; the default is
-    # this module's OLLAMA_API_BASE, looked up at call time so nothing is frozen.
-    def __init__(self, base_url=None):
-        super().__init__(base_url if base_url is not None else OLLAMA_API_BASE)
+EmbeddingProvider = embeddings.EmbeddingProvider
+MemoryDatabase = memory_store.MemoryDatabase
 
 
 # ==============================================================================
-# 2. Database & Schema Management
-# ==============================================================================
-
-class MemoryDatabase(memory_store.MemoryDatabase):
-    # moved, shim until Phase 6e: connection and schema live in agl.platform.memory_store;
-    # DB_PATH is looked up at call time so tests and tools can repoint it.
-    def __init__(self, db_path=None):
-        super().__init__(db_path if db_path is not None else DB_PATH)
-
-
-# ==============================================================================
-# 3. Document Chunking & Indexer Engine
+# Document Chunking & Indexer Engine
 # ==============================================================================
 
 class MemoryIndexer:
     """Discovers repository files, chunks them by markdown sections or lines, and indexes them."""
 
-    def __init__(self, db: MemoryDatabase, embedder: EmbeddingProvider):
+    def __init__(self, db: memory_store.MemoryDatabase, embedder: embeddings.EmbeddingProvider):
         self.db = db
         self.embedder = embedder
 
@@ -177,8 +158,6 @@ class MemoryIndexer:
 
     def index_all(self, force: bool = False) -> dict:
         """Scan, chunk, and index all repository memory files."""
-        # moved, shim until Phase 6e: the SQL lives in agl.platform.memory_store and the orchestration in
-        # agl.app.memory; targets and chunking stay here, so REPO_ROOT / WIKI_DIR are read at call time.
         return app_memory.index_all(
             force,
             store=self.db,
@@ -191,20 +170,18 @@ class MemoryIndexer:
 
 
 # ==============================================================================
-# 4. Search & Reciprocal Rank Fusion (RRF) Retrieval Engine
+# Search & Reciprocal Rank Fusion (RRF) Retrieval Engine
 # ==============================================================================
 
 class MemorySearcher:
     """Executes hybrid BM25 + Vector search with Reciprocal Rank Fusion."""
 
-    def __init__(self, db: MemoryDatabase, embedder: EmbeddingProvider):
+    def __init__(self, db: memory_store.MemoryDatabase, embedder: embeddings.EmbeddingProvider):
         self.db = db
         self.embedder = embedder
 
     def search(self, query: str, limit: int = 5) -> list[dict]:
         """Perform hybrid search and return top-K scored chunks."""
-        # moved, shim until Phase 6e: the SQL lives in agl.platform.memory_store, the fusion math in
-        # agl.core.memory and the orchestration in agl.app.memory. The gates are looked up at call time.
         return app_memory.search(
             query, limit,
             store=self.db,
@@ -216,7 +193,7 @@ class MemorySearcher:
 
 
 # ==============================================================================
-# 5. CLI & User-Facing Operations
+# CLI & User-Facing Operations
 # ==============================================================================
 
 REINDEX_HINT = memory_cli.REINDEX_HINT  # the text itself lives in agl.ui.memory_cli
@@ -225,7 +202,7 @@ REINDEX_HINT = memory_cli.REINDEX_HINT  # the text itself lives in agl.ui.memory
 def _run_index(force: bool, embedder) -> dict:
     """Index; if the DB file is corrupt, move it aside to .bak and rebuild from scratch."""
     try:
-        return MemoryIndexer(MemoryDatabase(), embedder).index_all(force=force)
+        return MemoryIndexer(memory_store.MemoryDatabase(DB_PATH), embedder).index_all(force=force)
     except memory_store.DatabaseError as e:
         msg = str(e).lower()
         if "malformed" not in msg and "not a database" not in msg:
@@ -239,17 +216,16 @@ def _run_index(force: bool, embedder) -> dict:
                     os.replace(p, bak.with_name(bak.name + suffix) if suffix else bak)
         except OSError as oe:
             sys.exit(f"[!] Could not move the corrupt index aside ({oe}). Close other memory.py or serve.py processes and retry.")
-        return MemoryIndexer(MemoryDatabase(), embedder).index_all(force=True)
+        return MemoryIndexer(memory_store.MemoryDatabase(DB_PATH), embedder).index_all(force=True)
 
 
-def _positive_limit(value: str) -> int:
-    # moved, shim until Phase 6e
-    return core_memory._positive_limit(value, MAX_LIMIT)
+def _positive_limit(value: str, max_limit: int = MAX_LIMIT) -> int:
+    return core_memory._positive_limit(value, max_limit)
 
 
 def cmd_index(args):
     memory_cli.render_index_header()
-    embedder = EmbeddingProvider()
+    embedder = embeddings.EmbeddingProvider(OLLAMA_API_BASE)
     memory_cli.render_index_backend(embedder.mode)
     stats = _run_index(args.force, embedder)
     memory_cli.render_index_done(stats, DB_PATH)
@@ -259,9 +235,9 @@ def cmd_search(args):
     if not DB_PATH.exists():
         memory_cli.render_no_index()
         sys.exit(1)
-    embedder = EmbeddingProvider()
+    embedder = embeddings.EmbeddingProvider(OLLAMA_API_BASE)
     try:
-        searcher = MemorySearcher(MemoryDatabase(), embedder)
+        searcher = MemorySearcher(memory_store.MemoryDatabase(DB_PATH), embedder)
         results = searcher.search(args.query, limit=args.limit)
     except memory_store.DatabaseError as e:
         memory_cli.render_search_unreadable(str(e))
@@ -281,7 +257,7 @@ def cmd_search(args):
 
 
 def cmd_status(args):
-    embedder = EmbeddingProvider()
+    embedder = embeddings.EmbeddingProvider(OLLAMA_API_BASE)
     memory_cli.render_status_header(DB_PATH, embedder.mode)
 
     if not DB_PATH.exists():
@@ -292,7 +268,7 @@ def cmd_status(args):
     memory_cli.render_status_size(size_kb)
 
     try:
-        db = MemoryDatabase()
+        db = memory_store.MemoryDatabase(DB_PATH)
         with db.get_connection() as conn:
             # moved in Phase 6d: the counts SQL lives in agl.platform.memory_store.
             doc_count, chunk_count = db.counts(conn)
@@ -346,19 +322,21 @@ def cmd_sync(args):
     memory_cli.render_sync_header()
 
     # 1. Run memory indexing
-    embedder = EmbeddingProvider()
+    embedder = embeddings.EmbeddingProvider(OLLAMA_API_BASE)
     stats = _run_index(True, embedder)
     memory_cli.render_sync_memory_done(stats)
 
     # 2. Run graphify update if installed
     try:
-        proc = process.run(["graphify", "update", "."], capture_output=True, text=True)
+        proc = process.run(["graphify", "update", "."], capture_output=True, text=True, timeout=60)
         if proc.returncode == 0:
             memory_cli.render_sync_graphify_ok()
         else:
             memory_cli.render_sync_graphify_failed(proc.stderr.strip() or proc.stdout.strip())
     except FileNotFoundError:
         memory_cli.render_sync_graphify_missing()
+    except process.TimeoutExpired:
+        memory_cli.render_sync_graphify_failed("timed out after 60s")
 
 
 # ==============================================================================

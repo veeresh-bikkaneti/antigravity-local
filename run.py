@@ -410,9 +410,16 @@ class _PickPorts:
         return sys.modules.get("google.antigravity", getattr(google, "antigravity", None))
 
     def index_memory(self):
-        from memory import MemoryDatabase, EmbeddingProvider, MemoryIndexer
-        db = MemoryDatabase()
-        embedder = EmbeddingProvider()
+        import memory
+        from agl.platform.embeddings import EmbeddingProvider
+        from agl.platform.memory_store import MemoryDatabase
+        from memory import MemoryIndexer
+        mem_db_cls = getattr(memory, "MemoryDatabase", MemoryDatabase)
+        emb_prov_cls = getattr(memory, "EmbeddingProvider", EmbeddingProvider)
+        db_path = getattr(memory, "DB_PATH", None)
+        ollama_url = getattr(memory, "OLLAMA_API_BASE", None)
+        db = mem_db_cls(db_path) if db_path is not None else mem_db_cls()
+        embedder = emb_prov_cls(ollama_url) if ollama_url is not None else emb_prov_cls()
         indexer = MemoryIndexer(db, embedder)
         return indexer.index_all(force=False)
 

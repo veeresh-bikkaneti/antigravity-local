@@ -12,7 +12,15 @@ DatabaseError = sqlite3.DatabaseError  # callers classify without importing sqli
 class MemoryDatabase:
     """Manages SQLite tables and FTS5 virtual indices."""
 
-    def __init__(self, db_path):
+    def __init__(self, db_path=None):
+        if db_path is None:
+            import sys
+            mem = sys.modules.get("memory")
+            if mem and hasattr(mem, "DB_PATH"):
+                db_path = mem.DB_PATH
+            else:
+                from pathlib import Path
+                db_path = Path(__file__).resolve().parent.parent.parent / ".memory" / "index.sqlite"
         self.db_path = db_path
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_schema()
