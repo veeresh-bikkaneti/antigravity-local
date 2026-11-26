@@ -21,11 +21,11 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from agl.app import agent_session
+from agl.app import agent_session, vscode_chat
 from agl.core import agent_config as core_config
-from agl.core import context_guard
+from agl.core import context_guard, vscode_models
 from agl.core.agent_config import AgentSetupError
-from agl.platform import agent_files, agent_proc, config, hardware, ollama_live
+from agl.platform import agent_files, agent_proc, config, hardware, ollama, ollama_live, vscode_files
 
 AGENTS = ("pi", "opencode", "codex", "claude")
 PACKAGES = {"pi": "@earendil-works/pi-coding-agent", "opencode": "opencode-ai", "codex": "@openai/codex"}
@@ -195,6 +195,27 @@ def live_window(model, base_url, environ=None):  # reads Ollama now; the rule is
     rows = ollama_live.loaded_models(core_config.claude_base_url(base_url, config.OLLAMA_BASE_URL))
     vram = hardware.get_hardware_profile()["vram_gb"]
     return context_guard.real_window(rows, model, env.get("OLLAMA_CONTEXT_LENGTH"), vram)
+
+
+def offer_vscode(result, model, base_url, workspace, input_fn=None, out=print):
+    """After the stage-4 banner: offer to give VS Code Chat the real window. Steps: agl.app.vscode_chat."""
+
+    def tools_of(url, name):
+        root = core_config.claude_base_url(url, config.OLLAMA_BASE_URL)
+        found = ollama.lookup(ollama.installed_details(root), name)
+        return "tools" in ((found or {}).get("caps") or [])
+
+    vscode_chat.offer(
+        result,
+        model,
+        core_config.claude_base_url(base_url, config.OLLAMA_BASE_URL),
+        workspace,
+        user_dirs=vscode_models.user_dirs(sys.platform, str(Path.home()), os.environ),
+        tools_of=tools_of,
+        files=vscode_files,
+        input_fn=input_fn or input,
+        out=out,
+    )
 
 
 def claude_child_env(model, base_url, home=None, environ=None, window=None):  # this module's own shell

@@ -197,6 +197,12 @@ async def run_agent(model, base_url, *, ports, out, input_fn=None):
         out(f"\n⚠️ The agent backend stopped unexpectedly. Log: {log}\n")
 
 
+def _offer_vscode(agent_setup, result, model, base_url, workspace, *, out):
+    offer = getattr(agent_setup, "offer_vscode", None)
+    if offer is not None:
+        offer(result, model, base_url, workspace, out=out)
+
+
 def handle_agent(args, model, base_api, interactive, *, ports, out):
     """Configure external coding agent (--agent pi/opencode/codex/claude) and hand over."""
     if getattr(args, "agent", "shell") == "shell":
@@ -233,7 +239,9 @@ def handle_agent(args, model, base_api, interactive, *, ports, out):
 
     ports.stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
     told = receives_window(args.agent, getattr(args, "agent_config_only", False))
-    ports.context_check(interactive=interactive, model=model, base_url=base_api, told=told)
+    result = ports.context_check(interactive=interactive, model=model, base_url=base_api, told=told)
+    if interactive:
+        _offer_vscode(agent_setup, result, model, base_api, workspace, out=out)
     ports.level_clear(model, args.agent)
     ports.sys.exit(
         agent_setup.run(
