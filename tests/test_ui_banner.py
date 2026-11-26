@@ -87,14 +87,15 @@ class TestBanner(unittest.TestCase):
     def test_context_check_warning_printed(self):
         ports = mock.Mock()
         ports.environ_copy.return_value = {"OLLAMA_CONTEXT_LENGTH": "2048"}
-        ports.agent_setup.claude_context.return_value = (False, "Claude Code needs 65536 context")
+        ports.agent_setup.live_window.return_value = (2048, "env")
         ports.sys.platform = "linux"
 
         lines = []
         banner.context_check(True, ports=ports, out=lines.append)
-        self.assertEqual(len(lines), 2)
-        self.assertIn("the coding agent needs 65536 context", lines[0])
-        self.assertIn("OLLAMA_CONTEXT_LENGTH=65536 ollama serve", lines[1])
+        self.assertIn("NOT CHECKED", lines[0])
+        self.assertIn("RED (a guess): 2,048 tokens.", lines[1])
+        self.assertIn("OLLAMA_CONTEXT_LENGTH in this terminal.", lines[2])
+        self.assertTrue(any("OLLAMA_CONTEXT_LENGTH=65536 ollama serve" in line for line in lines))
 
     def test_print_header_flag_check(self):
         ports = mock.Mock()

@@ -23,8 +23,9 @@ from pathlib import Path
 
 from agl.app import agent_session
 from agl.core import agent_config as core_config
+from agl.core import context_guard
 from agl.core.agent_config import AgentSetupError
-from agl.platform import agent_files, agent_proc, config
+from agl.platform import agent_files, agent_proc, config, hardware, ollama_live
 
 AGENTS = ("pi", "opencode", "codex", "claude")
 PACKAGES = {"pi": "@earendil-works/pi-coding-agent", "opencode": "opencode-ai", "codex": "@openai/codex"}
@@ -36,7 +37,7 @@ CONTINUE_PROMPT = ("Read HANDOFF.md and AGENTS.md, then continue the task. Check
 NODE_DOWNLOAD = "https://nodejs.org/en/download"
 PI_NODE_MIN = (22, 19)
 BACKUP_SUFFIX = ".bak-antigravity-local"
-CONTEXT_WINDOW = 65536
+CONTEXT_WINDOW = core_config.UNKNOWN_CONTEXT_WINDOW
 OPENCODE_SCHEMA = "https://opencode.ai/config.json"
 # Letters, digits and . _ / - only, plus an optional :tag. Real tags such as hf.co/user/repo:Q4_K_M pass. Shell
 # characters (& | ; < > ^ % quotes $) do not: on Windows the agents are .cmd files that run through cmd.exe.
@@ -105,7 +106,7 @@ def ensure_agent(name, which=None, input_fn=None, call=None, node_version=None, 
 
 # ---------- config merging ----------
 
-def write_config(name, model, base_url, home=None):  # this module's own shell
+def write_config(name, model, base_url, home=None, window=None):  # this module's own shell
     """Merge our Ollama block into the agent's config. Plans every file first, so a broken file stops us
     before anything is written. A file whose parsed content would not change is left exactly as it is."""
     validate_model_tag(model)
@@ -121,7 +122,7 @@ def write_config(name, model, base_url, home=None):  # this module's own shell
         return Result(command=core_config.agent_command("codex", model), notes=notes)
 
     plans = []
-    for path, merge in core_config.targets(name, home, CONTEXT_WINDOW, OPENCODE_SCHEMA):
+    for path, merge in core_config.targets(name, home, window, OPENCODE_SCHEMA):
         data, text = agent_files.load(path)
         before = json.loads(text) if text is not None else None
         merge(data, model, base_url, path)
@@ -188,11 +189,21 @@ def claude_context(environ):  # decision in agl.core.agent_config
     return core_config.claude_context(environ, CONTEXT_WINDOW)
 
 
-def claude_child_env(model, base_url, home=None, environ=None):  # this module's own shell
+def live_window(model, base_url, environ=None):  # reads Ollama now; the rule is in agl.core.context_guard
+    """(tokens, source) for the window Ollama really runs, read now."""
+    env = os.environ if environ is None else environ
+    rows = ollama_live.loaded_models(core_config.claude_base_url(base_url, config.OLLAMA_BASE_URL))
+    vram = hardware.get_hardware_profile()["vram_gb"]
+    return context_guard.real_window(rows, model, env.get("OLLAMA_CONTEXT_LENGTH"), vram)
+
+
+def claude_child_env(model, base_url, home=None, environ=None, window=None):  # this module's own shell
     """A COPY of the environment with everything Claude Code needs to talk to Ollama. Never applied to os.environ."""
     home = Path(home) if home else Path.home()
     env = dict(os.environ if environ is None else environ)
     tokens, _ = claude_context(env)
+    if window is not None:
+        tokens = window
     # Anything else that can pick a different login, model, endpoint or cloud would leak through the inherited
     # environment (a subscription token would be sent to the local server). Drop it for this child only.
     for key in [k for k in env if k.startswith("ANTHROPIC_") or k in INHERITED_AUTH_VARS]:
@@ -213,6 +224,8 @@ def claude_child_env(model, base_url, home=None, environ=None):  # this module's
         "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(tokens),
         "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
     })
+    if window is not None:
+        env["CLAUDE_CODE_AUTO_COMPACT_WINDOW"] = str(window)
     return env
 
 
@@ -315,13 +328,13 @@ def launch(name, model, workspace, call=None, which=None, env=None, prompt=None,
 
 def run(name, model, base_url, workspace, config_only=False, home=None, which=None, input_fn=None, call=None,
         node_version=None, out=print, environ=None, continue_local=False, resume_from=None,
-        copy_settings=False, find_transcript=None):  # orchestration in agl.app.agent_session
+        copy_settings=False, find_transcript=None, window_of=None):  # orchestration in agl.app.agent_session
     """Install if the user agrees, write config, say what we did, then launch. Returns the exit code."""
     return agent_session.setup_run(
         name, model, base_url, workspace, config_only=config_only, home=Path(home) if home else Path.home(),
         which=which, input_fn=input_fn, call=call, node_version=node_version, out=out, environ=environ,
         continue_local=continue_local, resume_from=resume_from, copy_settings=copy_settings,
-        find_transcript=find_transcript, validate=validate_model_tag, ensure_agent=ensure_agent,
+        find_transcript=find_transcript, window_of=window_of, validate=validate_model_tag, ensure_agent=ensure_agent,
         write_config=write_config, launch=launch,
         endpoint_of=lambda b: core_config.claude_base_url(b, config.OLLAMA_BASE_URL),
         context_of=lambda e: core_config.claude_context(e, CONTEXT_WINDOW),

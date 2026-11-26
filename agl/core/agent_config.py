@@ -41,6 +41,10 @@ def obj(parent, key, path):
     return child
 
 
+# assumed only when the window cannot be read (OpenAI-compatible servers)
+UNKNOWN_CONTEXT_WINDOW = 65536
+
+
 def pi_models(data, model, base_url, path, context_window):
     prov = obj(obj(data, "providers", path), "ollama", path)
     prov["baseUrl"] = base_url
@@ -52,17 +56,26 @@ def pi_models(data, model, base_url, path, context_window):
     models = prov.setdefault("models", [])
     if not isinstance(models, list):
         raise AgentSetupError(f"{path}: 'models' should be a JSON list. We did not change the file.")
-    if not any(isinstance(m, dict) and m.get("id") == model for m in models):
-        models.append({"id": model, "contextWindow": context_window})
+    entry = next((m for m in models if isinstance(m, dict) and m.get("id") == model), None)
+    if entry is None:
+        models.append({"id": model, "contextWindow": context_window or UNKNOWN_CONTEXT_WINDOW})
+    elif context_window is not None:
+        entry["contextWindow"] = context_window
 
 
-def opencode(data, model, base_url, path, schema):
+def opencode(data, model, base_url, path, schema, context_window=None):
     data.setdefault("$schema", schema)
     prov = obj(obj(data, "provider", path), "ollama", path)
     prov["npm"] = "@ai-sdk/openai-compatible"
     prov.setdefault("name", "Ollama (local)")
     obj(prov, "options", path)["baseURL"] = base_url
-    obj(prov, "models", path).setdefault(model, {"name": model})
+    models = obj(prov, "models", path)
+    models.setdefault(model, {"name": model})
+    if context_window is not None:
+        limit = obj(obj(models, model, path), "limit", path)
+        limit["context"] = context_window
+        # opencode's schema requires output whenever limit exists
+        limit.setdefault("output", min(4096, context_window // 4))
 
 
 def targets(name, home, context_window, schema):
@@ -74,7 +87,7 @@ def targets(name, home, context_window, schema):
                  lambda data, model, base_url, path: pi_models(data, model, base_url, path, context_window))]
     if name == "opencode":
         return [(home / ".config" / "opencode" / "opencode.json",
-                 lambda data, model, base_url, path: opencode(data, model, base_url, path, schema))]
+                 lambda data, model, base_url, path: opencode(data, model, base_url, path, schema, context_window))]
     return []
 
 

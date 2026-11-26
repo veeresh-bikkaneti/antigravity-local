@@ -1,6 +1,14 @@
+import sys
+import tempfile
 import unittest
+from pathlib import Path
 
-from agl.core.context_guard import band, real_window
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+import agent_setup as ags  # noqa: E402
+
+from agl.core import agent_config as core_config  # noqa: E402
+from agl.core.context_guard import band, real_window  # noqa: E402
 
 
 def row(name, context_length):
@@ -85,6 +93,31 @@ class BandTests(unittest.TestCase):
         self.assertEqual(band(16384), "amber")
         self.assertEqual(band(65535), "amber")
         self.assertEqual(band(65536), "green")
+
+
+class LiveWindowWiringTests(unittest.TestCase):
+    """The window the apps are told: pi's contextWindow, opencode's limit, Claude Code's window variables."""
+
+    def test_pi_models_corrects_an_existing_window_and_keeps_other_keys(self):
+        data = {"providers": {"ollama": {"models": [{"id": "m1", "contextWindow": 4096, "name": "keep me"}]}}}
+        core_config.pi_models(data, "m1", "http://h:11434/v1", "models.json", 65536)
+        entry = data["providers"]["ollama"]["models"][0]
+        self.assertEqual(entry["contextWindow"], 65536)
+        self.assertEqual(entry["name"], "keep me")
+
+    def test_claude_child_env_sets_both_window_variables_and_never_disables_compact(self):
+        with tempfile.TemporaryDirectory() as home:
+            env = ags.claude_child_env("m1", "http://h:11434", home=home, environ={}, window=8192)
+        self.assertEqual(env["CLAUDE_CODE_MAX_CONTEXT_TOKENS"], "8192")
+        self.assertEqual(env["CLAUDE_CODE_AUTO_COMPACT_WINDOW"], "8192")
+        self.assertNotIn("DISABLE_COMPACT", env)
+
+    def test_opencode_adds_limit_context_and_keeps_user_output(self):
+        data = {"provider": {"ollama": {"models": {"m1": {"name": "m1", "limit": {"output": 1000}}}}}}
+        core_config.opencode(data, "m1", "http://h:11434/v1", "opencode.json", "schema", 32768)
+        limit = data["provider"]["ollama"]["models"]["m1"]["limit"]
+        self.assertEqual(limit["context"], 32768)
+        self.assertEqual(limit["output"], 1000)
 
 
 if __name__ == "__main__":
