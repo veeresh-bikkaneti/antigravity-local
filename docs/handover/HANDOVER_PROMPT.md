@@ -5,7 +5,7 @@ You are taking over antigravity-local, a one-command local AI coding setup for P
 ## Step 0: right repo, right base (before reading anything else)
 1. `git remote -v` must show `veeresh-bikkaneti/antigravity-local`. If not, stop and ask which folder holds it. Do not search other repos.
 2. `git fetch origin` and `git log --oneline origin/main -3`. The handover base is `d5328ee106d64dd978582c7eb6e83ac33c9b2d8e` (PR #88). If main has moved, read the new commits' subjects and update your plan before acting.
-3. Record the full SHA of `origin/main`. Every PR starts from it in its own worktree: `git worktree add ../agl-<slug> -b <type>/<slug> origin/main`.
+3. Record the full SHA of `origin/main`. Every PR starts from it in its own worktree: `git worktree add .worktrees/<slug> -b <type>/<slug> origin/main`. Keep worktrees inside the repo folder (`.worktrees/` is gitignored); never create them, clones or scratch folders outside it.
 
 ## Read order (line ranges where you can; no whole-repo reads)
 1. `AGENTS.md` (the rule registry; R1 to R26 bind you)

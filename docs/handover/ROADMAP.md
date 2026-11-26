@@ -25,7 +25,7 @@ Weights and percentages are inferred (judgment by scope size, not measured). The
 
 ## Workstream 1: architecture refactor and tech debt
 
-All planned phases are merged (tested, `git log` on d5328ee). The repo now has layers `agl/{core,platform,app,ui}`, `run.py` is 199 lines (tested), and 1018 tests pass with 4 skipped and 2 expected failures (tested, `python -m unittest discover -s tests`, 22 s).
+All planned phases are merged (tested, `git log` on d5328ee). The repo now has layers `agl/{core,platform,app,ui}`, `run.py` is 199 lines (tested), and 1018 tests pass with 1 skipped and 3 expected failures (tested on Windows, 2026-11-26, `python -m unittest discover -s tests`, 240 s).
 
 | Phase | PR | Merge SHA | Status |
 |---|---|---|---|

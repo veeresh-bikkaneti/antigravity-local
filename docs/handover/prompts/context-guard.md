@@ -6,7 +6,7 @@ Goal (sharpen): today setup tells coding apps they have a 64K window even when O
 ## Step 0: right repo, right base (before reading anything)
 - `git remote -v` must show veeresh-bikkaneti/antigravity-local. If not, stop and ask Veeresh which folder holds it. Do not search other repos.
 - `git fetch origin`. `git rev-parse origin/main` must be d5328ee106d64dd978582c7eb6e83ac33c9b2d8e (6e, PR #88, merged) or a newer commit that contains it (`git merge-base --is-ancestor d5328ee origin/main`). If not, stop and ask.
-- Record the full SHA of origin/main. Create a worktree: `git worktree add ../agl-ctx -b feat/context-guard origin/main`. No rebase, no force push, no git merge.
+- Record the full SHA of origin/main. Create a worktree: `git worktree add .worktrees/ctx -b feat/context-guard origin/main` (inside the repo; nothing outside it). No rebase, no force push, no git merge.
 
 ## What the audit found on d5328ee (tested; re-check each line on your base before acting)
 1. `agl/core/agent_config.py:117-127` `claude_context` reads only OLLAMA_CONTEXT_LENGTH from the run terminal. When it is unset it assumes 65536.
