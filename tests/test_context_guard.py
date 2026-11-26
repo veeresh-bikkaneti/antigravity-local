@@ -2,11 +2,14 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 import agent_setup as ags  # noqa: E402
 
+from agl.app import agent  # noqa: E402
 from agl.core import agent_config as core_config  # noqa: E402
 from agl.core.context_guard import band, real_window  # noqa: E402
 
@@ -118,6 +121,29 @@ class LiveWindowWiringTests(unittest.TestCase):
         limit = data["provider"]["ollama"]["models"]["m1"]["limit"]
         self.assertEqual(limit["context"], 32768)
         self.assertEqual(limit["output"], 1000)
+
+
+class ToldOnlyWhenWrittenTests(unittest.TestCase):
+    """Never say an app "is told" the window when this run gives it no number."""
+
+    CASES = [("pi", False, True), ("opencode", True, True), ("claude", False, True),
+             ("claude", True, False), ("codex", False, False), ("codex", True, False)]
+
+    def test_stage_4_banner_is_told_only_for_apps_that_get_the_number(self):
+        for name, config_only, told in self.CASES:
+            ports = mock.MagicMock()
+            args = SimpleNamespace(agent=name, workspace=None, agent_config_only=config_only, resume_from=None)
+            agent.handle_agent(args, "m1", "http://h:11434/v1", False, ports=ports, out=lambda *a: None)
+            self.assertIs(ports.context_check.call_args.kwargs["told"], told, (name, config_only))
+
+    def test_setup_run_context_line_only_for_apps_that_get_the_number(self):
+        for name, told in (("pi", True), ("codex", False), ("claude", False)):
+            lines = []
+            with tempfile.TemporaryDirectory() as tmp:
+                code = ags.run(name, "m1", "http://h:11434/v1", tmp, config_only=True, home=Path(tmp), environ={},
+                               out=lines.append, window_of=lambda *a: (8192, "loaded"))
+            self.assertEqual(code, 0)
+            self.assertIs(any("is told" in line for line in lines), told, name)
 
 
 if __name__ == "__main__":

@@ -6,6 +6,8 @@ Collaborators are injected through `ports`.
 """
 import asyncio
 
+from agl.core.agent_config import receives_window
+
 MAX_SHELL_FAILURES = 3  # consecutive per-turn shell errors before the session stops; ports read this knob
 
 
@@ -230,7 +232,8 @@ def handle_agent(args, model, base_api, interactive, *, ports, out):
                 raise agent_setup.AgentSetupError(str(e))
 
     ports.stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
-    ports.context_check(interactive=interactive, model=model, base_url=base_api, told=True)
+    told = receives_window(args.agent, getattr(args, "agent_config_only", False))
+    ports.context_check(interactive=interactive, model=model, base_url=base_api, told=told)
     ports.level_clear(model, args.agent)
     ports.sys.exit(
         agent_setup.run(

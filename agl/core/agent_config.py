@@ -127,6 +127,12 @@ def claude_base_url(base_url, default):
     return url.rstrip("/") or default
 
 
+def receives_window(name, config_only):
+    """True when this run hands the app the context window. codex gets no setting from us, and Claude Code
+    only gets one through the session we start, so a config-only claude run hands it nothing."""
+    return name != "codex" and not (name == "claude" and config_only)
+
+
 def claude_context(environ, context_window):
     """(tokens, warning or None). The window Ollama really runs with is what Claude Code must plan for."""
     raw = (environ.get("OLLAMA_CONTEXT_LENGTH") or "").strip()

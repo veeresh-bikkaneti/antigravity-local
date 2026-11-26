@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 
 from agl.core import context_guard
-from agl.core.agent_config import AgentSetupError
+from agl.core.agent_config import AgentSetupError, receives_window
 from agl.core.handoff import HandoffError
 
 
@@ -99,6 +99,7 @@ def setup_run(name, model, base_url, workspace, *, config_only=False, home=None,
         window = None
         if window_of is not None and env.get("LOCAL_LLM_BACKEND") != "openai":
             window, source = window_of(model, base_url, env)
+        if window is not None and receives_window(name, config_only):
             out(f"       Context  : the app is told {window:,} tokens (source: {source}).")
         window_kwargs = {} if window is None else {"window": window}
         result = write_config(name, model, base_url, home=home, **window_kwargs)
