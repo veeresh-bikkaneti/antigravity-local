@@ -124,10 +124,10 @@ _VERDICT = {"red": "That is too small for coding apps.", "amber": "That is tight
 _ADVICE = {"red": "Expect the app to forget parts of your task.",
            "amber": "Keep tasks short and start a new chat often."}
 _PI_TOO_SMALL = "pi needs more than about 32,768 tokens. It will not work well here."
-_PI_TIGHT = "pi needs more than about 32,768 tokens. It may struggle here."
+_PI_TIGHT = "pi needs more than about 32,768 tokens; it may compact on every turn below that."
 
 
-def _context_lines(tokens, source, told, platform):
+def _context_lines(tokens, source, told):
     """The context check as plain lines (no prefix). Pure: the caller reads the window and prints."""
     colour = band(tokens)
     lines = []
@@ -136,9 +136,9 @@ def _context_lines(tokens, source, told, platform):
         lines.append("Source: Ollama reported this for the loaded model.")
         if colour in _ADVICE:
             lines.append(_ADVICE[colour])
-        if tokens <= 16384:
+        if colour == "red":
             lines.append(_PI_TOO_SMALL)
-        elif tokens <= 32768:
+        elif colour == "amber" and tokens <= 32768:
             lines.append(_PI_TIGHT)
     else:
         lines.append("NOT CHECKED: Ollama is not running, or the model is not loaded yet.")
@@ -150,10 +150,10 @@ def _context_lines(tokens, source, told, platform):
         lines.append(f"The coding app we set up is told: {tokens:,}.")
     if colour != "green":
         lines.append("For more room, raise the context length in the Ollama app settings,")
-        if platform == "win32":
-            lines.append(f"or start the server with: $env:OLLAMA_CONTEXT_LENGTH={GREEN_FROM}; ollama serve")
-        else:
-            lines.append(f"or start the server with: OLLAMA_CONTEXT_LENGTH={GREEN_FROM} ollama serve")
+        lines.append("or start the server with:")
+        lines.append(f"bash:       OLLAMA_CONTEXT_LENGTH={GREEN_FROM} ollama serve")
+        lines.append(f"PowerShell: $env:OLLAMA_CONTEXT_LENGTH={GREEN_FROM}; ollama serve")
+        lines.append("A bigger window uses more GPU memory; if the model no longer fits, try 32768.")
         lines.append("We do not change your Ollama settings.")
     return lines
 
@@ -172,8 +172,7 @@ def context_check(interactive, ask=None, *, model=None, base_url=None, told=Fals
     if env.get("LOCAL_LLM_BACKEND") == "openai":
         return None
     tokens, source = live(model, base_url or "", env)
-    plat = getattr(getattr(ports, "sys", None), "platform", None) or sys.platform
-    for line in _context_lines(tokens, source, told, plat):
+    for line in _context_lines(tokens, source, told):
         out(f"       {line}")
     return tokens, source
 

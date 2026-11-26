@@ -12,6 +12,7 @@ import agent_setup as ags  # noqa: E402
 from agl.app import agent  # noqa: E402
 from agl.core import agent_config as core_config  # noqa: E402
 from agl.core.context_guard import band, real_window  # noqa: E402
+from agl.ui import banner  # noqa: E402
 
 
 def row(name, context_length):
@@ -144,6 +145,33 @@ class ToldOnlyWhenWrittenTests(unittest.TestCase):
                                out=lines.append, window_of=lambda *a: (8192, "loaded"))
             self.assertEqual(code, 0)
             self.assertIs(any("is told" in line for line in lines), told, name)
+
+
+class BannerTextTests(unittest.TestCase):
+    """The stage 4 banner text: the fix lines show below green, and the pi line follows the window size."""
+
+    PI_NEW = "pi needs more than about 32,768 tokens; it may compact on every turn below that."
+
+    def test_fix_lines_shown_below_green(self):
+        lines = banner._context_lines(8192, "loaded", False)
+        self.assertIn("bash:       OLLAMA_CONTEXT_LENGTH=65536 ollama serve", lines)
+        self.assertIn("PowerShell: $env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve", lines)
+        self.assertIn("A bigger window uses more GPU memory; if the model no longer fits, try 32768.", lines)
+
+    def test_pi_line_for_tight_windows(self):
+        for tokens in (16384, 32768):
+            text = "\n".join(banner._context_lines(tokens, "loaded", False))
+            self.assertIn(self.PI_NEW, text, tokens)
+            self.assertNotIn("It will not work well here", text, tokens)
+
+    def test_pi_line_for_small_window(self):
+        text = "\n".join(banner._context_lines(8192, "loaded", False))
+        self.assertIn("It will not work well here", text)
+        self.assertNotIn(self.PI_NEW, text)
+
+    def test_no_pi_line_above_32768(self):
+        lines = banner._context_lines(32769, "loaded", False)
+        self.assertFalse(any(line.startswith("pi needs") for line in lines))
 
 
 if __name__ == "__main__":
