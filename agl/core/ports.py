@@ -146,3 +146,23 @@ class HardwareProbe(Protocol):
     def free_resources(self, env=None, home=None) -> dict:
         """Everything the fit rule and the disk gate need, in one dict (hardware.free_resources)."""
         ...
+
+
+class ClaimStorePort(Protocol):
+    """The claim cache, as agl.platform.claim_store.ClaimStore does it. No behaviour here."""
+
+    def get_many(self, claims, context="") -> tuple:
+        """({original claim: result dict}, [uncached claims]). Expired rows are misses."""
+        ...
+
+    def set_many(self, results, context="") -> None:
+        """Store each result under its claim, with a TTL taken from the status."""
+        ...
+
+
+class WebSearchPort(Protocol):
+    """One web search, as agl.platform.web_search.search does it. No behaviour here."""
+
+    def search(self, query, *, http, env) -> dict:
+        """{"backend": "searxng"|"tavily"|"none", "hits": [{"url", "snippet"}]}."""
+        ...

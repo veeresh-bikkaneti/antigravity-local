@@ -17,9 +17,9 @@ PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 UPGRADE_STATE_FILE = os.path.join(PROJECT_DIR, ".antigravity_upgrade_state.json")
 _SETUP_ONLY = False
 
-
 def build_ports():
     """One explicit ports object per call: run globals are read here, at call time."""
+    from agl.platform import claim_store, web_search
     return app_ports.AppPorts(
         banner,
         pick_menu,
@@ -35,8 +35,9 @@ def build_ports():
         setup_only=_SETUP_ONLY,
         out=banner.out,
         index_memory=memory.index_for_probe,
+        claim_store=claim_store.ClaimStore(os.path.join(PROJECT_DIR, ".claim_cache.sqlite")),
+        web_search=web_search,
     )
-
 
 def parse_args(argv=None):
     ap = argparse.ArgumentParser(
@@ -90,7 +91,6 @@ def parse_args(argv=None):
     if args.resume_from and args.continue_local:
         ap.error("--resume-from and --continue-local do different things; pick one")
     return args
-
 
 def _dispatch_simple(args, ports):
     if args.coding_apps:

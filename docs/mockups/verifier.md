@@ -303,3 +303,5 @@ Today `<repo>\.worktrees\v1-verifier\agl\app\agent.py` does not pass `tools=`. R
     )
 ```
 
+Part B now passes system_instructions always, and tools= only when capabilities is None.
+

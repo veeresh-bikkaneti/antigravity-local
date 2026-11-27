@@ -19,6 +19,7 @@
 9. [Troubleshooting & pro-tips](#9-troubleshooting--pro-tips)
 10. [Docker clean-room test drive](#10-docker-clean-room-test-drive)
 11. [Product specification & consensus governance](#11-product-specification--consensus-governance)
+12. [Web check (optional)](#12-web-check-optional)
 
 ---
 
@@ -446,6 +447,12 @@ The architecture specs and governance records live in these docs:
 - [Refined Product Specification](docs/PRODUCT_SPEC.md): Covers the runtime engine, zero-download model scheduler, 3-tier zero-token memory fabric, and security policies.
 - [Council Consensus Manifest](docs/CONSENSUS_MANIFEST.md): Voting and deliberation record signed by the Council of Experts (Architect, QA Lead, Systems Engineer, UX Designer, Security Officer) and approved by the Advisor.
 - [3-Tier Memory Fabric Specification](docs/MEMORY_SPEC.md): Compares RAG, OKF, and vector DBs, and gives the math for Reciprocal Rank Fusion.
+
+---
+
+## 12. Web check (optional)
+
+The shell can look a fact up before it repeats it. It tries a local SearXNG at `AGL_SEARXNG_URL` first. Tavily is used only when `TAVILY_API_KEY` is set and SearXNG is unset or unreachable. Otherwise every claim is "Data not available." No model is pulled. The setup note is [docs/mockups/verifier.md](docs/mockups/verifier.md).
 
 ---
 
