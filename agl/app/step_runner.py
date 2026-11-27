@@ -21,6 +21,7 @@ PLAN_DROPPED = "Plan dropped. Nothing was written."
 TOO_BIG = "This step does not fit the window. It was not sent."
 NO_FILES = "(none)"
 NO_FILE_CHANGE = "No file was created or changed."
+TEST_QUESTION = "Test command (empty skips it): "
 MIN_STEPS, MAX_STEPS = 2, 8
 _STEP_LINE = re.compile(r"^\s*\d+[.)]\s+(.+?)\s*$")
 
@@ -53,6 +54,8 @@ class _Run:
     out: Any
     now: Any
     checkpoint_path: str
+    run_test: Any = None
+    test_cmd: str = ""
     number: int = 0
     total: int = 0
 
@@ -102,6 +105,7 @@ async def _plan(run: _Run, task: str) -> bool:
     if not _accepted(run):
         run.say(PLAN_DROPPED)
         return False
+    _ask_test(run)
     text = steps.with_plan(run.read_ck(), plan, run.now())
     run.write_ck(text)
     run.say(f"Wrote {run.checkpoint_path} with {len(steps.open_steps(text))} open steps.")
@@ -131,10 +135,35 @@ async def _attempt(run: _Run, step: str) -> str:
         nothing = not (created or changed)
         run.say("Check failed. " + NO_FILE_CHANGE if nothing else "Check failed.")
         return "failed"
+    if not _test_passed(run):
+        return "failed"
     run.say(" ".join(line for line in ("Check passed.", _file_news(created, changed)) if line))
     run.write_ck(steps.mark_done(run.read_ck(), step, run.now()))
     run.say(run.next_line(f"Saved. Step {run.number} is done."))
     return "ok"
+
+
+def _ask_test(run: _Run) -> None:
+    """Ask once for the user's own test command. Kept for this run only, never written to a file."""
+    if run.run_test is None:
+        return
+    try:
+        run.test_cmd = run.input_fn(TEST_QUESTION).strip()
+    except (EOFError, KeyboardInterrupt):
+        run.test_cmd = ""
+
+
+def _test_passed(run: _Run) -> bool:
+    """Run the user's test command, when there is one. True when it exits 0 or there is none."""
+    if not run.test_cmd:
+        return True
+    code, tail = run.run_test(run.test_cmd)
+    if code == 0:
+        return True
+    run.say("Test timed out after 120 seconds." if code is None else f"Test failed (exit {code}).")
+    for line in tail:
+        run.say("  " + line)
+    return False
 
 
 def _retry_choice(run: _Run) -> str:
@@ -199,16 +228,21 @@ async def run_steps(
     out: Any,
     now: Any,
     checkpoint_path: str,
+    run_test: Any = None,
 ) -> str:
     """Plan if nothing is open, then run the open steps.
 
-    Returns "done", "stopped", "declined" or "too_big".
+    Returns "done", "stopped", "declined" or "too_big". `run_test(cmd) -> (exit_code, last_lines)` runs the
+    user's own test command after a passed check; exit_code None means it timed out.
     """
     run = _Run(new_agent, read_ck, write_ck, snapshot, window, system_tokens, input_fn, out, now,
-               checkpoint_path)
+               checkpoint_path, run_test)
     try:
-        if steps.position(read_ck()) is None and not await _plan(run, task):
-            return "declined"
+        if steps.position(read_ck()) is None:
+            if not await _plan(run, task):
+                return "declined"
+        else:
+            _ask_test(run)
         return await _drive(run)
     except KeyboardInterrupt:
         run.out.write("\n")
