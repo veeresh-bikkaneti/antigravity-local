@@ -1096,23 +1096,43 @@ class WizardD2(unittest.TestCase):
             self.assertTrue(call.kwargs.get("flush"), call)
 
     # v1.2.3: stage 4 never asks; it prints the warning, then the command for this OS.
-    def test_context_unset_and_interactive_prints_the_powershell_line_without_asking(self):
+    def test_context_unknown_and_interactive_prints_the_powershell_line_without_asking(self):
         out = []
-        with mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(sys, "platform", "win32"):
+        with mock.patch("agent_setup.live_window", return_value=(4096, "default")), \
+                mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(sys, "platform", "win32"):
             banner.context_check(True, ask=lambda p: self.fail("stage 4 asked a question"), out=out.append)
-        self.assertEqual(len(out), 2)
-        self.assertIn("OLLAMA_CONTEXT_LENGTH is not set", out[0])
-        self.assertIn("$env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve", out[1])
+        self.assertEqual(out, [
+            "       NOT CHECKED: Ollama is not running, or the model is not loaded yet.",
+            "       RED (a guess): 4,096 tokens.",
+            "       Source: Ollama's usual size for your graphics memory.",
+            "       The real size may be different. Run this again once the model is loaded.",
+            "       For more room, raise the context length in the Ollama app settings,",
+            "       or start the server with:",
+            "       bash:       OLLAMA_CONTEXT_LENGTH=65536 ollama serve",
+            "       PowerShell: $env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve",
+            "       A bigger window uses more GPU memory; if the model no longer fits, try 32768.",
+            "       We do not change your Ollama settings.",
+        ])
 
     def test_context_on_a_yes_run_prints_the_shell_line_and_asks_nothing(self):
         out = []
         def no_question(prompt):
             raise AssertionError("asked a question on a --yes run")
-        with mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(sys, "platform", "linux"):
+        with mock.patch("agent_setup.live_window", return_value=(4096, "default")), \
+                mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(sys, "platform", "linux"):
             banner.context_check(False, ask=no_question, out=out.append)
-        self.assertEqual(len(out), 2)
-        self.assertIn("OLLAMA_CONTEXT_LENGTH is not set", out[0])
-        self.assertEqual(out[1].strip(), "OLLAMA_CONTEXT_LENGTH=65536 ollama serve")
+        self.assertEqual(out, [
+            "       NOT CHECKED: Ollama is not running, or the model is not loaded yet.",
+            "       RED (a guess): 4,096 tokens.",
+            "       Source: Ollama's usual size for your graphics memory.",
+            "       The real size may be different. Run this again once the model is loaded.",
+            "       For more room, raise the context length in the Ollama app settings,",
+            "       or start the server with:",
+            "       bash:       OLLAMA_CONTEXT_LENGTH=65536 ollama serve",
+            "       PowerShell: $env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve",
+            "       A bigger window uses more GPU memory; if the model no longer fits, try 32768.",
+            "       We do not change your Ollama settings.",
+        ])
 
     def test_context_is_skipped_for_an_openai_compatible_server(self):
         out = []
@@ -1121,11 +1141,13 @@ class WizardD2(unittest.TestCase):
             banner.context_check(True, ask=lambda p: self.fail("asked on an openai server"), out=out.append)
         self.assertEqual(out, [])
 
-    def test_context_at_or_above_65536_prints_nothing(self):
+    def test_context_at_or_above_65536_prints_the_green_lines(self):
         out = []
-        with mock.patch.dict(os.environ, {"OLLAMA_CONTEXT_LENGTH": "65536"}, clear=True):
+        with mock.patch("agent_setup.live_window", return_value=(65536, "loaded")), \
+                mock.patch.dict(os.environ, {"OLLAMA_CONTEXT_LENGTH": "65536"}, clear=True):
             banner.context_check(True, ask=lambda p: "y", out=out.append)
-        self.assertEqual(out, [])
+        self.assertEqual(out, ["       GREEN: the model can hold 65,536 tokens at once. That is enough for coding apps.",
+                               "       Source: Ollama reported this for the loaded model."])
 
     def test_plain_flag_gives_hash_bars_not_block_characters(self):
         text = self.yes_run(["--plain", "--yes"])

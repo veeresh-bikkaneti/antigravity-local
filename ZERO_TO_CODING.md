@@ -28,7 +28,7 @@ Unlike web-based chat interfaces or API-metered plugins, this agent runs on your
 - Private inference: no telemetry and no cloud calls while the model runs, so your code stays on your SSD. Setup downloads packages, Ollama, and the model.
 - Zero fees: No monthly subscription ($0/mo) and no token billing.
 - Real disk access: The agent inspects folders, reads your source code, writes new files, and applies changes directly in your project workspace.
-- Model freedom: swap models whenever you like. Use `qwen2.5:14b` for code reasoning, `llama3.1:8b` for lightweight laptops, or `gemma2:27b` for creative design.
+- Model freedom: swap models whenever you like. Use `qwen2.5:14b` for code reasoning, `llama3.1:8b` for lightweight laptops, or `gemma2:27b` for creative design. Heads up: gemma2:27b holds only about 8K tokens at once, which is too small for coding apps, so use it for chat and ideas, not for editing files.
 
 ---
 
@@ -260,7 +260,7 @@ python run.py --agent claude      # Claude Code on your local model, with its ow
 
 It asks before it installs anything (`[y/N]`, and the default is no), merges a provider entry into the agent's own config while keeping everything else you had, and starts the agent in the folder you ran it from. One catch: `run.py` lives in antigravity-local, and `run.sh` and `run.bat` always start there. Run from inside antigravity-local and the agent works in the `workspace/` folder, so it cannot wander into this repo's own files. To work on your own project, add `--workspace <path to your project>` (Windows: `run.bat --agent pi --workspace C:\path\to\project`), or run `python <path-to>/antigravity-local/run.py --agent pi` from inside your project. Every run prints the folder it picked. Just want the config? Add `--agent-config-only` and it prints the start command instead of launching.
 
-One gotcha that trips almost everyone, so you are in good company: these agents want a **64k-token context window**, and Ollama starts smaller than that on most PCs. Raise it in the Ollama app's settings, or start the server with `OLLAMA_CONTEXT_LENGTH=65536`. Without it the agent can seem forgetful, because it is. The full table of agents, licenses and the Antigravity-specific caveats lives in [the README](README.md#pick-a-coding-agent).
+One gotcha that trips almost everyone, so you are in good company: these agents want a **64k-token context window**, and Ollama starts smaller than that on most PCs. Raise it in the Ollama app's settings, or start the server with `OLLAMA_CONTEXT_LENGTH=65536 ollama serve` in bash, or `$env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve` in PowerShell. Without it the agent can seem forgetful, because it is. The full table of agents, licenses and the Antigravity-specific caveats lives in [the README](README.md#pick-a-coding-agent).
 
 Got a Claude subscription and want to try Claude Code on your local model? `--agent claude` keeps everything in a separate `~/.claude-local` folder and one child process, so your normal sessions stay on your subscription. If you ever wonder whether something rerouted them, `python run.py --agent claude --doctor` checks without changing anything. The [README section](README.md#claude-code-with-your-local-model) covers the details, plus what to do when your limit hits mid-task (`python run.py handoff`).
 

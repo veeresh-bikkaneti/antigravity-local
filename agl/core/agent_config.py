@@ -41,7 +41,19 @@ def obj(parent, key, path):
     return child
 
 
-def pi_models(data, model, base_url, path, context_window):
+# assumed only when the window cannot be read (OpenAI-compatible servers)
+UNKNOWN_CONTEXT_WINDOW = 65536
+
+# window sources that may replace a window the user already has in the file; "default" is a guess
+TOLD_SOURCES = ("loaded", "env")
+
+
+def _pos_int(value):
+    """value when it is a positive int (not a bool), else None."""
+    return value if isinstance(value, int) and not isinstance(value, bool) and value > 0 else None
+
+
+def pi_models(data, model, base_url, path, context_window, source=None):
     prov = obj(obj(data, "providers", path), "ollama", path)
     prov["baseUrl"] = base_url
     prov["api"] = "openai-completions"
@@ -52,29 +64,47 @@ def pi_models(data, model, base_url, path, context_window):
     models = prov.setdefault("models", [])
     if not isinstance(models, list):
         raise AgentSetupError(f"{path}: 'models' should be a JSON list. We did not change the file.")
-    if not any(isinstance(m, dict) and m.get("id") == model for m in models):
-        models.append({"id": model, "contextWindow": context_window})
+    entry = next((m for m in models if isinstance(m, dict) and m.get("id") == model), None)
+    if entry is None:
+        models.append({"id": model, "contextWindow": context_window or UNKNOWN_CONTEXT_WINDOW})
+    elif context_window is not None:
+        if source in TOLD_SOURCES:
+            entry["contextWindow"] = context_window
+        else:
+            # a guess never replaces a window the user already has
+            entry.setdefault("contextWindow", context_window)
 
 
-def opencode(data, model, base_url, path, schema):
+def opencode(data, model, base_url, path, schema, context_window=None, source=None):
     data.setdefault("$schema", schema)
     prov = obj(obj(data, "provider", path), "ollama", path)
     prov["npm"] = "@ai-sdk/openai-compatible"
     prov.setdefault("name", "Ollama (local)")
     obj(prov, "options", path)["baseURL"] = base_url
-    obj(prov, "models", path).setdefault(model, {"name": model})
+    models = obj(prov, "models", path)
+    models.setdefault(model, {"name": model})
+    if context_window is not None:
+        limit = obj(obj(models, model, path), "limit", path)
+        if source in TOLD_SOURCES or limit.get("context") is None:
+            limit["context"] = context_window
+        # the window the app will really use: what the file now says, else our number
+        window = _pos_int(limit["context"]) or context_window
+        # opencode's schema requires output whenever limit exists; never larger than the window
+        output = _pos_int(limit.get("output")) or min(4096, window // 4)
+        limit["output"] = max(1, min(output, window))
 
 
-def targets(name, home, context_window, schema):
+def targets(name, home, context_window, schema, source=None):
     """(path, merge function) per file we own a block in. Codex has none."""
     if name == "pi":
         agent = home / ".pi" / "agent"
         # never settings.json: pi's own default is the user's
         return [(agent / "models.json",
-                 lambda data, model, base_url, path: pi_models(data, model, base_url, path, context_window))]
+                 lambda data, model, base_url, path: pi_models(data, model, base_url, path, context_window, source))]
     if name == "opencode":
         return [(home / ".config" / "opencode" / "opencode.json",
-                 lambda data, model, base_url, path: opencode(data, model, base_url, path, schema))]
+                 lambda data, model, base_url, path: opencode(data, model, base_url, path, schema, context_window,
+                                                              source))]
     return []
 
 
@@ -112,6 +142,12 @@ def claude_base_url(base_url, default):
     if url.endswith("/v1"):
         url = url[:-3]
     return url.rstrip("/") or default
+
+
+def receives_window(name, config_only):
+    """True when this run hands the app the context window. codex gets no setting from us, and Claude Code
+    only gets one through the session we start, so a config-only claude run hands it nothing."""
+    return name != "codex" and not (name == "claude" and config_only)
 
 
 def claude_context(environ, context_window):

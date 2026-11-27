@@ -6,6 +6,8 @@ Collaborators are injected through `ports`.
 """
 import asyncio
 
+from agl.core.agent_config import receives_window
+
 MAX_SHELL_FAILURES = 3  # consecutive per-turn shell errors before the session stops; ports read this knob
 
 
@@ -39,7 +41,7 @@ def _get_sdk(ports):
 def _setup_only_path(model, base_url, *, ports, out):
     """Context check and stage reporting when terminal interaction is disabled."""
     ports.stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
-    ports.context_check(interactive=False)
+    ports.context_check(interactive=False, model=model, base_url=base_url)
     ports.stage(5, 5, "LAUNCH", "skipped: no terminal, so the chat does not start. Run python run.py in a terminal to chat")
     ports.level_clear(model, "built-in shell", ready=f"Ready: {model} at {base_url}. Run python run.py in a terminal to chat.")
 
@@ -124,7 +126,7 @@ async def _run_agent_session(model, base_url, leave, *, ports, out, input_fn=Non
         _setup_only_path(model, base_url, ports=ports, out=out)
         return
     ports.stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
-    ports.context_check(interactive=True)
+    ports.context_check(interactive=True, model=model, base_url=base_url)
     ports.stage(5, 5, "LAUNCH", "start the agent")
     ports.level_clear(model, "built-in shell")
 
@@ -195,6 +197,12 @@ async def run_agent(model, base_url, *, ports, out, input_fn=None):
         out(f"\n⚠️ The agent backend stopped unexpectedly. Log: {log}\n")
 
 
+def _offer_vscode(agent_setup, result, model, base_url, workspace, *, out):
+    offer = getattr(agent_setup, "offer_vscode", None)
+    if offer is not None:
+        offer(result, model, base_url, workspace, out=out)
+
+
 def handle_agent(args, model, base_api, interactive, *, ports, out):
     """Configure external coding agent (--agent pi/opencode/codex/claude) and hand over."""
     if getattr(args, "agent", "shell") == "shell":
@@ -230,7 +238,10 @@ def handle_agent(args, model, base_api, interactive, *, ports, out):
                 raise agent_setup.AgentSetupError(str(e))
 
     ports.stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
-    ports.context_check(interactive=interactive)
+    told = receives_window(args.agent, getattr(args, "agent_config_only", False))
+    result = ports.context_check(interactive=interactive, model=model, base_url=base_api, told=told)
+    if interactive:
+        _offer_vscode(agent_setup, result, model, base_api, workspace, out=out)
     ports.level_clear(model, args.agent)
     ports.sys.exit(
         agent_setup.run(
@@ -243,6 +254,7 @@ def handle_agent(args, model, base_api, interactive, *, ports, out):
             resume_from=getattr(args, "resume_from", None),
             copy_settings=getattr(args, "copy_user_settings", False),
             find_transcript=finder,
+            window_of=getattr(agent_setup, "live_window", None),
         )
     )
 

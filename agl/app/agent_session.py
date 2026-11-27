@@ -12,7 +12,8 @@ import json
 import os
 from pathlib import Path
 
-from agl.core.agent_config import AgentSetupError
+from agl.core import context_guard
+from agl.core.agent_config import AgentSetupError, receives_window
 from agl.core.handoff import HandoffError
 
 
@@ -42,16 +43,21 @@ def _report_result(out, name, model, endpoint, backend, result, backup_suffix, h
     out(f"       {hint()}")
 
 
-def _claude_warnings(out, home, env, routing_warnings, context_of):
+def _claude_warnings(out, home, env, routing_warnings, context_of, window=None):
     for line in routing_warnings(home, env):
         out(f"       WARNING  : {line}")
+    if window is not None:
+        if window < context_guard.GREEN_FROM:
+            out(f"       WARNING  : The model can hold {window:,} tokens at once, below the "
+                f"{context_guard.GREEN_FROM:,} coding agents want.")
+        return
     _, ctx_warning = context_of(env)
     if ctx_warning:
         out(f"       WARNING  : {ctx_warning}")
 
 
 def _claude_setup(model, base_url, home, env, out, *, config_only, copy_settings, resume_from, find_transcript,
-                  no_transcript, copy_settings_fn, child_env, mkdir, banner, local_config_name):
+                  no_transcript, copy_settings_fn, child_env, mkdir, banner, local_config_name, window=None):
     """The claude-only half of a setup run. Returns (child_env, argv, exit_code_now); exit_code_now is 0
     when --agent-config-only stops the run right after the banner."""
     out(f"       {banner}")
@@ -63,7 +69,8 @@ def _claude_setup(model, base_url, home, env, out, *, config_only, copy_settings
     if copy_settings:
         copy_settings_fn(home, out=out)
     mkdir(home / local_config_name)
-    child = child_env(model, base_url, home, env)
+    window_kwargs = {} if window is None else {"window": window}
+    child = child_env(model, base_url, home, env, **window_kwargs)
     argv = None
     if resume_from:
         path = (find_transcript or no_transcript)(resume_from)
@@ -80,7 +87,7 @@ def setup_run(name, model, base_url, workspace, *, config_only=False, home=None,
               copy_settings=False, find_transcript=None, validate=None, ensure_agent=None, write_config=None,
               launch=None, endpoint_of=None, context_of=None, routing_warnings=None, child_env=None,
               copy_settings_fn=None, hint=None, cmdline=None, no_transcript=None, mkdir=None,
-              continue_prompt=None, backup_suffix=None, banner=None, local_config_name=None):
+              continue_prompt=None, backup_suffix=None, banner=None, local_config_name=None, window_of=None):
     """Install if the user agrees, write config, say what we did, then launch. Returns the exit code."""
     out = out or print
     env = os.environ if environ is None else environ
@@ -89,17 +96,23 @@ def setup_run(name, model, base_url, workspace, *, config_only=False, home=None,
         prompt = continue_prompt if continue_local else None
         if not config_only:
             ensure_agent(name, which=which, input_fn=input_fn, call=call, node_version=node_version, out=out)
-        result = write_config(name, model, base_url, home=home)
+        window = None
+        if window_of is not None and env.get("LOCAL_LLM_BACKEND") != "openai":
+            window, source = window_of(model, base_url, env)
+        if window is not None and receives_window(name, config_only):
+            out(f"       Context  : the app is told {window:,} tokens (source: {source}).")
+        window_kwargs = {} if window is None else {"window": window, "source": source}
+        result = write_config(name, model, base_url, home=home, **window_kwargs)
         _report_result(out, name, model, endpoint_of(base_url) if name == "claude" else base_url,
                        env.get("LOCAL_LLM_BACKEND"), result, backup_suffix, hint)
         child, argv = None, None
         if name == "claude":
-            _claude_warnings(out, home, env, routing_warnings, context_of)
+            _claude_warnings(out, home, env, routing_warnings, context_of, window=window)
             child, argv, early = _claude_setup(model, base_url, home, env, out, config_only=config_only,
                                                copy_settings=copy_settings, resume_from=resume_from,
                                                find_transcript=find_transcript, no_transcript=no_transcript,
                                                copy_settings_fn=copy_settings_fn, child_env=child_env, mkdir=mkdir,
-                                               banner=banner, local_config_name=local_config_name)
+                                               banner=banner, local_config_name=local_config_name, window=window)
             if early is not None:
                 return early
         if config_only:

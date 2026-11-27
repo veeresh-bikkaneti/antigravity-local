@@ -241,7 +241,7 @@
 
         <li class="step" id="step-3" data-step="3" data-focus="repo">
           <h3>Clone the repo and run setup</h3>
-          <p>One command runs five stages: ENVIRONMENT (a private Python folder for this project, plus the packages), SERVER (checks Ollama), MODEL (one numbered list, where Enter keeps your model and a typo just asks again), CONTEXT (checks the 64k context window coding agents need and prints the fix if it's short) and LAUNCH. Then a LEVEL CLEAR box sums up the model, the agent and the log file. A better model that fits shows up as a recommended upgrade row in the same numbered list, and your current model is marked with a <code>*</code>. If no model is installed, it asks before it downloads one (about 9 GB for the 14B model).</p>
+          <p>One command runs five stages: ENVIRONMENT (a private Python folder for this project, plus the packages), SERVER (checks Ollama), MODEL (one numbered list, where Enter keeps your model and a typo just asks again), CONTEXT (reads the context window Ollama really loaded and grades it RED under 16K, AMBER up to 64K, or GREEN at 64K and up, printing the fix when it is not green) and LAUNCH. Then a LEVEL CLEAR box sums up the model, the agent and the log file. A better model that fits shows up as a recommended upgrade row in the same numbered list, and your current model is marked with a <code>*</code>. If no model is installed, it asks before it downloads one (about 9 GB for the 14B model).</p>
           <div class="code"><pre><code>git clone https://github.com/veeresh-bikkaneti/antigravity-local.git
 cd antigravity-local
 python run.py</code></pre><button class="copy" type="button" aria-label="Copy the three setup commands">Copy</button></div>
@@ -349,12 +349,14 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
     <section class="faq apps" id="coding-apps" aria-labelledby="apps-title">
       <h2 id="apps-title">Connect your coding app</h2>
       <p>Ollama holds the model, and every app below knocks on its door at <code>http://localhost:11434</code>. Apps that speak the OpenAI style use <code>http://localhost:11434/v1</code>. Start Ollama first, and check your model with <code>ollama list</code>. Checked 2026-11-18. Confidence tags: High means three or more primary sources agree, Moderate means two sources or one primary source, Low means secondary or conflicting.</p>
-      <p>Coding tools want a 64k context window, and Ollama's default is 4k on a PC with under 24 GB of VRAM. On Windows, run this, or use the context slider in the Ollama app, then check with <code>ollama ps</code>. Source: Ollama's context length docs [Moderate].</p>
+      <p>Coding tools want a 64k context window, and Ollama's default is 4k on a PC with under 24 GB of VRAM. Run the line for your shell (PowerShell on Windows, bash on macOS and Linux), or use the context slider in the Ollama app, then check with <code>ollama ps</code>. Source: Ollama's context length docs [Moderate].</p>
       <div class="code"><pre><code>$env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve</code></pre><button class="copy" type="button" aria-label="Copy command: set the Ollama context length to 65536 and start Ollama">Copy</button></div>
+      <div class="code"><pre><code>OLLAMA_CONTEXT_LENGTH=65536 ollama serve</code></pre><button class="copy" type="button" aria-label="Copy command: set the Ollama context length to 65536 and start Ollama (bash)">Copy</button></div>
 
       <details id="app-vscode">
         <summary>VS Code: use the Ollama extension</summary>
         <p>VS Code's built-in Ollama provider is deprecated. Use the official Ollama extension instead.</p>
+        <p>When you run <code>python run.py --agent ...</code>, stage 4 asks once whether to add a VS Code Chat model entry with the real context window. Nothing is written unless you answer y, and an existing file is backed up first.</p>
         <ol>
           <li>Update VS Code (1.127 or newer) and Ollama (0.17.6 or newer recommended).</li>
           <li>Install the extension with the ID <code>Ollama.ollama</code>.</li>

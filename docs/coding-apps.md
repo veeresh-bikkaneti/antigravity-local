@@ -7,7 +7,7 @@ Checked 2026-11-18. Confidence tags: High means three or more primary sources ag
 Two things before you start:
 
 - Start Ollama first, and pull your model (`ollama list` shows it).
-- Coding tools want a 64k context window. Ollama's default is 4k on a PC with under 24 GB of VRAM. On Windows, run `$env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve`, or use the context slider in the Ollama app. Check with `ollama ps`. Source: [Ollama context length](https://docs.ollama.com/context-length) [Moderate]. Setup stage 4 prints the same command.
+- Coding tools want a 64k context window. Ollama's default is 4k on a PC with under 24 GB of VRAM. On Windows, run `$env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve`. On macOS or Linux, run `OLLAMA_CONTEXT_LENGTH=65536 ollama serve`. Or use the context slider in the Ollama app. Check with `ollama ps`. Source: [Ollama context length](https://docs.ollama.com/context-length) [Moderate]. Setup stage 4 prints both commands whenever your window is not green (under 64K).
 
 `python run.py --coding-apps` prints a short version of this page with your model filled in.
 

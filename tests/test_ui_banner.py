@@ -87,14 +87,23 @@ class TestBanner(unittest.TestCase):
     def test_context_check_warning_printed(self):
         ports = mock.Mock()
         ports.environ_copy.return_value = {"OLLAMA_CONTEXT_LENGTH": "2048"}
-        ports.agent_setup.claude_context.return_value = (False, "Claude Code needs 65536 context")
+        ports.agent_setup.live_window.return_value = (2048, "env")
         ports.sys.platform = "linux"
 
         lines = []
         banner.context_check(True, ports=ports, out=lines.append)
-        self.assertEqual(len(lines), 2)
-        self.assertIn("the coding agent needs 65536 context", lines[0])
-        self.assertIn("OLLAMA_CONTEXT_LENGTH=65536 ollama serve", lines[1])
+        self.assertEqual(lines, [
+            "       NOT CHECKED: Ollama is not running, or the model is not loaded yet.",
+            "       RED (a guess): 2,048 tokens.",
+            "       Source: OLLAMA_CONTEXT_LENGTH in this terminal.",
+            "       The real size may be different. Run this again once the model is loaded.",
+            "       For more room, raise the context length in the Ollama app settings,",
+            "       or start the server with:",
+            "       bash:       OLLAMA_CONTEXT_LENGTH=65536 ollama serve",
+            "       PowerShell: $env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve",
+            "       A bigger window uses more GPU memory; if the model no longer fits, try 32768.",
+            "       We do not change your Ollama settings.",
+        ])
 
     def test_print_header_flag_check(self):
         ports = mock.Mock()
