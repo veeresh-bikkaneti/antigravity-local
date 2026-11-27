@@ -182,10 +182,10 @@ search:
 Run line, as sample text only. This mockup did not start Docker and did not pull a model:
 
 ```text
-docker run --name searxng -p 8888:8080 searxng/searxng
+docker run --name searxng -d -p 8888:8080 -v "./config/:/etc/searxng/" -v "./data/:/var/cache/searxng/" docker.io/searxng/searxng:latest
 ```
 
-Add a volume mount on that same run so the container reads your settings file instead of the image default. Keep the host port at 8888 and the container port at 8080.
+Put `settings.yml` in `./config/` and list `json` under `search.formats`. `/etc/searxng` is the config volume (mount path checked on 2026-11-27).
 
 Tavily is the fallback, and only when SearXNG is missing and `TAVILY_API_KEY` is set. The free plan is 1,000 credits a month. No credit card. Basic search is 1 credit. The credits page has a card named "Get your free API key". Take the key from that card and store it in `TAVILY_API_KEY`. Keep the key out of git and out of this file.
 
