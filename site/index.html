@@ -253,7 +253,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
 
         <li class="step" id="step-4" data-step="4" data-focus="app">
           <h3>Use your model in a coding app</h3>
-          <p>Your pick is saved as <code>LOCAL_LLM_MODEL</code> in <code>.env</code>, so every app uses the same model. Pick one agent below. Each command adds only an Ollama entry to that app's config, and it asks before it installs anything. Coding apps want a 64k context window. If stage 4 says yours is smaller, set <code>OLLAMA_CONTEXT_LENGTH=65536</code> and restart Ollama.</p>
+          <p>Your pick is saved as <code>LOCAL_LLM_MODEL</code> in <code>.env</code>, so every app uses the same model. Pick one agent below. Each command adds only an Ollama entry to that app's config, and it asks before it installs anything. Coding apps want a 64k context window. If stage 4 says yours is smaller, it offers to make a copy of the model with the largest window your GPU can hold. The copy reuses your weights, so nothing downloads.</p>
           <div class="agent-cards">
             <div class="agent-card">
               <h4>Built-in shell</h4>

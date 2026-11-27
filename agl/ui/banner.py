@@ -6,7 +6,7 @@ Imports app and core only (no platform, no root modules).
 import os
 import sys
 
-from agl.core.window_fit import RUNGS
+from agl.core import window_fit
 
 HEADER_FLAG = "ANTIGRAVITY_HEADER_SHOWN"
 
@@ -118,10 +118,7 @@ def level_clear(model, agent, ready=None, *, ports=None, out=print) -> None:
         safe_print("\n" + "\n".join(coding_apps_mod.lines(model, base_url, backend)), out=out)
 
 
-def _article(tokens):
-    """'an' for numbers said with a vowel first (8,192, 11,000, 18,000), else 'a'."""
-    lead = f"{tokens:,}".split(",")[0]
-    return "an" if lead.startswith("8") or lead in ("11", "18") else "a"
+_article = window_fit.article
 
 
 def _context_lines(tag, tokens, source, target, trained, told):
@@ -133,24 +130,25 @@ def _context_lines(tag, tokens, source, target, trained, told):
     else:
         lines = [f"{tag} runs with {_article(tokens)} {tokens:,} token window."]
     if target == 0:
-        lines.append(f"This GPU cannot fit an {RUNGS[0]:,} window on top of the weights.")
+        lines.append(f"This GPU cannot fit an {window_fit.RUNGS[0]:,} window on top of the weights.")
         lines.append("No copy. A long prompt can use /steps.")
     elif target is None:
         lines.append("Free GPU memory or the model's shape was not read, so there is no target.")
+    elif window_fit.wants_copy(tokens, target, trained):
+        lines.append(f"Coding agents want about {target:,} on this GPU.")
     elif trained and tokens >= trained:
         lines.append("That is as high as this model goes. A bigger copy will not help.")
-    elif tokens >= target:
-        lines.append(f"That covers the {target:,} this GPU can give. No copy needed.")
     else:
-        lines.append(f"Coding agents want about {target:,} on this GPU.")
+        lines.append(f"That covers the {target:,} this GPU can give. No copy needed.")
     if told:
         lines.append(f"The coding app we set up is told: {tokens:,}.")
     return lines
 
 
 def context_check(interactive, ask=None, *, model=None, base_url=None, told=False, ports=None, out=print):
-    """Stage 4: read the window Ollama runs now and say how it fits coding agents. Returns (tokens, source),
-    or None when the check does not apply (no agent_setup, or the OpenAI-compatible backend)."""
+    """Stage 4: read the window Ollama runs now and say how it fits coding agents. When interactive and a bigger
+    copy would help, offer it once (agent_setup.offer_window_copy). Returns (tokens, source); after a copy is
+    made, (target, "model", new_tag). None when the check does not apply (no agent_setup, or the OpenAI backend)."""
     if ports is not None and hasattr(ports, "agent_setup"):
         agent_setup = ports.agent_setup
     else:
@@ -164,9 +162,16 @@ def context_check(interactive, ask=None, *, model=None, base_url=None, told=Fals
     tokens, source = live(model, base_url or "", env)
     aim = getattr(agent_setup, "window_target", None)
     target, trained = aim(model, base_url or "", env) if aim else (None, None)
-    for line in _context_lines(model, tokens, source, target, trained, told):
+    offer = getattr(agent_setup, "offer_window_copy", None) if interactive else None
+    asks = offer is not None and window_fit.wants_copy(tokens, target, trained)
+    for line in _context_lines(model, tokens, source, target, trained, told and not asks):
         out(f"       {line}")
-    return tokens, source
+    made = offer(model, target, out=out) if asks else None
+    if made:
+        tokens, source = target, "model"
+    if asks and told:
+        out(f"       The coding app we set up is told: {tokens:,}.")
+    return (tokens, source, made) if made else (tokens, source)
 
 
 def print_header(*, ports=None, out=print) -> None:

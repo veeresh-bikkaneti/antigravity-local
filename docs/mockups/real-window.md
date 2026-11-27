@@ -2,7 +2,7 @@
 
 Stage 4 should tell you the window this model will really run with, in short lines. If that window is too small for a coding agent, it offers a bigger copy of the same weights. It does not download anything, and it does not cut your prompt.
 
-This file is the mockup. No product code yet. PR A (read the real window) waits until D3 PR B merges. PR B (the offer and the copy) waits until C4 B3 merges.
+This file is the mockup. PR A (read the real window) shipped in #100. PR B1 ships the copy offer (sections 3 and 6). The big-prompt question (section 5) is PR B2.
 
 Base: `origin/main` `2ba43232f456fd1e6faa4052c09e4065c2266f58`.
 

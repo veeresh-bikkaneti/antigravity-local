@@ -89,16 +89,55 @@ class TestBanner(unittest.TestCase):
         ports.environ_copy.return_value = {"OLLAMA_CONTEXT_LENGTH": "2048"}
         ports.agent_setup.live_window.return_value = (2048, "env")
         ports.agent_setup.window_target.return_value = (16384, 131072)
+        ports.agent_setup.offer_window_copy.return_value = None
         ports.sys.platform = "linux"
 
         lines = []
         result = banner.context_check(True, model="qwen2.5:14b", ports=ports, out=lines.append)
         self.assertEqual(result, (2048, "env"))
+        ports.agent_setup.offer_window_copy.assert_called_once_with("qwen2.5:14b", 16384, out=lines.append)
         self.assertEqual(lines, [
             "       qwen2.5:14b runs with a 2,048 token window.",
             "       Coding agents want about 16,384 on this GPU.",
         ])
         ports.agent_setup.window_target.assert_called_once_with("qwen2.5:14b", "", {"OLLAMA_CONTEXT_LENGTH": "2048"})
+
+    def _offer_ports(self, made):
+        ports = mock.Mock()
+        ports.environ_copy.return_value = {}
+        ports.agent_setup.live_window.return_value = (4096, "default")
+        ports.agent_setup.window_target.return_value = (16384, 131072)
+        ports.agent_setup.offer_window_copy.return_value = made
+        return ports
+
+    def test_context_check_returns_the_copy_and_tells_the_new_window_last(self):
+        ports, lines = self._offer_ports("qwen2.5:14b-ctx16k"), []
+        result = banner.context_check(True, model="qwen2.5:14b", told=True, ports=ports, out=lines.append)
+        self.assertEqual(result, (16384, "model", "qwen2.5:14b-ctx16k"))
+        self.assertEqual(lines, [
+            "       qwen2.5:14b runs with Ollama's default 4,096 tokens.",
+            "       Coding agents want about 16,384 on this GPU.",
+            "       The coding app we set up is told: 16,384.",
+        ])
+
+    def test_context_check_told_after_a_no_keeps_the_old_window(self):
+        ports, lines = self._offer_ports(None), []
+        result = banner.context_check(True, model="qwen2.5:14b", told=True, ports=ports, out=lines.append)
+        self.assertEqual(result, (4096, "default"))
+        self.assertEqual(lines[-1], "       The coding app we set up is told: 4,096.")
+
+    def test_context_check_not_interactive_never_offers(self):
+        ports, lines = self._offer_ports("x"), []
+        result = banner.context_check(False, model="qwen2.5:14b", ports=ports, out=lines.append)
+        self.assertEqual(result, (4096, "default"))
+        ports.agent_setup.offer_window_copy.assert_not_called()
+
+    def test_context_check_covered_window_never_offers(self):
+        ports, lines = self._offer_ports("x"), []
+        ports.agent_setup.live_window.return_value = (32768, "model")
+        banner.context_check(True, model="qwen2.5:14b-omb-32k", ports=ports, out=lines.append)
+        ports.agent_setup.offer_window_copy.assert_not_called()
+        self.assertEqual(lines[-1], "       That covers the 16,384 this GPU can give. No copy needed.")
 
     def test_print_header_flag_check(self):
         ports = mock.Mock()
