@@ -21,7 +21,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from agl.app import agent_session, checkpoint_offer, vscode_chat
+from agl.app import agent_session, checkpoint_offer, vscode_chat, window_offer
 from agl.core import agent_config as core_config
 from agl.core import context_guard, vscode_models, window_fit
 from agl.core.agent_config import AgentSetupError
@@ -235,6 +235,11 @@ def offer_vscode(result, model, base_url, workspace, input_fn=None, out=print):
         input_fn=input_fn or input,
         out=out,
     )
+
+
+def offer_window_copy(model, target, input_fn=None, out=print):
+    """Stage 4: offer a copy of the model with the target window (agl.app.window_offer). Returns the new tag or None."""
+    return window_offer.offer(model, target, create=ollama.create_copy, input_fn=input_fn or input, out=out)
 
 
 def offer_checkpoint(workspace, app, input_fn=None, out=print):

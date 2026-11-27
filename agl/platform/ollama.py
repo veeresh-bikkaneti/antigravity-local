@@ -7,6 +7,8 @@ Bodies moved verbatim from run.py, ollama_models.py, ollama_library.py and probe
 there as shims until Phase 6.
 """
 import json
+import os
+import tempfile
 import urllib.request
 
 from agl.core.menu import _norm
@@ -139,6 +141,29 @@ def show(tag, base_url=config.OLLAMA_BASE_URL, *, opener=None, timeout=3):
     except Exception:
         return None
     return shown if isinstance(shown, dict) else None
+
+
+def create_copy(tag, new_tag, num_ctx, *, run=None, timeout=600):
+    """`ollama create new_tag -f <Modelfile>` from a model you already have, with one num_ctx line.
+    The weights are reused; this never pulls. Returns None on success, else the error text."""
+    if run is None:
+        from agl.platform import process
+        run = process.run
+    fd, path = tempfile.mkstemp(suffix=".Modelfile", text=True)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(f"FROM {tag}\nPARAMETER num_ctx {int(num_ctx)}\n")
+        done = run(["ollama", "create", new_tag, "-f", path], capture_output=True, text=True, timeout=timeout)
+    except Exception as exc:
+        return str(exc) or type(exc).__name__
+    finally:
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+    if done.returncode != 0:
+        return (done.stderr or done.stdout or "").strip()
+    return None
 
 
 def lookup(details, name):

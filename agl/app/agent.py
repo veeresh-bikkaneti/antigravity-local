@@ -160,6 +160,7 @@ async def _run_agent_session(model, base_url, leave, *, ports, out, input_fn=Non
         return
     ports.stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
     checked = ports.context_check(interactive=True, model=model, base_url=base_url)
+    model = _switch_to_copy(checked, model, ports=ports)
     ports.stage(5, 5, "LAUNCH", "start the agent")
     ports.level_clear(model, "built-in shell")
 
@@ -226,6 +227,15 @@ async def run_agent(model, base_url, *, ports, out, input_fn=None):
         out(f"\n⚠️ The agent backend stopped unexpectedly. Log: {log}\n")
 
 
+def _switch_to_copy(checked, model, *, ports):
+    """After stage 4 made a copy, run with it and save it the way stage 3 saves a pick."""
+    if not (isinstance(checked, tuple) and len(checked) > 2 and checked[2]):
+        return model
+    if hasattr(ports, "update_env_model"):
+        ports.update_env_model(checked[2])
+    return checked[2]
+
+
 def _offer_vscode(agent_setup, result, model, base_url, workspace, *, out):
     offer = getattr(agent_setup, "offer_vscode", None)
     if offer is not None:
@@ -275,6 +285,7 @@ def handle_agent(args, model, base_api, interactive, *, ports, out):
     ports.stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
     told = receives_window(args.agent, getattr(args, "agent_config_only", False))
     result = ports.context_check(interactive=interactive, model=model, base_url=base_api, told=told)
+    model = _switch_to_copy(result, model, ports=ports)
     if interactive:
         _offer_vscode(agent_setup, result, model, base_api, workspace, out=out)
         _offer_checkpoint(agent_setup, workspace, args.agent, out=out)

@@ -4,6 +4,8 @@ Standard library only. No I/O. The caller passes in free graphics memory, the we
 /api/show model_info dict. KV cache only: the compute graph has no closed form, so it is not counted.
 """
 
+import re
+
 from agl.core.menu import FIT_HEADROOM
 
 GIB = 2 ** 30
@@ -71,6 +73,23 @@ def target_window(room, per_token, trained=None):
     return 0
 
 
+def wants_copy(tokens, target, trained=None):
+    """True when a bigger copy would help: a target was read, the model can go higher, and the window
+    running now is under the target."""
+    if not target or not isinstance(tokens, int):
+        return False
+    if trained and tokens >= trained:
+        return False
+    return tokens < target
+
+
 def copy_name(tag, tokens):
-    """The copy's tag: the window in thousands, e.g. qwen2.5:14b-ctx16k."""
-    return f"{tag}-ctx{tokens // 1000}k"
+    """The copy's tag: the window in thousands, e.g. qwen2.5:14b-ctx16k. A tag that is already a copy
+    keeps one suffix: qwen2.5:14b-ctx8k becomes qwen2.5:14b-ctx16k."""
+    return f"{re.sub(r'-ctx[0-9]+k$', '', tag)}-ctx{tokens // 1000}k"
+
+
+def article(tokens):
+    """'an' for numbers said with a vowel first (8,192, 11,000, 18,000), else 'a'."""
+    lead = f"{tokens:,}".split(",")[0]
+    return "an" if lead.startswith("8") or lead in ("11", "18") else "a"

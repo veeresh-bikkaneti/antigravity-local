@@ -1096,17 +1096,20 @@ class WizardD2(unittest.TestCase):
             self.assertTrue(call.kwargs.get("flush"), call)
 
     # C1b: stage 4 never asks in PR A; it says the real window and what this GPU can hold.
-    def test_context_unknown_and_interactive_prints_the_mockup_lines_without_asking(self):
+    def test_context_under_the_target_and_interactive_offers_the_copy_once(self):
         out = []
         with mock.patch("agent_setup.live_window", return_value=(4096, "default")), \
                 mock.patch("agent_setup.window_target", return_value=(16384, 131072)), \
+                mock.patch("agent_setup.offer_window_copy", return_value=None) as offer, \
                 mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(sys, "platform", "win32"):
-            banner.context_check(True, ask=lambda p: self.fail("stage 4 asked a question"), model="qwen2.5:14b",
-                                 out=out.append)
+            result = banner.context_check(True, ask=lambda p: self.fail("stage 4 used the old ask"),
+                                          model="qwen2.5:14b", out=out.append)
         self.assertEqual(out, [
             "       qwen2.5:14b runs with Ollama's default 4,096 tokens.",
             "       Coding agents want about 16,384 on this GPU.",
         ])
+        offer.assert_called_once_with("qwen2.5:14b", 16384, out=out.append)
+        self.assertEqual(result, (4096, "default"))
 
     def test_context_on_a_yes_run_prints_the_no_fit_lines_and_asks_nothing(self):
         out = []
