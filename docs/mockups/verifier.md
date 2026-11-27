@@ -86,15 +86,10 @@ verify_claims parameters, copied from the spec tool object. claims is a required
 
 ## Open vote
 
-One decision, side by side. No winner.
-
-| Left: spec High bullet | Right: docs/coding-apps.md line 5 |
-| --- | --- |
-| - **High (`"conf": "high"` — 1+ primary source, or 2+ agreeing secondary sources):** Use definitive phrasing (*"confirms," "establishes"*). | High means three or more primary sources agree. Moderate means two sources, or one primary source. Low means secondary or conflicting. |
-
-Left treats 1 primary source as High ("1+ primary source, or 2+ agreeing secondary sources"). Right treats one primary source as Moderate, and High as three or more primary sources that agree. Both cells are quotes, not a rewrite.
-
-Part B waits for Veeresh to pick.
+High (conf "high"): 3+ primary sources agree. Use "confirms", "establishes".
+Moderate (conf "mod"): 2 agreeing sources, or 1 primary source. Use "indicates", "suggests".
+Low (conf "low"): 1 secondary source, or sources conflict. Say "sources conflict" or "preliminary".
+Tag every cited claim, High included: [High 3/3], [Moderate 1/1], [Low 1/2].
 
 ## Sample terminal text
 
@@ -207,9 +202,9 @@ When you try it for real:
 
 ## SDK tool check
 
-google-antigravity 0.1.23 can register a custom tool. Pass a callable in `tools=` on `LocalOpenAIAgentConfig`. Confirmed with the installed copy in `C:\Users\veere\source\repos\local-antigravity\venv` (`importlib.metadata.version("google-antigravity")` is `0.1.23`).
+google-antigravity 0.1.23 can register a custom tool. Pass a callable in `tools=` on `LocalOpenAIAgentConfig`. Confirmed with the installed copy in `<venv>` (`importlib.metadata.version("google-antigravity")` is `0.1.23`).
 
-`C:\Users\veere\source\repos\local-antigravity\venv\Lib\site-packages\google\antigravity\connections\local\local_openai_connection_config.py` lines 43-50. The `tools` parameter is line 50:
+`<venv>\Lib\site-packages\google\antigravity\connections\local\local_openai_connection_config.py` lines 43-50. The `tools` parameter is line 50:
 
 ```text
   def __init__(
@@ -222,7 +217,7 @@ google-antigravity 0.1.23 can register a custom tool. Pass a callable in `tools=
       tools: list[Callable[..., Any]] | None = None,
 ```
 
-`C:\Users\veere\source\repos\local-antigravity\venv\Lib\site-packages\google\antigravity\agent.py` lines 217-219. `ToolRunner` gets `config._get_all_custom_tools()`:
+`<venv>\Lib\site-packages\google\antigravity\agent.py` lines 217-219. `ToolRunner` gets `config._get_all_custom_tools()`:
 
 ```text
       self._tool_runner = tool_runner.ToolRunner(
@@ -230,7 +225,7 @@ google-antigravity 0.1.23 can register a custom tool. Pass a callable in `tools=
       )
 ```
 
-`C:\Users\veere\source\repos\local-antigravity\venv\Lib\site-packages\google\antigravity\connections\connection.py` lines 301-330. `_get_all_custom_tools` keeps callables. The name is `__name__` (or the class name when `__name__` is missing). Subagent tools are included in the same walk:
+`<venv>\Lib\site-packages\google\antigravity\connections\connection.py` lines 301-330. `_get_all_custom_tools` keeps callables. The name is `__name__` (or the class name when `__name__` is missing). Subagent tools are included in the same walk:
 
 ```text
   def _get_all_custom_tools(self) -> list[Callable[..., Any]]:
@@ -265,7 +260,7 @@ google-antigravity 0.1.23 can register a custom tool. Pass a callable in `tools=
     return tools
 ```
 
-`C:\Users\veere\source\repos\local-antigravity\venv\Lib\site-packages\google\antigravity\connections\local\local_openai_connection_test.py` lines 251-271. `test_tools_forwarded_to_strategy` passes `tools=[custom_lookup]` and the harness proto includes `custom_lookup`:
+`<venv>\Lib\site-packages\google\antigravity\connections\local\local_openai_connection_test.py` lines 251-271. `test_tools_forwarded_to_strategy` passes `tools=[custom_lookup]` and the harness proto includes `custom_lookup`:
 
 ```text
   def test_tools_forwarded_to_strategy(self):
@@ -293,7 +288,7 @@ google-antigravity 0.1.23 can register a custom tool. Pass a callable in `tools=
 
 Part B can register `verify_claims` the same way: a callable named `verify_claims` in `tools=` on `LocalOpenAIAgentConfig`. The SDK will pick up that name.
 
-Today `C:\Users\veere\source\repos\local-antigravity\.worktrees\v1-verifier\agl\app\agent.py` does not pass `tools=`. Re-checked in this worktree. The Gemma rule is line 159, not an older line. It still sets `CapabilitiesConfig(enabled_tools=[])` when `gemma` is in the model name. That rule stays. This mockup does not edit the file.
+Today `<repo>\.worktrees\v1-verifier\agl\app\agent.py` does not pass `tools=`. Re-checked in this worktree. The Gemma rule is line 159, not an older line. It still sets `CapabilitiesConfig(enabled_tools=[])` when `gemma` is in the model name. That rule stays. This mockup does not edit the file.
 
 ```text
     # Disable tools only if using Gemma under Ollama (which does not support Ollama tool schema)
