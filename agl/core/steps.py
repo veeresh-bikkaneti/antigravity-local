@@ -64,8 +64,9 @@ def with_plan(text, steps, now):
 def mark_done(text, step, now, *, skipped=False):
     """`text` with `step` moved from Plan to Done, and Next on the next open step (or cleared)."""
     _, sections = checkpoint.parse(text)
-    if OPEN + step in sections["Plan"]:
-        sections["Plan"].remove(OPEN + step)  # one box per call, so twin steps each get their turn
+    if OPEN + step not in sections["Plan"]:
+        return text  # not an open step (unknown or already done): nothing to tick
+    sections["Plan"].remove(OPEN + step)  # one box per call, so twin steps each get their turn
     finished = DONE + (SKIPPED if skipped else "") + step
     sections["Done"] = _real_done(sections["Done"]) + [finished]
     opened = _open(sections["Plan"])

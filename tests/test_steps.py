@@ -87,6 +87,16 @@ class StepsTest(unittest.TestCase):
         self.assertEqual(steps.open_steps(text), ["Run tests"])
         self.assertEqual(steps.position(text), (2, 2))
 
+    def test_unknown_or_repeat_mark_changes_nothing(self):
+        text = _planned()
+        before = (steps.position(text), steps.done_steps(text))
+        unknown = steps.mark_done(text, "zzz", "t")
+        self.assertEqual((steps.position(unknown), steps.done_steps(unknown)), before)
+        once = steps.mark_done(text, STEP_LIST[0], "t")
+        twice = steps.mark_done(once, STEP_LIST[0], "t")
+        self.assertEqual((steps.position(twice), steps.done_steps(twice)), (steps.position(once), steps.done_steps(once)))
+        self.assertEqual(steps.done_steps(twice), [STEP_LIST[0]])
+
 
 if __name__ == "__main__":
     unittest.main()
