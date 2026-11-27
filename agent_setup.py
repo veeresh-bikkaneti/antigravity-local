@@ -21,7 +21,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from agl.app import agent_session, vscode_chat
+from agl.app import agent_session, checkpoint_offer, vscode_chat
 from agl.core import agent_config as core_config
 from agl.core import context_guard, vscode_models
 from agl.core.agent_config import AgentSetupError
@@ -213,6 +213,18 @@ def offer_vscode(result, model, base_url, workspace, input_fn=None, out=print):
         user_dirs=vscode_models.user_dirs(sys.platform, str(Path.home()), os.environ),
         tools_of=tools_of,
         files=vscode_files,
+        input_fn=input_fn or input,
+        out=out,
+    )
+
+
+def offer_checkpoint(workspace, app, input_fn=None, out=print):
+    """After the VS Code offer: offer the checkpoint file and pointer blocks for the chosen app (agl.app.checkpoint_offer)."""
+    checkpoint_offer.offer(
+        workspace,
+        app=app,
+        files=agent_files,
+        is_tracked=agent_files.git_tracks,
         input_fn=input_fn or input,
         out=out,
     )

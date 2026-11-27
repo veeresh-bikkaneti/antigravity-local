@@ -162,6 +162,8 @@ Prefer a browser? `python run.py --serve` starts a memory search page on a free 
 
 The interactive shell lets you chat with your local agent about any project folder on your machine. Prefer working inside an editor? See [Use your local model from Antigravity or VS Code](README.md#use-your-local-model-from-antigravity-or-vs-code).
 
+Long tasks can outgrow the window, and that is normal. Stage 4 can offer a small file, `.agl/checkpoint.md`, that keeps your plan and progress in one place. Your coding app reads it first and updates it before it stops, so a fresh session can carry on where the last one left off. Say no and nothing changes.
+
 ### Before you start: activate the virtual environment
 Do this once per terminal window, from inside the `antigravity-local` folder. After that, plain `python` is the right command for everything below.
 - Windows PowerShell: `.\venv\Scripts\Activate.ps1` (if PowerShell blocks scripts, run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first)

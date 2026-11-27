@@ -333,6 +333,8 @@ Step-by-step for VS Code, Continue, terminal agents, Antigravity and Gemini CLI:
 
 Your pick is saved as `LOCAL_LLM_MODEL` in `.env`, so every coding app below uses the same model. Change the pick there, and the next launch follows.
 
+Apps forget things when the window fills up or when you switch models. So stage 4 can also offer one shared file, `.agl/checkpoint.md`, in your project. It holds the plan, what is done, what is next, and the files you touched. Your coding app reads it first and updates it before it stops. Say y and we add a short pointer to your instruction files too (AGENTS.md, and CLAUDE.md or Copilot's file when they exist). We back up each file first, and we add `.agl/` to your `.gitignore` in the same step. Say n, or just press Enter, and nothing is written. `HANDOFF.md` stays as it is. Details: [docs/coding-apps.md](docs/coding-apps.md#shared-checkpoint-file).
+
 There are two ways in. Pick the one that feels friendlier.
 
 **Option 1: our launcher.** Run one of these, and it writes that app's config for your model and starts the app in your project:

@@ -34,5 +34,6 @@ agree. Sizes are relative effort for one focused PR, and Evidence says how firm 
 | banner reaches agent_setup via sys.modules | agl/ui/banner.py:167 gets agent_setup with `sys.modules.get("agent_setup")`, not an import, so the layer rules cannot see that dependency (pre-existing) | app (pass it in as a port) | open | S | inferred |
 | banner and launch reads can disagree | the stage 4 banner (agl/ui/banner.py:174) and setup_run (agl/app/agent_session.py:101) each read the Ollama window, so the number shown and the number written can differ if the model reloads between them | app | open | S | inferred |
 | hardware probe on every read | agent_setup.py:196 live_window calls hardware.get_hardware_profile() each time with no cache, so every window read pays the GPU probe again | app | open | S | inferred |
+| HANDOFF.md vs checkpoint overlap | HANDOFF.md (written at a rate limit or before a compaction) and .agl/checkpoint.md (plan, done, next) both carry hand-off state. Both stay for now, and the checkpoint pointer names HANDOFF.md as extra reading. Decide later whether one should feed the other | app | open | S | judgment |
 
 Seed: ruff baseline at c90a615 plus the Phase 0 findings sweep, 2026-11-19. Architecture plan: all refactor roadmap phases (0 through 6e) are closed with the 6e follow-up; the open rows above are the leftovers.
