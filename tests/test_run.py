@@ -1101,8 +1101,18 @@ class WizardD2(unittest.TestCase):
         with mock.patch("agent_setup.live_window", return_value=(4096, "default")), \
                 mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(sys, "platform", "win32"):
             banner.context_check(True, ask=lambda p: self.fail("stage 4 asked a question"), out=out.append)
-        self.assertIn("NOT CHECKED", out[0])
-        self.assertTrue(any("$env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve" in line for line in out))
+        self.assertEqual(out, [
+            "       NOT CHECKED: Ollama is not running, or the model is not loaded yet.",
+            "       RED (a guess): 4,096 tokens.",
+            "       Source: Ollama's usual size for your graphics memory.",
+            "       The real size may be different. Run this again once the model is loaded.",
+            "       For more room, raise the context length in the Ollama app settings,",
+            "       or start the server with:",
+            "       bash:       OLLAMA_CONTEXT_LENGTH=65536 ollama serve",
+            "       PowerShell: $env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve",
+            "       A bigger window uses more GPU memory; if the model no longer fits, try 32768.",
+            "       We do not change your Ollama settings.",
+        ])
 
     def test_context_on_a_yes_run_prints_the_shell_line_and_asks_nothing(self):
         out = []
@@ -1111,8 +1121,18 @@ class WizardD2(unittest.TestCase):
         with mock.patch("agent_setup.live_window", return_value=(4096, "default")), \
                 mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(sys, "platform", "linux"):
             banner.context_check(False, ask=no_question, out=out.append)
-        self.assertIn("NOT CHECKED", out[0])
-        self.assertTrue(any("OLLAMA_CONTEXT_LENGTH=65536 ollama serve" in line for line in out))
+        self.assertEqual(out, [
+            "       NOT CHECKED: Ollama is not running, or the model is not loaded yet.",
+            "       RED (a guess): 4,096 tokens.",
+            "       Source: Ollama's usual size for your graphics memory.",
+            "       The real size may be different. Run this again once the model is loaded.",
+            "       For more room, raise the context length in the Ollama app settings,",
+            "       or start the server with:",
+            "       bash:       OLLAMA_CONTEXT_LENGTH=65536 ollama serve",
+            "       PowerShell: $env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve",
+            "       A bigger window uses more GPU memory; if the model no longer fits, try 32768.",
+            "       We do not change your Ollama settings.",
+        ])
 
     def test_context_is_skipped_for_an_openai_compatible_server(self):
         out = []

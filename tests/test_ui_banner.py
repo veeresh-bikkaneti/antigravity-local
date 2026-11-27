@@ -92,10 +92,18 @@ class TestBanner(unittest.TestCase):
 
         lines = []
         banner.context_check(True, ports=ports, out=lines.append)
-        self.assertIn("NOT CHECKED", lines[0])
-        self.assertIn("RED (a guess): 2,048 tokens.", lines[1])
-        self.assertIn("OLLAMA_CONTEXT_LENGTH in this terminal.", lines[2])
-        self.assertTrue(any("OLLAMA_CONTEXT_LENGTH=65536 ollama serve" in line for line in lines))
+        self.assertEqual(lines, [
+            "       NOT CHECKED: Ollama is not running, or the model is not loaded yet.",
+            "       RED (a guess): 2,048 tokens.",
+            "       Source: OLLAMA_CONTEXT_LENGTH in this terminal.",
+            "       The real size may be different. Run this again once the model is loaded.",
+            "       For more room, raise the context length in the Ollama app settings,",
+            "       or start the server with:",
+            "       bash:       OLLAMA_CONTEXT_LENGTH=65536 ollama serve",
+            "       PowerShell: $env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve",
+            "       A bigger window uses more GPU memory; if the model no longer fits, try 32768.",
+            "       We do not change your Ollama settings.",
+        ])
 
     def test_print_header_flag_check(self):
         ports = mock.Mock()
