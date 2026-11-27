@@ -8,6 +8,13 @@ import re
 
 from agl.core import capabilities
 
+# Re-check this list when you touch it: `curl -I https://registry.ollama.ai/v2/library/<name>/manifests/<tag>`
+# must return 200, and sizes come from the manifest layers. Nothing here has been run through this
+# project's agent loop yet, so the notes say what is reported, not what we measured.
+# The list itself is CATALOG, just below.
+CATALOG_VERIFIED = "2026-11-15"
+
+
 # Sizes were read on each Ollama tag page: https://ollama.com/library/<model>/tags (checked 2026-11-15).
 # Re-check this list when you touch it: `curl -I https://registry.ollama.ai/v2/library/<name>/manifests/<tag>`
 # must return 200, and sizes come from the manifest layers. Nothing here has been run through this

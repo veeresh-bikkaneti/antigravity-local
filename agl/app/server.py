@@ -5,7 +5,9 @@ and all system collaborators (process, platform, stage, sleep) are injected thro
 """
 import json
 
-DEFAULT_OLLAMA_HOSTS = ("http://localhost:11434", "http://127.0.0.1:11434")
+from agl.core.vscode_models import DEFAULT_ENDPOINTS
+
+DEFAULT_OLLAMA_HOSTS = DEFAULT_ENDPOINTS
 
 
 def _is_tty(stream):
@@ -17,7 +19,7 @@ def _is_tty(stream):
 
 def _server_urls(base_url, *, ports=None):
     """(ollama root, [candidate /models URLs]) for a LOCAL_LLM_BASE_URL such as http://localhost:1234/v1."""
-    default_base = getattr(ports, "config", None).LLM_BASE_URL if (ports and hasattr(ports, "config")) else "http://localhost:11434/v1"
+    default_base = getattr(ports, "config", None).LLM_BASE_URL if (ports and hasattr(ports, "config")) else f"{DEFAULT_ENDPOINTS[0]}/v1"
     base = (base_url or default_base).strip().rstrip("/")
     if base.endswith("/v1"):
         return base[:-3].rstrip("/"), [base + "/models"]
