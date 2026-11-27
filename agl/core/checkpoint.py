@@ -5,8 +5,9 @@ stops. The layout and wording come from docs/mockups/checkpoint.md. Reads and wr
 """
 
 import re
+from collections import namedtuple
 
-MARKER = "<!-- agl-checkpoint v1 -->"
+MARKER ="<!-- agl-checkpoint v1 -->"
 BEGIN = "<!-- agl-checkpoint:begin -->"
 END = "<!-- agl-checkpoint:end -->"
 SECTIONS = ("Plan", "Done", "Next", "Files", "Notes")
@@ -15,6 +16,8 @@ CHARS_PER_TOKEN = 4  # a rough count: about 4 characters per token
 TRIM_NOTE = re.compile(r"^- \((\d+) earlier steps trimmed to keep this file small\)$")
 IGNORE_LINE = ".agl/"
 IGNORE_FORMS = (".agl", ".agl/", "/.agl", "/.agl/")
+NONE_YET = "- (none yet)"  # what render() writes for an empty section. It is a placeholder, not a step.
+Fit = namedtuple("Fit", "text trimmed marker over_limit")
 
 TEMPLATE = {
     "Plan": ["The goal in one or two lines, in the user's own words.",
@@ -78,47 +81,69 @@ def _done_end(lines, start):
     return next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
 
 
-def capped(text, updated):
-    """`text` (a checkpoint file) with the oldest Done steps removed until it fits CAP_TOKENS. Every other line stays
-    as it was: unknown sections, free text, Plan, Next, Files and Notes. The `updated:` line becomes `updated`.
-    A note under Done counts the steps dropped so far. If no Done step is left to drop, `text` comes back unchanged."""
+def _cap(text, updated):
+    """(new text, Done steps trimmed this run). The oldest Done steps go until the text fits CAP_TOKENS. Every other line
+    stays as it was. The `updated:` line becomes `updated`, and a note under Done counts the steps dropped so far.
+    (None, 0) when dropping Done steps cannot make it fit. Then nothing is removed."""
     lines = [f"updated: {updated}" if line.startswith("updated: ") else line for line in text.splitlines()]
     dropped, start = 0, _done_header(lines)
-    if start is not None:  # fold an earlier note into the running count
-        i = start + 1
-        while i < _done_end(lines, start):
-            m = TRIM_NOTE.match(lines[i])
-            if m:
-                dropped += int(m.group(1))
-                del lines[i]
-            else:
-                i += 1
+    if start is None:
+        return None, 0
+    i = start + 1  # fold an earlier note into the running count
+    while i < _done_end(lines, start):
+        m = TRIM_NOTE.match(lines[i])
+        if m:
+            dropped += int(m.group(1))
+            del lines[i]
+        else:
+            i += 1
 
-    def build(count):
-        body = list(lines)
-        if count and start is not None:
-            body.insert(start + 1, f"- ({count} earlier steps trimmed to keep this file small)")
-        return "\n".join(body) + ("\n" if text.endswith("\n") else "")
+    def build(body, count):
+        out = list(body)
+        if count:
+            out.insert(start + 1, f"- ({count} earlier steps trimmed to keep this file small)")
+        return "\n".join(out) + ("\n" if text.endswith("\n") else "")
 
-    trimmed = 0
-    while start is not None and tokens(build(dropped + trimmed)) > CAP_TOKENS:
-        step = next((j for j in range(start + 1, _done_end(lines, start)) if lines[j].startswith("- ")), None)
+    body, trimmed = list(lines), 0
+    while True:
+        result = build(body, dropped + trimmed)
+        if tokens(result) <= CAP_TOKENS:
+            return result, trimmed
+        step = next((j for j in range(start + 1, _done_end(body, start))
+                     if body[j].startswith("- ") and body[j] != NONE_YET), None)
         if step is None:
-            break
-        del lines[step]
+            return None, 0
+        del body[step]
         trimmed += 1
-    if not trimmed:
-        return text
-    return build(dropped + trimmed)
+
+
+def capped(text, updated):
+    """`text` (a checkpoint file) with the oldest Done steps removed until it fits CAP_TOKENS. If it cannot fit that way,
+    or no Done step is left to drop, `text` comes back unchanged."""
+    new, _ = _cap(text, updated)
+    return text if new is None else new
+
+
+def fit(old, now):
+    """The plan for the checkpoint file (`old` is None when there is no file yet), as a Fit. `text` is what to write and
+    equals `old` when nothing changes. `marker` is True when only our marker line is added and no line is removed.
+    `trimmed` counts the Done steps this run removes. `over_limit` is True when the file is over CAP_TOKENS and cannot
+    fit by trimming Done. Then `text` is `old`, and nothing is removed."""
+    if old is None or not old.strip():
+        return Fit(render(TEMPLATE, now), 0, False, False)
+    if not is_ours(old):
+        return Fit(MARKER + "\n" + old, 0, True, False)
+    if tokens(old) <= CAP_TOKENS:
+        return Fit(old, 0, False, False)
+    new, trimmed = _cap(old, now)
+    if new is None:
+        return Fit(old, 0, False, True)
+    return Fit(new, trimmed, False, False)
 
 
 def next_text(old, now):
     """What the checkpoint file should say now. When it returns `old`, nothing needs writing."""
-    if old is None or not is_ours(old):
-        return render(TEMPLATE, now)
-    if tokens(old) <= CAP_TOKENS:
-        return old
-    return capped(old, now)
+    return fit(old, now).text
 
 
 def merge_pointer(text):

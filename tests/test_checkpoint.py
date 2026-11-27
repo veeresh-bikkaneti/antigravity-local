@@ -87,6 +87,22 @@ class CheckpointCoreTests(unittest.TestCase):
         self.assertLessEqual(ck.tokens(second), ck.CAP_TOKENS)
         self.assertGreater(_steps_note(second), _steps_note(first))
 
+    def test_markerless_file_keeps_every_line(self):
+        old = "# My notes\n\n## Done\n\n- old step\n\nFree line that stays.\n"
+        self.assertEqual(ck.next_text(old, NOW), ck.MARKER + "\n" + old)
+        self.assertTrue(ck.fit(old, NOW).marker)
+
+    def test_plan_too_big_removes_no_done_steps(self):
+        text = ck.render({"Plan": ["x" * 8000], "Done": [f"Step {i}" for i in range(5)], "Next": ["Write the tests."]}, NOW)
+        self.assertEqual(ck.capped(text, NOW), text)
+        plan = ck.fit(text, NOW)
+        self.assertTrue(plan.over_limit)
+        self.assertEqual((plan.text, plan.trimmed), (text, 0))
+
+    def test_over_limit_with_no_done_steps_left_is_flagged(self):
+        text = ck.render({"Plan": ["Ship C3."], "Notes": ["x" * 8000]}, NOW)
+        self.assertTrue(ck.fit(text, NOW).over_limit)
+
     def test_with_ignore_adds_agl_once(self):
         once = ck.with_ignore("node_modules/")
         self.assertEqual(once, "node_modules/\n.agl/\n")

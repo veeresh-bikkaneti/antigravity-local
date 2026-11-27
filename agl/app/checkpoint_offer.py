@@ -17,7 +17,7 @@ CHECKPOINT = Path(".agl") / "checkpoint.md"
 GITIGNORE = Path(".gitignore")
 RULES_FILE = Path(".continue") / "rules" / "agl-checkpoint.md"
 QUESTION = "       Add the checkpoint file and the pointers? [y/N] "
-Change = namedtuple("Change", "path old new kind shown")
+Change = namedtuple("Change", "path old new kind shown backup detail")
 
 
 def _yes(input_fn, prompt):
@@ -46,29 +46,48 @@ def _status(existed):
     return "found" if existed else "missing, will be created"
 
 
+def _ck_detail(plan, old):
+    """The checkpoint change in words for the preview. Empty for a new file: the File line already shows it."""
+    if old is None:
+        return ""
+    parts = []
+    if plan.marker:
+        parts.append("add the marker line (every other line stays)")
+    if plan.trimmed:
+        parts.append(f"trim {plan.trimmed} old Done steps to keep it under about {ck.CAP_TOKENS:,} tokens")
+    return "; ".join(parts) or "refresh the updated: line"
+
+
+def _change(path, old, new, kind, shown, detail, files):
+    backup = files.backup_path(path) if old is not None else None
+    return Change(path, old, new, kind, shown, backup, detail)
+
+
 def _plan(ws, files, stamp, app):
-    """(changes, rows, broken). rows holds (shown, existed) per pointer file. Nothing is written here."""
+    """(changes, rows, broken, over_limit). rows holds (shown, existed) per pointer file. Nothing is written here."""
     changes, rows = [], []
     ck_path = ws / CHECKPOINT
     old = files.read_text_if_exists(ck_path)
-    new = ck.next_text(old, stamp)
-    if new != old:
-        changes.append(Change(ck_path, old, new, "checkpoint", str(CHECKPOINT)))
+    plan = ck.fit(old, stamp)
+    if plan.over_limit:
+        return [], rows, None, True
+    if plan.text != old:
+        changes.append(_change(ck_path, old, plan.text, "checkpoint", str(CHECKPOINT), _ck_detail(plan, old), files))
     for path, shown in _targets(ws, app):
         old = files.read_text_if_exists(path)
         rows.append((shown, old is not None))
         try:
             new = ck.merge_pointer("" if old is None else old)
         except ck.PointerError:
-            return [], rows, shown
+            return [], rows, shown, False
         if new != old:
-            changes.append(Change(path, old, new, "pointer", shown))
+            changes.append(_change(path, old, new, "pointer", shown, "", files))
     gi = ws / GITIGNORE
     old = files.read_text_if_exists(gi)
     new = ck.with_ignore("" if old is None else old)
     if new != old:
-        changes.append(Change(gi, old, new, "ignore", str(GITIGNORE)))
-    return changes, rows, None
+        changes.append(_change(gi, old, new, "ignore", str(GITIGNORE), "", files))
+    return changes, rows, None, False
 
 
 def _in_place(ck_path, rows, out):
@@ -81,6 +100,11 @@ def _show(ck_path, changes, rows, out):
     out("       Checkpoint: a short file your coding app reads first and updates before it stops.")
     out("       It keeps the plan, what is done, what is next, and the files you touched.")
     out(f"       File     : {ck_path}")
+    for c in changes:
+        if c.kind == "checkpoint" and c.detail:
+            out(f"       Change   : {c.detail}.")
+            if c.backup:
+                out(f"       Backup   : {c.backup}")
     (first_shown, first_existed), *others = rows
     out(f"       Pointers : {first_shown} ({_status(first_existed)})")
     found = [shown for shown, existed in others if existed]
@@ -96,17 +120,16 @@ def _show(ck_path, changes, rows, out):
 
 
 def _write(change, files, out):
-    backed_up = change.old is not None
     try:
-        if backed_up:
-            files.copy2(change.path, files.backup_path(change.path))
+        if change.backup:
+            files.copy2(change.path, change.backup)
         files.write_text_atomic(change.path, change.new)
     except OSError as e:
         out(f"       Not changed: {change.path} ({e}).")
         return
     if change.old is None:
         out(f"       Created: {change.path}")
-    elif backed_up:
+    elif change.backup:
         out(f"       Updated: {change.path} (an existing file was backed up first).")
     else:
         out(f"       Updated: {change.path}")
@@ -129,7 +152,11 @@ def offer(workspace, *, app, files, is_tracked, input_fn, out, now=None):
             "then run this again. Nothing was written.")
         return
     stamp = now or datetime.datetime.now().astimezone().isoformat(timespec="seconds")
-    changes, rows, broken = _plan(ws, files, stamp, app)
+    changes, rows, broken, over_limit = _plan(ws, files, stamp, app)
+    if over_limit:
+        out(f"       Not changed: {ck_path} is over the size limit (about {ck.CAP_TOKENS:,} tokens) and was not rewritten. "
+            "No Done steps were removed. Shorten the file by hand, then run this again. Nothing was written.")
+        return
     if broken:
         out(f"       Not changed: {broken} has only one of our two marker lines, or more than one. "
             "Fix that by hand, then run this again. Nothing was written.")

@@ -161,6 +161,48 @@ class CheckpointOfferTests(unittest.TestCase):
         self.assertIn(f"updated: {NOW}", new)
         self.assertLessEqual(ck.tokens(new), ck.CAP_TOKENS)
 
+    def test_markerless_checkpoint_keeps_every_line_and_gets_a_backup(self):
+        original = "# My checkpoint\n\n## Done\n\n- [x] Wrote the parser.\n\nFree line that stays.\n"
+        (self.ws / ".agl").mkdir()
+        (self.ws / ".agl" / "checkpoint.md").write_text(original, encoding="utf-8")
+        self._offer(["y"])
+        new = (self.ws / ".agl" / "checkpoint.md").read_text(encoding="utf-8")
+        self.assertEqual(new, ck.MARKER + "\n" + original)
+        backups = [p for p in (self.ws / ".agl").iterdir() if ".bak-antigravity-local" in p.name]
+        self.assertTrue(any(p.read_text(encoding="utf-8") == original for p in backups))
+
+    def test_preview_names_the_marker_change_when_pointers_are_current(self):
+        (self.ws / "AGENTS.md").write_text(ck.POINTER + "\n", encoding="utf-8")
+        (self.ws / ".agl").mkdir()
+        (self.ws / ".agl" / "checkpoint.md").write_text(USER_LINES, encoding="utf-8")
+        self._offer(["n"])
+        self.assertTrue(any(line.startswith("       Change   : add the marker line") for line in self.lines))
+        self.assertTrue(any(line.startswith("       Backup   : ") and ".bak-antigravity-local" in line
+                            for line in self.lines))
+        self.assertEqual((self.ws / ".agl" / "checkpoint.md").read_text(encoding="utf-8"), USER_LINES)
+
+    def test_preview_names_the_trim_when_pointers_are_current(self):
+        steps = [f"Step {i} " + "x" * 200 for i in range(500)]
+        (self.ws / "AGENTS.md").write_text(ck.POINTER + "\n", encoding="utf-8")
+        (self.ws / ".agl").mkdir()
+        (self.ws / ".agl" / "checkpoint.md").write_text(ck.render({"Done": steps, "Next": ["Write the tests."]}, OLD),
+                                                        encoding="utf-8")
+        before = self._snapshot()
+        self._offer(["n"])
+        self.assertTrue(any("Change   : trim " in line and " old Done steps" in line for line in self.lines))
+        self.assertEqual(self._snapshot(), before)
+
+    def test_oversize_plan_keeps_every_done_step_writes_nothing_and_says_so(self):
+        original = ck.render({"Plan": ["x" * 8000], "Done": [f"Step {i}" for i in range(5)],
+                              "Next": ["Write the tests."]}, OLD)
+        (self.ws / ".agl").mkdir()
+        (self.ws / ".agl" / "checkpoint.md").write_text(original, encoding="utf-8")
+        before = self._snapshot()
+        self._offer(["y"])
+        self.assertEqual(self._snapshot(), before)
+        self.assertEqual(self.prompts, [])
+        self.assertTrue(any("over the size limit" in line and "was not rewritten" in line for line in self.lines))
+
 
 class GitTracksTests(unittest.TestCase):
     def setUp(self):
