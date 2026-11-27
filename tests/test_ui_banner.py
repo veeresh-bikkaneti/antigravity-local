@@ -84,26 +84,21 @@ class TestBanner(unittest.TestCase):
         banner.context_check(True, ports=ports, out=lines.append)
         self.assertEqual(lines, [])
 
-    def test_context_check_warning_printed(self):
+    def test_context_check_prints_the_mockup_lines(self):
         ports = mock.Mock()
         ports.environ_copy.return_value = {"OLLAMA_CONTEXT_LENGTH": "2048"}
         ports.agent_setup.live_window.return_value = (2048, "env")
+        ports.agent_setup.window_target.return_value = (16384, 131072)
         ports.sys.platform = "linux"
 
         lines = []
-        banner.context_check(True, ports=ports, out=lines.append)
+        result = banner.context_check(True, model="qwen2.5:14b", ports=ports, out=lines.append)
+        self.assertEqual(result, (2048, "env"))
         self.assertEqual(lines, [
-            "       NOT CHECKED: Ollama is not running, or the model is not loaded yet.",
-            "       RED (a guess): 2,048 tokens.",
-            "       Source: OLLAMA_CONTEXT_LENGTH in this terminal.",
-            "       The real size may be different. Run this again once the model is loaded.",
-            "       For more room, raise the context length in the Ollama app settings,",
-            "       or start the server with:",
-            "       bash:       OLLAMA_CONTEXT_LENGTH=65536 ollama serve",
-            "       PowerShell: $env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve",
-            "       A bigger window uses more GPU memory; if the model no longer fits, try 32768.",
-            "       We do not change your Ollama settings.",
+            "       qwen2.5:14b runs with a 2,048 token window.",
+            "       Coding agents want about 16,384 on this GPU.",
         ])
+        ports.agent_setup.window_target.assert_called_once_with("qwen2.5:14b", "", {"OLLAMA_CONTEXT_LENGTH": "2048"})
 
     def test_print_header_flag_check(self):
         ports = mock.Mock()

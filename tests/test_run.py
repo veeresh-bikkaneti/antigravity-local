@@ -1095,43 +1095,31 @@ class WizardD2(unittest.TestCase):
         for call in printed.call_args_list:
             self.assertTrue(call.kwargs.get("flush"), call)
 
-    # v1.2.3: stage 4 never asks; it prints the warning, then the command for this OS.
-    def test_context_unknown_and_interactive_prints_the_powershell_line_without_asking(self):
+    # C1b: stage 4 never asks in PR A; it says the real window and what this GPU can hold.
+    def test_context_unknown_and_interactive_prints_the_mockup_lines_without_asking(self):
         out = []
         with mock.patch("agent_setup.live_window", return_value=(4096, "default")), \
+                mock.patch("agent_setup.window_target", return_value=(16384, 131072)), \
                 mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(sys, "platform", "win32"):
-            banner.context_check(True, ask=lambda p: self.fail("stage 4 asked a question"), out=out.append)
+            banner.context_check(True, ask=lambda p: self.fail("stage 4 asked a question"), model="qwen2.5:14b",
+                                 out=out.append)
         self.assertEqual(out, [
-            "       NOT CHECKED: Ollama is not running, or the model is not loaded yet.",
-            "       RED (a guess): 4,096 tokens.",
-            "       Source: Ollama's usual size for your graphics memory.",
-            "       The real size may be different. Run this again once the model is loaded.",
-            "       For more room, raise the context length in the Ollama app settings,",
-            "       or start the server with:",
-            "       bash:       OLLAMA_CONTEXT_LENGTH=65536 ollama serve",
-            "       PowerShell: $env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve",
-            "       A bigger window uses more GPU memory; if the model no longer fits, try 32768.",
-            "       We do not change your Ollama settings.",
+            "       qwen2.5:14b runs with Ollama's default 4,096 tokens.",
+            "       Coding agents want about 16,384 on this GPU.",
         ])
 
-    def test_context_on_a_yes_run_prints_the_shell_line_and_asks_nothing(self):
+    def test_context_on_a_yes_run_prints_the_no_fit_lines_and_asks_nothing(self):
         out = []
         def no_question(prompt):
             raise AssertionError("asked a question on a --yes run")
         with mock.patch("agent_setup.live_window", return_value=(4096, "default")), \
+                mock.patch("agent_setup.window_target", return_value=(0, 131072)), \
                 mock.patch.dict(os.environ, {}, clear=True), mock.patch.object(sys, "platform", "linux"):
-            banner.context_check(False, ask=no_question, out=out.append)
+            banner.context_check(False, ask=no_question, model="qwen2.5:14b", out=out.append)
         self.assertEqual(out, [
-            "       NOT CHECKED: Ollama is not running, or the model is not loaded yet.",
-            "       RED (a guess): 4,096 tokens.",
-            "       Source: Ollama's usual size for your graphics memory.",
-            "       The real size may be different. Run this again once the model is loaded.",
-            "       For more room, raise the context length in the Ollama app settings,",
-            "       or start the server with:",
-            "       bash:       OLLAMA_CONTEXT_LENGTH=65536 ollama serve",
-            "       PowerShell: $env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve",
-            "       A bigger window uses more GPU memory; if the model no longer fits, try 32768.",
-            "       We do not change your Ollama settings.",
+            "       qwen2.5:14b runs with Ollama's default 4,096 tokens.",
+            "       This GPU cannot fit an 8,192 window on top of the weights.",
+            "       No copy. A long prompt can use /steps.",
         ])
 
     def test_context_is_skipped_for_an_openai_compatible_server(self):
@@ -1141,13 +1129,14 @@ class WizardD2(unittest.TestCase):
             banner.context_check(True, ask=lambda p: self.fail("asked on an openai server"), out=out.append)
         self.assertEqual(out, [])
 
-    def test_context_at_or_above_65536_prints_the_green_lines(self):
+    def test_context_that_covers_the_target_needs_no_copy(self):
         out = []
         with mock.patch("agent_setup.live_window", return_value=(65536, "loaded")), \
+                mock.patch("agent_setup.window_target", return_value=(64000, 131072)), \
                 mock.patch.dict(os.environ, {"OLLAMA_CONTEXT_LENGTH": "65536"}, clear=True):
-            banner.context_check(True, ask=lambda p: "y", out=out.append)
-        self.assertEqual(out, ["       GREEN: the model can hold 65,536 tokens at once. That is enough for coding apps.",
-                               "       Source: Ollama reported this for the loaded model."])
+            banner.context_check(True, ask=lambda p: "y", model="qwen2.5:14b", out=out.append)
+        self.assertEqual(out, ["       qwen2.5:14b runs with a 65,536 token window.",
+                               "       That covers the 64,000 this GPU can give. No copy needed."])
 
     def test_plain_flag_gives_hash_bars_not_block_characters(self):
         text = self.yes_run(["--plain", "--yes"])

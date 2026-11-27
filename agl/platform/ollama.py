@@ -132,6 +132,15 @@ def installed_details(base_url=config.OLLAMA_BASE_URL, opener=None, timeout=3):
     return details
 
 
+def show(tag, base_url=config.OLLAMA_BASE_URL, *, opener=None, timeout=3):
+    """The /api/show dict for one model, or None on any error. Same client as installed_details."""
+    try:
+        shown = _get_json(opener, f"{base_url.rstrip('/')}/api/show", timeout, {"model": tag})
+    except Exception:
+        return None
+    return shown if isinstance(shown, dict) else None
+
+
 def lookup(details, name):
     """The details for a tag: the exact normalised tag first.
 
