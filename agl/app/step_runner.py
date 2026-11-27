@@ -20,6 +20,7 @@ RETRY_QUESTION = "Retry, skip or stop? [r/s/q] "
 PLAN_DROPPED = "Plan dropped. Nothing was written."
 TOO_BIG = "This step does not fit the window. It was not sent."
 NO_FILES = "(none)"
+NO_FILE_CHANGE = "No file was created or changed."
 MIN_STEPS, MAX_STEPS = 2, 8
 _STEP_LINE = re.compile(r"^\s*\d+[.)]\s+(.+?)\s*$")
 
@@ -28,6 +29,16 @@ def parse_plan(reply: str) -> list[str]:
     """The step texts from a numbered reply, or [] unless 2 to 8 steps came back."""
     found = [m.group(1) for m in map(_STEP_LINE.match, reply.splitlines()) if m]
     return found if MIN_STEPS <= len(found) <= MAX_STEPS else []
+
+
+def _file_news(created: list[str], changed: list[str]) -> str:
+    """`a.html is new. b.py changed.` for the files a step touched, or "" when there are none."""
+    parts = []
+    if created:
+        parts.append(f"{', '.join(created)} {'is' if len(created) == 1 else 'are'} new.")
+    if changed:
+        parts.append(f"{', '.join(changed)} changed.")
+    return " ".join(parts)
 
 
 @dataclass
@@ -41,6 +52,7 @@ class _Run:
     input_fn: Any
     out: Any
     now: Any
+    checkpoint_path: str
     number: int = 0
     total: int = 0
 
@@ -90,16 +102,18 @@ async def _plan(run: _Run, task: str) -> bool:
     if not _accepted(run):
         run.say(PLAN_DROPPED)
         return False
-    run.write_ck(steps.with_plan(run.read_ck(), plan, run.now()))
+    text = steps.with_plan(run.read_ck(), plan, run.now())
+    run.write_ck(text)
+    run.say(f"Wrote {run.checkpoint_path} with {len(steps.open_steps(text))} open steps.")
     return True
 
 
-async def _check(run: _Run, step: str, before: dict, after: dict) -> bool:
-    """Ask a fresh chat whether the step is done, given the files the step touched."""
+async def _check(run: _Run, step: str, before: dict, after: dict) -> tuple[bool, list[str], list[str]]:
+    """Ask a fresh chat whether the step is done. Returns (passed, created, changed)."""
     created, changed = task_report.summarize(before, after)
     files = ", ".join(created + changed) or NO_FILES
     reply = await _ask(run.new_agent, CHECK_PROMPT.format(step=step, files=files))
-    return reply.strip().lower().startswith("yes")
+    return reply.strip().lower().startswith("yes"), created, changed
 
 
 async def _attempt(run: _Run, step: str) -> str:
@@ -112,10 +126,12 @@ async def _attempt(run: _Run, step: str) -> str:
     before = run.snapshot()
     await _ask(run.new_agent, prompt, run.out)
     after = run.snapshot()
-    if not await _check(run, step, before, after):
-        run.say("Check failed.")
+    passed, created, changed = await _check(run, step, before, after)
+    if not passed:
+        nothing = not (created or changed)
+        run.say("Check failed. " + NO_FILE_CHANGE if nothing else "Check failed.")
         return "failed"
-    run.say("Check passed.")
+    run.say(" ".join(line for line in ("Check passed.", _file_news(created, changed)) if line))
     run.write_ck(steps.mark_done(run.read_ck(), step, run.now()))
     run.say(run.next_line(f"Saved. Step {run.number} is done."))
     return "ok"
@@ -182,16 +198,19 @@ async def run_steps(
     input_fn: Any,
     out: Any,
     now: Any,
+    checkpoint_path: str,
 ) -> str:
     """Plan if nothing is open, then run the open steps.
 
     Returns "done", "stopped", "declined" or "too_big".
     """
-    run = _Run(new_agent, read_ck, write_ck, snapshot, window, system_tokens, input_fn, out, now)
+    run = _Run(new_agent, read_ck, write_ck, snapshot, window, system_tokens, input_fn, out, now,
+               checkpoint_path)
     try:
         if steps.position(read_ck()) is None and not await _plan(run, task):
             return "declined"
         return await _drive(run)
     except KeyboardInterrupt:
+        run.out.write("\n")
         run.say(_interrupted(run.number))
         return "stopped"

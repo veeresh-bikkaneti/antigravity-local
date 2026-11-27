@@ -4,11 +4,13 @@ import asyncio
 import io
 import unittest
 from datetime import datetime, timezone
+from unittest import mock
 
 from agl.app.step_runner import parse_plan, run_steps
 from agl.core import checkpoint, steps
 
 TASK = "Add a health page and a test that opens it"
+CK_PATH = r"<repo>\.agl\checkpoint.md"
 STEPS = [
     "Add health.html with one status line",
     "Add test_health.py that reads that file",
@@ -122,8 +124,15 @@ def go(factory, store, answers, *, window=8192, input_fn=None):
         input_fn=asker,
         out=out,
         now=now,
+        checkpoint_path=CK_PATH,
     ))
     return result, out.getvalue(), asker
+
+
+def touched(created=(), changed=()):
+    """Pin what task_report.summarize reports for every check in the run."""
+    return mock.patch("agl.core.task_report.summarize",
+                      return_value=(list(created), list(changed)))
 
 
 class StepRunnerTests(unittest.TestCase):
@@ -208,6 +217,52 @@ class StepRunnerTests(unittest.TestCase):
         self.assertEqual(parse_plan("\n".join(f"{i}. s{i}" for i in range(1, 10))), [])
         self.assertEqual(parse_plan("1. a\n2) b\n3. c\n4. d\n5. e"),
                          ["a", "b", "c", "d", "e"])
+
+    def test_pass_line_one_new_file(self):
+        factory, store = FakeFactory(), Store(SEED)
+        with touched(created=["health.html"]):
+            _, out, _ = go(factory, store, ["y"])
+        self.assertIn("Check passed. health.html is new.", out.splitlines())
+
+    def test_pass_line_two_changed_files(self):
+        factory, store = FakeFactory(), Store(SEED)
+        with touched(changed=["a.py", "b.py"]):
+            _, out, _ = go(factory, store, ["y"])
+        self.assertIn("Check passed. a.py, b.py changed.", out.splitlines())
+
+    def test_pass_line_no_files(self):
+        factory, store = FakeFactory(), Store(SEED)
+        with touched():
+            _, out, _ = go(factory, store, ["y"])
+        self.assertIn("Check passed.", out.splitlines())
+
+    def test_fail_line_with_files_is_bare(self):
+        factory = FakeFactory(Script(checks=["no"]))
+        store = Store(SEED)
+        with touched(changed=["a.py"]):
+            _, out, _ = go(factory, store, ["y"])
+        lines = out.splitlines()
+        self.assertIn("Check failed.", lines)
+        self.assertNotIn("No file was created or changed.", out)
+
+    def test_fail_line_without_files_says_nothing_changed(self):
+        factory = FakeFactory(Script(checks=["no"]))
+        store = Store(SEED)
+        with touched():
+            _, out, _ = go(factory, store, ["y"])
+        self.assertIn("Check failed. No file was created or changed.", out.splitlines())
+
+    def test_wrote_line_is_exact(self):
+        factory, store = FakeFactory(), Store(SEED)
+        _, out, _ = go(factory, store, ["y"])
+        self.assertIn(r"Wrote <repo>\.agl\checkpoint.md with 5 open steps.", out.splitlines())
+
+    def test_ctrl_c_mid_stream_starts_a_new_line(self):
+        factory = FakeFactory(Script(interrupt_on="This step: " + STEPS[0] + "\n"))
+        store = Store(SEED)
+        result, out, _ = go(factory, store, ["y"])
+        self.assertEqual(result, "stopped")
+        self.assertIn("Agent > \nInterrupted on step 1. Nothing is saved yet.", out)
 
 
 if __name__ == "__main__":
