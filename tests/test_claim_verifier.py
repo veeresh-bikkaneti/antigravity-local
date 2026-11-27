@@ -1,5 +1,7 @@
 """Local claim verifier: prompts, cache key, search hits, and the verify_claims tool."""
 import json
+import os
+import tempfile
 import types
 import unittest
 from unittest import mock
@@ -247,6 +249,65 @@ class VerifyClaims(unittest.TestCase):
         for packet in user["sources"]:
             for hit in packet["hits"]:
                 self.assertEqual(set(hit), {"url", "snippet"})
+
+    def test_build_ports_does_not_open_the_claim_cache(self):
+        import run
+        previous = run.PROJECT_DIR
+        folder_path = None
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                folder_path = folder
+                run.PROJECT_DIR = folder
+                ports = run.build_ports()
+                self.assertIsNone(ports.claim_store)
+                self.assertFalse(os.path.exists(os.path.join(folder, ".claim_cache.sqlite")))
+            self.assertFalse(os.path.exists(folder_path))
+        finally:
+            run.PROJECT_DIR = previous
+
+    def test_file_cache_closes_before_verify_claims_returns(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder, ".claim_cache.sqlite")
+            ports = _Ports(None, _Search())
+            ports.open_claim_store = lambda: ClaimStore(path)
+            text = bind_verify_claims(ports)(["rain is wet"])
+            self.assertEqual(json.loads(text)["results"][0]["claim"], "rain is wet")
+            self.assertTrue(os.path.exists(path))
+            self.assertIsNone(ports.claim_store)
+
+    def test_each_call_with_no_store_opens_again(self):
+        opened = {"n": 0}
+
+        def opener():
+            opened["n"] += 1
+            return ClaimStore(":memory:")
+
+        ports = _Ports(None, _Search())
+        ports.open_claim_store = opener
+        tool = bind_verify_claims(ports)
+        tool(["one"])
+        tool(["two"])
+        self.assertEqual(opened["n"], 2)
+        self.assertIsNone(ports.claim_store)
+
+    def test_no_store_and_no_opener_skips_complete(self):
+        ports = _Ports(None, _Search())
+        rows = json.loads(bind_verify_claims(ports)(["one", "two"]))["results"]
+        self.assertEqual(ports.complete_calls, [])
+        self.assertEqual([row["status"] for row in rows], ["unavailable", "unavailable"])
+
+    def test_file_cache_closes_when_complete_raises(self):
+        def boom(system, user):
+            raise RuntimeError("complete failed")
+
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder, ".claim_cache.sqlite")
+            ports = _Ports(None, _Search(), reply=boom)
+            ports.open_claim_store = lambda: ClaimStore(path)
+            with self.assertRaises(RuntimeError):
+                bind_verify_claims(ports)(["rain is wet"])
+            self.assertTrue(os.path.exists(path))
+            self.assertIsNone(ports.claim_store)
 
 
 class ModelAndWiring(unittest.TestCase):

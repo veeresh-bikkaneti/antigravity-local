@@ -42,12 +42,12 @@ class AppPorts:
     The constructor receives ONLY what import-linter forbids agl.app from importing - the ui
     modules (banner, pick_menu) and the platform modules (config, hardware, ollama, process,
     state) - plus the shell state: project_dir, env_file, upgrade_state_file, setup_only, out,
-    index_memory, claim_store and web_search. run.py wires the real modules in (task 1b).
+    index_memory, claim_store, open_claim_store and web_search. run.py wires the real modules in.
     """
 
     def __init__(self, banner, pick_menu, config, hardware, ollama, process, state, http, *,
                  project_dir, env_file, upgrade_state_file, setup_only=False, out=None,
-                 index_memory=None, claim_store=None, web_search=None):
+                 index_memory=None, claim_store=None, open_claim_store=None, web_search=None):
         self._banner = banner
         self.pick_menu = pick_menu
         self.config = config
@@ -66,6 +66,7 @@ class AppPorts:
         self._out = out if out is not None else _noop
         self.index_memory = index_memory if index_memory is not None else _noop
         self.claim_store = claim_store
+        self.open_claim_store = open_claim_store
         self.web_search = web_search
         self.os = os
         self.sys = sys

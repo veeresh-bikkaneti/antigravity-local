@@ -22,6 +22,19 @@ class ClaimStore:
         )
         self._conn.commit()
 
+    def close(self):
+        """Close the connection. A second call does nothing."""
+        conn = self._conn
+        self._conn = None
+        if conn is not None:
+            conn.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+
     def get_many(self, claims, context=""):
         """({original claim: result dict}, [uncached claims]). Expired rows are misses."""
         found, uncached = {}, []

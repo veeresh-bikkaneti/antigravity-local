@@ -84,7 +84,7 @@ verify_claims parameters, copied from the spec tool object. claims is a required
             },
 ```
 
-## Open vote
+## Chosen vote
 
 High (conf "high"): 3+ primary sources agree. Use "confirms", "establishes".
 Moderate (conf "mod"): 2 agreeing sources, or 1 primary source. Use "indicates", "suggests".

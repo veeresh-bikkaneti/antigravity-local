@@ -20,9 +20,28 @@ def unavailable(claim):
 
 def run_verifier_subagent(claims, context, *, ports):
     """One result per input claim, in that order. Cache hits are not checked again."""
-    found, misses = ports.claim_store.get_many(claims, context)
-    fresh = _resolve_misses(ports, misses, context) if misses else {}
-    return _in_order(claims, found, fresh)
+    store, owned = _open_cache(ports)
+    try:
+        if store is None:
+            return [unavailable(claim) for claim in claims]
+        found, misses = store.get_many(claims, context)
+        fresh = _resolve_misses(ports, store, misses, context) if misses else {}
+        return _in_order(claims, found, fresh)
+    finally:
+        if owned is not None:
+            owned.close()
+
+
+def _open_cache(ports):
+    """(store, owned). The caller closes owned. owned is None when the store was injected."""
+    store = ports.claim_store
+    if store is not None:
+        return store, None
+    opener = getattr(ports, "open_claim_store", None)
+    if opener is None:
+        return None, None
+    opened = opener()
+    return opened, opened
 
 
 def bind_verify_claims(ports):
@@ -46,17 +65,17 @@ def _in_order(claims, found, fresh):
     return rows
 
 
-def _resolve_misses(ports, misses, context):
+def _resolve_misses(ports, store, misses, context):
     packets = _search_some(ports, misses)
     if packets is None:
-        return _store_rows(ports, [unavailable(claim) for claim in misses], context)
+        return _store_rows(store, [unavailable(claim) for claim in misses], context)
     raw = ports.complete(system=VERIFIER_SYSTEM_PROMPT, user=_user_text(misses, packets, context))
     rows = _rows_for(misses, _parse_results(raw))
-    return _store_rows(ports, rows, context)
+    return _store_rows(store, rows, context)
 
 
-def _store_rows(ports, rows, context):
-    ports.claim_store.set_many(rows, context)
+def _store_rows(store, rows, context):
+    store.set_many(rows, context)
     return {row["claim"]: row for row in rows}
 
 
