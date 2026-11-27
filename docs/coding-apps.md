@@ -89,3 +89,7 @@ Sources: [Antigravity SDK local models](https://antigravity.google/docs/sdk/loca
 ## Not covered
 
 We did not re-check Cline steps today (the README still has them), and we found nothing for Claude Desktop or an Antigravity command-line tool called `agy`.
+
+## Web check (optional)
+
+You can also let the shell check a claim on the web. It uses a local SearXNG at `AGL_SEARXNG_URL` first. Tavily runs only if `TAVILY_API_KEY` is set and SearXNG is unset or out of reach. If neither is there, every claim is "Data not available." No model is pulled. Notes live in [mockups/verifier.md](mockups/verifier.md).

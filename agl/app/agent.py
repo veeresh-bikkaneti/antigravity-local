@@ -6,7 +6,9 @@ Collaborators are injected through `ports`.
 """
 import asyncio
 
+from agl.app.verifier import bind_verify_claims
 from agl.core.agent_config import receives_window
+from agl.core.verification_prompts import MAIN_SYSTEM_PROMPT
 
 MAX_SHELL_FAILURES = 3  # consecutive per-turn shell errors before the session stops; ports read this knob
 
@@ -120,6 +122,21 @@ async def _run_shell(model, agent_config, leave, *, ports, out, input_fn=None):
                     break
 
 
+def _shell_config(model, base_url, workspace_dir, policy, capabilities, ports):
+    """Config kwargs. system_instructions always. tools= only when capabilities is None."""
+    kwargs = {
+        "model": model,
+        "base_url": base_url,
+        "workspaces": [workspace_dir],
+        "policies": [policy.allow_all()],
+        "capabilities": capabilities,
+        "system_instructions": MAIN_SYSTEM_PROMPT,
+    }
+    if capabilities is None:
+        kwargs["tools"] = [bind_verify_claims(ports)]
+    return kwargs
+
+
 async def _run_agent_session(model, base_url, leave, *, ports, out, input_fn=None):
     """Run autonomous demonstration and interactive shell."""
     if ports._SETUP_ONLY:
@@ -158,13 +175,8 @@ async def _run_agent_session(model, base_url, leave, *, ports, out, input_fn=Non
     # Disable tools only if using Gemma under Ollama (which does not support Ollama tool schema)
     capabilities = CapabilitiesConfig(enabled_tools=[]) if "gemma" in model.lower() else None
 
-    agent_config = LocalOpenAIAgentConfig(
-        model=model,
-        base_url=base_url,
-        workspaces=[workspace_dir],
-        policies=[policy.allow_all()],
-        capabilities=capabilities,
-    )
+    agent_config = LocalOpenAIAgentConfig(**_shell_config(
+        model, base_url, workspace_dir, policy, capabilities, ports))
 
     out("=============================================================================")
     out(" ✨ System Online: Autonomous Agent Ready!")

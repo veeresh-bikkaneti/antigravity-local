@@ -41,13 +41,13 @@ class AppPorts:
 
     The constructor receives ONLY what import-linter forbids agl.app from importing - the ui
     modules (banner, pick_menu) and the platform modules (config, hardware, ollama, process,
-    state) - plus the shell state: project_dir, env_file, upgrade_state_file, setup_only, out
-    and index_memory. run.py wires the real modules in (task 1b).
+    state) - plus the shell state: project_dir, env_file, upgrade_state_file, setup_only, out,
+    index_memory, claim_store, open_claim_store and web_search. run.py wires the real modules in.
     """
 
     def __init__(self, banner, pick_menu, config, hardware, ollama, process, state, http, *,
                  project_dir, env_file, upgrade_state_file, setup_only=False, out=None,
-                 index_memory=None):
+                 index_memory=None, claim_store=None, open_claim_store=None, web_search=None):
         self._banner = banner
         self.pick_menu = pick_menu
         self.config = config
@@ -65,6 +65,9 @@ class AppPorts:
         self._SETUP_ONLY = setup_only
         self._out = out if out is not None else _noop
         self.index_memory = index_memory if index_memory is not None else _noop
+        self.claim_store = claim_store
+        self.open_claim_store = open_claim_store
+        self.web_search = web_search
         self.os = os
         self.sys = sys
         self.shutil = shutil
@@ -261,3 +264,36 @@ class AppPorts:
     def agent_sdk(self):
         sdk = self.sys.modules.get("google.antigravity")
         return sdk or getattr(__import__("google.antigravity"), "antigravity", None)
+
+    def complete(self, system, user):
+        """One local chat completion for the claim verifier. Never pulls a model."""
+        url = self.config.llm_base_url().rstrip("/") + "/chat/completions"
+        model, note = self.ollama.verifier_model(
+            self.os.environ, base_url=self.config.ollama_api_base(self.os.environ))
+        if note:
+            self._out(note)
+        reply = self.ollama.chat_json(url, _chat_body(model, system, user))
+        return _chat_text(reply)
+
+
+def _chat_body(model, system, user):
+    """The chat-completions body. stream is off so the reply is one JSON object."""
+    return {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        "stream": False,
+    }
+
+
+def _chat_text(reply):
+    """The assistant string, or empty when the payload is not a chat completion."""
+    try:
+        content = reply["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError):
+        return ""
+    if isinstance(content, str):
+        return content
+    return ""

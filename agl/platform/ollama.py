@@ -170,3 +170,24 @@ def chat_json(url, body, *, opener=None, timeout=60):
                                      headers={"Content-Type": "application/json", "Accept": "application/json"})
     with opener(request, timeout=timeout) as resp:
         return json.loads(resp.read().decode("utf-8"))
+
+
+def verifier_model(env, *, base_url=None, get_json=None):
+    """The local verifier tag, and a note when we fall back. Never pulls a model."""
+    named = (env.get("LOCAL_VERIFIER_MODEL") or "").strip()
+    main = env.get("LOCAL_LLM_MODEL") or ""
+    if not named:
+        return main, ""
+    if named.lower() in _installed_names(base_url, get_json):
+        return named, ""
+    used = main or "LOCAL_LLM_MODEL"
+    return main, f"The verifier model {named} is not installed. {used} is used."
+
+
+def _installed_names(base_url, get_json):
+    kwargs = {}
+    if base_url is not None:
+        kwargs["base_url"] = base_url
+    if get_json is not None:
+        kwargs["get_json"] = get_json
+    return installed_models(**kwargs)

@@ -356,11 +356,16 @@ Add `--config` to set an app up without starting it, for example `ollama launch 
 
 **The 64k context note.** Coding apps want a context window of 64k tokens. Stage 4 of the run checks it. If Ollama's window is smaller, set `OLLAMA_CONTEXT_LENGTH=65536` and restart Ollama. Stage 4 prints that command for you. It never changes your Ollama settings for you.
 
+## Web check (optional)
+
+Want a fact checked before you quote it? The shell asks a local SearXNG at `AGL_SEARXNG_URL` first. If that address is unset or SearXNG does not answer, Tavily is used only when `TAVILY_API_KEY` is set. If neither is available, every claim comes back as "Data not available." No model is pulled. Setup notes: [docs/mockups/verifier.md](docs/mockups/verifier.md).
+
 ## Table of contents
 0. [Serve it: search UI + API on a free port](#serve-it-search-ui--api-on-a-free-port-local-or-docker)
 0. [Play the setup as a game](#play-the-setup-as-a-game)
 1. [Use your local model from Antigravity or VS Code](#use-your-local-model-from-antigravity-or-vs-code)
 2. [Use your model in a coding app](#use-your-model-in-a-coding-app)
+2a. [Web check (optional)](#web-check-optional)
 3. [Run it with one command](#run-it-with-one-command)
 4. [What is Antigravity Local?](#what-is-this)
 5. [Prerequisites & model selection](#prerequisites-checklist)
