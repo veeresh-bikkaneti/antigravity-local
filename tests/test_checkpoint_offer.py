@@ -192,6 +192,26 @@ class CheckpointOfferTests(unittest.TestCase):
         self.assertTrue(any("Change   : trim " in line and " old Done steps" in line for line in self.lines))
         self.assertEqual(self._snapshot(), before)
 
+    def test_oversize_file_without_the_marker_is_fixed_in_one_run(self):
+        steps = [f"Step {i} " + "x" * 200 for i in range(500)]
+        original = ck.render({"Done": steps, "Next": ["Write the tests."]}, OLD).replace(ck.MARKER + "\n", "")
+        (self.ws / ".agl").mkdir()
+        path = self.ws / ".agl" / "checkpoint.md"
+        path.write_text(original, encoding="utf-8")
+        self._offer(["y"])
+        text = path.read_text(encoding="utf-8")
+        self.assertTrue(ck.is_ours(text))
+        self.assertLessEqual(ck.tokens(text), ck.CAP_TOKENS)
+        before = self._snapshot()
+        self._offer(["y"])
+        self.assertEqual(self._snapshot(), before)
+
+    def test_preview_says_an_empty_checkpoint_gets_the_template(self):
+        (self.ws / ".agl").mkdir()
+        (self.ws / ".agl" / "checkpoint.md").write_text("  \n\n", encoding="utf-8")
+        self._offer(["n"])
+        self.assertIn("       Change   : the file is empty, so it gets the starter template.", self.lines)
+
     def test_oversize_plan_keeps_every_done_step_writes_nothing_and_says_so(self):
         original = ck.render({"Plan": ["x" * 8000], "Done": [f"Step {i}" for i in range(5)],
                               "Next": ["Write the tests."]}, OLD)

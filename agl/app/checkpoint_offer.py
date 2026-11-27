@@ -50,6 +50,8 @@ def _ck_detail(plan, old):
     """The checkpoint change in words for the preview. Empty for a new file: the File line already shows it."""
     if old is None:
         return ""
+    if not old.strip():
+        return "the file is empty, so it gets the starter template"
     parts = []
     if plan.marker:
         parts.append("add the marker line (every other line stays)")

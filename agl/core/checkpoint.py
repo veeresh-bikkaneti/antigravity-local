@@ -126,13 +126,20 @@ def capped(text, updated):
 
 def fit(old, now):
     """The plan for the checkpoint file (`old` is None when there is no file yet), as a Fit. `text` is what to write and
-    equals `old` when nothing changes. `marker` is True when only our marker line is added and no line is removed.
-    `trimmed` counts the Done steps this run removes. `over_limit` is True when the file is over CAP_TOKENS and cannot
-    fit by trimming Done. Then `text` is `old`, and nothing is removed."""
+    equals `old` when nothing changes. `marker` is True when our marker line is added. A file that needs the marker and
+    is over CAP_TOKENS gets both in one run, so `marker` can come with `trimmed`. `trimmed` counts the Done steps this
+    run removes. `over_limit` is True when the file cannot fit by trimming Done. Then `text` is `old`, and nothing is
+    removed or added."""
     if old is None or not old.strip():
         return Fit(render(TEMPLATE, now), 0, False, False)
     if not is_ours(old):
-        return Fit(MARKER + "\n" + old, 0, True, False)
+        marked = MARKER + "\n" + old
+        if tokens(marked) <= CAP_TOKENS:
+            return Fit(marked, 0, True, False)
+        new, trimmed = _cap(marked, now)
+        if new is None:
+            return Fit(old, 0, False, True)
+        return Fit(new, trimmed, True, False)
     if tokens(old) <= CAP_TOKENS:
         return Fit(old, 0, False, False)
     new, trimmed = _cap(old, now)
