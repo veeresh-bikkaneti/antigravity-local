@@ -37,7 +37,7 @@ The model sees only the task and must return 2 to 8 short steps, one line each, 
 ```text
   1. Add health.html with one status line
   2. Add test_health.py that reads that file
-  3. Run the test you type at plan time
+  3. Link health.html from index.html
   4. Note both files in the checkpoint
   5. Leave a one-line note for the next session
 Accept this plan? [y/N] y
@@ -74,7 +74,7 @@ updated: 2026-11-27T12:00:00+00:00 (example)
 - The goal: a health page and a test that opens it.
 - [ ] Add health.html with one status line
 - [ ] Add test_health.py that reads that file
-- [ ] Run the test you type at plan time
+- [ ] Link health.html from index.html
 - [ ] Note both files in the checkpoint
 - [ ] Leave a one-line note for the next session
 
@@ -112,28 +112,41 @@ Add test_health.py that reads that file
 Agent > Done. You should run pytest now.
 Check failed. test_health.py is not in the file list.
 A command in the reply was not run.
-Retry, skip or stop? [r/s/S] r
+Retry, skip or stop? [r/s/q] r
 --- step 2 of 5 ---
 Add test_health.py that reads that file
 Agent > Wrote test_health.py.
 Check passed. test_health.py is new.
 Saved. Step 2 is done. Next is step 3.
 --- step 3 of 5 ---
-Run the test you type at plan time
+Link health.html from index.html
 ^C
 Interrupted on step 3. Steps 1 and 2 are saved.
 ```
 
-`r` retries the same step in a new chat. `s` skips it (marks it done and moves on). `S` and end of input both stop. The open step stays `[ ]`.
+`r` retries the same step in a new chat. `s` skips it. The step goes under Done as `- [x] (skipped) <step>`, and the runner moves on. `q` and end of input both stop. The open step stays `[ ]`.
 
 A stop from a failed check, as its own short scene:
 
 ```text
-Retry, skip or stop? [r/s/S]
+Retry, skip or stop? [r/s/q]
 Stopped. Step 2 is still open.
 ```
 
 That blank answer is end of input.
+
+A skip from a failed check, as its own short scene:
+
+```text
+Retry, skip or stop? [r/s/q] s
+Skipped. Step 2 is done. Next is step 3.
+```
+
+The skipped step is under Done:
+
+```markdown
+- [x] (skipped) Add test_health.py that reads that file
+```
 
 Ctrl+C lost only step 3. The checkpoint on disk already has steps 1 and 2 under Done, and your note is still there:
 
@@ -141,7 +154,7 @@ Ctrl+C lost only step 3. The checkpoint on disk already has steps 1 and 2 under 
 ## Plan
 
 - The goal: a health page and a test that opens it.
-- [ ] Run the test you type at plan time
+- [ ] Link health.html from index.html
 - [ ] Note both files in the checkpoint
 - [ ] Leave a one-line note for the next session
 
@@ -152,7 +165,7 @@ Ctrl+C lost only step 3. The checkpoint on disk already has steps 1 and 2 under 
 
 ## Next
 
-- [ ] Run the test you type at plan time
+- [ ] Link health.html from index.html
 
 ## Notes
 
@@ -164,8 +177,8 @@ Start the shell again. It offers resume. `y` runs step 3, then 4, then 5. Steps 
 ```text
 Resume at step 3 of 5? [y/N] y
 --- step 3 of 5 ---
-Run the test you type at plan time
-Agent > The test you typed finished with exit 0.
+Link health.html from index.html
+Agent > Linked health.html from index.html.
 Check passed.
 Saved. Step 3 is done. Next is step 4.
 --- step 4 of 5 ---
@@ -205,7 +218,7 @@ A step is sent only when system + checkpoint + step text + reply reserve is at m
 
 Left = window minus the four costs. 8K fits. Headroom is 4,803 tokens. Nothing needs a cut.
 
-Replace 665, and recompute Left, if your own measurement is not 665. Keep step text at 200 and the reply reserve at 1024, both inferred.
+Keep step text at 200 and the reply reserve at 1024, both inferred.
 
 ## 5. Sanity check
 
