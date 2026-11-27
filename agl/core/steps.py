@@ -17,6 +17,11 @@ def _items(text, section):
     return [item for item in checkpoint.parse(text)[1][section] if item != EMPTY]
 
 
+def _real_done(items):
+    """Done items without the two placeholders: "(none yet)" and the template's sample line."""
+    return [item for item in items if item not in (EMPTY, _EXAMPLE_DONE)]
+
+
 def _open(plan):
     return [item[len(OPEN):] for item in plan if item.startswith(OPEN)]
 
@@ -28,8 +33,7 @@ def open_steps(text):
 
 def done_steps(text):
     """The finished steps, oldest first. A skipped step keeps its "(skipped) " prefix."""
-    return [item[len(DONE):] for item in _items(text, "Done")
-            if item.startswith(DONE) and item != _EXAMPLE_DONE]
+    return [item[len(DONE):] for item in _real_done(_items(text, "Done")) if item.startswith(DONE)]
 
 
 def _trimmed(text):
@@ -53,15 +57,17 @@ def with_plan(text, steps, now):
     kept = [item for item in sections["Plan"] if item != EMPTY and not item.startswith((OPEN, DONE))]
     sections["Plan"] = kept + [OPEN + step for step in steps]
     sections["Next"] = [OPEN + steps[0]] if steps else []
+    sections["Done"] = _real_done(sections["Done"])  # gone before the cap can trim it and count it as a step
     return checkpoint.capped(checkpoint.render(sections, now), now)
 
 
 def mark_done(text, step, now, *, skipped=False):
     """`text` with `step` moved from Plan to Done, and Next on the next open step (or cleared)."""
     _, sections = checkpoint.parse(text)
-    sections["Plan"] = [item for item in sections["Plan"] if item != OPEN + step]
+    if OPEN + step in sections["Plan"]:
+        sections["Plan"].remove(OPEN + step)  # one box per call, so twin steps each get their turn
     finished = DONE + (SKIPPED if skipped else "") + step
-    sections["Done"] = [item for item in sections["Done"] if item != EMPTY] + [finished]
+    sections["Done"] = _real_done(sections["Done"]) + [finished]
     opened = _open(sections["Plan"])
     sections["Next"] = [OPEN + opened[0]] if opened else []
     return checkpoint.capped(checkpoint.render(sections, now), now)

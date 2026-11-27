@@ -72,6 +72,21 @@ class StepsTest(unittest.TestCase):
         for result in results:
             self.assertLessEqual(checkpoint.tokens(result), checkpoint.CAP_TOKENS)
 
+    def test_trimmed_sample_line_is_not_counted(self):
+        boxes = ["[ ] " + step for step in STEP_LIST]
+        sections = dict(checkpoint.TEMPLATE, Plan=checkpoint.TEMPLATE["Plan"] + boxes, Next=boxes[:1], Notes=[""])
+        pad = checkpoint.CAP_TOKENS * 4 + 20 - len(checkpoint.render(sections, "t"))
+        full = checkpoint.render(dict(sections, Notes=["x" * pad]), "t")  # just over the cap, sample line included
+        planned = steps.with_plan(full, STEP_LIST, "t")
+        self.assertEqual(steps.position(planned), (1, 5))
+        self.assertEqual(steps.position(steps.mark_done(full, STEP_LIST[0], "t")), (2, 5))
+
+    def test_duplicate_steps_are_marked_one_at_a_time(self):
+        text = steps.with_plan(checkpoint.render(checkpoint.TEMPLATE, "t"), ["Run tests", "Run tests"], "t")
+        text = steps.mark_done(text, "Run tests", "t")
+        self.assertEqual(steps.open_steps(text), ["Run tests"])
+        self.assertEqual(steps.position(text), (2, 2))
+
 
 if __name__ == "__main__":
     unittest.main()
