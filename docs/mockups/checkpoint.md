@@ -53,13 +53,15 @@ The pointer block goes into each app instruction file. It sits between two marke
 Before you start, read `.agl/checkpoint.md`. It holds the plan, what is done, and what is next.
 Before you stop, update it: plan, done, next, files, notes, and the `updated:` line.
 Keep it under about 1,500 tokens. If `HANDOFF.md` exists, read it too for extra context.
-Do not merge it into the checkpoint and do not rename it.
+Do not merge HANDOFF.md into the checkpoint and do not rename it.
 <!-- agl-checkpoint:end -->
 ```
 
 Rules for the pointer block:
 
-- A write happens only after a yes. A backup of the existing file is made first, the same way `agent_files` backs up config files.
+- The chosen app's file is always written: `AGENTS.md` for pi, opencode and codex, `CLAUDE.md` for Claude Code. If it is missing, the same yes creates it.
+- `.github/copilot-instructions.md` and `.continue/rules/` get a pointer only when they already exist. In `.continue/rules/` the block goes in `agl-checkpoint.md`.
+- A write happens only after a yes. A backup of each existing file is made first, the same way `agent_files` backs up config files.
 - A re-run finds the begin and end markers and replaces only what is between them. If only one marker is found, we stop and ask. We never guess.
 - The block names HANDOFF.md as extra reading. It never merges or renames it.
 
@@ -75,8 +77,9 @@ and so does the end of input. The lines use the same 7-space indent as the other
        Checkpoint: a short file your coding app reads first and updates before it stops.
        It keeps the plan, what is done, what is next, and the files you touched.
        File     : C:\projects\my-app\.agl\checkpoint.md
-       Pointers : CLAUDE.md, .github\copilot-instructions.md
-       Add a pointer block to each file that exists. We back up each file first.
+       Pointers : AGENTS.md (missing, will be created)
+                  .github\copilot-instructions.md, .continue\rules\ (found)
+       Add a pointer block for each. We back up each existing file first.
        The same yes also adds .agl/ to the project's .gitignore.
        Add the checkpoint file and the pointers? [y/N]
 ```
@@ -86,7 +89,7 @@ and so does the end of input. The lines use the same 7-space indent as the other
 ```text
        Checkpoint: already in place. Nothing to do.
        File     : C:\projects\my-app\.agl\checkpoint.md (up to date)
-       Pointers : CLAUDE.md, .github\copilot-instructions.md (all current)
+       Pointers : AGENTS.md, .github\copilot-instructions.md, .continue\rules\ (all current)
 ```
 
 ### 3c. User says no
@@ -99,6 +102,7 @@ and so does the end of input. The lines use the same 7-space indent as the other
 Notes on the text:
 
 - Every line in this section is 100 columns or fewer.
+- The Copilot and Continue pointers are listed only when found.
 - The paths are examples. Real output uses the user's own project folder.
 
 ## 4. Fact table
@@ -107,35 +111,23 @@ Each row says which file an app reads at start, where we read that, and how many
 
 | App | Instruction file it reads at start | Source link | Vote tag | Notes |
 |---|---|---|---|---|
-| opencode | AGENTS.md. Falls back to CLAUDE.md when a directory has no AGENTS.md | [opencode instructions](https://opencode.ai/docs/instructions/) | Low 1/3 | Page says: "In any directory without an `AGENTS.md`, OpenCode reads `CLAUDE.md` instead." Dropped: second source [sst/opencode](https://github.com/sst/opencode) lists AGENTS.md but does not say the app reads it. |
-| pi | AGENTS.md or CLAUDE.md, both recognized | [pi configuration](https://docs.pi.dev/latest/configuration.md) | Low 1/3 | Opened through a redirect from pi.dev. Page says context files load from the agent folder, the working folder, and its parents. It does not say when at startup. Dropped: second source [pi-mono](https://github.com/badlogic/pi-mono) says AGENTS.md is guidance for contributors, not a file the app loads. |
-| codex | AGENTS.md, one file per folder | [Codex AGENTS.md guide](https://learn.chatgpt.com/docs/agent-configuration/agents-md) | Low 1/3 | Opened through a redirect from developers.openai.com. Page says Codex reads AGENTS.md before doing any work. Dropped: second source [openai/codex](https://github.com/openai/codex) names no instruction file. |
-| Claude Code | CLAUDE.md. AGENTS.md can stand in for it | [Claude Code memory](https://code.claude.com/docs/en/memory) | Med 2/3 | Page says Claude can read a repository's AGENTS.md in place of CLAUDE.md. That AGENTS.md stand-in is single source, so it is not used. Second source [claude-code repo](https://github.com/anthropics/claude-code) names CLAUDE.md, but does not describe how it is loaded. |
+| opencode | AGENTS.md. Falls back to CLAUDE.md when a directory has no AGENTS.md | [opencode instructions](https://opencode.ai/docs/instructions/) | Moderate 1/1 primary | Page says: "In any directory without an `AGENTS.md`, OpenCode reads `CLAUDE.md` instead." The repo [sst/opencode](https://github.com/sst/opencode) is silent on this, which is not a conflict. |
+| pi | AGENTS.md or CLAUDE.md, both recognized | [pi configuration](https://docs.pi.dev/latest/configuration.md) | Moderate 1/1 primary | Opened through a redirect from pi.dev. Page says context files load from the agent folder, the working folder, and its parents. It does not say when at startup. The repo [pi-mono](https://github.com/badlogic/pi-mono) is silent on this, which is not a conflict. |
+| codex | AGENTS.md, one file per folder | [Codex AGENTS.md guide](https://learn.chatgpt.com/docs/agent-configuration/agents-md) | Moderate 1/1 primary | Opened through a redirect from developers.openai.com. Page says Codex reads AGENTS.md before doing any work. The repo [openai/codex](https://github.com/openai/codex) is silent on this, which is not a conflict. |
+| Claude Code | CLAUDE.md. AGENTS.md can stand in for it | [Claude Code memory](https://code.claude.com/docs/en/memory) | Med 2/3 | Page says Claude can read a repository's AGENTS.md in place of CLAUDE.md. The mockup does not use that stand-in: Claude Code gets `CLAUDE.md`. Second source [claude-code repo](https://github.com/anthropics/claude-code) names CLAUDE.md, but does not describe how it is loaded. |
 | VS Code Copilot | .github/copilot-instructions.md | [GitHub repository instructions](https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions) | Med 2/3 | Page says the nearest AGENTS.md wins for agent work. A single CLAUDE.md or GEMINI.md at the root is also accepted. Second source [VS Code custom instructions](https://code.visualstudio.com/docs/copilot/customization/custom-instructions) names .github/copilot-instructions.md. |
-| Continue | Markdown files in .continue/rules/ | [Continue rules](https://docs.continue.dev/customize/deep-dives/rules) | Low 1/3 | Page does not mention AGENTS.md. A third-party guide says Continue reads AGENTS.md too. That claim is not verified, so it is not used. Dropped: second source [continuedev/continue](https://github.com/continuedev/continue) does not name the rules folder. |
+| Continue | Markdown files in .continue/rules/ | [Continue rules](https://docs.continue.dev/customize/deep-dives/rules) | Moderate 1/1 primary | Page does not mention AGENTS.md. A third-party guide says Continue reads AGENTS.md too. That claim is not verified, so it is not used. The repo [continuedev/continue](https://github.com/continuedev/continue) is silent on this, which is not a conflict. |
 
 ### Legend
 
-- High 3/3: three independent sources, all opened, agree on the file name.
-- Med 2/3: two independent sources, all opened, agree.
-- Low 1/3: one source, opened. It names the file but needs a second source before code ships.
-- None: no source found.
+- Moderate 1/1 primary: one official docs page, opened, names the file. A repo that is silent is not a conflict.
+- Med 2/3: two sources, both opened, agree on the file name.
+- Low or None: no official docs page names the file. No row votes this.
 - `unverified` in the link cell means the page was not opened. No row uses it today.
 
-### Targets that vote Low or None
+### Pointer targets
 
-Four rows stayed at Low 1/3 after a second source was opened. Each is dropped from the pointer list, with the reason:
+No target is dropped.
 
-- opencode (Low 1/3, dropped): the GitHub repo lists AGENTS.md but does not say the app reads it.
-- pi (Low 1/3, dropped): the GitHub repo says AGENTS.md is for contributors, not for the app.
-- codex (Low 1/3, dropped): the GitHub repo names no instruction file.
-- Continue (Low 1/3, dropped): the GitHub repo does not name the rules folder. The `.continue\rules\` pointer is removed.
-
-AGENTS.md has no row left. Its three rows (opencode, pi, codex) are all dropped, so AGENTS.md is removed from the pointer list. Claude Code's AGENTS.md stand-in is single source, so it is not used either.
-
-Two rows reach Med 2/3, and they are the only pointer targets now:
-
-- Claude Code (Med 2/3): the claude-code repo names CLAUDE.md. This second source is weaker. It names the file but does not describe loading.
-- VS Code Copilot (Med 2/3): the VS Code page names `.github/copilot-instructions.md`. The VS Code side (`.instructions.md` files) is not covered by this mockup.
-
-No row reaches High 3/3. The pointer list in section 3 is CLAUDE.md and `.github\copilot-instructions.md`.
+- Chosen app's file, created if missing: `AGENTS.md` (pi, opencode, codex) or `CLAUDE.md` (Claude Code).
+- Only when already present: `.github/copilot-instructions.md` and `.continue/rules/`.
