@@ -45,7 +45,8 @@ def obj(parent, key, path):
 UNKNOWN_CONTEXT_WINDOW = 65536
 
 # window sources that may replace a window the user already has in the file; "default" is a guess
-TOLD_SOURCES = ("loaded", "env")
+# ("model" is the tag's own num_ctx, which Ollama uses unless a request sets one)
+TOLD_SOURCES = ("loaded", "model", "env")
 
 
 def _pos_int(value):
@@ -126,9 +127,8 @@ def agent_command(name, model, exe=None, prompt=None):
 
 
 def context_hint():
-    return ("Heads up: coding agents want a 64k+ token context. Ollama's default is smaller on most PCs "
-            "(4k below 24 GB of VRAM). Raise it in the Ollama app's settings, or start the server with "
-            "OLLAMA_CONTEXT_LENGTH=65536. We do not change your Ollama settings.")
+    return ("Heads up: coding agents want a 64k+ token window. Stage 4 says the window this model really "
+            "runs with and what this GPU can hold. We do not change your Ollama settings.")
 
 
 def same_folder(a, b):
@@ -151,15 +151,15 @@ def receives_window(name, config_only):
 
 
 def claude_context(environ, context_window):
-    """(tokens, warning or None). The window Ollama really runs with is what Claude Code must plan for."""
+    """(tokens, warning or None) when stage 4 could not read the real window. `context_window` is what the
+    caller would tell Claude Code; OLLAMA_CONTEXT_LENGTH, when set, is closer to the truth and wins."""
     raw = (environ.get("OLLAMA_CONTEXT_LENGTH") or "").strip()
     if raw.isdigit() and int(raw) > 0:
         n = int(raw)
         return n, (None if n >= context_window else
-                   f"OLLAMA_CONTEXT_LENGTH is {n}, below the 64k (65536) coding agents want.")
-    return context_window, ("OLLAMA_CONTEXT_LENGTH is not set in this terminal. Ollama's default window is 4096, "
-                            "so start the Ollama server with OLLAMA_CONTEXT_LENGTH=65536 (we assume 65536 here; if "
-                            "the server runs smaller, Claude Code will overrun it).")
+                   f"OLLAMA_CONTEXT_LENGTH is {n:,}, below the {context_window:,} coding agents want.")
+    return context_window, (f"Ollama's real window was not read, so Claude Code is told {context_window:,}. "
+                            "If Ollama runs a smaller window, Claude Code will overrun it.")
 
 
 def is_claude_key(name):

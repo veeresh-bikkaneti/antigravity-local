@@ -6,7 +6,7 @@ Imports app and core only (no platform, no root modules).
 import os
 import sys
 
-from agl.core.context_guard import GREEN_FROM, band
+from agl.core.window_fit import RUNGS
 
 HEADER_FLAG = "ANTIGRAVITY_HEADER_SHOWN"
 
@@ -118,43 +118,33 @@ def level_clear(model, agent, ready=None, *, ports=None, out=print) -> None:
         safe_print("\n" + "\n".join(coding_apps_mod.lines(model, base_url, backend)), out=out)
 
 
-_WORD = {"red": "RED", "amber": "AMBER", "green": "GREEN"}
-_VERDICT = {"red": "That is too small for coding apps.", "amber": "That is tight for coding apps.",
-            "green": "That is enough for coding apps."}
-_ADVICE = {"red": "Expect the app to forget parts of your task.",
-           "amber": "Keep tasks short and start a new chat often."}
-_PI_TOO_SMALL = "pi needs more than about 32,768 tokens. It will not work well here."
-_PI_TIGHT = "pi needs more than about 32,768 tokens; it may compact on every turn below that."
+def _article(tokens):
+    """'an' for numbers said with a vowel first (8,192, 11,000, 18,000), else 'a'."""
+    lead = f"{tokens:,}".split(",")[0]
+    return "an" if lead.startswith("8") or lead in ("11", "18") else "a"
 
 
-def _context_lines(tokens, source, told):
-    """The context check as plain lines (no prefix). Pure: the caller reads the window and prints."""
-    colour = band(tokens)
-    lines = []
-    if source == "loaded":
-        lines.append(f"{_WORD[colour]}: the model can hold {tokens:,} tokens at once. {_VERDICT[colour]}")
-        lines.append("Source: Ollama reported this for the loaded model.")
-        if colour in _ADVICE:
-            lines.append(_ADVICE[colour])
-        if colour == "red":
-            lines.append(_PI_TOO_SMALL)
-        elif colour == "amber" and tokens <= 32768:
-            lines.append(_PI_TIGHT)
+def _context_lines(tag, tokens, source, target, trained, told):
+    """Stage 4 as plain lines (no prefix), worded as docs/mockups/real-window.md. Pure: the caller reads
+    the window, the target (0: nothing fits, None: not read) and the trained max, then prints."""
+    tag = tag or "The model"
+    if source == "default":
+        lines = [f"{tag} runs with Ollama's default {tokens:,} tokens."]
     else:
-        lines.append("NOT CHECKED: Ollama is not running, or the model is not loaded yet.")
-        lines.append(f"{_WORD[colour]} (a guess): {tokens:,} tokens.")
-        lines.append("Source: OLLAMA_CONTEXT_LENGTH in this terminal." if source == "env"
-                     else "Source: Ollama's usual size for your graphics memory.")
-        lines.append("The real size may be different. Run this again once the model is loaded.")
+        lines = [f"{tag} runs with {_article(tokens)} {tokens:,} token window."]
+    if target == 0:
+        lines.append(f"This GPU cannot fit an {RUNGS[0]:,} window on top of the weights.")
+        lines.append("No copy. A long prompt can use /steps.")
+    elif target is None:
+        lines.append("Free GPU memory or the model's shape was not read, so there is no target.")
+    elif trained and tokens >= trained:
+        lines.append("That is as high as this model goes. A bigger copy will not help.")
+    elif tokens >= target:
+        lines.append(f"That covers the {target:,} this GPU can give. No copy needed.")
+    else:
+        lines.append(f"Coding agents want about {target:,} on this GPU.")
     if told:
         lines.append(f"The coding app we set up is told: {tokens:,}.")
-    if colour != "green":
-        lines.append("For more room, raise the context length in the Ollama app settings,")
-        lines.append("or start the server with:")
-        lines.append(f"bash:       OLLAMA_CONTEXT_LENGTH={GREEN_FROM} ollama serve")
-        lines.append(f"PowerShell: $env:OLLAMA_CONTEXT_LENGTH={GREEN_FROM}; ollama serve")
-        lines.append("A bigger window uses more GPU memory; if the model no longer fits, try 32768.")
-        lines.append("We do not change your Ollama settings.")
     return lines
 
 
@@ -172,7 +162,9 @@ def context_check(interactive, ask=None, *, model=None, base_url=None, told=Fals
     if env.get("LOCAL_LLM_BACKEND") == "openai":
         return None
     tokens, source = live(model, base_url or "", env)
-    for line in _context_lines(tokens, source, told):
+    aim = getattr(agent_setup, "window_target", None)
+    target, trained = aim(model, base_url or "", env) if aim else (None, None)
+    for line in _context_lines(model, tokens, source, target, trained, told):
         out(f"       {line}")
     return tokens, source
 

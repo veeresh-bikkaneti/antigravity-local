@@ -23,7 +23,7 @@ from pathlib import Path
 
 from agl.app import agent_session, checkpoint_offer, vscode_chat
 from agl.core import agent_config as core_config
-from agl.core import context_guard, vscode_models
+from agl.core import context_guard, vscode_models, window_fit
 from agl.core.agent_config import AgentSetupError
 from agl.platform import agent_files, agent_proc, config, hardware, ollama, ollama_live, vscode_files
 
@@ -192,9 +192,28 @@ def claude_context(environ):  # decision in agl.core.agent_config
 def live_window(model, base_url, environ=None):  # reads Ollama now; the rule is in agl.core.context_guard
     """(tokens, source) for the window Ollama really runs, read now."""
     env = os.environ if environ is None else environ
-    rows = ollama_live.loaded_models(core_config.claude_base_url(base_url, config.OLLAMA_BASE_URL))
+    root = core_config.claude_base_url(base_url, config.OLLAMA_BASE_URL)
+    rows = ollama_live.loaded_models(root)
     vram = hardware.get_hardware_profile()["vram_gb"]
-    return context_guard.real_window(rows, model, env.get("OLLAMA_CONTEXT_LENGTH"), vram)
+    return context_guard.real_window(rows, model, env.get("OLLAMA_CONTEXT_LENGTH"), vram, ollama.show(model, root))
+
+
+def window_target(model, base_url, environ=None):  # reads Ollama and the GPU now; the rule is in agl.core.window_fit
+    """(target, trained max) for this model on this GPU. target 0: no window fits; None: a reading is missing."""
+    env = os.environ if environ is None else environ
+    root = core_config.claude_base_url(base_url, config.OLLAMA_BASE_URL)
+    shown = ollama.show(model, root)
+    info = ollama.installed_info(root)
+    name = (model or "").strip().lower()
+    row = info.get(name) or info.get(f"{name}:latest") or {}
+    weight = row["size_gb"] * 1e9 if row.get("size_gb") else None
+    loaded = sum(r.get("size_vram") or 0 for r in ollama_live.loaded_models(root)
+                 if isinstance(r.get("size_vram"), int) and context_guard.same_model(r.get("name"), model))
+    free, known = hardware.get_free_vram_gb()
+    trained = context_guard.trained_max(shown)
+    per_token = window_fit.kv_bytes_per_token((shown or {}).get("model_info"), env.get("OLLAMA_KV_CACHE_TYPE"))
+    room = window_fit.room_gib(free, weight, loaded) if known else None
+    return window_fit.target_window(room, per_token, trained), trained
 
 
 def offer_vscode(result, model, base_url, workspace, input_fn=None, out=print):

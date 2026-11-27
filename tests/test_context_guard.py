@@ -12,7 +12,7 @@ import agent_setup as ags  # noqa: E402
 
 from agl.app import agent  # noqa: E402
 from agl.core import agent_config as core_config  # noqa: E402
-from agl.core.context_guard import band, real_window  # noqa: E402
+from agl.core.context_guard import band, model_window, real_window, same_model, trained_max  # noqa: E402
 from agl.ui import banner  # noqa: E402
 
 
@@ -192,30 +192,83 @@ class ToldOnlyWhenWrittenTests(unittest.TestCase):
 
 
 class BannerTextTests(unittest.TestCase):
-    """The stage 4 banner text: the fix lines show below green, and the pi line follows the window size."""
+    """The stage 4 lines match docs/mockups/real-window.md word for word."""
 
-    PI_NEW = "pi needs more than about 32,768 tokens; it may compact on every turn below that."
+    def test_running_window_already_covers_the_target(self):
+        self.assertEqual(banner._context_lines("qwen2.5:14b-omb-32k", 32768, "model", 16384, 131072, False), [
+            "qwen2.5:14b-omb-32k runs with a 32,768 token window.",
+            "That covers the 16,384 this GPU can give. No copy needed.",
+        ])
 
-    def test_fix_lines_shown_below_green(self):
-        lines = banner._context_lines(8192, "loaded", False)
-        self.assertIn("bash:       OLLAMA_CONTEXT_LENGTH=65536 ollama serve", lines)
-        self.assertIn("PowerShell: $env:OLLAMA_CONTEXT_LENGTH=65536; ollama serve", lines)
-        self.assertIn("A bigger window uses more GPU memory; if the model no longer fits, try 32768.", lines)
+    def test_running_window_is_the_trained_max(self):
+        self.assertEqual(banner._context_lines("qwen2.5:14b", 8192, "loaded", 8192, 8192, False), [
+            "qwen2.5:14b runs with an 8,192 token window.",
+            "That is as high as this model goes. A bigger copy will not help.",
+        ])
 
-    def test_pi_line_for_tight_windows(self):
-        for tokens in (16384, 32768):
-            text = "\n".join(banner._context_lines(tokens, "loaded", False))
-            self.assertIn(self.PI_NEW, text, tokens)
-            self.assertNotIn("It will not work well here", text, tokens)
+    def test_default_is_under_the_target(self):
+        self.assertEqual(banner._context_lines("qwen2.5:14b", 4096, "default", 16384, 131072, False), [
+            "qwen2.5:14b runs with Ollama's default 4,096 tokens.",
+            "Coding agents want about 16,384 on this GPU.",
+        ])
 
-    def test_pi_line_for_small_window(self):
-        text = "\n".join(banner._context_lines(8192, "loaded", False))
-        self.assertIn("It will not work well here", text)
-        self.assertNotIn(self.PI_NEW, text)
+    def test_no_rung_fits(self):
+        self.assertEqual(banner._context_lines("qwen2.5:14b", 4096, "default", 0, 131072, False), [
+            "qwen2.5:14b runs with Ollama's default 4,096 tokens.",
+            "This GPU cannot fit an 8,192 window on top of the weights.",
+            "No copy. A long prompt can use /steps.",
+        ])
 
-    def test_no_pi_line_above_32768(self):
-        lines = banner._context_lines(32769, "loaded", False)
-        self.assertFalse(any(line.startswith("pi needs") for line in lines))
+    def test_target_not_read(self):
+        lines = banner._context_lines("qwen2.5:14b", 4096, "default", None, None, True)
+        self.assertEqual(lines[1], "Free GPU memory or the model's shape was not read, so there is no target.")
+        self.assertEqual(lines[2], "The coding app we set up is told: 4,096.")
+
+    def test_no_server_restart_or_band_words(self):
+        for target in (0, None, 16384):
+            text = "\n".join(banner._context_lines("m", 4096, "default", target, None, False))
+            for word in ("OLLAMA_CONTEXT_LENGTH", "ollama serve", "RED", "AMBER", "GREEN", "65536", "65,536"):
+                self.assertNotIn(word, text, (target, word))
+
+    def test_article_before_the_number(self):
+        for tokens, word in ((8192, "an"), (11000, "an"), (18000, "an"), (80000, "an"),
+                             (16384, "a"), (32768, "a"), (1000, "a")):
+            self.assertEqual(banner._article(tokens), word, tokens)
+
+
+class ModelWindowTests(unittest.TestCase):
+    """The model's own num_ctx sits between the loaded row and the env var (Ollama's read order)."""
+
+    SHOWN = {"parameters": "stop \"<|im_end|>\"\nnum_ctx 32768\ntemperature 0.7"}
+
+    def test_model_num_ctx_beats_env_and_default(self):
+        self.assertEqual(real_window([], "demo:1b", "8192", 8, self.SHOWN), (32768, "model"))
+
+    def test_loaded_row_beats_model_num_ctx(self):
+        rows = [{"name": "demo:1b", "context_length": 16384}]
+        self.assertEqual(real_window(rows, "demo:1b", None, 8, self.SHOWN), (16384, "loaded"))
+
+    def test_no_num_ctx_falls_through(self):
+        shown = {"parameters": "temperature 0.7"}
+        self.assertEqual(real_window([], "demo:1b", "8192", 8, shown), (8192, "env"))
+        self.assertEqual(real_window([], "demo:1b", None, 8, {}), (4096, "default"))
+        self.assertEqual(real_window([], "demo:1b", None, 8, None), (4096, "default"))
+
+    def test_junk_num_ctx_is_ignored(self):
+        for params in ("num_ctx", "num_ctx abc", "num_ctx -5", "num_ctx 0", "num_ctx 1.5", "num_ctx \u0663", 7, None):
+            self.assertIsNone(model_window({"parameters": params}), repr(params))
+        self.assertIsNone(model_window("not a dict"))
+
+    def test_trained_max(self):
+        self.assertEqual(trained_max({"model_info": {"qwen2.context_length": 131072}}), 131072)
+        for info in ({}, {"qwen2.context_length": "131072"}, {"qwen2.context_length": True}, None, [1]):
+            self.assertIsNone(trained_max({"model_info": info}), repr(info))
+        self.assertIsNone(trained_max(None))
+
+    def test_same_model(self):
+        self.assertTrue(same_model("demo", "demo:latest"))
+        self.assertFalse(same_model("demo:1b", "demo"))
+        self.assertFalse(same_model(None, None))
 
 
 if __name__ == "__main__":

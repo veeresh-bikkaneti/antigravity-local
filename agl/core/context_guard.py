@@ -1,7 +1,7 @@
 """Context window guard, pure core: which context window is real, and which band it falls in.
 
 Standard library only. No I/O, no env reads, no imports from the platform, app or ui layers.
-The caller passes in the loaded-model rows, the raw env value and the graphics memory.
+The caller passes in the loaded-model rows, the /api/show dict, the raw env value and the graphics memory.
 """
 
 import math
@@ -29,6 +29,11 @@ def _canonical_name(name):
     return name or None
 
 
+def same_model(a, b):
+    """True when two tags name the same model ('x' and 'x:latest' do)."""
+    return _canonical_name(a) is not None and _canonical_name(a) == _canonical_name(b)
+
+
 def _is_window(value):
     """A context length is a positive int. Bools, strings and floats are not."""
     return isinstance(value, int) and not isinstance(value, bool) and value > 0
@@ -49,13 +54,7 @@ def _loaded_window(loaded_rows, model):
 
 def _env_window(env_value):
     """A plain ASCII positive integer in the env value, or None."""
-    if not isinstance(env_value, str):
-        return None
-    text = env_value.strip()
-    if not (text.isascii() and text.isdigit()):
-        return None
-    value = int(text)
-    return value if value > 0 else None
+    return _text_int(env_value)
 
 
 def _gib_number(vram_gib):
@@ -75,11 +74,40 @@ def _default_window(vram_gib):
     return DEFAULT_CONTEXT_LARGE
 
 
-def real_window(loaded_rows, model, env_value, vram_gib):
-    """Return (tokens, source). Source is "loaded", "env" or "default", tried in that order."""
+def _text_int(text):
+    """A plain ASCII positive integer in a string, or None."""
+    text = text.strip() if isinstance(text, str) else ""
+    return int(text) if text.isascii() and text.isdigit() and int(text) > 0 else None
+
+
+def model_window(shown):
+    """The model's own num_ctx from an /api/show dict ("parameters" is "name value" lines), or None."""
+    params = shown.get("parameters") if isinstance(shown, dict) else None
+    for line in params.splitlines() if isinstance(params, str) else []:
+        name, _, value = line.strip().partition(" ")
+        if name == "num_ctx":
+            return _text_int(value)
+    return None
+
+
+def trained_max(shown):
+    """The longest window the model was trained for: the model_info key ending in ".context_length"."""
+    info = shown.get("model_info") if isinstance(shown, dict) else None
+    for key, value in info.items() if isinstance(info, dict) else []:
+        if isinstance(key, str) and key.endswith(".context_length") and _is_window(value):
+            return value
+    return None
+
+
+def real_window(loaded_rows, model, env_value, vram_gib, shown=None):
+    """Return (tokens, source). Source is "loaded", "model", "env" or "default", tried in that order.
+    `shown` is the /api/show dict; the model's own num_ctx beats the env var (Ollama's read order)."""
     tokens = _loaded_window(loaded_rows, model)
     if tokens is not None:
         return tokens, "loaded"
+    tokens = model_window(shown)
+    if tokens is not None:
+        return tokens, "model"
     tokens = _env_window(env_value)
     if tokens is not None:
         return tokens, "env"

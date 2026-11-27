@@ -241,7 +241,7 @@
 
         <li class="step" id="step-3" data-step="3" data-focus="repo">
           <h3>Clone the repo and run setup</h3>
-          <p>One command runs five stages: ENVIRONMENT (a private Python folder for this project, plus the packages), SERVER (checks Ollama), MODEL (one numbered list, where Enter keeps your model and a typo just asks again), CONTEXT (reads the context window Ollama really loaded and grades it RED under 16K, AMBER up to 64K, or GREEN at 64K and up, printing the fix when it is not green) and LAUNCH. Then a LEVEL CLEAR box sums up the model, the agent and the log file. A better model that fits shows up as a recommended upgrade row in the same numbered list, and your current model is marked with a <code>*</code>. If no model is installed, it asks before it downloads one (about 9 GB for the 14B model).</p>
+          <p>One command runs five stages: ENVIRONMENT (a private Python folder for this project, plus the packages), SERVER (checks Ollama), MODEL (one numbered list, where Enter keeps your model and a typo just asks again), CONTEXT (says the window your model really runs with, and the largest window this GPU can hold on top of the weights) and LAUNCH. Then a LEVEL CLEAR box sums up the model, the agent and the log file. A better model that fits shows up as a recommended upgrade row in the same numbered list, and your current model is marked with a <code>*</code>. If no model is installed, it asks before it downloads one (about 9 GB for the 14B model).</p>
           <div class="code"><pre><code>git clone https://github.com/veeresh-bikkaneti/antigravity-local.git
 cd antigravity-local
 python run.py</code></pre><button class="copy" type="button" aria-label="Copy the three setup commands">Copy</button></div>
