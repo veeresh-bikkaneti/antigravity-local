@@ -54,7 +54,7 @@ def _ck_detail(plan, old):
         return "the file is empty, so it gets the starter template"
     parts = []
     if plan.marker:
-        parts.append("add the marker line (every other line stays)")
+        parts.append("add the marker line" + ("" if plan.trimmed else " (every other line stays)"))
     if plan.trimmed:
         parts.append(f"trim {plan.trimmed} old Done steps to keep it under about {ck.CAP_TOKENS:,} tokens")
     return "; ".join(parts) or "refresh the updated: line"

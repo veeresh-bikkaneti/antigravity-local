@@ -202,6 +202,13 @@ class CheckpointOfferTests(unittest.TestCase):
         text = path.read_text(encoding="utf-8")
         self.assertTrue(ck.is_ours(text))
         self.assertLessEqual(ck.tokens(text), ck.CAP_TOKENS)
+        self.assertTrue(any("Change   : add the marker line; trim " in line for line in self.lines))
+        self.assertFalse(any("every other line stays" in line for line in self.lines))
+        backups = [p for p in path.parent.iterdir() if ".bak-antigravity-local" in p.name]
+        self.assertTrue(any(p.read_text(encoding="utf-8") == original for p in backups))
+        self.assertIn("Write the tests.", text)
+        self.assertIn("Step 499 ", text)
+        self.assertNotIn("Step 0 ", text)
         before = self._snapshot()
         self._offer(["y"])
         self.assertEqual(self._snapshot(), before)
