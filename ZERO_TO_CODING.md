@@ -230,6 +230,10 @@ Launch with `--with-memory` to prepend the top 2 most relevant project memory ch
 python code_agent.py --workspace ./workspace --with-memory
 ```
 
+### Step mode: `/steps <task>`
+
+Got a task too big for the window? In the shell, type `/steps <task>`. It makes a plan of 2 to 8 steps, and you type `y` to start. Each step runs in a fresh chat, so the model only sees the checkpoint and that step. Quit whenever you like: the next start offers to resume. You can also type a test command after the plan; a step passes only when the model says yes and the test exits 0.
+
 ---
 
 ## 5. Start coding: one-shot autonomous task CLI

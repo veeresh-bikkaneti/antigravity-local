@@ -358,6 +358,7 @@ python run.py</code></pre><button class="copy" type="button" aria-label="Copy th
         <p>VS Code's built-in Ollama provider is deprecated. Use the official Ollama extension instead.</p>
         <p>When you run <code>python run.py --agent ...</code>, stage 4 asks once whether to add a VS Code Chat model entry with the real context window. Nothing is written unless you answer y, and an existing file is backed up first.</p>
         <p>The same stage 4 step can also offer a shared checkpoint file, <code>.agl/checkpoint.md</code>, that your coding app reads first and updates before it stops, and nothing is written unless you answer y.</p>
+        <p>Got a task too big for the window? Type <code>/steps &lt;task&gt;</code> in the built-in shell. You get a plan of 2 to 8 steps, and each step runs in a fresh chat. Quit whenever you like, and the next start offers to resume. An optional test command must exit 0 before a step counts as done.</p>
         <ol>
           <li>Update VS Code (1.127 or newer) and Ollama (0.17.6 or newer recommended).</li>
           <li>Install the extension with the ID <code>Ollama.ollama</code>.</li>

@@ -358,6 +358,10 @@ Add `--config` to set an app up without starting it, for example `ollama launch 
 
 **The 64k context note.** Coding apps want a context window of 64k tokens. Stage 4 of the run checks it. If Ollama's window is smaller, set `OLLAMA_CONTEXT_LENGTH=65536` and restart Ollama. Stage 4 prints that command for you. It never changes your Ollama settings for you.
 
+## Step mode: `/steps <task>` in the shell
+
+Big task, small model? Type `/steps <task>` and the shell splits it into 2 to 8 steps. You type `y` to accept the plan. Each step runs in a fresh chat, so the model sees only the checkpoint and that one step. Quit any time: the next start offers to resume at the first open step. Optional: type a test command after the plan, and a step passes only when the model says yes and the test exits 0. The test command is kept for that run only and is asked again on resume.
+
 ## Web check (optional)
 
 Want a fact checked before you quote it? The shell asks a local SearXNG at `AGL_SEARXNG_URL` first. If that address is unset or SearXNG does not answer, Tavily is used only when `TAVILY_API_KEY` is set. If neither is available, every claim comes back as "Data not available." No model is pulled. Setup notes: [docs/mockups/verifier.md](docs/mockups/verifier.md).

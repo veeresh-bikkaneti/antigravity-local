@@ -86,6 +86,10 @@ Any OpenAI-style client works.
 
 Sources: [Antigravity SDK local models](https://antigravity.google/docs/sdk/local-models/), [Ollama pi guide](https://docs.ollama.com/integrations/pi), [Ollama VS Code guide](https://docs.ollama.com/integrations/vscode) [High]. Checked 2026-11-18.
 
+## Step mode: `/steps <task>`
+
+Type `/steps <task>` in the built-in shell to walk a long task one step at a time. The plan waits for your `y`. Each step runs in a fresh chat, so a small window never fills with old turns. The checkpoint keeps what is done, and the next start offers to resume. An optional test command, typed after the plan, must exit 0 before a step counts as done. It is kept for that run only.
+
 ## Shared checkpoint file
 
 Long tasks can outgrow a coding app's window, and switching models can drop the plan. So stage 4 can offer one shared file for every app: `.agl/checkpoint.md` in your project. It keeps the plan, what is done, what is next, the files you touched, and a few notes. It is capped near 1,500 tokens, and when it grows past that, the oldest finished steps get trimmed first. The next step is never dropped.

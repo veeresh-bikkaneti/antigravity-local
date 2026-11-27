@@ -19,7 +19,7 @@ _SETUP_ONLY = False
 
 def build_ports():
     """One explicit ports object per call: run globals are read here, at call time."""
-    from agl.platform import claim_store, web_search
+    from agl.platform import claim_store, step_io, web_search
     return app_ports.AppPorts(
         banner,
         pick_menu,
@@ -37,7 +37,7 @@ def build_ports():
         index_memory=memory.index_for_probe, claim_store=None,
         open_claim_store=lambda: claim_store.ClaimStore(
             os.path.join(PROJECT_DIR, ".claim_cache.sqlite")),
-        web_search=web_search,
+        web_search=web_search, step_io=step_io,
     )
 
 def parse_args(argv=None):

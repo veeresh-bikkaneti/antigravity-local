@@ -6,6 +6,7 @@ Collaborators are injected through `ports`.
 """
 import asyncio
 
+from agl.app import step_shell
 from agl.app.verifier import bind_verify_claims
 from agl.core.agent_config import receives_window
 from agl.core.verification_prompts import MAIN_SYSTEM_PROMPT
@@ -77,8 +78,8 @@ async def _run_demo(agent_config, workspace_dir, *, ports, out):
         out(f"\n⚠️ Demo notice: {exc}\n")
 
 
-async def _run_shell(model, agent_config, leave, *, ports, out, input_fn=None):
-    """Interactive Agent Shell."""
+async def _run_shell(model, agent_config, leave, *, ports, out, input_fn=None, workspace=None, window=None):
+    """Interactive Agent Shell. `/steps <task>` runs step mode (agl/app/step_shell.py)."""
     sdk = _get_sdk(ports)
     Agent = getattr(sdk, "Agent")
 
@@ -90,7 +91,11 @@ async def _run_shell(model, agent_config, leave, *, ports, out, input_fn=None):
     out("💡 Example prompts to try:")
     out("   - 'What files are in this repository?'")
     out("   - 'Create a python script called calculator.py with basic math functions.'")
-    out("   - 'Create about.html, a small page with a heading and one paragraph.'\n")
+    out("   - 'Create about.html, a small page with a heading and one paragraph.'")
+    out("   - '/steps <task>' walks a long task one step at a time, each in a fresh chat.\n")
+    steps_kw = {"new_agent": lambda: Agent(agent_config), "workspace": workspace,
+                "window": step_shell.window_from(window), "ports": ports, "out": out, "input_fn": _input}
+    await _resume(steps_kw, out)
 
     failures = 0  # consecutive per-turn errors; a dead backend must not loop forever
     async with Agent(agent_config) as agent:
@@ -104,6 +109,9 @@ async def _run_shell(model, agent_config, leave, *, ports, out, input_fn=None):
                     leave["left"] = True
                     break
 
+                if step_shell.is_steps(user_input):
+                    await step_shell.handle(user_input, **steps_kw)
+                    continue
                 out("\nAgent > ", end="", flush=True)
                 response = await agent.chat(user_input)
                 async for chunk in response:
@@ -120,6 +128,14 @@ async def _run_shell(model, agent_config, leave, *, ports, out, input_fn=None):
                 if failures >= ports.MAX_SHELL_FAILURES:
                     out(f"Stopping after {failures} errors in a row. Check that Ollama is running.\n")
                     break
+
+
+async def _resume(steps_kw, out):
+    """Offer to finish open checkpoint steps before the first prompt. Ctrl+C here just skips the offer."""
+    try:
+        await step_shell.offer_resume(**steps_kw)
+    except (KeyboardInterrupt, EOFError):
+        out("")
 
 
 def _shell_config(model, base_url, workspace_dir, policy, capabilities, ports):
@@ -143,7 +159,7 @@ async def _run_agent_session(model, base_url, leave, *, ports, out, input_fn=Non
         _setup_only_path(model, base_url, ports=ports, out=out)
         return
     ports.stage(4, 5, "CONTEXT", "check the context window the coding agent needs")
-    ports.context_check(interactive=True, model=model, base_url=base_url)
+    checked = ports.context_check(interactive=True, model=model, base_url=base_url)
     ports.stage(5, 5, "LAUNCH", "start the agent")
     ports.level_clear(model, "built-in shell")
 
@@ -186,7 +202,8 @@ async def _run_agent_session(model, base_url, leave, *, ports, out, input_fn=Non
     out("=============================================================================\n")
 
     await _run_demo(agent_config, workspace_dir, ports=ports, out=out)
-    await _run_shell(model, agent_config, leave, ports=ports, out=out, input_fn=input_fn)
+    await _run_shell(model, agent_config, leave, ports=ports, out=out, input_fn=input_fn,
+                     workspace=workspace_dir, window=checked)
 
 
 async def run_agent(model, base_url, *, ports, out, input_fn=None):
