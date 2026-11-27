@@ -139,7 +139,7 @@ A skip from a failed check, as its own short scene:
 
 ```text
 Retry, skip or stop? [r/s/q] s
-Skipped. Step 2 is done. Next is step 3.
+Skipped step 2. Next is step 3.
 ```
 
 The skipped step is under Done:
