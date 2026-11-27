@@ -7,6 +7,7 @@ temp-file dance lives here. `shutil`/`tempfile` are platform-only imports, so th
 import json
 import os
 import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 
@@ -97,6 +98,16 @@ def read_text_if_exists(path):
 
 def write_text(path, text):
     path.write_text(text, encoding="utf-8")
+
+
+def git_tracks(workspace, rel):
+    """True when git tracks `rel` in `workspace`. No git, or no repo, counts as not tracked."""
+    try:
+        done = subprocess.run(["git", "ls-files", "--error-unmatch", "--", rel], cwd=str(workspace),
+                              capture_output=True, timeout=30, check=False)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return done.returncode == 0
 
 
 def backup_path(target):

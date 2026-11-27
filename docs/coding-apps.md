@@ -86,6 +86,20 @@ Any OpenAI-style client works.
 
 Sources: [Antigravity SDK local models](https://antigravity.google/docs/sdk/local-models/), [Ollama pi guide](https://docs.ollama.com/integrations/pi), [Ollama VS Code guide](https://docs.ollama.com/integrations/vscode) [High]. Checked 2026-11-18.
 
+## Shared checkpoint file
+
+Long tasks can outgrow a coding app's window, and switching models can drop the plan. So stage 4 can offer one shared file for every app: `.agl/checkpoint.md` in your project. It keeps the plan, what is done, what is next, the files you touched, and a few notes. It is capped near 1,500 tokens, and when it grows past that, the oldest finished steps get trimmed first. The next step is never dropped.
+
+Say y at the stage 4 question and we do three things, after showing you what will change:
+
+1. Create or update `.agl/checkpoint.md`.
+2. Add a short pointer block (between two marker lines, so we can find it again) to each instruction file that applies: `AGENTS.md` (created if missing), plus `CLAUDE.md`, `.github/copilot-instructions.md`, or `.continue/rules/` when they already exist.
+3. Add `.agl/` to your `.gitignore`.
+
+Anything we did not write gets a backup first. Your own lines outside the pointer block stay exactly as they are. A second run with y changes no bytes. Say n, or press Enter, and nothing is written.
+
+If git already tracks `.agl/checkpoint.md`, we refuse and write nothing, because notes in there would be committed. The fix is to run `git rm --cached .agl/checkpoint.md` (this keeps your file), then run the offer again. `HANDOFF.md` is separate: the pointer tells the app it can read `HANDOFF.md` as extra reading, and we never merge or rename it.
+
 ## Not covered
 
 We did not re-check Cline steps today (the README still has them), and we found nothing for Claude Desktop or an Antigravity command-line tool called `agy`.
