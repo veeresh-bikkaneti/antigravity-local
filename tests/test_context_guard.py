@@ -1,3 +1,4 @@
+import json
 import sys
 import tempfile
 import unittest
@@ -104,7 +105,7 @@ class LiveWindowWiringTests(unittest.TestCase):
 
     def test_pi_models_corrects_an_existing_window_and_keeps_other_keys(self):
         data = {"providers": {"ollama": {"models": [{"id": "m1", "contextWindow": 4096, "name": "keep me"}]}}}
-        core_config.pi_models(data, "m1", "http://h:11434/v1", "models.json", 65536)
+        core_config.pi_models(data, "m1", "http://h:11434/v1", "models.json", 65536, source="loaded")
         entry = data["providers"]["ollama"]["models"][0]
         self.assertEqual(entry["contextWindow"], 65536)
         self.assertEqual(entry["name"], "keep me")
@@ -122,6 +123,49 @@ class LiveWindowWiringTests(unittest.TestCase):
         limit = data["provider"]["ollama"]["models"]["m1"]["limit"]
         self.assertEqual(limit["context"], 32768)
         self.assertEqual(limit["output"], 1000)
+
+    def test_default_guess_keeps_an_existing_window(self):
+        pi = {"providers": {"ollama": {"models": [{"id": "m1", "contextWindow": 65536}]}}}
+        core_config.pi_models(pi, "m1", "http://h:11434/v1", "models.json", 4096, source="default")
+        self.assertEqual(pi["providers"]["ollama"]["models"][0]["contextWindow"], 65536)
+        oc = {"provider": {"ollama": {"models": {"m1": {"name": "m1", "limit": {"context": 65536}}}}}}
+        core_config.opencode(oc, "m1", "http://h:11434/v1", "opencode.json", "schema", 4096, source="default")
+        self.assertEqual(oc["provider"]["ollama"]["models"]["m1"]["limit"]["context"], 65536)
+
+    def test_loaded_or_env_window_replaces_the_existing_one(self):
+        for source in ("loaded", "env"):
+            pi = {"providers": {"ollama": {"models": [{"id": "m1", "contextWindow": 65536}]}}}
+            core_config.pi_models(pi, "m1", "http://h:11434/v1", "models.json", 8192, source=source)
+            self.assertEqual(pi["providers"]["ollama"]["models"][0]["contextWindow"], 8192, source)
+            oc = {"provider": {"ollama": {"models": {"m1": {"name": "m1", "limit": {"context": 65536}}}}}}
+            core_config.opencode(oc, "m1", "http://h:11434/v1", "opencode.json", "schema", 8192, source=source)
+            self.assertEqual(oc["provider"]["ollama"]["models"]["m1"]["limit"]["context"], 8192, source)
+
+    def test_opencode_output_is_clamped_to_the_window(self):
+        big = {"provider": {"ollama": {"models": {"m1": {"name": "m1", "limit": {"output": 50000}}}}}}
+        core_config.opencode(big, "m1", "http://h:11434/v1", "opencode.json", "schema", 8192, source="loaded")
+        self.assertEqual(big["provider"]["ollama"]["models"]["m1"]["limit"]["output"], 8192)
+        fresh = {"provider": {"ollama": {}}}
+        core_config.opencode(fresh, "m1", "http://h:11434/v1", "opencode.json", "schema", 1024, source="loaded")
+        self.assertEqual(fresh["provider"]["ollama"]["models"]["m1"]["limit"]["output"], 256)
+        # the window the app really uses is the 65536 already in the file, so 50000 still fits
+        kept = {"provider": {"ollama": {"models": {"m1": {"name": "m1", "limit": {"context": 65536, "output": 50000}}}}}}
+        core_config.opencode(kept, "m1", "http://h:11434/v1", "opencode.json", "schema", 4096, source="default")
+        self.assertEqual(kept["provider"]["ollama"]["models"]["m1"]["limit"]["output"], 50000)
+
+    def test_setup_run_passes_the_source_to_the_pi_file(self):
+        for source, window, expected in (("default", 4096, 65536), ("loaded", 8192, 8192)):
+            with tempfile.TemporaryDirectory() as tmp:
+                home = Path(tmp)
+                models = home / ".pi" / "agent" / "models.json"
+                models.parent.mkdir(parents=True)
+                models.write_text(json.dumps({"providers": {"ollama": {"models": [{"id": "m1", "contextWindow": 65536}]}}}),
+                                  encoding="utf-8")
+                code = ags.run("pi", "m1", "http://h:11434/v1", tmp, config_only=True, home=home, environ={},
+                               out=lambda *a: None, window_of=lambda *a: (window, source))
+                written = json.loads(models.read_text(encoding="utf-8"))
+            self.assertEqual(code, 0)
+            self.assertEqual(written["providers"]["ollama"]["models"][0]["contextWindow"], expected, source)
 
 
 class ToldOnlyWhenWrittenTests(unittest.TestCase):

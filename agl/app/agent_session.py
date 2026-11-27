@@ -101,7 +101,7 @@ def setup_run(name, model, base_url, workspace, *, config_only=False, home=None,
             window, source = window_of(model, base_url, env)
         if window is not None and receives_window(name, config_only):
             out(f"       Context  : the app is told {window:,} tokens (source: {source}).")
-        window_kwargs = {} if window is None else {"window": window}
+        window_kwargs = {} if window is None else {"window": window, "source": source}
         result = write_config(name, model, base_url, home=home, **window_kwargs)
         _report_result(out, name, model, endpoint_of(base_url) if name == "claude" else base_url,
                        env.get("LOCAL_LLM_BACKEND"), result, backup_suffix, hint)

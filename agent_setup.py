@@ -106,7 +106,7 @@ def ensure_agent(name, which=None, input_fn=None, call=None, node_version=None, 
 
 # ---------- config merging ----------
 
-def write_config(name, model, base_url, home=None, window=None):  # this module's own shell
+def write_config(name, model, base_url, home=None, window=None, source=None):  # this module's own shell
     """Merge our Ollama block into the agent's config. Plans every file first, so a broken file stops us
     before anything is written. A file whose parsed content would not change is left exactly as it is."""
     validate_model_tag(model)
@@ -122,7 +122,7 @@ def write_config(name, model, base_url, home=None, window=None):  # this module'
         return Result(command=core_config.agent_command("codex", model), notes=notes)
 
     plans = []
-    for path, merge in core_config.targets(name, home, window, OPENCODE_SCHEMA):
+    for path, merge in core_config.targets(name, home, window, OPENCODE_SCHEMA, source):
         data, text = agent_files.load(path)
         before = json.loads(text) if text is not None else None
         merge(data, model, base_url, path)
