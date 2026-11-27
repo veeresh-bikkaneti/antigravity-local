@@ -1,5 +1,6 @@
 """Tests for agl.core.checkpoint: the template, pointer block, cap and .gitignore rule. Pure, no files touched."""
 
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -9,6 +10,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from agl.core import checkpoint as ck  # noqa: E402
 
 NOW = "2026-11-27T10:00:00+00:00"
+
+
+def _steps_note(text):
+    return int(re.search(r"\((\d+) earlier steps trimmed", text).group(1))
 
 
 class CheckpointCoreTests(unittest.TestCase):
@@ -57,12 +62,30 @@ class CheckpointCoreTests(unittest.TestCase):
             "Done": [f"Step {i} " + "x" * 200 for i in range(500)],
             "Next": ["Write the tests."],
         }
-        text = ck.capped(sections, NOW)
+        text = ck.capped(ck.render(sections, NOW), NOW)
         self.assertLessEqual(ck.tokens(text), ck.CAP_TOKENS)
         self.assertIn("- Write the tests.", text)
         self.assertIn("earlier steps trimmed", text)
         self.assertIn("- Step 499 ", text)
         self.assertEqual(ck.next_text(text, NOW), text)
+
+    def test_capped_keeps_unknown_sections_and_free_text(self):
+        text = ck.render({"Done": [f"Step {i} " + "x" * 200 for i in range(500)], "Next": ["Write the tests."]}, NOW)
+        text = text.replace("## Notes", "## Scratch\n\n- my own list\n\nFree line that stays.\n\n## Notes")
+        trimmed = ck.capped(text, NOW)
+        self.assertLessEqual(ck.tokens(trimmed), ck.CAP_TOKENS)
+        self.assertIn("## Scratch\n\n- my own list\n\nFree line that stays.", trimmed)
+        self.assertIn("- Write the tests.", trimmed)
+        self.assertIn("- Step 499 ", trimmed)
+        self.assertNotIn("- Step 0 ", trimmed)
+
+    def test_capped_counts_trimmed_steps_across_runs(self):
+        text = ck.render({"Done": [f"Step {i} " + "x" * 200 for i in range(500)]}, NOW)
+        first = ck.capped(text, NOW)
+        more = first.replace("## Next", "".join(f"- Later {i} " + "y" * 200 + "\n" for i in range(50)) + "\n## Next")
+        second = ck.capped(more, NOW)
+        self.assertLessEqual(ck.tokens(second), ck.CAP_TOKENS)
+        self.assertGreater(_steps_note(second), _steps_note(first))
 
     def test_with_ignore_adds_agl_once(self):
         once = ck.with_ignore("node_modules/")

@@ -4,13 +4,15 @@ The file is `.agl/checkpoint.md` in the user's project. Every coding app reads i
 stops. The layout and wording come from docs/mockups/checkpoint.md. Reads and writes live in agl.app.checkpoint_offer.
 """
 
+import re
+
 MARKER = "<!-- agl-checkpoint v1 -->"
 BEGIN = "<!-- agl-checkpoint:begin -->"
 END = "<!-- agl-checkpoint:end -->"
 SECTIONS = ("Plan", "Done", "Next", "Files", "Notes")
 CAP_TOKENS = 1500  # the C3 target from docs/handover/SPECS.md. It is inferred, not measured.
 CHARS_PER_TOKEN = 4  # a rough count: about 4 characters per token
-ONE_LINE = 160
+TRIM_NOTE = re.compile(r"^- \((\d+) earlier steps trimmed to keep this file small\)$")
 IGNORE_LINE = ".agl/"
 IGNORE_FORMS = (".agl", ".agl/", "/.agl", "/.agl/")
 
@@ -68,22 +70,46 @@ def parse(text):
     return updated, sections
 
 
-def _one_line(item):
-    flat = " ".join(str(item).split())
-    return flat if len(flat) <= ONE_LINE else flat[: ONE_LINE - 3] + "..."
+def _done_header(lines):
+    return next((i for i, line in enumerate(lines) if line.strip() == "## Done"), None)
 
 
-def capped(sections, updated):
-    """The checkpoint text, trimmed to stay under CAP_TOKENS. Each item becomes one line first. Then the oldest
-    Done steps go, with a note saying how many. Plan and Next are never dropped."""
-    clean = {name: [_one_line(i) for i in sections.get(name, [])] for name in SECTIONS}
-    done, dropped = clean["Done"], 0
-    while True:
-        note = [f"({dropped} earlier steps trimmed to keep this file small)"] if dropped else []
-        text = render(dict(clean, Done=note + done), updated)
-        if tokens(text) <= CAP_TOKENS or not done:
-            return text
-        done, dropped = done[1:], dropped + 1
+def _done_end(lines, start):
+    return next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+
+
+def capped(text, updated):
+    """`text` (a checkpoint file) with the oldest Done steps removed until it fits CAP_TOKENS. Every other line stays
+    as it was: unknown sections, free text, Plan, Next, Files and Notes. The `updated:` line becomes `updated`.
+    A note under Done counts the steps dropped so far. If no Done step is left to drop, `text` comes back unchanged."""
+    lines = [f"updated: {updated}" if line.startswith("updated: ") else line for line in text.splitlines()]
+    dropped, start = 0, _done_header(lines)
+    if start is not None:  # fold an earlier note into the running count
+        i = start + 1
+        while i < _done_end(lines, start):
+            m = TRIM_NOTE.match(lines[i])
+            if m:
+                dropped += int(m.group(1))
+                del lines[i]
+            else:
+                i += 1
+
+    def build(count):
+        body = list(lines)
+        if count and start is not None:
+            body.insert(start + 1, f"- ({count} earlier steps trimmed to keep this file small)")
+        return "\n".join(body) + ("\n" if text.endswith("\n") else "")
+
+    trimmed = 0
+    while start is not None and tokens(build(dropped + trimmed)) > CAP_TOKENS:
+        step = next((j for j in range(start + 1, _done_end(lines, start)) if lines[j].startswith("- ")), None)
+        if step is None:
+            break
+        del lines[step]
+        trimmed += 1
+    if not trimmed:
+        return text
+    return build(dropped + trimmed)
 
 
 def next_text(old, now):
@@ -92,7 +118,7 @@ def next_text(old, now):
         return render(TEMPLATE, now)
     if tokens(old) <= CAP_TOKENS:
         return old
-    return capped(parse(old)[1], now)
+    return capped(old, now)
 
 
 def merge_pointer(text):

@@ -1,18 +1,23 @@
 """Tests for agl.app.checkpoint_offer: the yes-gated checkpoint file and pointer blocks, run only in temp folders."""
 
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from agl.app import checkpoint_offer  # noqa: E402
 from agl.core import checkpoint as ck  # noqa: E402
+from agl.core.agent_config import AgentSetupError  # noqa: E402
 from agl.platform import agent_files  # noqa: E402
 
 NOW = "2026-11-27T10:00:00+00:00"
+OLD = "2026-11-26T10:00:00+00:00"
 USER_LINES = "# My rules\n\nAlways write tests first.\n"
+RULES_FILE = str(Path(".continue", "rules", "agl-checkpoint.md"))
 
 
 class _RecordingFiles:
@@ -52,9 +57,10 @@ class CheckpointOfferTests(unittest.TestCase):
 
         return fake
 
-    def _offer(self, answers):
+    def _offer(self, answers, app="pi"):
         checkpoint_offer.offer(
             str(self.ws),
+            app=app,
             files=self.files,
             is_tracked=lambda ws, rel: self.tracked,
             input_fn=self._input(answers),
@@ -122,6 +128,80 @@ class CheckpointOfferTests(unittest.TestCase):
         self._offer(["y"])
         self.assertEqual(self.prompts, [])
         self.assertEqual(self._snapshot(), before)
+
+    def test_claude_gets_claude_md_created_and_agents_md_is_not_made(self):
+        self._offer(["y"], app="claude")
+        self.assertIn(ck.POINTER, (self.ws / "CLAUDE.md").read_text(encoding="utf-8"))
+        self.assertFalse((self.ws / "AGENTS.md").exists())
+
+    def test_pi_does_not_edit_an_existing_claude_md(self):
+        (self.ws / "CLAUDE.md").write_text(USER_LINES, encoding="utf-8")
+        self._offer(["y"], app="pi")
+        self.assertEqual((self.ws / "CLAUDE.md").read_text(encoding="utf-8"), USER_LINES)
+        self.assertIn(ck.POINTER, (self.ws / "AGENTS.md").read_text(encoding="utf-8"))
+
+    def test_every_file_that_will_be_written_is_shown_before_the_yes(self):
+        (self.ws / ".continue" / "rules").mkdir(parents=True)
+        self._offer(["n"])
+        self.assertTrue(any(RULES_FILE in line and "missing, will be created" in line for line in self.lines))
+        self.assertFalse((self.ws / ".continue" / "rules" / "agl-checkpoint.md").exists())
+
+    def test_oversize_checkpoint_is_backed_up_and_unknown_lines_survive(self):
+        steps = [f"Step {i} " + "x" * 200 for i in range(500)]
+        original = ck.render({"Plan": ["Ship C3."], "Done": steps, "Next": ["Write the tests."]}, OLD)
+        original = original.replace("## Notes", "## Scratch\n\n- my own list\n\nFree line that stays.\n\n## Notes")
+        (self.ws / ".agl").mkdir()
+        (self.ws / ".agl" / "checkpoint.md").write_text(original, encoding="utf-8")
+        self._offer(["y"])
+        new = (self.ws / ".agl" / "checkpoint.md").read_text(encoding="utf-8")
+        backups = [p for p in (self.ws / ".agl").iterdir() if ".bak-antigravity-local" in p.name]
+        self.assertTrue(any(p.read_text(encoding="utf-8") == original for p in backups))
+        self.assertIn("## Scratch\n\n- my own list\n\nFree line that stays.", new)
+        self.assertIn("- Write the tests.", new)
+        self.assertIn(f"updated: {NOW}", new)
+        self.assertLessEqual(ck.tokens(new), ck.CAP_TOKENS)
+
+
+class GitTracksTests(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.ws = Path(self._tmp.name)
+
+    def test_folder_outside_git_is_untracked(self):
+        self.assertFalse(agent_files.git_tracks(self.ws, ".agl/checkpoint.md"))
+
+    def test_real_repo_reports_tracked_and_untracked(self):
+        subprocess.run(["git", "init", "-q"], cwd=str(self.ws), check=True, capture_output=True)
+        (self.ws / ".agl").mkdir()
+        (self.ws / ".agl" / "checkpoint.md").write_text("x", encoding="utf-8")
+        self.assertFalse(agent_files.git_tracks(self.ws, ".agl/checkpoint.md"))
+        subprocess.run(["git", "add", ".agl/checkpoint.md"], cwd=str(self.ws), check=True, capture_output=True)
+        self.assertTrue(agent_files.git_tracks(self.ws, ".agl/checkpoint.md"))
+
+    def test_git_error_inside_a_repo_refuses(self):
+        (self.ws / ".git").mkdir()
+        failed = subprocess.CompletedProcess(args=["git"], returncode=128)
+        with mock.patch.object(agent_files.subprocess, "run", return_value=failed):
+            with self.assertRaises(AgentSetupError) as ctx:
+                agent_files.git_tracks(self.ws, ".agl/checkpoint.md")
+        self.assertIn("git status", str(ctx.exception))
+
+    def test_git_missing_inside_a_repo_refuses(self):
+        (self.ws / ".git").mkdir()
+        with mock.patch.object(agent_files.subprocess, "run", side_effect=OSError("git not found")):
+            with self.assertRaises(AgentSetupError):
+                agent_files.git_tracks(self.ws, ".agl/checkpoint.md")
+
+    def test_unknown_tracking_refuses_and_writes_nothing(self):
+        def unknown(ws, rel):
+            raise AgentSetupError("Could not check whether git tracks .agl/checkpoint.md. Fix: make `git status` work.")
+
+        lines = []
+        checkpoint_offer.offer(str(self.ws), app="pi", files=_RecordingFiles(), is_tracked=unknown,
+                               input_fn=lambda prompt: "y", out=lines.append, now=NOW)
+        self.assertEqual(list(self.ws.iterdir()), [])
+        self.assertTrue(any("Not changed" in line and "git status" in line for line in lines))
 
 
 if __name__ == "__main__":

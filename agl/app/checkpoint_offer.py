@@ -11,9 +11,11 @@ from collections import namedtuple
 from pathlib import Path
 
 from agl.core import checkpoint as ck
+from agl.core.agent_config import AgentSetupError
 
 CHECKPOINT = Path(".agl") / "checkpoint.md"
 GITIGNORE = Path(".gitignore")
+RULES_FILE = Path(".continue") / "rules" / "agl-checkpoint.md"
 QUESTION = "       Add the checkpoint file and the pointers? [y/N] "
 Change = namedtuple("Change", "path old new kind shown")
 
@@ -26,19 +28,25 @@ def _yes(input_fn, prompt):
     return answer.strip().lower() in ("y", "yes")
 
 
-def _targets(ws):
-    """(path, shown name) for each instruction file that gets our pointer block. AGENTS.md is always one."""
-    found = [(ws / "AGENTS.md", "AGENTS.md")]
-    for name in ("CLAUDE.md", Path(".github") / "copilot-instructions.md"):
-        if (ws / name).is_file():
-            found.append((ws / name, str(name)))
-    rules = ws / ".continue" / "rules"
-    if rules.is_dir():
-        found.append((rules / "agl-checkpoint.md", str(Path(".continue", "rules")) + os.sep))
+def _targets(ws, app):
+    """(path, shown name) for each instruction file that gets our pointer block. The chosen app's file is always
+    one: CLAUDE.md for Claude Code, AGENTS.md for pi, opencode and codex. The others only when they already exist."""
+    name = "CLAUDE.md" if app == "claude" else "AGENTS.md"
+    found = [(ws / name, name)]
+    copilot = Path(".github") / "copilot-instructions.md"
+    if (ws / copilot).is_file():
+        found.append((ws / copilot, str(copilot)))
+    if (ws / ".continue" / "rules").is_dir():
+        shown = str(RULES_FILE) if not (ws / RULES_FILE).is_file() else str(Path(".continue", "rules")) + os.sep
+        found.append((ws / RULES_FILE, shown))
     return found
 
 
-def _plan(ws, files, stamp):
+def _status(existed):
+    return "found" if existed else "missing, will be created"
+
+
+def _plan(ws, files, stamp, app):
     """(changes, rows, broken). rows holds (shown, existed) per pointer file. Nothing is written here."""
     changes, rows = [], []
     ck_path = ws / CHECKPOINT
@@ -46,7 +54,7 @@ def _plan(ws, files, stamp):
     new = ck.next_text(old, stamp)
     if new != old:
         changes.append(Change(ck_path, old, new, "checkpoint", str(CHECKPOINT)))
-    for path, shown in _targets(ws):
+    for path, shown in _targets(ws, app):
         old = files.read_text_if_exists(path)
         rows.append((shown, old is not None))
         try:
@@ -74,10 +82,13 @@ def _show(ck_path, changes, rows, out):
     out("       It keeps the plan, what is done, what is next, and the files you touched.")
     out(f"       File     : {ck_path}")
     (first_shown, first_existed), *others = rows
-    out(f"       Pointers : {first_shown} ({'found' if first_existed else 'missing, will be created'})")
+    out(f"       Pointers : {first_shown} ({_status(first_existed)})")
     found = [shown for shown, existed in others if existed]
     if found:
         out(" " * 18 + ", ".join(found) + " (found)")
+    for shown, existed in others:
+        if not existed:
+            out(" " * 18 + f"{shown} ({_status(existed)})")
     if any(c.kind == "pointer" for c in changes):
         out("       Add a pointer block for each. We back up each existing file first.")
     if any(c.kind == "ignore" for c in changes):
@@ -85,7 +96,7 @@ def _show(ck_path, changes, rows, out):
 
 
 def _write(change, files, out):
-    backed_up = change.old is not None and (change.kind != "checkpoint" or not ck.is_ours(change.old))
+    backed_up = change.old is not None
     try:
         if backed_up:
             files.copy2(change.path, files.backup_path(change.path))
@@ -101,18 +112,24 @@ def _write(change, files, out):
         out(f"       Updated: {change.path}")
 
 
-def offer(workspace, *, files, is_tracked, input_fn, out, now=None):
-    """Ask once. A yes writes the checkpoint file, adds our pointer block to each instruction file that applies,
-    and adds .agl/ to .gitignore. Anything else writes nothing."""
+def offer(workspace, *, app, files, is_tracked, input_fn, out, now=None):
+    """Ask once. A yes writes the checkpoint file, adds our pointer block to the chosen app's file (created if
+    missing) and to each other instruction file that already exists, and adds .agl/ to .gitignore. Anything else
+    writes nothing. `app` is the agent name: claude, pi, opencode or codex."""
     ws = Path(workspace)
     ck_path = ws / CHECKPOINT
-    if is_tracked(ws, CHECKPOINT.as_posix()):
+    try:
+        tracked = is_tracked(ws, CHECKPOINT.as_posix())
+    except AgentSetupError as e:
+        out(f"       Not changed: {e}")
+        return
+    if tracked:
         out(f"       Not changed: {ck_path} is already tracked by git, so notes in it would be committed. "
             f"Run `git rm --cached {CHECKPOINT.as_posix()}` (this keeps your file), add .agl/ to .gitignore, "
             "then run this again. Nothing was written.")
         return
     stamp = now or datetime.datetime.now().astimezone().isoformat(timespec="seconds")
-    changes, rows, broken = _plan(ws, files, stamp)
+    changes, rows, broken = _plan(ws, files, stamp, app)
     if broken:
         out(f"       Not changed: {broken} has only one of our two marker lines, or more than one. "
             "Fix that by hand, then run this again. Nothing was written.")

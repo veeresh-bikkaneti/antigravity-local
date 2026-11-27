@@ -203,10 +203,10 @@ def _offer_vscode(agent_setup, result, model, base_url, workspace, *, out):
         offer(result, model, base_url, workspace, out=out)
 
 
-def _offer_checkpoint(agent_setup, workspace, *, out):
+def _offer_checkpoint(agent_setup, workspace, app, *, out):
     offer = getattr(agent_setup, "offer_checkpoint", None)
     if offer is not None:
-        offer(workspace, out=out)
+        offer(workspace, app=app, out=out)
 
 
 def handle_agent(args, model, base_api, interactive, *, ports, out):
@@ -248,7 +248,7 @@ def handle_agent(args, model, base_api, interactive, *, ports, out):
     result = ports.context_check(interactive=interactive, model=model, base_url=base_api, told=told)
     if interactive:
         _offer_vscode(agent_setup, result, model, base_api, workspace, out=out)
-        _offer_checkpoint(agent_setup, workspace, out=out)
+        _offer_checkpoint(agent_setup, workspace, args.agent, out=out)
     ports.level_clear(model, args.agent)
     ports.sys.exit(
         agent_setup.run(

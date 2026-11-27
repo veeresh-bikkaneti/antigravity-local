@@ -100,13 +100,26 @@ def write_text(path, text):
     path.write_text(text, encoding="utf-8")
 
 
+def _unknown_tracking(rel, why):
+    return (f"Could not check whether git tracks {rel} ({why}), and this folder is inside a git repo. "
+            "We did not change anything. Fix: make `git status` work in this folder (for dubious ownership, run "
+            "`git config --global --add safe.directory <this folder>`), then run this again.")
+
+
 def git_tracks(workspace, rel):
-    """True when git tracks `rel` in `workspace`. No git, or no repo, counts as not tracked."""
-    try:
-        done = subprocess.run(["git", "ls-files", "--error-unmatch", "--", rel], cwd=str(workspace),
-                              capture_output=True, timeout=30, check=False)
-    except (OSError, subprocess.SubprocessError):
+    """True when git tracks `rel` in `workspace`, False when it does not. A folder outside any git repo is untracked.
+    Inside a repo, when git cannot answer (git missing, dubious ownership, any other error), raise AgentSetupError:
+    we cannot tell, so we refuse rather than guess."""
+    folder = Path(workspace).resolve()
+    if not any((p / ".git").exists() for p in (folder, *folder.parents)):
         return False
+    try:
+        done = subprocess.run(["git", "ls-files", "--error-unmatch", "--", rel], cwd=str(folder),
+                              capture_output=True, timeout=30, check=False)
+    except (OSError, subprocess.SubprocessError) as e:
+        raise AgentSetupError(_unknown_tracking(rel, f"git did not run: {e}"))
+    if done.returncode not in (0, 1):  # 1 means git ran and the file is not in the index
+        raise AgentSetupError(_unknown_tracking(rel, f"git exited with code {done.returncode}"))
     return done.returncode == 0
 
 

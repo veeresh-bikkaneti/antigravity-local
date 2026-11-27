@@ -218,10 +218,11 @@ def offer_vscode(result, model, base_url, workspace, input_fn=None, out=print):
     )
 
 
-def offer_checkpoint(workspace, input_fn=None, out=print):
-    """After the VS Code offer: offer the shared checkpoint file and pointer blocks. Steps: agl.app.checkpoint_offer."""
+def offer_checkpoint(workspace, app, input_fn=None, out=print):
+    """After the VS Code offer: offer the checkpoint file and pointer blocks for the chosen app (agl.app.checkpoint_offer)."""
     checkpoint_offer.offer(
         workspace,
+        app=app,
         files=agent_files,
         is_tracked=agent_files.git_tracks,
         input_fn=input_fn or input,
