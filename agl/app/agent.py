@@ -6,7 +6,7 @@ Collaborators are injected through `ports`.
 """
 import asyncio
 
-from agl.app import step_shell
+from agl.app import big_prompt, step_shell
 from agl.app.verifier import bind_verify_claims
 from agl.core.agent_config import receives_window
 from agl.core.verification_prompts import MAIN_SYSTEM_PROMPT
@@ -112,6 +112,8 @@ async def _run_shell(model, agent_config, leave, *, ports, out, input_fn=None, w
                 if step_shell.is_steps(user_input):
                     await step_shell.handle(user_input, **steps_kw)
                     continue
+                if not await _big_prompt_sent(user_input, window, steps_kw):
+                    continue
                 out("\nAgent > ", end="", flush=True)
                 response = await agent.chat(user_input)
                 async for chunk in response:
@@ -128,6 +130,15 @@ async def _run_shell(model, agent_config, leave, *, ports, out, input_fn=None, w
                 if failures >= ports.MAX_SHELL_FAILURES:
                     out(f"Stopping after {failures} errors in a row. Check that Ollama is running.\n")
                     break
+
+
+async def _big_prompt_sent(user_input, window, steps_kw):
+    """True when the prompt goes to the chat. Over the window the shell asks first (big_prompt.ask)."""
+    choice = big_prompt.ask(user_input, big_prompt.known_window(window),
+                            input_fn=steps_kw["input_fn"], out=steps_kw["out"])
+    if choice == big_prompt.STEPS:
+        await step_shell.handle(f"{step_shell.COMMAND} {user_input}", **steps_kw)
+    return choice == big_prompt.SEND
 
 
 async def _resume(steps_kw, out):
