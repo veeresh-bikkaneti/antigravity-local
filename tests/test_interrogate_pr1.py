@@ -226,6 +226,12 @@ def _resp(body, link=""):
 
 
 class HfApi(unittest.TestCase):
+    def setUp(self):
+        # hf_tree_files on a network error sets model_wizard._STATE["offline"]; give each test its own dict.
+        patcher = mock.patch.object(model_wizard, "_STATE", {"offline": False})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def tree(self, responses):
         """hf_tree_files with urlopen replaying `responses` (a response, or an exception to raise). Returns (files, urls)."""
         seen, it = [], iter(responses)
@@ -509,6 +515,19 @@ class GateInRun(unittest.TestCase):
             self.assertIsInstance(cmd, list)
             self.assertEqual(cmd[:2], ["ollama", "pull"])
             self.assertEqual(len(cmd), 3)
+
+
+class HubStateIsolation(unittest.TestCase):
+    def test_unreachable_hub_flag_from_an_hf_test_does_not_reach_a_gate_run(self):
+        # HfApi's unreachable test sets model_wizard._STATE["offline"]; a later GateInRun case must not see it.
+        hf = HfApi("test_unreachable_hf_gives_empty_list")
+        hf.setUp()
+        try:
+            hf.test_unreachable_hf_gives_empty_list()
+        finally:
+            hf.doCleanups()
+        gate = GateInRun("test_zero_free_vram_on_a_known_gpu_asks_and_picks_a_split_quant")
+        gate.test_zero_free_vram_on_a_known_gpu_asks_and_picks_a_split_quant()
 
 
 class MainNeverCrashes(unittest.TestCase):
