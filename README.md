@@ -277,6 +277,7 @@ claude-local() {
 ```bash
 python run.py handoff                    # newest transcript for this project
 python run.py handoff --session <id>     # or a specific session (or --transcript <file.jsonl>)
+python run.py handoff --from-checkpoint  # any coding app: build it from .agl/checkpoint.md instead
 python run.py handoff --install-hook     # opt in: write it automatically when a rate limit hits or before a compaction
 python run.py --agent pi --continue-local   # start a local agent on the task (pi, opencode, codex or claude)
 ```

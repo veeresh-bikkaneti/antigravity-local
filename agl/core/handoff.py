@@ -181,6 +181,22 @@ def render(info, transcript, repo, now=None, git_text=None):
     return "\n".join(out)
 
 
+def render_checkpoint(checkpoint, source, repo, now=None, git_text=None):
+    """HANDOFF.md built from the shared `.agl/checkpoint.md`, so a hand-off works for every coding app, not only
+    Claude Code. The checkpoint text is copied as it is; git status and diff stat are added for the next model."""
+    gt = git_text or _no_git
+    now = now or datetime.datetime.now().astimezone()
+    body = (checkpoint or "").strip() or "(the checkpoint is empty)"
+    out = ["# Hand-off", "", MARKER, "",
+           f"Written {now.isoformat(timespec='seconds')} from `.agl/checkpoint.md`, with no model call. "
+           "Read it, check `git status`, then continue from Next.", "",
+           "## Checkpoint", "", body, "",
+           "## git status --short", "", "```", gt(["status", "--short"], repo), "```", "",
+           "## git diff --stat", "", "```", gt(["diff", "--stat"], repo), "```", "",
+           "## Source", "", f"- Checkpoint: `{source}`", f"- Repo: `{repo}`", ""]
+    return "\n".join(out)
+
+
 # ---------- --install-hook ----------
 
 def our_hook(hook_cmd, matcher=None):

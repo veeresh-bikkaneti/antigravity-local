@@ -145,6 +145,20 @@ def write_handoff(transcript, repo, now=None, git_run=None, out=print):  # orche
         read_existing=agent_files.read_text_if_exists, write_file=agent_files.write_text, marker=MARKER)
 
 
+def write_from_checkpoint(repo, now=None, git_run=None, out=print):  # same guards as write_handoff
+    """Write HANDOFF.md from <repo>/.agl/checkpoint.md. Refuses when there is no checkpoint yet."""
+    source = Path(repo) / ".agl" / "checkpoint.md"
+    if not source.is_file():
+        raise HandoffError(f"No checkpoint at {source}. Run a task with /steps first, or use --transcript.")
+    return agent_session.write_handoff(
+        source, repo, now=now, git_run=git_run, out=out, is_tracked=agent_proc.is_tracked,
+        read_records=lambda p: agent_files.read_text_or(p, ""), summarize=lambda text: text,
+        render=lambda text, src, rp, now=None: core_handoff.render_checkpoint(
+            text, src, rp, now=now, git_text=lambda args, r: agent_proc.git(args, r, git_run)),
+        backup_path=agent_files.backup_path, copy2=agent_files.copy2,
+        read_existing=agent_files.read_text_if_exists, write_file=agent_files.write_text, marker=MARKER)
+
+
 # ---------- --install-hook ----------
 
 def hook_command():
@@ -170,6 +184,8 @@ def main(argv=None, stdin=None, input_fn=None, home=None, environ=None, cwd=None
                                  description="Write HANDOFF.md from a Claude Code transcript (no model call).")
     ap.add_argument("--transcript", metavar="PATH", help="a transcript .jsonl to read")
     ap.add_argument("--session", metavar="ID", help="a session id, or 'latest' (the default)")
+    ap.add_argument("--from-checkpoint", action="store_true",
+                    help="build HANDOFF.md from .agl/checkpoint.md (works for every coding app)")
     ap.add_argument("--install-hook", action="store_true",
                     help="add rate-limit and pre-compact hooks to this project's .claude/settings.local.json")
     args = ap.parse_args(argv)
@@ -178,6 +194,11 @@ def main(argv=None, stdin=None, input_fn=None, home=None, environ=None, cwd=None
         repo = repo_root(cwd, git_run)
         if args.install_hook:
             install_hook(repo, input_fn=input_fn, out=out)
+            return 0
+        if args.from_checkpoint:
+            target = write_from_checkpoint(repo, git_run=git_run, out=out)
+            out(f"Wrote {target} from .agl/checkpoint.md")
+            ensure_ignored(repo, git_run=git_run, out=out)
             return 0
         payload = {} if (args.transcript or args.session) else read_hook_stdin(stdin if stdin is not None else sys.stdin)
         if payload.get("cwd") and not args.transcript:

@@ -181,7 +181,14 @@ python memory.py wiki hardware-matrix
 
 # 5. Dual-sync: Update Graphify AST graph + SQLite memory store in one step
 python memory.py sync
+
+# 6. Index your own project instead of this repo (any command takes --project)
+python memory.py --project C:\code\my-app index
 ```
+
+With `--project`, the index lives in `<project>/.agl/memory/index.sqlite`, next to the shared checkpoint, and a
+`.gitignore` inside that folder keeps it out of git. It indexes `.agl/checkpoint.md`, `HANDOFF.md`, `README.md`,
+`AGENTS.md`, `CLAUDE.md`, `docs/*.md` and `.agl/wiki/*.md`. Without `--project`, nothing changes: this repo is indexed.
 
 ### Agent Integration:
 `code_agent.py` has two memory slash commands. For automatic context, start it with `--with-memory`, which prepends the top 2 excerpts (1,200 characters each) to every prompt.
