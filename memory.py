@@ -188,6 +188,8 @@ def use_project(path) -> Path:
     root = Path(path).expanduser().resolve()
     if not root.is_dir():
         sys.exit(f"[!] --project {path} is not a folder.")
+    if not (root / ".agl").resolve().is_relative_to(root):
+        sys.exit(f"[!] {root / '.agl'} links outside the project, so the index is not written there.")
     PROJECT_ROOT, DB_DIR, WIKI_DIR = root, root / ".agl" / "memory", root / ".agl" / "wiki"
     DB_PATH = DB_DIR / "index.sqlite"
     DB_DIR.mkdir(parents=True, exist_ok=True)
@@ -363,7 +365,8 @@ def cmd_sync(args):
 
     # 2. Run graphify update if installed
     try:
-        proc = process.run(["graphify", "update", "."], capture_output=True, text=True, timeout=60)
+        proc = process.run(["graphify", "update", "."], capture_output=True, text=True, timeout=60,
+                           cwd=PROJECT_ROOT or REPO_ROOT)
         if proc.returncode == 0:
             memory_cli.render_sync_graphify_ok()
         else:

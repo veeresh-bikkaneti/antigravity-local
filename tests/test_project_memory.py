@@ -86,13 +86,33 @@ class ProjectRoot(Temp):
         outside = tempfile.TemporaryDirectory()
         self.addCleanup(outside.cleanup)
         (Path(outside.name) / "secret.md").write_text("x", encoding="utf-8")
-        if sys.platform == "win32":  # a junction needs no admin rights, a symlink does
-            import _winapi
-            _winapi.CreateJunction(outside.name, str(self.repo / "docs"))
-        else:
-            (self.repo / "docs").symlink_to(outside.name, target_is_directory=True)
+        self._link(outside.name, self.repo / "docs")
         memory.use_project(self.repo)
         self.assertEqual(memory.MemoryIndexer(None, None).collect_target_files(), [])
+
+    def _link(self, target, link):
+        if sys.platform == "win32":  # a junction needs no admin rights, a symlink does
+            import _winapi
+            _winapi.CreateJunction(str(target), str(link))
+        else:
+            link.symlink_to(target, target_is_directory=True)
+
+    def test_an_agl_folder_that_links_outside_stops(self):
+        outside = tempfile.TemporaryDirectory()
+        self.addCleanup(outside.cleanup)
+        self._link(outside.name, self.repo / ".agl")
+        with self.assertRaises(SystemExit):
+            memory.use_project(self.repo)
+        self.assertEqual(list(Path(outside.name).iterdir()), [])
+
+    def test_sync_runs_graphify_in_the_project(self):
+        memory.use_project(self.repo)
+        with mock.patch.object(memory, "_run_index", return_value={}), \
+                mock.patch.object(memory, "memory_cli"), \
+                mock.patch.object(memory.process, "run",
+                                  return_value=SimpleNamespace(returncode=0, stdout="", stderr="")) as run:
+            memory.cmd_sync(SimpleNamespace())
+        self.assertEqual(run.call_args.kwargs["cwd"], self.repo)
 
     def test_a_missing_folder_stops(self):
         with self.assertRaises(SystemExit):
