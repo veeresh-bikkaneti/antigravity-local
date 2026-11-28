@@ -25,6 +25,9 @@ class Relay(BaseHTTPRequestHandler):
         pass
 
     def _forward(self, method):
+        if "chunked" in self.headers.get("Transfer-Encoding", "").lower():
+            self.send_error(411, "Send a Content-Length: the relay does not read chunked requests")
+            return
         size = int(self.headers.get("Content-Length") or 0)
         data = self.rfile.read(size) if size else None
         path = self.path.split("?", 1)[0]

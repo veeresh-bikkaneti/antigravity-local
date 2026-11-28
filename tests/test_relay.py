@@ -6,6 +6,7 @@ import json
 import sys
 import threading
 import unittest
+from http.client import HTTPConnection
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -130,6 +131,15 @@ class RoundTrip(unittest.TestCase):
         body = chat(msg("assistant", 40))
         self.post("/api/chat", body)
         self.assertEqual(FakeOllama.seen[-1][1], body)
+
+    def test_a_chunked_request_is_refused_not_emptied(self):
+        conn = HTTPConnection("127.0.0.1", self.relay.server_port, timeout=10)
+        self.addCleanup(conn.close)
+        conn.putrequest("POST", "/api/chat")
+        conn.putheader("Transfer-Encoding", "chunked")
+        conn.endheaders()
+        self.assertEqual(conn.getresponse().status, 411)
+        self.assertEqual(FakeOllama.seen, [])
 
     def test_show_reports_the_real_window(self):
         status, text = self.post("/api/show", {"model": "m"})
