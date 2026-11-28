@@ -88,7 +88,7 @@ Sources: [Antigravity SDK local models](https://antigravity.google/docs/sdk/loca
 
 ## Step mode: `/steps <task>`
 
-Type `/steps <task>` in the built-in shell to walk a long task one step at a time. The plan waits for your `y`. Each step runs in a fresh chat, so a small window never fills with old turns. The checkpoint keeps what is done, and the next start offers to resume. An optional test command, typed after the plan, must exit 0 before a step counts as done. It is kept for that run only.
+Type `/steps <task>` in the built-in shell to walk a long task one step at a time. The plan waits for your `y`. Each step runs in a fresh chat, so a small window never fills with old turns. The checkpoint keeps what is done, and the next start offers to resume. An optional test command, typed after the plan, must exit 0 before a step counts as done. It is kept for that run only. A prompt bigger than the window is never cut. The shell says so and asks `Send anyway? [Y/n]`: Enter sends it unchanged, `n` or end of input holds it, and `/steps` turns it into a step-mode task.
 
 ## Shared checkpoint file
 

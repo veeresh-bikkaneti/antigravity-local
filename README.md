@@ -360,7 +360,7 @@ Add `--config` to set an app up without starting it, for example `ollama launch 
 
 ## Step mode: `/steps <task>` in the shell
 
-Big task, small model? Type `/steps <task>` and the shell splits it into 2 to 8 steps. You type `y` to accept the plan. Each step runs in a fresh chat, so the model sees only the checkpoint and that one step. Quit any time: the next start offers to resume at the first open step. Optional: type a test command after the plan, and a step passes only when the model says yes and the test exits 0. The test command is kept for that run only and is asked again on resume.
+Big task, small model? Type `/steps <task>` and the shell splits it into 2 to 8 steps. You type `y` to accept the plan. Each step runs in a fresh chat, so the model sees only the checkpoint and that one step. Quit any time: the next start offers to resume at the first open step. Optional: type a test command after the plan, and a step passes only when the model says yes and the test exits 0. The test command is kept for that run only and is asked again on resume. A prompt bigger than the window is never cut. The shell says so and asks `Send anyway? [Y/n]`: Enter sends it unchanged, `n` or end of input holds it, and `/steps` turns it into a step-mode task.
 
 ## Web check (optional)
 
