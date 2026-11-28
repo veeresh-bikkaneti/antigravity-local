@@ -40,6 +40,9 @@ def _split(messages):
         head_end += 1
     if head_end < len(messages):
         head_end += 1  # the goal: the first message that is not a system message
+    while head_end < len(messages) and isinstance(messages[head_end], dict) \
+            and messages[head_end].get("role") == "tool":
+        head_end += 1  # tool results right after the goal stay with it
     tail_start = max(head_end, len(messages) - KEEP_LAST)
     while tail_start > head_end and isinstance(messages[tail_start], dict) \
             and messages[tail_start].get("role") == "tool":
@@ -66,6 +69,19 @@ def trim(body, window, *, reserve=RESERVE):
     if not dropped:
         return body, 0
     return {**body, "messages": head + [note] + [m for u in units for m in u] + tail}, dropped
+
+
+LOOPBACK_HOSTS = ("localhost", "127.0.0.1", "::1")
+
+
+def loopback_host(value):
+    """True when a Host header names this machine. Any other name may be a DNS-rebinding page in a browser."""
+    host = (value or "").strip().lower()
+    if host.startswith("["):
+        host = host[1:].split("]", 1)[0]  # [::1]:11435
+    elif host.count(":") == 1:
+        host = host.split(":", 1)[0]  # localhost:11435
+    return host in LOOPBACK_HOSTS
 
 
 def patch_show(reply, window):

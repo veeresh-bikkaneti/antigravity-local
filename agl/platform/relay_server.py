@@ -19,12 +19,15 @@ SKIP_HEADERS = {"host", "content-length", "connection", "accept-encoding"}
 class Relay(BaseHTTPRequestHandler):
     """One request. serve() binds upstream, window and the decisions on a subclass."""
     upstream = window = chat_paths = None
-    trim = patch_show = log = None  # staticmethods set by serve()
+    trim = patch_show = loopback_host = log = None  # staticmethods set by serve()
 
     def log_message(self, *args):  # quiet: our own log line says what matters
         pass
 
     def _forward(self, method):
+        if not self.loopback_host(self.headers.get("Host")):
+            self.send_error(403, "The relay answers only requests addressed to localhost or 127.0.0.1")
+            return
         if "chunked" in self.headers.get("Transfer-Encoding", "").lower():
             self.send_error(411, "Send a Content-Length: the relay does not read chunked requests")
             return
@@ -98,11 +101,12 @@ class Relay(BaseHTTPRequestHandler):
         self._forward("DELETE")
 
 
-def serve(port, upstream, window, *, trim, patch_show, chat_paths, log=print):
+def serve(port, upstream, window, *, trim, patch_show, chat_paths, loopback_host, log=print):
     """Start the relay in a daemon thread and return the server. Call .shutdown() to stop it."""
     bound = type("BoundRelay", (Relay,), {
         "upstream": upstream.rstrip("/"), "window": window, "chat_paths": tuple(chat_paths),
-        "trim": staticmethod(trim), "patch_show": staticmethod(patch_show), "log": staticmethod(log)})
+        "trim": staticmethod(trim), "patch_show": staticmethod(patch_show),
+        "loopback_host": staticmethod(loopback_host), "log": staticmethod(log)})
     server = ThreadingHTTPServer((HOST, port), bound)
     server.daemon_threads = True
     threading.Thread(target=server.serve_forever, daemon=True).start()

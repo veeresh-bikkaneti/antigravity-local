@@ -27,7 +27,8 @@ def main(argv=None, out=print, wait=None):
         return 2
     try:
         server = relay_server.serve(args.port, args.upstream, args.window, trim=relay_trim.trim,
-                                    patch_show=relay_trim.patch_show, chat_paths=relay_trim.CHAT_PATHS, log=out)
+                                    patch_show=relay_trim.patch_show, chat_paths=relay_trim.CHAT_PATHS,
+                                    loopback_host=relay_trim.loopback_host, log=out)
     except OSError as exc:
         out(f"[relay] could not listen on {relay_server.HOST}:{args.port} ({exc}). Try another --port.")
         return 1

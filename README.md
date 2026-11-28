@@ -318,7 +318,7 @@ Four ways, easiest first. All of them use the same Ollama on `http://localhost:1
          - tool_use
    ```
 4. **Cline** ([Cline's guide](https://docs.cline.bot/running-models-locally/ollama)). Open Cline's settings, choose **Ollama** as the provider, keep the Base URL at `http://localhost:11434`, and pick your model from the dropdown. Cline's guide says to turn on **Use Compact Prompt**.
-5. **Relay trial for small windows (C2, experimental).** If your app sends more than the window Ollama loaded, run `python relay.py --window 8192` (use your real window) and point the app's Ollama address at `http://127.0.0.1:11435`. Chat requests that are too big keep the instructions, tools, the goal and the latest messages; the oldest middle turns are dropped with a note that points to `.agl/checkpoint.md`. It also reports that window in `/api/show`. It listens on 127.0.0.1 only, changes nothing on your machine, and Ctrl+C stops it.
+5. **Relay trial for small windows (C2, experimental).** If your app sends more than the window Ollama loaded, run `python relay.py --window 8192` (use your real window) and point the app's Ollama address at `http://127.0.0.1:11435`. Chat requests that are too big keep the instructions, tools, the goal and the latest messages; the oldest middle turns are dropped with a note that points to `.agl/checkpoint.md`. It also reports that window in `/api/show`. It listens on 127.0.0.1 only, refuses requests addressed to any other host name, changes nothing on your machine, and Ctrl+C stops it. If Ollama stops mid-answer, the app sees the reply end early with no error line.
 
 Good to know:
 - Agent modes need a model that supports tools. `qwen2.5:14b` does. `gemma2` does not (see [troubleshooting](#common-gotchas--troubleshooting)).

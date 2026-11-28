@@ -61,6 +61,20 @@ class Trim(unittest.TestCase):
     def test_no_messages_is_left_alone(self):
         self.assertEqual(relay_trim.trim({"prompt": "x" * 90000}, 8192), ({"prompt": "x" * 90000}, 0))
 
+    def test_a_tool_result_right_after_the_goal_stays_with_it(self):
+        call = msg("assistant", 10, tool_calls=[{"function": {"name": "read"}}])
+        body = {"messages": [msg("system", 10), call, msg("tool", 10)] + [msg("assistant", 4000)] * 5
+                + [msg("user", 10)] * 6}
+        new, dropped = relay_trim.trim(body, 4096)
+        self.assertGreater(dropped, 0)
+        self.assertEqual(new["messages"][:3], body["messages"][:3])
+
+    def test_loopback_host_names(self):
+        for ok in ("localhost", "LOCALHOST:11435", "127.0.0.1:11435", "[::1]:11435", "::1"):
+            self.assertTrue(relay_trim.loopback_host(ok), ok)
+        for bad in ("evil.example:11435", "127.0.0.1.evil.example", "", None, "[::2]:1"):
+            self.assertFalse(relay_trim.loopback_host(bad), bad)
+
     def test_patch_show_caps_context_length(self):
         reply = {"model_info": {"qwen2.context_length": 32768, "qwen2.embedding_length": 5120}}
         got = relay_trim.patch_show(reply, 8192)["model_info"]
@@ -104,7 +118,8 @@ class RoundTrip(unittest.TestCase):
         self.logs = []
         self.relay = relay_server.serve(0, f"http://127.0.0.1:{self.ollama.server_port}", 8192,
                                         trim=relay_trim.trim, patch_show=relay_trim.patch_show,
-                                        chat_paths=relay_trim.CHAT_PATHS, log=self.logs.append)
+                                        chat_paths=relay_trim.CHAT_PATHS, loopback_host=relay_trim.loopback_host,
+                                        log=self.logs.append)
         self.addCleanup(self.relay.server_close)
         self.addCleanup(self.relay.shutdown)
         self.base = f"http://127.0.0.1:{self.relay.server_port}"
@@ -139,6 +154,13 @@ class RoundTrip(unittest.TestCase):
         conn.putheader("Transfer-Encoding", "chunked")
         conn.endheaders()
         self.assertEqual(conn.getresponse().status, 411)
+        self.assertEqual(FakeOllama.seen, [])
+
+    def test_a_request_for_another_host_is_refused(self):
+        conn = HTTPConnection("127.0.0.1", self.relay.server_port, timeout=10)
+        self.addCleanup(conn.close)
+        conn.request("GET", "/api/tags", headers={"Host": "rebind.example:11435"})
+        self.assertEqual(conn.getresponse().status, 403)
         self.assertEqual(FakeOllama.seen, [])
 
     def test_show_reports_the_real_window(self):
