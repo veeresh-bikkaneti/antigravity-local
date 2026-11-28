@@ -82,6 +82,18 @@ class ProjectRoot(Temp):
         self.assertEqual({(p.relative_to(self.repo).as_posix(), c) for p, c in got},
                          {(".agl/checkpoint.md", "context"), ("README.md", "root_doc"), ("docs/guide.md", "doc")})
 
+    def test_a_link_that_leaves_the_project_is_not_indexed(self):
+        outside = tempfile.TemporaryDirectory()
+        self.addCleanup(outside.cleanup)
+        (Path(outside.name) / "secret.md").write_text("x", encoding="utf-8")
+        if sys.platform == "win32":  # a junction needs no admin rights, a symlink does
+            import _winapi
+            _winapi.CreateJunction(outside.name, str(self.repo / "docs"))
+        else:
+            (self.repo / "docs").symlink_to(outside.name, target_is_directory=True)
+        memory.use_project(self.repo)
+        self.assertEqual(memory.MemoryIndexer(None, None).collect_target_files(), [])
+
     def test_a_missing_folder_stops(self):
         with self.assertRaises(SystemExit):
             memory.use_project(self.repo / "nope")

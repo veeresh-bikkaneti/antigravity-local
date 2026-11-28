@@ -179,7 +179,7 @@ def project_targets(root: Path) -> list[tuple[Path, str]]:
     targets = [(p, "wiki") for p in sorted((root / ".agl" / "wiki").glob("*.md"))]
     targets += [(root / name, cat) for name, cat in PROJECT_FILES if (root / name).is_file()]
     targets += [(p, "doc") for p in sorted((root / "docs").glob("*.md"))]
-    return targets
+    return [(p, cat) for p, cat in targets if p.resolve().is_relative_to(root)]  # a link must not leave it
 
 
 def use_project(path) -> Path:
