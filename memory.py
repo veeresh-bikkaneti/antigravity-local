@@ -30,6 +30,9 @@ REPO_ROOT = Path(__file__).resolve().parent
 DB_DIR = REPO_ROOT / ".memory"
 DB_PATH = DB_DIR / "index.sqlite"
 WIKI_DIR = REPO_ROOT / ".wiki"
+PROJECT_ROOT = None  # set by --project: index the user's project, not this repo
+PROJECT_FILES = ((".agl/checkpoint.md", "context"), ("HANDOFF.md", "context"), ("README.md", "root_doc"),
+                 ("AGENTS.md", "root_doc"), ("CLAUDE.md", "root_doc"))
 OLLAMA_API_BASE = os.getenv("OLLAMA_API_BASE", config.OLLAMA_BASE_URL)
 
 # Relevance gates (calibrated on this repo's index with the pure-python backend: gibberish tops out
@@ -69,6 +72,8 @@ class MemoryIndexer:
 
     def collect_target_files(self) -> list[tuple[Path, str]]:
         """Collect all files to index categorized by priority."""
+        if PROJECT_ROOT is not None:
+            return project_targets(PROJECT_ROOT)
         targets = []
 
         # 1. LLMWiki (.wiki/*.md)
@@ -163,10 +168,33 @@ class MemoryIndexer:
             store=self.db,
             embedder=self.embedder,
             targets=self.collect_target_files(),
-            repo_root=REPO_ROOT,
+            repo_root=PROJECT_ROOT or REPO_ROOT,
             chunk=self.chunk_file,
             warn=memory_cli.render_index_warn
         )
+
+
+def project_targets(root: Path) -> list[tuple[Path, str]]:
+    """What --project indexes: the shared checkpoint, the hand-off, the project's own guides and docs/*.md."""
+    targets = [(p, "wiki") for p in sorted((root / ".agl" / "wiki").glob("*.md"))]
+    targets += [(root / name, cat) for name, cat in PROJECT_FILES if (root / name).is_file()]
+    targets += [(p, "doc") for p in sorted((root / "docs").glob("*.md"))]
+    return targets
+
+
+def use_project(path) -> Path:
+    """Root the index at the user's project: <project>/.agl/memory, kept out of git by its own .gitignore."""
+    global PROJECT_ROOT, DB_DIR, DB_PATH, WIKI_DIR
+    root = Path(path).expanduser().resolve()
+    if not root.is_dir():
+        sys.exit(f"[!] --project {path} is not a folder.")
+    PROJECT_ROOT, DB_DIR, WIKI_DIR = root, root / ".agl" / "memory", root / ".agl" / "wiki"
+    DB_PATH = DB_DIR / "index.sqlite"
+    DB_DIR.mkdir(parents=True, exist_ok=True)
+    ignore = DB_DIR / ".gitignore"
+    if not ignore.exists():
+        ignore.write_text("*\n", encoding="utf-8")
+    return root
 
 
 def index_for_probe() -> dict:
@@ -352,6 +380,8 @@ def cmd_sync(args):
 
 def main():
     parser = argparse.ArgumentParser(description="Antigravity Embedded Hybrid Memory Engine")
+    parser.add_argument("--project", metavar="PATH",
+                        help="index this project into <PATH>/.agl/memory instead of this repo")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # index
@@ -381,6 +411,8 @@ def main():
     p_sync.set_defaults(func=cmd_sync)
 
     args = parser.parse_args()
+    if args.project:
+        use_project(args.project)
     args.func(args)
 
 
